@@ -1,0 +1,316 @@
+// ═══════════════════════════════════════════════════════════════
+//  LIVE POSITIONS v4 brick 6 + v5 Sprint 1.3 — data grid 19 colonnes
+//
+//  Module bento col 1-12 row 2 (160 px). Plein-écran dashboard,
+//  table dense Excel-style. Header 22 + h-22 thead + N × h-15
+//  rows. Au-delà de ~7 rows : scroll Y interne, jamais sur le
+//  module.
+//
+//  19 colonnes ordre exact spec v5 :
+//    TICKER · TYPE · STR · EXP · DTE · QTY · ENTRY · MARK ·
+//    UNREAL$ · UNREAL% · Δ · Θ · IVR · EDGE · C-TIER · GATE-NXT ·
+//    DAYS-IN · SPARK 7D · ALERT
+//
+//  v5 Sprint 1.3 deltas vs v4 :
+//    - EDGE (was combined "E3C2") split into two cols : EDGE + C-TIER.
+//    - GATE renamed GATE-NXT and reads pos.nextGate object (computed
+//      via computeNextGate util) instead of pos.gates[0]. Renders
+//      "TKR DTE45 in Xd" or "SL35 ARMED" semantics.
+//    - DAYS renamed DAYS-IN for clarity (days-in-trade convention).
+//
+//  Props-driven : <LivePositions data={...} />.
+//  data = output de useLivePositions / buildLivePositions.
+// ═══════════════════════════════════════════════════════════════
+
+import { useState } from 'react';
+import PositionSparkline from './PositionSparkline';
+import SniperMetaEditor from './SniperMetaEditor';
+
+const FR_MONTHS = [
+  'Jan',
+  'Fév',
+  'Mar',
+  'Avr',
+  'Mai',
+  'Jun',
+  'Jul',
+  'Aoû',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Déc',
+];
+
+const fmtUsd = (v, digits = 0) => {
+  if (v == null || !Number.isFinite(v)) return '—';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: digits,
+    minimumFractionDigits: digits,
+  }).format(v);
+};
+
+const fmtUsdSigned = (v, digits = 2) => {
+  if (v == null || !Number.isFinite(v)) return '—';
+  if (v === 0) return '$0.00';
+  const sign = v > 0 ? '+' : '−';
+  return `${sign}$${Math.abs(v).toFixed(digits)}`;
+};
+
+const fmtPctSigned = (v, digits = 2) => {
+  if (v == null || !Number.isFinite(v)) return '—';
+  if (v === 0) return '0.00 %';
+  const sign = v > 0 ? '+' : '−';
+  return `${sign}${Math.abs(v).toFixed(digits)} %`;
+};
+
+const fmtNumberSigned = (v, digits = 2) => {
+  if (v == null || !Number.isFinite(v)) return '—';
+  if (v === 0) return '0.00';
+  const sign = v > 0 ? '+' : '−';
+  return `${sign}${Math.abs(v).toFixed(digits)}`;
+};
+
+const fmtExp = (iso) => {
+  if (!iso || typeof iso !== 'string') return '—';
+  const parts = iso.split('-');
+  if (parts.length !== 3) return iso;
+  const month = FR_MONTHS[parseInt(parts[1], 10) - 1] || parts[1];
+  const yy = parts[0].slice(-2);
+  return `${month}'${yy}`;
+};
+
+const toneFromSign = (v) => {
+  if (v == null || !Number.isFinite(v) || v === 0) return 'mute';
+  return v > 0 ? 'profit' : 'loss';
+};
+
+const ALERT_TONE = {
+  DTE: 'warn',
+  EARN: 'info',
+  IV: 'warn',
+  PRICE: 'warn',
+  TIME: 'warn',
+};
+
+function IvrCell({ ivr }) {
+  if (ivr == null || !Number.isFinite(ivr)) return <span className="live-pos__mute">—</span>;
+  const pct = Math.max(0, Math.min(100, ivr));
+  // High-IV bar color = profit (premium-rich for short premium strategies),
+  // low-IV bar color = mute, mid = neutral.
+  const tone = pct > 70 ? 'profit' : pct < 20 ? 'loss' : 'mute';
+  return (
+    <span className="live-pos__ivr">
+      <span className="live-pos__ivr-num">{Math.round(pct)}</span>
+      <span className="live-pos__ivr-bar">
+        <span
+          className={`live-pos__ivr-fill live-pos__ivr-fill--${tone}`}
+          style={{ width: `${pct}%` }}
+        />
+      </span>
+    </span>
+  );
+}
+
+// v5 Sprint 2.2 : pills clickable when empty → opens SniperMetaEditor.
+// When tagged, the pill renders as a span (no click) — re-tagging is
+// done via the row-level "Tag" affordance (Sprint 2.3+ adds an
+// explicit edit button ; for now click on cell still works to retag).
+function EdgePill({ edge, onTag }) {
+  if (!edge) {
+    return (
+      <button type="button" className="live-pos__tag-btn" onClick={onTag} title="Tag Edge Tier">
+        Tag
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className="live-pos__edge-pill live-pos__edge-pill--clickable"
+      onClick={onTag}
+      title="Modifier Edge Tier"
+    >
+      {edge}
+    </button>
+  );
+}
+
+function CTierPill({ cap, onTag }) {
+  if (!cap) {
+    return (
+      <button type="button" className="live-pos__tag-btn" onClick={onTag} title="Tag Capital Tier">
+        Tag
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className="live-pos__ctier-pill live-pos__ctier-pill--clickable"
+      onClick={onTag}
+      title="Modifier Capital Tier"
+    >
+      {cap}
+    </button>
+  );
+}
+
+// v5 Sprint 1.3 : nextGate is { gateType, daysToTrigger, dte } | null.
+// Format : "DTE45 in 12d" / "SL35 ARMED" / "SL35 in 3d".
+function GatePill({ nextGate }) {
+  if (!nextGate) return <span className="live-pos__mute">—</span>;
+  const { gateType, daysToTrigger } = nextGate;
+  let suffix;
+  if (daysToTrigger > 0) {
+    suffix = ` ${daysToTrigger}d`;
+  } else if (daysToTrigger === 0) {
+    suffix = ' 0d';
+  } else {
+    suffix = ' ARMED';
+  }
+  const tone = daysToTrigger <= 0 ? 'armed' : daysToTrigger <= 7 ? 'imminent' : 'normal';
+  return (
+    <span className={`live-pos__gate-pill live-pos__gate-pill--${tone}`}>
+      {gateType}
+      <span className="live-pos__gate-pill-sub">{suffix}</span>
+    </span>
+  );
+}
+
+function AlertPill({ alert }) {
+  if (!alert) return <span className="live-pos__mute">—</span>;
+  const tone = ALERT_TONE[alert] || 'warn';
+  return <span className={`live-pos__alert-pill live-pos__alert-pill--${tone}`}>{alert}</span>;
+}
+
+function PositionRow({ pos, onTag }) {
+  const isStock = pos.type === 'STK';
+  return (
+    <tr className="live-pos__row">
+      <td className="live-pos__ticker">{pos.ticker || '—'}</td>
+      <td>
+        <span className={`live-pos__type-pill live-pos__type-pill--${pos.type}`}>{pos.type}</span>
+      </td>
+      <td>{isStock ? '—' : pos.strike != null ? `$${pos.strike}` : '—'}</td>
+      <td className="live-pos__mute">{isStock ? '—' : fmtExp(pos.exp)}</td>
+      <td>
+        {isStock || pos.dte == null ? (
+          '—'
+        ) : (
+          <>
+            {pos.dte}
+            <span className="live-pos__sub">d</span>
+          </>
+        )}
+      </td>
+      <td>{pos.qty}</td>
+      <td>${pos.entry.toFixed(2)}</td>
+      <td>${pos.mark.toFixed(2)}</td>
+      <td className={`live-pos__cell--${toneFromSign(pos.unrealDollar)}`}>
+        {fmtUsdSigned(pos.unrealDollar, 2)}
+      </td>
+      <td className={`live-pos__cell--${toneFromSign(pos.unrealPct)}`}>
+        {fmtPctSigned(pos.unrealPct, 2)}
+      </td>
+      <td className={`live-pos__cell--${isStock ? 'mute' : toneFromSign(pos.delta)}`}>
+        {isStock || pos.delta == null ? '—' : fmtNumberSigned(pos.delta, 2)}
+      </td>
+      <td className={`live-pos__cell--${isStock ? 'mute' : toneFromSign(pos.theta)}`}>
+        {isStock || pos.theta == null ? '—' : fmtNumberSigned(pos.theta, 2)}
+      </td>
+      <td>
+        <IvrCell ivr={isStock ? null : pos.ivr} />
+      </td>
+      <td>
+        <EdgePill edge={pos.edgeTier} onTag={() => onTag(pos)} />
+      </td>
+      <td>
+        <CTierPill cap={pos.capitalTier} onTag={() => onTag(pos)} />
+      </td>
+      <td>
+        {isStock ? <span className="live-pos__mute">—</span> : <GatePill nextGate={pos.nextGate} />}
+      </td>
+      <td>
+        {pos.daysHeld}
+        <span className="live-pos__sub">d</span>
+      </td>
+      <td>
+        <PositionSparkline prices={pos.spark7d} dir={pos.dir} />
+      </td>
+      <td>
+        <AlertPill alert={pos.alert} />
+      </td>
+    </tr>
+  );
+}
+
+export default function LivePositions({ data, area = 'positions' }) {
+  const count = data?.count ?? 0;
+  const totalNotional = data?.totalNotional ?? 0;
+  const totalMaxRisk = data?.totalMaxRisk ?? 0;
+  const positions = data?.positions ?? [];
+  const isEmpty = count === 0;
+
+  // v5 Sprint 2.2 : modal state for per-position Sniper meta tagging.
+  // Opens when the user clicks the EDGE / C-TIER pill or its 'Tag'
+  // placeholder in a row.
+  const [editorPos, setEditorPos] = useState(null);
+
+  const headerHint = isEmpty
+    ? 'Σ Notional $0 · Σ Max Risk $0'
+    : `Σ Notional ${fmtUsd(totalNotional, 0)} · Σ Max Risk ${fmtUsdSigned(totalMaxRisk, 0)}`;
+
+  return (
+    <section className="module live-pos" style={{ gridArea: area }}>
+      <header className="module-header">
+        <span className="module-header__title">
+          Live Positions · {count} {count === 1 ? 'ouverte' : 'ouvertes'}
+        </span>
+        <span className="module-header__hint">{headerHint}</span>
+      </header>
+      <div className="module-body live-pos__body">
+        {isEmpty ? (
+          <div className="live-pos__empty">Aucune position ouverte</div>
+        ) : (
+          <table className="live-pos__table" aria-label="Live positions">
+            <thead>
+              <tr>
+                <th>Ticker</th>
+                <th>Type</th>
+                <th>Str</th>
+                <th>Exp</th>
+                <th>DTE</th>
+                <th>Qty</th>
+                <th>Entry</th>
+                <th>Mark</th>
+                <th>Unreal $</th>
+                <th>Unreal %</th>
+                <th>Δ</th>
+                <th>Θ</th>
+                <th>IVR</th>
+                <th>Edge</th>
+                <th>C-Tier</th>
+                <th>Gate Nxt</th>
+                <th>Days In</th>
+                <th>Spark 7D</th>
+                <th>Alert</th>
+              </tr>
+            </thead>
+            <tbody>
+              {positions.map((pos) => (
+                <PositionRow key={pos.id} pos={pos} onTag={setEditorPos} />
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+      <SniperMetaEditor
+        position={editorPos}
+        open={!!editorPos}
+        onClose={() => setEditorPos(null)}
+      />
+    </section>
+  );
+}

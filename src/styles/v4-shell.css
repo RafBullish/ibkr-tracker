@@ -1,0 +1,579 @@
+/* ════════════════════════════════════════════════════════════════
+   v4-shell.css — Institutional Terminal v4 brick 1 (+ v5 Sprint 1)
+   Shell-level chrome only : CommandBar (32 px), TickerTape (24 px,
+   v5 Sprint 1.4), StatusBar (22 px). Token-driven, tied to tokens.css.
+
+   Loaded after v3-components.css in main.jsx so its rules win when
+   class names overlap legacy headers/sidebars.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ─── Shell-level vars ───────────────────────────────────────────── */
+:root {
+  --shell-cmdbar-h: 32px;
+  --shell-tickertape-h: var(--tickertape, 24px);
+  --shell-statusbar-h: 22px;
+  --shell-pill-h: 22px;
+  --shell-hairline: var(--border);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   COMMAND BAR (top, 32px)
+   ════════════════════════════════════════════════════════════════ */
+
+.cmdbar {
+  display: flex;
+  align-items: center;
+  height: var(--shell-cmdbar-h);
+  padding: 0 var(--space-3);
+  gap: var(--space-3);
+  background: var(--bg-elev-1);
+  border-bottom: 1px solid var(--shell-hairline);
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  position: relative;
+  z-index: 10;
+}
+
+.cmdbar__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 220px;
+  flex-shrink: 0;
+}
+
+.cmdbar__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  transition: color 120ms ease-out;
+}
+
+.cmdbar__logo:hover {
+  color: var(--accent);
+}
+
+.cmdbar__logo:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.cmdbar__logo-mark {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.cmdbar__logo-bar {
+  font-size: 14px;
+  line-height: 1;
+  color: var(--text-tertiary);
+}
+
+.cmdbar__logo-name {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  line-height: 1;
+}
+
+.cmdbar__sep {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.cmdbar__crumb {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.cmdbar__nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1 1 auto;
+  justify-content: center;
+  min-width: 0;
+}
+
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--shell-pill-h);
+  padding: 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0;
+  cursor: pointer;
+  transition:
+    color 80ms ease-out,
+    background 80ms ease-out,
+    border-color 80ms ease-out;
+  white-space: nowrap;
+}
+
+.nav-pill:hover {
+  background: var(--row-hover);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+.nav-pill:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.nav-pill[data-active] {
+  background: var(--row-hover);
+  color: var(--text-primary);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.cmdbar__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.cmdbar__search {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--shell-pill-h);
+  padding: 0 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  cursor: pointer;
+  transition:
+    color 80ms ease-out,
+    border-color 80ms ease-out;
+  min-width: 22px;
+}
+
+.cmdbar__search:hover {
+  color: var(--text-secondary);
+  border-color: var(--border-strong);
+}
+
+.cmdbar__search:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.cmdbar__search-label {
+  font-size: 10px;
+}
+
+.cmdbar__kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 14px;
+  padding: 0 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  line-height: 1;
+}
+
+@media (max-width: 1023px) {
+  .cmdbar__left {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .cmdbar {
+    padding: 0 var(--space-2);
+  }
+  .cmdbar__crumb,
+  .cmdbar__sep {
+    display: none;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   STATUS BAR (bottom, 22px)
+   ════════════════════════════════════════════════════════════════ */
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  height: var(--shell-statusbar-h);
+  padding: 0 8px;
+  gap: 12px;
+  background: var(--bg-elev-1);
+  border-top: 1px solid var(--shell-hairline);
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  position: relative;
+  z-index: 10;
+}
+
+.statusbar__zone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.statusbar__zone--center {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.statusbar__zone--right {
+  margin-left: auto;
+}
+
+.statusbar__divider {
+  width: 1px;
+  height: 12px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.statusbar__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.statusbar__label {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.statusbar__value {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums slashed-zero;
+  color: var(--text-secondary);
+}
+
+.statusbar__value--profit {
+  color: var(--profit);
+}
+.statusbar__value--loss {
+  color: var(--loss);
+}
+.statusbar__value--strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.statusbar__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  flex-shrink: 0;
+}
+.statusbar__dot--ok {
+  background: var(--profit);
+  box-shadow: 0 0 4px var(--profit);
+}
+.statusbar__dot--warn {
+  background: var(--warning);
+}
+.statusbar__dot--err {
+  background: var(--loss);
+}
+
+/* Brick 11 fix : sur Daylight (light theme) le bg du status bar
+   est var(--bg-elev-1) = #f4f5f7 (gris très clair). Le glow
+   box-shadow `0 0 4px var(--profit)` se dilue sur fond clair
+   (l'effet halo perd son punch). On retire le glow Daylight ;
+   le dot solide reste lisible — la couleur var(--profit) #00875a
+   est dark green et contraste bien sur le fond clair sans halo. */
+[data-theme="daylight"] .statusbar__dot--ok {
+  box-shadow: none;
+}
+.statusbar__dot--off {
+  background: var(--text-tertiary);
+  opacity: 0.5;
+}
+
+.statusbar__clock {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.statusbar__clock-code {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.statusbar__clock-time {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums slashed-zero;
+  color: var(--text-secondary);
+}
+
+.statusbar__clock-session {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-left: 2px;
+}
+.statusbar__clock-session--open {
+  color: var(--profit);
+}
+.statusbar__clock-session--closed {
+  color: var(--text-tertiary);
+}
+
+.statusbar__version {
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── ThemeSwitcher compressed for status bar (22px) ──────────── */
+.theme-switcher__trigger.statusbar__theme-switcher {
+  height: 18px;
+  padding: 0 6px;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  border-radius: 0;
+  gap: 4px;
+}
+
+.theme-switcher__trigger.statusbar__theme-switcher svg {
+  width: 11px;
+  height: 11px;
+}
+
+@media (max-width: 1023px) {
+  .statusbar__clock--xtra {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .statusbar {
+    padding: 0 6px;
+    gap: 8px;
+  }
+  .statusbar__zone--center {
+    display: none;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TICKER TAPE (24px, between CommandBar and main) — v5 Sprint 1.4
+   Scrolls horizontally infinite at 30 px/s. Hover pauses.
+   Click on a ticker navigates to /trading/chain?ticker=X.
+   ════════════════════════════════════════════════════════════════ */
+
+.tickertape {
+  position: relative;
+  height: var(--shell-tickertape-h);
+  background: var(--bg-elev-1);
+  border-bottom: var(--hairline);
+  overflow: hidden;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  z-index: 9;
+  /* Edge fade — subtle gradient mask on left/right so cells slide in/out cleanly */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
+}
+
+.tickertape__track {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  white-space: nowrap;
+  /* The track holds 2× items; -50% translation == 1 full cycle */
+  animation: tickertape-marquee 90s linear infinite;
+  will-change: transform;
+}
+
+.tickertape:hover .tickertape__track {
+  animation-play-state: paused;
+}
+
+@keyframes tickertape-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.tickertape__cell {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 var(--cell-pad-x, 8px);
+  background: transparent;
+  border: 0;
+  border-right: var(--hairline);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+  transition:
+    color 120ms ease-out,
+    background-color 120ms ease-out;
+}
+
+.tickertape__cell:hover {
+  background: var(--bg-elev-2);
+  color: var(--text-primary);
+}
+
+.tickertape__cell:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.tickertape__cell[data-type="index"] .tickertape__sym {
+  color: var(--accent-amber, #ffa028);
+}
+
+.tickertape__cell[data-type="position"] .tickertape__sym {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.tickertape__sym {
+  font-feature-settings:
+    "tnum" 1,
+    "zero" 1;
+  font-variant-numeric: tabular-nums slashed-zero;
+  margin-right: 6px;
+}
+
+.tickertape__px {
+  font-feature-settings:
+    "tnum" 1,
+    "zero" 1;
+  font-variant-numeric: tabular-nums slashed-zero;
+  margin-right: 4px;
+  color: var(--text-primary);
+}
+
+.tickertape__chg {
+  font-feature-settings:
+    "tnum" 1,
+    "zero" 1;
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 9px;
+}
+
+.tickertape__chg[data-semantic="bull"] {
+  color: var(--profit);
+}
+
+.tickertape__chg[data-semantic="bear"] {
+  color: var(--loss);
+}
+
+.tickertape__chg[data-semantic="neutral"] {
+  color: var(--text-tertiary);
+}
+
+/* Reduce motion : freeze the marquee, but keep cells visible */
+@media (prefers-reduced-motion: reduce) {
+  .tickertape__track {
+    animation: none;
+    transform: translateX(0);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   STATUS BAR — v5 Sprint 1.2 additions
+   Market phase indicator (PRE / OPEN / AFTER / CLOSED) + GATE pill
+   ════════════════════════════════════════════════════════════════ */
+
+.statusbar__phase .statusbar__value {
+  letter-spacing: 0.06em;
+}
+
+.statusbar__phase--open .statusbar__value {
+  color: var(--profit);
+}
+
+.statusbar__phase--pre .statusbar__value,
+.statusbar__phase--after .statusbar__value {
+  color: var(--accent-amber, #ffa028);
+}
+
+.statusbar__phase--closed .statusbar__value {
+  color: var(--text-tertiary);
+}
+
+.statusbar__group--gate .statusbar__value {
+  color: var(--accent-amber, #ffa028);
+  letter-spacing: 0.04em;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   COMMAND BAR — Cmd+/ help pill (v5 Sprint 10)
+   ════════════════════════════════════════════════════════════════ */
+
+.cmdbar__kbd--help {
+  cursor: pointer;
+  transition:
+    color 80ms ease-out,
+    border-color 80ms ease-out;
+  user-select: none;
+}
+
+.cmdbar__kbd--help:hover {
+  color: var(--accent-amber, #ffa028);
+  border-color: var(--accent-amber, #ffa028);
+}
+
+.cmdbar__kbd--help:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}

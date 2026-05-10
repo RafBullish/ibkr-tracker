@@ -1,0 +1,281 @@
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE.CSS — Breakpoints, mobile adaptations, touch
+   v7.0 — Bento-aware dashboard breakpoints
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Ultrawide: ≥ 1920px ── */
+@media (min-width: 1920px) {
+  .bento-grid {
+    gap: var(--bento-gap-wide);
+  }
+  .dashboard-wrapper {
+    gap: var(--bento-gap-wide);
+  }
+  .v2-kpi-card--hero .v2-kpi-value {
+    font-size: 48px;
+  }
+  .page-container {
+    padding: var(--space-8);
+  }
+  .dashboard-hero-row {
+    gap: var(--bento-gap-wide);
+  }
+  .dashboard-equity-metrics-row {
+    gap: var(--bento-gap-wide);
+  }
+  .dashboard-context-row {
+    gap: var(--bento-gap-wide);
+  }
+  .dashboard-investigation-row {
+    gap: var(--bento-gap-wide);
+  }
+  .dashboard-triple-row {
+    gap: var(--bento-gap-wide);
+  }
+  .dashboard-dual-row {
+    gap: var(--bento-gap-wide);
+  }
+  .kpi-strip {
+    gap: var(--bento-gap-wide);
+  }
+}
+
+/* ── Desktop: ≤ 1400px ── */
+@media (max-width: 1400px) {
+  .bento-grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+  .col-9,
+  .col-10,
+  .col-11,
+  .col-12 {
+    grid-column: span 8;
+  }
+  .col-7,
+  .col-8 {
+    grid-column: span 8;
+  }
+  .col-5,
+  .col-6 {
+    grid-column: span 4;
+  }
+}
+
+/* ── Tablet/Laptop: ≤ 1200px ── */
+@media (max-width: 1200px) {
+  .v2-bento {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .v2-col-4 {
+    grid-column: span 3;
+  }
+}
+
+/* ── Tablet: ≤ 1024px ── */
+@media (max-width: 1024px) {
+  .dashboard-hero-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dashboard-hero-row > :first-child {
+    grid-column: span 2;
+  }
+  .dashboard-equity-metrics-row {
+    grid-template-columns: 1fr;
+  }
+  .kpi-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .dashboard-context-row {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-investigation-row {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-triple-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dashboard-triple-row > :last-child {
+    grid-column: span 2;
+  }
+  .gauge-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ── Tablet: ≤ 900px ── */
+@media (max-width: 900px) {
+  .bento-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--bento-gap-dense);
+  }
+  .col-3,
+  .col-4,
+  .col-5,
+  .col-6 {
+    grid-column: span 4;
+  }
+  .col-7,
+  .col-8,
+  .col-9,
+  .col-10,
+  .col-11,
+  .col-12 {
+    grid-column: span 4;
+  }
+
+  .v2-bento {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .v2-col-3,
+  .v2-col-4 {
+    grid-column: span 2;
+  }
+}
+
+/* ── Mobile: < 768px ── */
+@media (max-width: 767px) {
+  .cockpit-chip {
+    padding: 3px 8px;
+    gap: 4px;
+    border-radius: 6px;
+  }
+
+  .page-container {
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+  .page-title {
+    font-size: 16px;
+  }
+
+  .dashboard-wrapper {
+    padding: var(--space-3);
+    gap: var(--bento-gap-dense);
+  }
+  .kpi-strip {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--bento-gap-dense);
+  }
+  .dashboard-hero-row {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--bento-gap-dense);
+  }
+  .dashboard-hero-row > :first-child {
+    grid-column: span 2;
+  }
+  .dashboard-equity-metrics-row {
+    grid-template-columns: 1fr;
+    gap: var(--bento-gap-dense);
+  }
+  .dashboard-context-row {
+    grid-template-columns: 1fr;
+    gap: var(--bento-gap-dense);
+  }
+  .dashboard-investigation-row {
+    grid-template-columns: 1fr;
+    gap: var(--bento-gap-dense);
+  }
+  .dashboard-triple-row {
+    grid-template-columns: 1fr;
+    gap: var(--bento-gap-dense);
+  }
+  .dashboard-triple-row > :last-child {
+    grid-column: span 1;
+  }
+  .dashboard-dual-row {
+    grid-template-columns: 1fr;
+    gap: var(--bento-gap-dense);
+  }
+  .gauge-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Greek ribbon: wrap on mobile */
+  .greek-ribbon {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  .greek-ribbon-cell {
+    padding: 8px 6px;
+  }
+  .greek-ribbon-value {
+    font-size: 13px;
+  }
+
+  /* Tables: horizontal scroll with padding */
+  .v2-table th,
+  .v2-table td {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  .v2-table td {
+    height: 34px;
+  }
+
+  .dash-table th,
+  .dash-table td {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  .dash-table td {
+    height: 36px;
+  }
+
+  /* Heatmap cells smaller on mobile */
+  .heatmap-cell {
+    min-height: 38px;
+  }
+}
+
+/* ── Small mobile: ≤ 600px ── */
+@media (max-width: 600px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .col-1,
+  .col-2,
+  .col-3,
+  .col-4,
+  .col-5,
+  .col-6,
+  .col-7,
+  .col-8,
+  .col-9,
+  .col-10,
+  .col-11,
+  .col-12 {
+    grid-column: span 1;
+  }
+
+  .v2-bento {
+    grid-template-columns: 1fr;
+  }
+  .v2-col-2,
+  .v2-col-3,
+  .v2-col-4 {
+    grid-column: span 1;
+  }
+
+  .dashboard-hero-row {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-hero-row > :first-child {
+    grid-column: span 1;
+  }
+  .kpi-strip {
+    grid-template-columns: 1fr;
+  }
+  .gauge-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ── Touch targets (WCAG 2.5.8) ── */
+@media (pointer: coarse) {
+  button,
+  a,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

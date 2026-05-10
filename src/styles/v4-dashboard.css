@@ -1,0 +1,2055 @@
+/* ════════════════════════════════════════════════════════════════
+   v4-dashboard.css — Institutional Terminal v4 brick 2
+   12-col bento grid pour /dashboard. Token-driven.
+
+   Loaded after v4-shell.css in main.jsx so dashboard rules can
+   reference shell vars (--shell-cmdbar-h, --shell-statusbar-h)
+   when needed.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ─── Grid container ─────────────────────────────────────────── */
+/* Hairline gap pattern: 1px gap entre cellules + parent peint avec
+   var(--border-strong) → la couleur de bordure transparaît dans les
+   « gouttières » entre modules. Chaque module garde un fond opaque
+   --bg-elev-1 et n'a PLUS de border propre — visuellement c'est une
+   ligne 1 px parfaitement uniforme entre tous les modules, sans
+   doublon de bordure aux jointures.
+   Avantage vs. border 1px par module : zéro double-trait, et le
+   gap reste exactement 1 px en toutes circonstances. */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  /* v5 Sprint 2.1 : insertion d'une 5e row pour SniperGateMonitor.
+     Total : 240 + 160 + 130 + 200 + 200 = 930 px (était 800 px en v4).
+     Sur 1080p le shell occupe 1080 - 32 (CmdBar) - 24 (TickerTape) -
+     22 (StatusBar) = 1002 px → tient sans scroll. Sur 900p le scroll
+     vertical s'active à l'intérieur du <main> (acceptable). */
+  grid-template-rows: 240px 160px 130px 200px 200px;
+  grid-template-areas:
+    "master master master master master master risk     risk     risk     greeks greeks greeks"
+    "positions positions positions positions positions positions positions positions positions positions positions positions"
+    "gates  gates  gates  gates  gates  gates  gates  gates  gates  gates  gates  gates"
+    "watch watch watch earn earn earn heat heat heat ivr ivr ivr"
+    "intrn intrn intrn skew skew skew alert alert alert alert alert alert";
+  gap: 1px;
+  height: 100%;
+  width: 100%;
+  background: var(--border-strong);
+  font-family: var(--font-mono);
+}
+
+/* ─── Module shell ───────────────────────────────────────────── */
+.module {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elev-1);
+  border-radius: 0;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+
+.module-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  background: var(--bg-elev-1);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.module-header__code {
+  font-weight: 600;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.module-header__sep {
+  color: var(--text-tertiary);
+}
+
+.module-header__label {
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.module-body {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+.module-body--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* ─── Token additionnel pour Risk Matrix (brick 4) ───────────── */
+:root {
+  --row-h-15: 15px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MASTER CHART — brick 3
+   ════════════════════════════════════════════════════════════════ */
+
+/* Header layout : title left + actions right (timeframe pills) */
+.module-header__title {
+  flex: 1;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.module-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+/* Timeframe pills (chart-internal — distinct du nav-pill du shell) */
+.tf-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  padding: 0 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  cursor: pointer;
+  transition:
+    color 80ms ease-out,
+    background 80ms ease-out,
+    border-color 80ms ease-out;
+}
+
+.tf-pill:hover {
+  color: var(--text-secondary);
+  background: var(--row-hover);
+}
+
+.tf-pill:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.tf-pill[data-active] {
+  color: var(--text-primary);
+  background: var(--row-hover);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+/* Master Chart body — sub-pane 70 % equity / 30 % daily P&L */
+.master-chart {
+  /* hérite .module — gridArea injecté inline depuis JSX */
+}
+
+.master-chart .module-body,
+.master-chart__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  /* override .module-body { overflow: auto } sur le module Master :
+     pas de scroll interne sur le chart, ResponsiveContainer gère tout */
+}
+
+.master-chart__body {
+  flex: 1;
+}
+
+.master-chart__top {
+  flex: 7 1 0;
+  min-height: 0;
+}
+
+.master-chart__bottom {
+  flex: 3 1 0;
+  min-height: 0;
+  border-top: 1px solid var(--border);
+}
+
+.master-chart__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  text-align: center;
+  padding: 0 24px;
+}
+
+/* Custom tooltip — boîte hairline, monospace tabular-nums */
+.master-chart__tooltip {
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border-strong);
+  padding: 6px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums slashed-zero;
+  color: var(--text-secondary);
+  min-width: 140px;
+  border-radius: 0;
+}
+
+.master-chart__tooltip-date {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 3px;
+}
+
+.master-chart__tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: baseline;
+}
+
+.master-chart__tooltip-row > span:first-child {
+  color: var(--text-tertiary);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.master-chart__tooltip-val {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.master-chart__tooltip-val.is-profit {
+  color: var(--profit);
+}
+
+.master-chart__tooltip-val.is-loss {
+  color: var(--loss);
+}
+
+/* Module header hint (right-aligned mute label, e.g. 'YTD') */
+.module-header__hint {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   RISK MATRIX — brick 4
+   14 lignes denses h-15. Header 22 + 14×15 = 232 px → tient dans 240.
+   ════════════════════════════════════════════════════════════════ */
+
+.risk-matrix__body {
+  /* v4 : 14 lignes tenaient pile dans 240 - 22 = 218 px (overflow hidden).
+     v5 Sprint 2.3 : 17 lignes -> 17 × 15 = 255 px ; on autorise le scroll
+     vertical interne pour les 3 dernières lignes exposure (Sprint 2.3).
+     Le scroll bar est styled discret via theme tokens. */
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0;
+}
+
+.risk-matrix__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.risk-matrix__table tr {
+  height: var(--row-h-15);
+  border-bottom: 1px solid var(--border);
+  transition: background 80ms ease-out;
+}
+
+.risk-matrix__table tr:last-child {
+  border-bottom: none;
+}
+
+.risk-matrix__table tr:hover {
+  background: var(--row-hover);
+}
+
+.risk-matrix__label {
+  padding: 0 8px;
+  text-align: left;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  width: 60%;
+}
+
+.risk-matrix__cell {
+  padding: 0 8px;
+  text-align: right;
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.risk-matrix__num {
+  font-weight: 500;
+}
+
+.risk-matrix__sub {
+  font-size: 9px;
+  color: var(--text-tertiary);
+  margin-left: 6px;
+  letter-spacing: 0.02em;
+}
+
+/* Tones — appliqués sur la cell (le num l'hérite) */
+.risk-matrix__cell--profit .risk-matrix__num {
+  color: var(--profit);
+}
+.risk-matrix__cell--loss .risk-matrix__num {
+  color: var(--loss);
+}
+.risk-matrix__cell--warn .risk-matrix__num {
+  color: var(--warning);
+}
+.risk-matrix__cell--mute .risk-matrix__num {
+  color: var(--text-secondary);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GREEKS AGGREGATE — brick 5
+   Split 50/50 — KPI strip 109 px (top) + per-position table 108 px (bottom).
+   ════════════════════════════════════════════════════════════════ */
+
+.greeks-agg .module-body,
+.greeks-agg__body {
+  /* Pas utilisé — on rend top + bottom en frères directs sous l'header */
+}
+
+.greeks-agg__top {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  height: 109px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.greeks-agg__kpi {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 8px;
+  background: var(--bg-elev-1);
+  font-family: var(--font-mono);
+  min-width: 0;
+}
+
+.greeks-agg__kpi-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.greeks-agg__kpi-value {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums slashed-zero;
+  line-height: 1.2;
+}
+
+.greeks-agg__kpi-value--profit {
+  color: var(--profit);
+}
+.greeks-agg__kpi-value--loss {
+  color: var(--loss);
+}
+.greeks-agg__kpi-value--mute {
+  color: var(--text-primary);
+}
+
+.greeks-agg__kpi-sub {
+  font-size: 9px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.greeks-agg__bottom {
+  height: 108px;
+  overflow: auto;
+  flex: 1;
+}
+
+.greeks-agg__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.greeks-agg__table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.greeks-agg__table thead th {
+  height: 22px;
+  padding: 0 6px;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elev-1);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.greeks-agg__table thead th:first-child,
+.greeks-agg__table thead th:nth-child(2) {
+  text-align: left;
+}
+
+.greeks-agg__table tbody tr {
+  height: var(--row-h-15);
+  border-bottom: 1px solid var(--border);
+  transition: background 80ms ease-out;
+}
+
+.greeks-agg__table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.greeks-agg__table tbody tr:hover {
+  background: var(--row-hover);
+}
+
+.greeks-agg__table tbody td {
+  padding: 0 6px;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+.greeks-agg__table tbody td.greeks-agg__ticker {
+  text-align: left;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.greeks-agg__table tbody td:nth-child(2) {
+  text-align: left;
+}
+
+/* Type pills (CALL / PUT / STK) */
+.greeks-agg__type-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 11px;
+  padding: 0 4px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--border);
+  border-radius: 0;
+}
+
+.greeks-agg__type-pill--CALL {
+  color: var(--profit);
+  border-color: color-mix(in srgb, var(--profit) 30%, transparent);
+  background: color-mix(in srgb, var(--profit) 6%, transparent);
+}
+
+.greeks-agg__type-pill--PUT {
+  color: var(--loss);
+  border-color: color-mix(in srgb, var(--loss) 30%, transparent);
+  background: color-mix(in srgb, var(--loss) 6%, transparent);
+}
+
+.greeks-agg__type-pill--STK {
+  color: var(--text-tertiary);
+}
+
+/* Tones cellules (Δ Γ Θ ν) */
+.greeks-agg__cell--profit {
+  color: var(--profit);
+}
+.greeks-agg__cell--loss {
+  color: var(--loss);
+}
+.greeks-agg__cell--mute {
+  color: var(--text-tertiary);
+}
+
+.greeks-agg__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LIVE POSITIONS — brick 6 (col 1-12 row 2, 160 px)
+   18 cols dense table. Header 22 + h-22 thead + N×h-15 rows.
+   ════════════════════════════════════════════════════════════════ */
+
+.live-pos__body {
+  padding: 0;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.live-pos__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.live-pos__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.live-pos__table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.live-pos__table thead th {
+  height: 22px;
+  padding: 0 6px;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  background: var(--bg-elev-1);
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.live-pos__table thead th:nth-child(-n + 2) {
+  text-align: left;
+}
+
+.live-pos__table thead th:nth-child(14),
+.live-pos__table thead th:nth-child(15),
+.live-pos__table thead th:nth-child(17),
+.live-pos__table thead th:nth-child(18) {
+  text-align: center;
+}
+
+.live-pos__row {
+  height: var(--row-h-15);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 80ms ease-out;
+}
+
+.live-pos__row:last-child {
+  border-bottom: none;
+}
+
+.live-pos__row:hover {
+  background: var(--row-hover);
+}
+
+.live-pos__table tbody td {
+  padding: 0 6px;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+.live-pos__table tbody td:nth-child(-n + 2) {
+  text-align: left;
+}
+
+.live-pos__table tbody td:nth-child(14),
+.live-pos__table tbody td:nth-child(15),
+.live-pos__table tbody td:nth-child(17),
+.live-pos__table tbody td:nth-child(18) {
+  text-align: center;
+}
+
+.live-pos__ticker {
+  color: var(--text-primary) !important;
+  font-weight: 600;
+}
+
+.live-pos__sub {
+  font-size: 8px;
+  color: var(--text-tertiary);
+  margin-left: 1px;
+  letter-spacing: 0.02em;
+}
+
+.live-pos__mute {
+  color: var(--text-tertiary);
+}
+
+.live-pos__cell--profit {
+  color: var(--profit);
+}
+.live-pos__cell--loss {
+  color: var(--loss);
+}
+.live-pos__cell--mute {
+  color: var(--text-tertiary);
+}
+
+/* ─── Type pill (CALL/PUT/STK) ──────────────────────────────── */
+.live-pos__type-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 11px;
+  padding: 0 4px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--border);
+  border-radius: 0;
+}
+
+.live-pos__type-pill--CALL {
+  color: var(--profit);
+  border-color: color-mix(in srgb, var(--profit) 30%, transparent);
+  background: color-mix(in srgb, var(--profit) 6%, transparent);
+}
+
+.live-pos__type-pill--PUT {
+  color: var(--loss);
+  border-color: color-mix(in srgb, var(--loss) 30%, transparent);
+  background: color-mix(in srgb, var(--loss) 6%, transparent);
+}
+
+.live-pos__type-pill--STK {
+  color: var(--text-tertiary);
+}
+
+/* ─── IVR cell : number + microbar ──────────────────────────── */
+.live-pos__ivr {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.live-pos__ivr-num {
+  color: var(--text-primary);
+  font-size: 10px;
+  min-width: 16px;
+  text-align: right;
+}
+
+.live-pos__ivr-bar {
+  position: relative;
+  display: inline-block;
+  width: 30px;
+  height: 4px;
+  background: var(--border);
+}
+
+.live-pos__ivr-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+}
+
+.live-pos__ivr-fill--profit {
+  background: var(--profit);
+}
+.live-pos__ivr-fill--loss {
+  background: var(--loss);
+}
+.live-pos__ivr-fill--mute {
+  background: var(--text-tertiary);
+}
+
+/* ─── Edge / Gate / Alert pills ────────────────────────────── */
+.live-pos__edge-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 11px;
+  padding: 0 4px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border: 1px solid var(--border-strong);
+  border-radius: 0;
+}
+
+.live-pos__gate-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 11px;
+  padding: 0 4px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--warning);
+  border: 1px solid color-mix(in srgb, var(--warning) 30%, transparent);
+  background: color-mix(in srgb, var(--warning) 6%, transparent);
+  border-radius: 0;
+}
+
+/* v5 Sprint 1.3 — Gate-NXT countdown semantics */
+.live-pos__gate-pill--normal {
+  color: var(--accent-amber, #ffa028);
+  border-color: color-mix(in srgb, var(--accent-amber, #ffa028) 30%, transparent);
+  background: color-mix(in srgb, var(--accent-amber, #ffa028) 6%, transparent);
+}
+.live-pos__gate-pill--imminent {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 35%, transparent);
+  background: color-mix(in srgb, var(--warning) 8%, transparent);
+}
+.live-pos__gate-pill--armed {
+  color: var(--loss);
+  border-color: color-mix(in srgb, var(--loss) 35%, transparent);
+  background: color-mix(in srgb, var(--loss) 8%, transparent);
+  animation: gate-armed-pulse 2s ease-in-out infinite;
+}
+.live-pos__gate-pill-sub {
+  opacity: 0.85;
+  font-weight: 500;
+  font-feature-settings:
+    "tnum" 1,
+    "zero" 1;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+@keyframes gate-armed-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-pos__gate-pill--armed {
+    animation: none;
+  }
+}
+
+/* v5 Sprint 1.3 — C-TIER pill (separate from EDGE) */
+.live-pos__ctier-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 11px;
+  padding: 0 4px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--accent-amber, #ffa028) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-amber, #ffa028) 30%, transparent);
+  border-radius: 0;
+}
+
+.live-pos__alert-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 11px;
+  padding: 0 4px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--border);
+  border-radius: 0;
+}
+
+.live-pos__alert-pill--warn {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 30%, transparent);
+  background: color-mix(in srgb, var(--warning) 6%, transparent);
+}
+
+.live-pos__alert-pill--info {
+  color: var(--info);
+  border-color: color-mix(in srgb, var(--info) 30%, transparent);
+  background: color-mix(in srgb, var(--info) 6%, transparent);
+}
+
+/* ─── Sparkline 60×14 inline ────────────────────────────────── */
+.position-sparkline {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.position-sparkline__line--profit {
+  stroke: var(--profit);
+}
+
+.position-sparkline__line--loss {
+  stroke: var(--loss);
+}
+
+.position-sparkline__line--mute {
+  stroke: var(--text-tertiary);
+}
+
+.position-sparkline__empty {
+  color: var(--text-tertiary);
+  font-size: 10px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ROW 3 — brick 7
+   Watchlist · Earnings · Sector Heatmap · IV Rank Movers
+   Tous : 200 px haut. Réutilisent .live-pos__type-pill, .live-pos__
+   ivr*, .live-pos__cell--{profit,loss,mute}, .live-pos__mute,
+   .live-pos__sub livrés brick 6 + .position-sparkline livré brick 6.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ─── Watchlist ────────────────────────────────────────────── */
+.watchlist__body,
+.earnings-cal__body,
+.iv-movers__body {
+  padding: 0;
+  overflow: auto;
+}
+
+.watchlist__empty,
+.earnings-cal__empty,
+.iv-movers__empty,
+.sector-heatmap__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.watchlist__add-btn {
+  height: 16px;
+  padding: 0 6px;
+  background: transparent;
+  color: var(--text-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color 80ms,
+    border-color 80ms;
+}
+
+.watchlist__add-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.watchlist__table,
+.earnings-cal__table,
+.iv-movers__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.watchlist__table thead,
+.earnings-cal__table thead,
+.iv-movers__table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.watchlist__table thead th,
+.earnings-cal__table thead th,
+.iv-movers__table thead th {
+  height: 22px;
+  padding: 0 6px;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  background: var(--bg-elev-1);
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.watchlist__table thead th:first-child,
+.earnings-cal__table thead th:first-child,
+.iv-movers__table thead th:first-child,
+.earnings-cal__table thead th:nth-child(3),
+.iv-movers__table thead th:nth-child(6) {
+  text-align: left;
+}
+
+.watchlist__row,
+.earnings-cal__row,
+.iv-movers__row {
+  height: var(--row-h-15);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 80ms;
+}
+
+.watchlist__row:last-child,
+.earnings-cal__row:last-child,
+.iv-movers__row:last-child {
+  border-bottom: none;
+}
+
+.watchlist__row:hover,
+.earnings-cal__row:hover,
+.iv-movers__row:hover {
+  background: var(--row-hover);
+}
+
+.watchlist__table tbody td,
+.earnings-cal__table tbody td,
+.iv-movers__table tbody td {
+  padding: 0 6px;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+.watchlist__table tbody td:first-child,
+.earnings-cal__table tbody td:first-child,
+.iv-movers__table tbody td:first-child,
+.earnings-cal__table tbody td:nth-child(3),
+.iv-movers__table tbody td:nth-child(6) {
+  text-align: left;
+}
+
+.watchlist__ticker,
+.earnings-cal__ticker,
+.iv-movers__ticker {
+  color: var(--text-primary) !important;
+  font-weight: 600;
+}
+
+/* ─── Earnings : highlight ticker possédé ─────────────────────── */
+.earnings-cal__row--owned {
+  background: color-mix(in srgb, var(--warning) 8%, transparent);
+}
+
+.earnings-cal__row--owned:hover {
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+}
+
+.earnings-cal__owned-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--warning);
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.earnings-cal__t-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 11px;
+  padding: 0 4px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 0;
+}
+
+/* ─── Sector Heatmap : grid 4×3 cells ─────────────────────────── */
+.sector-heatmap__body {
+  padding: 4px;
+  overflow: hidden;
+}
+
+.sector-heatmap__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 2px;
+  height: 100%;
+}
+
+.heat-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  cursor: default;
+  min-height: 0;
+}
+
+.heat-cell__code {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+
+.heat-cell__pct {
+  font-size: 10px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.heat-cell__pct--profit,
+.heat-cell__pct--profit-strong {
+  color: var(--profit);
+}
+.heat-cell__pct--loss,
+.heat-cell__pct--loss-strong {
+  color: var(--loss);
+}
+.heat-cell__pct--mute {
+  color: var(--text-secondary);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ROW 4 — brick 8 (DASHBOARD COMPLET)
+   Market Internals (col 1-3) · Volatility Skew (col 4-6) ·
+   Alerts Feed (col 7-12). Tous 200 px haut.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ─── Market Internals ──────────────────────────────────────── */
+.market-internals__body {
+  padding: 0;
+  overflow: hidden;
+}
+
+.market-internals__empty,
+.vol-skew__empty,
+.alerts-feed__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.market-internals__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.market-internals__table thead th {
+  height: 22px;
+  padding: 0 8px;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  background: var(--bg-elev-1);
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.market-internals__table thead th:first-child {
+  text-align: left;
+}
+
+.market-internals__row {
+  height: 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.market-internals__row:last-child {
+  border-bottom: none;
+}
+
+.market-internals__table tbody td {
+  padding: 0 8px;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+.market-internals__label {
+  text-align: left !important;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* ─── Volatility Skew ───────────────────────────────────────── */
+.vol-skew__body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.vol-skew__legend {
+  display: flex;
+  gap: 12px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.vol-skew__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.vol-skew__legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 2px;
+  vertical-align: middle;
+}
+
+.vol-skew__chart {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ─── Alerts Feed ───────────────────────────────────────────── */
+.alerts-feed__body {
+  padding: 0;
+  overflow: auto;
+}
+
+.alerts-feed__pause-btn {
+  height: 16px;
+  padding: 0 6px;
+  background: transparent;
+  color: var(--text-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color 80ms,
+    border-color 80ms;
+}
+
+.alerts-feed__pause-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.alerts-feed__pause-btn[aria-pressed="true"] {
+  color: var(--profit);
+  border-color: color-mix(in srgb, var(--profit) 30%, transparent);
+}
+
+.alerts-feed__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.alerts-feed__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--row-h-15);
+  padding: 0 8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alerts-feed__row:last-child {
+  border-bottom: none;
+}
+
+.alerts-feed__row:hover {
+  background: var(--row-hover);
+}
+
+.alerts-feed__time {
+  font-size: 9px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.alerts-feed__sep {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  font-size: 10px;
+}
+
+.alerts-feed__level {
+  display: inline-flex;
+  align-items: center;
+  height: 11px;
+  padding: 0 4px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  flex-shrink: 0;
+  min-width: 42px;
+  justify-content: center;
+}
+
+.alerts-feed__level--profit {
+  color: var(--profit);
+  border-color: color-mix(in srgb, var(--profit) 30%, transparent);
+  background: color-mix(in srgb, var(--profit) 6%, transparent);
+}
+
+.alerts-feed__level--loss {
+  color: var(--loss);
+  border-color: color-mix(in srgb, var(--loss) 30%, transparent);
+  background: color-mix(in srgb, var(--loss) 6%, transparent);
+}
+
+.alerts-feed__level--warn {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 30%, transparent);
+  background: color-mix(in srgb, var(--warning) 6%, transparent);
+}
+
+.alerts-feed__level--info {
+  color: var(--info);
+  border-color: color-mix(in srgb, var(--info) 30%, transparent);
+  background: color-mix(in srgb, var(--info) 6%, transparent);
+}
+
+.alerts-feed__level--mute {
+  color: var(--text-tertiary);
+}
+
+.alerts-feed__msg {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─── Mobile: stack modules linearly, allow scroll ───────────── */
+@media (max-width: 767px) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(12, 200px);
+    grid-template-areas:
+      "master"
+      "risk"
+      "greeks"
+      "positions"
+      "gates"
+      "watch"
+      "earn"
+      "heat"
+      "ivr"
+      "intrn"
+      "skew"
+      "alert";
+    gap: 1px;
+    height: auto;
+    min-height: 100%;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SNIPER GATE MONITOR — v5 Sprint 2.1
+   Bento module : 1 row per open option, 6 mini-bars per row.
+   Color/intensity follows Sniper gate semantics.
+   ════════════════════════════════════════════════════════════════ */
+
+.sniper-gates__body {
+  padding: 0;
+  overflow: auto;
+}
+
+.sniper-gates__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.sniper-gates__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums slashed-zero;
+  color: var(--text-secondary);
+}
+
+.sniper-gates__table thead th {
+  height: 22px;
+  padding: 0 8px;
+  background: var(--bg-elev-1);
+  border-bottom: var(--hairline);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  text-align: left;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.sniper-gates__row {
+  height: var(--row-data, 26px);
+  cursor: pointer;
+  transition: background-color 80ms ease-out;
+}
+
+.sniper-gates__row td {
+  padding: 0 8px;
+  border-bottom: var(--hairline);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.sniper-gates__row:hover {
+  background: var(--row-hover);
+}
+
+.sniper-gates__ticker {
+  color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.sniper-gates__type {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--accent-amber, #ffa028);
+  text-transform: uppercase;
+}
+
+.sniper-gates__sep {
+  width: 1px;
+  padding: 0 !important;
+  background: var(--border);
+}
+
+.sniper-gates__sub {
+  margin-left: 2px;
+  color: var(--text-tertiary);
+  font-size: 8px;
+}
+
+.sniper-gates__unreal--profit {
+  color: var(--profit);
+}
+.sniper-gates__unreal--loss {
+  color: var(--loss);
+}
+.sniper-gates__unreal--mute {
+  color: var(--text-tertiary);
+}
+
+.sniper-gates__armed-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 14px;
+  padding: 0 6px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--loss);
+  border: 1px solid color-mix(in srgb, var(--loss) 35%, transparent);
+  background: color-mix(in srgb, var(--loss) 10%, transparent);
+  animation: sniper-armed-pulse 2s ease-in-out infinite;
+}
+@keyframes sniper-armed-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sniper-gates__armed-chip {
+    animation: none;
+  }
+}
+
+/* ─── Gate mini-bar ────────────────────────────────────────────── */
+
+.sniper-gates__gate-cell {
+  padding: 0 4px !important;
+  width: 90px;
+  min-width: 90px;
+}
+
+.gate-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  height: 14px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.gate-bar__name {
+  flex-shrink: 0;
+  width: 32px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.gate-bar__track {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.gate-bar__fill {
+  display: block;
+  height: 100%;
+  transition:
+    width 250ms ease-out,
+    background-color 120ms ease-out;
+}
+
+/* Status semantics — fill color cascading from safe→armed */
+.gate-bar--safe .gate-bar__fill {
+  background: color-mix(in srgb, var(--accent-amber, #ffa028) 50%, transparent);
+}
+.gate-bar--normal .gate-bar__fill {
+  background: var(--accent-amber, #ffa028);
+}
+.gate-bar--imminent .gate-bar__fill {
+  background: var(--warning);
+}
+.gate-bar--armed .gate-bar__fill {
+  background: var(--loss);
+  animation: gate-bar-armed-pulse 2s ease-in-out infinite;
+}
+@keyframes gate-bar-armed-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gate-bar--armed .gate-bar__fill {
+    animation: none;
+  }
+}
+
+/* Pending = data not wired yet — render a dotted track, no fill */
+.gate-bar--pending .gate-bar__name {
+  color: var(--text-tertiary);
+  opacity: 0.55;
+}
+.gate-bar--pending .gate-bar__track {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--text-tertiary) 0,
+    var(--text-tertiary) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  opacity: 0.35;
+}
+.gate-bar--pending .gate-bar__fill {
+  display: none;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LIVE POSITIONS — v5 Sprint 2.2 tag affordances
+   "Tag" placeholder when meta empty + clickable pill when meta set
+   ════════════════════════════════════════════════════════════════ */
+
+.live-pos__tag-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 11px;
+  padding: 0 6px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 100ms ease-out;
+}
+
+.live-pos__tag-btn:hover {
+  color: var(--accent-amber, #ffa028);
+  border-color: var(--accent-amber, #ffa028);
+  border-style: solid;
+}
+
+.live-pos__tag-btn:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.live-pos__edge-pill--clickable,
+.live-pos__ctier-pill--clickable {
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter 100ms ease-out;
+}
+
+.live-pos__edge-pill--clickable:hover,
+.live-pos__ctier-pill--clickable:hover {
+  filter: brightness(1.2);
+}
+
+.live-pos__edge-pill--clickable:focus-visible,
+.live-pos__ctier-pill--clickable:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SNIPER META EDITOR — v5 Sprint 2.2 modal form
+   ════════════════════════════════════════════════════════════════ */
+
+.sniper-meta-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-family: var(--font-mono);
+}
+
+.sniper-meta-editor__hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+  padding-bottom: 10px;
+  border-bottom: var(--hairline);
+}
+
+.sniper-meta-editor__pnl--profit {
+  color: var(--profit);
+}
+.sniper-meta-editor__pnl--loss {
+  color: var(--loss);
+}
+.sniper-meta-editor__pnl--mute {
+  color: var(--text-tertiary);
+}
+
+.sniper-meta-editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sniper-meta-editor__label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.sniper-meta-editor__input {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-primary);
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  transition: border-color 80ms ease-out;
+}
+
+.sniper-meta-editor__input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.sniper-meta-editor__input--num {
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.sniper-meta-editor__hint-sub {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+  font-family: var(--font-sans);
+}
+
+.sniper-meta-editor__error {
+  padding: 6px 8px;
+  font-size: 11px;
+  color: var(--loss);
+  background: color-mix(in srgb, var(--loss) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--loss) 30%, transparent);
+  border-radius: 0;
+}
+
+.sniper-meta-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: var(--hairline);
+}
+
+.sniper-meta-editor__btn {
+  height: 28px;
+  padding: 0 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 100ms ease-out;
+}
+
+.sniper-meta-editor__btn--ghost {
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border);
+}
+
+.sniper-meta-editor__btn--ghost:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.sniper-meta-editor__btn--primary {
+  color: var(--bg-base);
+  background: var(--accent-amber, #ffa028);
+  border: 1px solid var(--accent-amber, #ffa028);
+}
+
+.sniper-meta-editor__btn--primary:hover {
+  filter: brightness(1.1);
+}
+
+.sniper-meta-editor__btn:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DASHBOARD HERO STRIP — v5 Sprint B (two-tier hierarchy)
+   Top-of-page KPI band, 88 px row.
+   - 3 PRIMARY cells (36 px values) for survival metrics
+   - hairline-strong separator
+   - 6 SECONDARY cells (14 px values) for context
+   Tier-driven font-size via .hero-strip__cell--{primary,secondary}.
+   Tone-driven color via [data-tone] (preserved from Sprint 2.4).
+   Above the bento grid. .dash-shell flex-column wraps both.
+   ════════════════════════════════════════════════════════════════ */
+
+.dash-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--border-strong);
+  gap: 1px;
+}
+
+.dash-shell .dash-grid {
+  /* When inside .dash-shell, the grid takes the remaining vertical
+     space below the hero strip and shrinks if necessary. */
+  flex: 1;
+  min-height: 0;
+}
+
+.hero-strip {
+  display: flex;
+  align-items: stretch;
+  height: 88px;
+  flex-shrink: 0;
+  background: var(--bg-elev-1);
+  font-family: var(--font-mono);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.hero-strip__cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1 1 0;
+  min-width: 130px;
+  padding: 0 14px;
+  border-right: var(--hairline);
+  position: relative;
+  transition: background-color 120ms ease-out;
+}
+
+.hero-strip__cell:last-child {
+  border-right: none;
+}
+
+.hero-strip__cell:hover {
+  background: var(--bg-elev-2);
+}
+
+/* ─── Tier modifiers (Sprint B) ──────────────────────────────── */
+
+.hero-strip__cell--primary {
+  flex: 1.5 1 0;
+  min-width: 200px;
+  padding: 0 18px;
+}
+
+.hero-strip__cell--primary .hero-strip__label {
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.hero-strip__cell--primary .hero-strip__value {
+  font-size: 36px;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.hero-strip__cell--primary .hero-strip__sub {
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.hero-strip__cell--secondary {
+  flex: 1 1 0;
+  min-width: 110px;
+  padding: 0 12px;
+}
+
+.hero-strip__cell--secondary .hero-strip__value {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+/* ─── Visual separator between primary and secondary zones ───── */
+
+.hero-strip__separator {
+  width: 1px;
+  background: var(--border-strong);
+  margin: 14px 4px;
+  flex-shrink: 0;
+}
+
+.hero-strip__label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+.hero-strip__value {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--text-primary);
+  font-feature-settings:
+    "tnum" 1,
+    "zero" 1;
+  font-variant-numeric: tabular-nums slashed-zero;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.hero-strip__sub {
+  font-size: 9px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+  font-feature-settings:
+    "tnum" 1,
+    "zero" 1;
+  font-variant-numeric: tabular-nums slashed-zero;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* Tone variants — colored value + accent bar at the left edge */
+.hero-strip__cell[data-tone="profit"] .hero-strip__value {
+  color: var(--profit);
+}
+.hero-strip__cell[data-tone="profit"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--profit);
+}
+
+.hero-strip__cell[data-tone="loss"] .hero-strip__value {
+  color: var(--loss);
+}
+.hero-strip__cell[data-tone="loss"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--loss);
+}
+
+.hero-strip__cell[data-tone="strong"] .hero-strip__value {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+.hero-strip__cell[data-tone="strong"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--accent-amber, #ffa028);
+}
+
+.hero-strip__cell[data-tone="amber"] .hero-strip__value {
+  color: var(--accent-amber, #ffa028);
+}
+.hero-strip__cell[data-tone="amber"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: var(--accent-amber, #ffa028);
+  opacity: 0.6;
+}
+
+.hero-strip__cell[data-tone="mute"] .hero-strip__value {
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.hero-strip__cell[data-tone="neutral"] .hero-strip__value {
+  color: var(--text-primary);
+}
+
+@media (max-width: 767px) {
+  .hero-strip {
+    height: 72px;
+  }
+  .hero-strip__cell--primary {
+    min-width: 140px;
+    padding: 0 12px;
+  }
+  .hero-strip__cell--primary .hero-strip__value {
+    font-size: 28px;
+  }
+  .hero-strip__cell--primary .hero-strip__label,
+  .hero-strip__cell--primary .hero-strip__sub {
+    font-size: 10px;
+  }
+  .hero-strip__cell--secondary {
+    min-width: 90px;
+    padding: 0 8px;
+  }
+  .hero-strip__cell--secondary .hero-strip__value {
+    font-size: 12px;
+  }
+  .hero-strip__separator {
+    margin: 10px 2px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MODULE HEADER POLISH — v5 Sprint 2.4
+   Subtle Bloomberg-amber accent on hover + clearer hierarchy.
+   ════════════════════════════════════════════════════════════════ */
+
+.module-header {
+  /* 1 px amber underline appears on hover so the active module
+     visually anchors itself. Subtle, no shift, no flash. */
+  box-shadow: inset 0 -1px 0 transparent;
+  transition:
+    box-shadow 120ms ease-out,
+    color 120ms ease-out;
+}
+
+.module:hover > .module-header {
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--accent-amber, #ffa028) 50%, transparent);
+}
+
+.module:hover > .module-header .module-header__title {
+  color: var(--text-primary);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MODULE EMPTY STATE — v5 Sprint polish
+   2-line typography pattern for empty modules across the dashboard.
+   Applied alongside the per-module class (e.g. .alerts-feed__empty
+   + .module-empty) so existing layout positioning still wins for
+   width / centering, while typography/hierarchy comes from here.
+   ════════════════════════════════════════════════════════════════ */
+
+.module-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 24px;
+  text-align: center;
+  height: 100%;
+  font-family: var(--font-mono);
+}
+
+.module-empty__title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.module-empty__sub {
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--text-tertiary);
+  max-width: 320px;
+  line-height: 1.45;
+}

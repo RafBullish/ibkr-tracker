@@ -1,0 +1,387 @@
+/* ═══════════════════════════════════════════════════════════════
+   GLOBAL.CSS — v3.0 « Midnight Terminal »
+   Reset + typography defaults + utility helpers.
+   All values come from tokens.css — no hardcoded colors or sizes.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Box model & reset ─────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--surface-0);
+  color: var(--text-primary);
+}
+
+html {
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Theme transition — softens theme swaps (300ms matches brief) */
+  transition:
+    background-color 300ms var(--ease-out),
+    color 300ms var(--ease-out);
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--text-primary);
+  background: var(--surface-0);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+figure,
+blockquote,
+dl,
+dd,
+ol,
+ul {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+a {
+  color: var(--accent-text);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+a:hover {
+  color: var(--accent);
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  margin: var(--space-4) 0;
+}
+
+/* ── Scrollbars — custom, theme-aware ───────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  background-clip: padding-box;
+}
+
+/* ── Selection ─────────────────────────────────────────── */
+::selection {
+  background: var(--accent-bg);
+  color: var(--text-primary);
+}
+
+/* ── Focus rings — WCAG 2.2 ────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── Skip link (a11y) ───────────────────────────────────── */
+.skip-to-content {
+  position: absolute;
+  top: -9999px;
+  left: var(--space-4);
+  z-index: var(--z-tooltip);
+  padding: var(--space-3) var(--space-4);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  border-radius: var(--radius-md);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+}
+
+.skip-to-content:focus,
+.skip-to-content:focus-visible {
+  top: var(--space-4);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITY HELPERS
+   ═══════════════════════════════════════════════════════════════ */
+
+.tabular {
+  font-variant-numeric: tabular-nums lining-nums slashed-zero;
+}
+
+.font-mono,
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums slashed-zero;
+  font-feature-settings: "tnum", "zero";
+}
+
+.font-ui {
+  font-family: var(--font-ui);
+}
+
+.uppercase-label {
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wider);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: var(--text-secondary);
+  line-height: var(--lh-tight);
+}
+
+.text-profit {
+  color: var(--profit-text);
+}
+.text-loss {
+  color: var(--loss-text);
+}
+.text-accent {
+  color: var(--accent-text);
+}
+.text-warning {
+  color: var(--warning-text);
+}
+.text-neutral {
+  color: var(--text-secondary);
+}
+.text-primary {
+  color: var(--text-primary);
+}
+.text-muted {
+  color: var(--text-tertiary);
+}
+
+.bg-profit {
+  background: var(--profit-bg);
+}
+.bg-loss {
+  background: var(--loss-bg);
+}
+.bg-accent {
+  background: var(--accent-bg);
+}
+.bg-warning {
+  background: var(--warning-bg);
+}
+
+/* ── Visually hidden (a11y, for SR-only content) ──────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AMBIENT BACKGROUND — Fixed orbs with subtle float
+   Rendered by <AmbientBackground /> mounted once in AppShell.
+   ═══════════════════════════════════════════════════════════════ */
+.app-ambient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--surface-0);
+  transition: background-color 300ms var(--ease-out);
+}
+
+.app-ambient-bg::before,
+.app-ambient-bg::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: orb-float 30s ease-in-out infinite;
+  will-change: transform;
+}
+
+.app-ambient-bg::before {
+  width: 600px;
+  height: 600px;
+  top: -200px;
+  left: -100px;
+  background: radial-gradient(circle, var(--orb-violet) 0%, transparent 70%);
+}
+
+.app-ambient-bg::after {
+  width: 500px;
+  height: 500px;
+  bottom: -150px;
+  right: -100px;
+  background: radial-gradient(circle, var(--orb-blue) 0%, transparent 70%);
+  animation-delay: -10s;
+}
+
+@keyframes orb-float {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(40px, -30px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-ambient-bg::before,
+  .app-ambient-bg::after {
+    animation: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SHIMMER KEYFRAMES — LoadingSkeleton
+   ═══════════════════════════════════════════════════════════════ */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FLASH KEYFRAMES — live update indicator
+   ═══════════════════════════════════════════════════════════════ */
+@keyframes flash-profit {
+  0% {
+    background-color: var(--profit-bg);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes flash-loss {
+  0% {
+    background-color: var(--loss-bg);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.92);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LEGACY CLASS ALIASES
+   Very small shim for a handful of utility classes used across the
+   legacy pages (will be naturally replaced as Phases 2-4 rewrite).
+   ═══════════════════════════════════════════════════════════════ */
+.is-profit {
+  color: var(--profit-text);
+}
+.is-loss {
+  color: var(--loss-text);
+}
+.is-neutral {
+  color: var(--text-secondary);
+}
+
+.hide-desktop {
+  display: initial;
+}
+.hide-mobile {
+  display: initial;
+}
+
+@media (min-width: 768px) {
+  .hide-desktop {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
