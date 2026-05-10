@@ -53,13 +53,13 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  height: 22px;
-  padding: 0 8px;
+  height: 32px;
+  padding: 0 12px;
   background: var(--bg-elev-1);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -102,10 +102,11 @@
   user-select: none;
 }
 
-/* ─── Token additionnel pour Risk Matrix (brick 4) ───────────── */
-:root {
-  --row-h-15: 15px;
-}
+/* ─── Token --row-h-15 → définition canonique migrée vers tokens.css ─────
+   4K refonte 2026-05-10 : on a déplacé --row-h-15 (et ajouté --row-h-22)
+   dans src/styles/tokens.css §A « v5 Institutional density ». Le local
+   override 15px qui vivait ici a été retiré pour que toutes les rows
+   héritent automatiquement de la nouvelle valeur 22 px. */
 
 /* ════════════════════════════════════════════════════════════════
    MASTER CHART — brick 3
@@ -117,7 +118,7 @@
   font-weight: 600;
   color: var(--text-primary);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -271,7 +272,7 @@
 /* Module header hint (right-aligned mute label, e.g. 'YTD') */
 .module-header__hint {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1767,14 +1768,22 @@
 }
 
 /* ════════════════════════════════════════════════════════════════
-   DASHBOARD HERO STRIP — v5 Sprint B (two-tier hierarchy)
-   Top-of-page KPI band, 88 px row.
-   - 3 PRIMARY cells (36 px values) for survival metrics
-   - hairline-strong separator
-   - 6 SECONDARY cells (14 px values) for context
-   Tier-driven font-size via .hero-strip__cell--{primary,secondary}.
-   Tone-driven color via [data-tone] (preserved from Sprint 2.4).
-   Above the bento grid. .dash-shell flex-column wraps both.
+   DASHBOARD KPI CARDS — v4 (4K refonte Phase B.3 polish final)
+   Sept cards en grid 1.85fr · 1fr × 6, hauteur 200 px.
+   Pattern UNIFIÉ 4 zones (justify-content: space-between) :
+     1. top    : label + indicator droite (pill | hint | range selector)
+     2. money  : valeur USD (28 / 40 px) + ligne CHF (11 / 13 px)
+     3. visual : sparkline / fill bar / donut SVG
+     4. footer : 2 ou 3 cells avec border-right + top-border 6 % opacity
+
+   Variantes :
+     .dash-kpi-card--hero  — 1.85 fr, value 40 px, hero-mid grid
+                             0.95fr 1.3fr, border-left 3 px accent.
+     .dash-kpi-card--wr    — Win Rate avec wr-mid grid 1fr auto.
+
+   Tones via [data-tone] : profit / loss / accent / amber / neutral.
+   Pill tones via classes : profit / loss / amber / accent / mute.
+   Tous les colors via var(--*) — aucun hex hardcoded.
    ════════════════════════════════════════════════════════════════ */
 
 .dash-shell {
@@ -1787,212 +1796,865 @@
 }
 
 .dash-shell .dash-grid {
-  /* When inside .dash-shell, the grid takes the remaining vertical
-     space below the hero strip and shrinks if necessary. */
   flex: 1;
   min-height: 0;
 }
 
-.hero-strip {
-  display: flex;
-  align-items: stretch;
-  height: 88px;
+.dash-kpi-cards {
+  display: grid;
+  grid-template-columns: 1.85fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--bg-base);
   flex-shrink: 0;
-  background: var(--bg-elev-1);
   font-family: var(--font-mono);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
 }
 
-.hero-strip__cell {
+.dash-kpi-card {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  flex: 1 1 0;
-  min-width: 130px;
-  padding: 0 14px;
-  border-right: var(--hairline);
+  justify-content: space-between;
+  height: 240px;
+  padding: 16px 16px;
+  background: var(--bg-elev-1);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  min-width: 0;
   position: relative;
-  transition: background-color 120ms ease-out;
+  transition:
+    border-color 120ms ease-out,
+    background-color 120ms ease-out;
 }
 
-.hero-strip__cell:last-child {
-  border-right: none;
+.dash-kpi-card:hover {
+  border-color: var(--border-strong);
 }
 
-.hero-strip__cell:hover {
-  background: var(--bg-elev-2);
+.dash-kpi-card--hero {
+  padding: 16px 20px;
+  border-left: 3px solid var(--accent);
 }
 
-/* ─── Tier modifiers (Sprint B) ──────────────────────────────── */
+/* ── Zone 1 : top (label + indicator droite) ──────────────────── */
 
-.hero-strip__cell--primary {
-  flex: 1.5 1 0;
-  min-width: 200px;
-  padding: 0 18px;
-}
-
-.hero-strip__cell--primary .hero-strip__label {
-  font-size: 11px;
-  margin-bottom: 4px;
-}
-
-.hero-strip__cell--primary .hero-strip__value {
-  font-size: 36px;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
-}
-
-.hero-strip__cell--primary .hero-strip__sub {
-  font-size: 11px;
-  margin-top: 4px;
-}
-
-.hero-strip__cell--secondary {
-  flex: 1 1 0;
-  min-width: 110px;
-  padding: 0 12px;
-}
-
-.hero-strip__cell--secondary .hero-strip__value {
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0;
-}
-
-/* ─── Visual separator between primary and secondary zones ───── */
-
-.hero-strip__separator {
-  width: 1px;
-  background: var(--border-strong);
-  margin: 14px 4px;
+.dash-kpi-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   flex-shrink: 0;
 }
 
-.hero-strip__label {
-  font-size: 9px;
+.dash-kpi-card__top-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.dash-kpi-card__label {
+  font-size: 11px;
   font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Hint "neutral" (sans Pill component) — version pillée subtile pour
+   matcher visuellement les pills colorées en top-right. */
+.dash-kpi-card__hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
-  margin-bottom: 2px;
   white-space: nowrap;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  padding: 3px 7px;
+  border-radius: 2px;
 }
 
-.hero-strip__value {
-  font-size: 18px;
+.dash-kpi-card__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.dash-kpi-card__live-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--profit);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--profit) 18%, transparent);
+}
+
+.dash-kpi-card__live-text {
+  color: var(--profit);
   font-weight: 600;
-  letter-spacing: -0.005em;
-  color: var(--text-primary);
-  font-feature-settings:
-    "tnum" 1,
-    "zero" 1;
-  font-variant-numeric: tabular-nums slashed-zero;
-  line-height: 1.1;
-  white-space: nowrap;
-}
-
-.hero-strip__sub {
   font-size: 9px;
-  color: var(--text-tertiary);
-  margin-top: 2px;
-  font-feature-settings:
-    "tnum" 1,
-    "zero" 1;
-  font-variant-numeric: tabular-nums slashed-zero;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-/* Tone variants — colored value + accent bar at the left edge */
-.hero-strip__cell[data-tone="profit"] .hero-strip__value {
+/* ── Pill (indicator droite : profit / loss / amber / accent / mute) */
+
+.dash-kpi-card__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+/* Pill hero — delta NLV avec arrow + montant + % */
+.dash-kpi-card__pill--hero {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.dash-kpi-card__pill--hero.dash-kpi-card__pill--profit {
+  background: color-mix(in srgb, var(--profit) 12%, transparent);
+}
+
+.dash-kpi-card__pill--hero.dash-kpi-card__pill--loss {
+  background: color-mix(in srgb, var(--loss) 12%, transparent);
+}
+
+.dash-kpi-card__pill--hero .dash-kpi-card__pill-sub {
+  opacity: 0.85;
+  font-size: 12px;
+}
+
+.dash-kpi-card__pill--profit {
+  background: color-mix(in srgb, var(--profit) 10%, transparent);
   color: var(--profit);
 }
-.hero-strip__cell[data-tone="profit"]::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: var(--profit);
-}
-
-.hero-strip__cell[data-tone="loss"] .hero-strip__value {
+.dash-kpi-card__pill--loss {
+  background: color-mix(in srgb, var(--loss) 10%, transparent);
   color: var(--loss);
 }
-.hero-strip__cell[data-tone="loss"]::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: var(--loss);
+.dash-kpi-card__pill--amber {
+  background: color-mix(in srgb, var(--accent-amber) 10%, transparent);
+  color: var(--accent-amber);
 }
-
-.hero-strip__cell[data-tone="strong"] .hero-strip__value {
-  color: var(--text-primary);
-  font-weight: 700;
+.dash-kpi-card__pill--accent {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
 }
-.hero-strip__cell[data-tone="strong"]::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: var(--accent-amber, #ffa028);
-}
-
-.hero-strip__cell[data-tone="amber"] .hero-strip__value {
-  color: var(--accent-amber, #ffa028);
-}
-.hero-strip__cell[data-tone="amber"]::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 1px;
-  background: var(--accent-amber, #ffa028);
-  opacity: 0.6;
-}
-
-.hero-strip__cell[data-tone="mute"] .hero-strip__value {
+.dash-kpi-card__pill--mute {
+  background: color-mix(in srgb, var(--text-tertiary) 10%, transparent);
   color: var(--text-tertiary);
+}
+
+.dash-kpi-card__pill-sub {
+  opacity: 0.8;
+  font-weight: 400;
+}
+
+/* ── Range selector (NLV hero) ────────────────────────────────── */
+
+.dash-kpi-card__range {
+  display: inline-flex;
+  align-items: stretch;
+  background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+  padding: 2px;
+  gap: 0;
+}
+
+.dash-kpi-card__range-btn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition:
+    color 120ms ease-out,
+    background-color 120ms ease-out;
+  line-height: 1;
+  border-radius: 2px;
+}
+
+.dash-kpi-card__range-btn:hover {
+  color: var(--text-secondary);
+}
+
+.dash-kpi-card__range-btn:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.dash-kpi-card__range-btn.is-active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
   font-weight: 500;
 }
 
-.hero-strip__cell[data-tone="neutral"] .hero-strip__value {
+/* ── Zone 2 : money (USD + CHF) ──────────────────────────────── */
+
+.dash-kpi-card__money {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dash-kpi-card__value {
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums slashed-zero;
+  line-height: 1;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-kpi-card--hero .dash-kpi-card__value {
+  font-size: 44px;
+  letter-spacing: -0.01em;
+}
+
+.dash-kpi-card__chf {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 7px;
+  font-variant-numeric: tabular-nums slashed-zero;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-kpi-card--hero .dash-kpi-card__chf {
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+/* Tones — la couleur du value + chf suit le data-tone du card */
+.dash-kpi-card[data-tone="profit"] .dash-kpi-card__value,
+.dash-kpi-card[data-tone="profit"] .dash-kpi-card__chf {
+  color: var(--profit);
+}
+.dash-kpi-card[data-tone="loss"] .dash-kpi-card__value,
+.dash-kpi-card[data-tone="loss"] .dash-kpi-card__chf {
+  color: var(--loss);
+}
+.dash-kpi-card[data-tone="neutral"] .dash-kpi-card__value,
+.dash-kpi-card[data-tone="mute"] .dash-kpi-card__value,
+.dash-kpi-card[data-tone="accent"] .dash-kpi-card__value,
+.dash-kpi-card[data-tone="amber"] .dash-kpi-card__value {
+  color: var(--text-primary);
+}
+.dash-kpi-card[data-tone="neutral"] .dash-kpi-card__chf,
+.dash-kpi-card[data-tone="mute"] .dash-kpi-card__chf,
+.dash-kpi-card[data-tone="accent"] .dash-kpi-card__chf,
+.dash-kpi-card[data-tone="amber"] .dash-kpi-card__chf {
+  color: var(--text-secondary);
+}
+
+/* ── Zone 3 : visual (sparkline | bar | donut) ───────────────── */
+
+.dash-kpi-card__visual {
+  width: 100%;
+  min-width: 0;
+}
+
+.dash-kpi-card__visual .sparkline {
+  height: 32px;
+}
+
+/* ── Zone 3a : fill bar (Avail Capital / Exposure) ───────────── */
+
+.dash-kpi-card__bar-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dash-kpi-card__bar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.dash-kpi-card__bar-pct {
+  font-weight: 500;
+}
+
+.dash-kpi-card__bar-pct--accent {
+  color: var(--accent);
+}
+.dash-kpi-card__bar-pct--amber {
+  color: var(--accent-amber);
+}
+
+.dash-kpi-card__bar-denom {
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dash-kpi-card__bar {
+  height: 8px;
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border-radius: 2px;
+  overflow: visible;
+  position: relative;
+  display: flex;
+}
+
+.dash-kpi-card__bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 240ms ease;
+}
+
+.dash-kpi-card__bar-fill--accent {
+  background: var(--accent);
+}
+
+.dash-kpi-card__bar-fill--amber {
+  background: var(--accent-amber);
+}
+
+/* Rest of bar (capital déployable résiduel) — semi-transparent accent.
+   Phase B.4 : passé de 15 % → 18 % pour mieux distinguer le segment
+   "non consommé" sur le bar agrandi. */
+.dash-kpi-card__bar-rest {
+  flex: 1;
+  height: 100%;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* Marker vertical à un pct précis (ex : plafond Sniper 70 % NLV).
+   Phase B.4 : 14 px de haut (était 10), background solide var(--loss). */
+.dash-kpi-card__bar-marker {
+  position: absolute;
+  top: -3px;
+  width: 1.5px;
+  height: 14px;
+  background: var(--loss);
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+/* Label "CAP" au-dessus du marker — signal du plafond Sniper. */
+.dash-kpi-card__bar-cap-label {
+  position: absolute;
+  top: -15px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  color: var(--loss);
+  font-weight: 500;
+  transform: translateX(-50%);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.dash-kpi-card__bar--with-marker {
+  margin-top: 16px; /* laisser place au label CAP qui déborde */
+}
+
+/* ── Zone 4 : footer (grid 2 / 3 / 4 cells avec border-right) ───
+
+   Phase B.4 :
+     - padding-top 12 (was 10)
+     - top border 7 % (was 6 %)
+     - cell-label 10 px / weight 500 (was 9 px / 400)
+     - cell-value 13 px (was 11)
+     - variant --4 pour NLV (HIGH / LOW / PEAK / ALL-TIME) */
+
+.dash-kpi-card__footer {
+  display: grid;
+  gap: 0;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--text-primary) 7%, transparent);
+  font-family: var(--font-mono);
+}
+
+.dash-kpi-card__footer--2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.dash-kpi-card__footer--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.dash-kpi-card__footer--4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.dash-kpi-card__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.dash-kpi-card__footer--2 .dash-kpi-card__cell:nth-child(1),
+.dash-kpi-card__footer--3 .dash-kpi-card__cell:not(:last-child),
+.dash-kpi-card__footer--4 .dash-kpi-card__cell:not(:last-child) {
+  border-right: 1px solid color-mix(in srgb, var(--text-primary) 6%, transparent);
+  padding-right: 8px;
+}
+
+.dash-kpi-card__footer--2 .dash-kpi-card__cell:nth-child(2),
+.dash-kpi-card__footer--3 .dash-kpi-card__cell:not(:first-child),
+.dash-kpi-card__footer--4 .dash-kpi-card__cell:not(:first-child) {
+  padding-left: 8px;
+}
+
+.dash-kpi-card__cell-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-kpi-card__cell-value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums slashed-zero;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-kpi-card__cell-value--profit {
+  color: var(--profit);
+}
+.dash-kpi-card__cell-value--loss {
+  color: var(--loss);
+}
+.dash-kpi-card__cell-value--accent {
+  color: var(--accent);
+}
+.dash-kpi-card__cell-value--amber {
+  color: var(--accent-amber);
+}
+.dash-kpi-card__cell-value--mute {
+  color: var(--text-tertiary);
+}
+.dash-kpi-card__cell-value--neutral {
+  color: var(--text-primary);
+}
+
+/* ── Hero card mid-zone : value/CHF/delta à gauche, spark à droite */
+
+.dash-kpi-card--hero .dash-kpi-card__hero-mid {
+  display: grid;
+  grid-template-columns: 0.95fr 1.3fr;
+  gap: 16px;
+  align-items: center;
+  flex: 1;
+  min-height: 0;
+}
+
+.dash-kpi-card__hero-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.dash-kpi-card__hero-text .dash-kpi-card__pill {
+  margin-top: 10px;
+}
+
+.dash-kpi-card__hero-spark {
+  height: 100px;
+  width: 100%;
+  min-width: 0;
+  position: relative;
+}
+
+.dash-kpi-card__hero-spark .sparkline,
+.dash-kpi-card__hero-spark .sparkline-wrap {
+  height: 100px;
+}
+
+/* ── Win Rate card mid-zone : value+W·L à gauche, donut à droite */
+
+.dash-kpi-card--wr .dash-kpi-card__wr-mid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 0;
+}
+
+.dash-kpi-card__wr-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dash-kpi-card__wr-value {
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.dash-kpi-card__wr-sub {
+  margin-top: 9px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums slashed-zero;
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.dash-kpi-card__wr-w {
+  color: var(--profit);
+  font-weight: 500;
+}
+.dash-kpi-card__wr-l {
+  color: var(--loss);
+  font-weight: 500;
+}
+.dash-kpi-card__wr-sep {
+  color: var(--text-tertiary);
+  margin: 0 5px;
+}
+
+.dash-kpi-card__wr-donut {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Donut SVG primitive (Phase B.4 : 74×74, r=28, stroke 7) ──── */
+
+.dash-kpi-donut__bg {
+  stroke: color-mix(in srgb, var(--loss) 22%, transparent);
+}
+
+.dash-kpi-donut__fg {
+  stroke: var(--profit);
+}
+
+.dash-kpi-donut__label {
+  fill: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+.dash-kpi-donut__value {
+  fill: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+/* ── Sparkline colour modifiers ─────────────────────────────── */
+
+.sparkline {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.spark-profit {
+  color: var(--profit);
+}
+.spark-loss {
+  color: var(--loss);
+}
+.spark-accent {
+  color: var(--accent);
+}
+.spark-amber {
+  color: var(--accent-amber);
+}
+.spark-neutral {
+  color: var(--text-secondary);
+}
+.sparkline--flat {
+  color: var(--text-tertiary);
+}
+
+/* Phase B.3 — gridlines + zero line en couleur neutre (pas
+   tributaires de currentColor pour éviter de re-teinter avec la
+   couleur sémantique du sparkline). */
+.sparkline-grid {
+  stroke: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  fill: none;
+}
+
+.sparkline-zero {
+  stroke: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  fill: none;
+}
+
+/* Phase B.3 — wrapper pour axisLabels (mini-labels max top + min
+   bottom collés à droite, padding 1 4 sur fond bg-elev-1). */
+.sparkline-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.sparkline-wrap .sparkline {
+  width: 100%;
+  height: 100%;
+}
+
+.sparkline-wrap__axis {
+  position: absolute;
+  right: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums slashed-zero;
+  color: var(--text-secondary);
+  background: var(--bg-elev-1);
+  padding: 1px 4px;
+  border-radius: 2px;
+  line-height: 1;
+  pointer-events: none;
+  letter-spacing: 0.02em;
+}
+
+.sparkline-wrap__axis--max {
+  top: 0;
+}
+
+.sparkline-wrap__axis--min {
+  bottom: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Phase B.4 — Info blocks (Day P&L / Exposure / Win Rate)
+   Pattern : étiquette gauche + valeur droite, border-left coloré
+   matchant le tone. Réutilisable across cards.
+   ════════════════════════════════════════════════════════════════ */
+
+.dash-kpi-card__info-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dash-kpi-card__info-slot {
+  margin-top: 8px;
+}
+
+.dash-kpi-card__info-slot--tight {
+  margin-top: 6px;
+}
+
+.dash-kpi-card__info-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--text-primary) 2.5%, transparent);
+  border-radius: 3px;
+  border-left: 2px solid var(--text-tertiary);
+}
+
+.dash-kpi-card__info-block--loss {
+  border-left-color: color-mix(in srgb, var(--loss) 50%, transparent);
+}
+
+.dash-kpi-card__info-block--accent {
+  border-left-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.dash-kpi-card__info-block--profit {
+  border-left-color: color-mix(in srgb, var(--profit) 50%, transparent);
+}
+
+.dash-kpi-card__info-block--amber {
+  border-left-color: color-mix(in srgb, var(--accent-amber) 50%, transparent);
+}
+
+.dash-kpi-card__info-block--mute {
+  border-left-color: var(--text-tertiary);
+  opacity: 0.7;
+}
+
+.dash-kpi-card__info-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.dash-kpi-card__info-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums slashed-zero;
+  white-space: nowrap;
+}
+
+.dash-kpi-card__info-value--loss {
+  color: var(--loss);
+}
+
+.dash-kpi-card__info-value--accent {
+  color: var(--accent);
+}
+
+.dash-kpi-card__info-value--profit {
+  color: var(--profit);
+}
+
+.dash-kpi-card__info-value--amber {
+  color: var(--accent-amber);
+  letter-spacing: 0.08em;
+}
+
+.dash-kpi-card__info-value--mute {
+  color: var(--text-tertiary);
+}
+
+/* Tier-block dans Exposure : padding plus serré pour tenir
+   à côté du bar + marker. */
+.dash-kpi-card__info-slot--tight .dash-kpi-card__info-block {
+  padding: 6px 10px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Phase B.4 — Sparkline avec overlay pill (Unrealized / Realized)
+   Le sparkline garde sa taille naturelle, l'overlay flotte top-right.
+   ════════════════════════════════════════════════════════════════ */
+
+.dash-kpi-card__spark-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.dash-kpi-card__spark-overlay {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-tertiary);
+  background: color-mix(in srgb, var(--bg-elev-1) 85%, transparent);
+  padding: 1px 5px;
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Phase B.4 — Avail Capital block : mini-spark trend + bar
+   ════════════════════════════════════════════════════════════════ */
+
+.dash-kpi-card__avail-block {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.dash-kpi-card__avail-spark {
+  height: 28px;
+  width: 100%;
+}
+
+.dash-kpi-card__avail-spark .sparkline {
+  height: 28px;
+}
+
+/* Exposure block : groupe le bar-row + bar + marker label + tier block. */
+.dash-kpi-card__expo-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ─── Mobile fallback : stack cards linearly ────────────────── */
+
+@media (max-width: 1023px) {
+  .dash-kpi-cards {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 12px;
+  }
+  .dash-kpi-card--hero {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 767px) {
-  .hero-strip {
-    height: 72px;
+  .dash-kpi-cards {
+    grid-template-columns: 1fr 1fr;
   }
-  .hero-strip__cell--primary {
-    min-width: 140px;
-    padding: 0 12px;
+  .dash-kpi-card {
+    height: 220px;
+    padding: 14px;
   }
-  .hero-strip__cell--primary .hero-strip__value {
-    font-size: 28px;
+  .dash-kpi-card--hero .dash-kpi-card__value {
+    font-size: 32px;
   }
-  .hero-strip__cell--primary .hero-strip__label,
-  .hero-strip__cell--primary .hero-strip__sub {
-    font-size: 10px;
+  /* Sur mobile le range selector 6 segments prend trop de place — on
+     le masque, le user voit le range par défaut (30J). */
+  .dash-kpi-card--hero .dash-kpi-card__range {
+    display: none;
   }
-  .hero-strip__cell--secondary {
-    min-width: 90px;
-    padding: 0 8px;
+  /* Footer 4-cells passe en 2×2 pour respirer */
+  .dash-kpi-card__footer--4 {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 8px;
   }
-  .hero-strip__cell--secondary .hero-strip__value {
-    font-size: 12px;
+  .dash-kpi-card__footer--4 .dash-kpi-card__cell:not(:last-child) {
+    border-right: none;
+    padding-right: 0;
   }
-  .hero-strip__separator {
-    margin: 10px 2px;
+  .dash-kpi-card__footer--4 .dash-kpi-card__cell:not(:first-child) {
+    padding-left: 0;
   }
 }
 

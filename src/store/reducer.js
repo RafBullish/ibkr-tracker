@@ -36,6 +36,38 @@ export function applyAction(state, action) {
       return { ...state, settings: next };
     }
 
+    case 'UPDATE_DAILY_SNAPSHOT': {
+      // Idempotent par date — un appel répété le même jour avec les mêmes
+      // valeurs renvoie la même référence d'état (pas de re-render storm,
+      // pas de write localStorage inutile).
+      //
+      // FIFO 60 jours — au-delà, on drop le plus ancien après tri par date
+      // pour conserver les 60 derniers points (≈ 3 mois ouvrés, suffisant
+      // pour sparklines 30 j et marge confortable).
+      const snap = action.payload;
+      if (!snap || !snap.date) return state;
+      const list = Array.isArray(state.settings.dailySnapshots)
+        ? state.settings.dailySnapshots
+        : [];
+      const idx = list.findIndex((s) => s.date === snap.date);
+      if (idx !== -1) {
+        const existing = list[idx];
+        const same = Object.keys(snap).every((k) => existing[k] === snap[k]);
+        if (same) return state;
+        const merged = list.slice();
+        merged[idx] = { ...existing, ...snap };
+        return { ...state, settings: { ...state.settings, dailySnapshots: merged } };
+      }
+      let appended = [...list, snap];
+      if (appended.length > 60) {
+        appended = appended
+          .slice()
+          .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+          .slice(appended.length - 60);
+      }
+      return { ...state, settings: { ...state.settings, dailySnapshots: appended } };
+    }
+
     case 'ADD_POSITION': {
       const pos = action.payload;
       const existingIdx = state.openPositions.findIndex(

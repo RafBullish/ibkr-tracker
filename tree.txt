@@ -1,0 +1,201 @@
+﻿Structure du dossier
+Le numÚro de sÚrie du volume est 5650-7488
+C:\USERS\RAF77\IBKR-TRACKER\SRC
+|   App.jsx
+|   main.jsx
+|   
++---components
+|   +---charts
+|   |       GreekEvolutionChart.jsx
+|   |       IVRankHistogram.jsx
+|   |       MasterChart.jsx
+|   |       OptionsChainTable.jsx
+|   |       PerPositionGreeksTable.jsx
+|   |       PnLCalendarHeatmap.jsx
+|   |       RiskMetricsRow.jsx
+|   |       StrategyBreakdown.jsx
+|   |       ThetaDecayProjection.jsx
+|   |       TiltMeter.jsx
+|   |       
+|   +---dashboard
+|   |       AlertsFeed.jsx
+|   |       DashboardHeroStrip.jsx
+|   |       EarningsCalendar.jsx
+|   |       GreeksAggregate.jsx
+|   |       IVRankMovers.jsx
+|   |       LivePositions.jsx
+|   |       MarketInternals.jsx
+|   |       ModulePlaceholder.jsx
+|   |       PositionSparkline.jsx
+|   |       RiskMatrix.jsx
+|   |       SectorHeatmap.jsx
+|   |       SniperGateMonitor.jsx
+|   |       SniperMetaEditor.jsx
+|   |       VolatilitySkew.jsx
+|   |       Watchlist.jsx
+|   |       
+|   +---fx
+|   |       FxStaleBanner.jsx
+|   |       
+|   +---history
+|   |       PerformanceAttribution.jsx
+|   |       
+|   +---layout
+|   |       AmbientBackground.jsx
+|   |       AppShell.jsx
+|   |       BottomNav.jsx
+|   |       CommandBar.jsx
+|   |       StatusBar.jsx
+|   |       TickerTape.jsx
+|   |       Toast.jsx
+|   |       
+|   +---trades
+|   |       AddTradeModal.jsx
+|   |       
+|   \---ui
+|           ApiServiceCard.jsx
+|           CheatsheetModal.jsx
+|           CommandPalette.jsx
+|           DataTable.jsx
+|           DeltaBadge.jsx
+|           EmptyState.jsx
+|           ErrorBoundary.jsx
+|           GlassCard.jsx
+|           Icons.jsx
+|           InfoTooltip.jsx
+|           LoadingSkeleton.jsx
+|           MarketStatusBadge.jsx
+|           MarketTicker.jsx
+|           MetricCard.jsx
+|           Modal.jsx
+|           Sparkline.jsx
+|           StatusBadge.jsx
+|           ThemeSwitcher.jsx
+|           Tooltip.jsx
+|           WinRateDonut.jsx
+|           
++---constants
+|       featureFlags.js
+|       timing.js
+|       
++---data
+|       macroEvents2026.js
+|       
++---hooks
+|       useAlertsFeed.js
+|       useApiStatus.js
+|       useAvailableCapital.js
+|       useCalendarFeeds.js
+|       useDailyKillSwitch.js
+|       useDailyPnL.js
+|       useEarningsCalendar.js
+|       useEquityHistory.js
+|       useFx.js
+|       useFxAutoRefresh.js
+|       useGreeksAggregate.js
+|       useIVMovers.js
+|       useLivePositions.js
+|       useLiveTheme.js
+|       useMarketInternals.js
+|       useMarketQuotes.js
+|       useMediaQuery.js
+|       useNextGate.js
+|       usePortfolioMetrics.js
+|       useRiskMatrix.js
+|       useSectorHeatmap.js
+|       useSniperGates.js
+|       useTradingMetrics.js
+|       useVolSkew.js
+|       useWatchlist.js
+|       
++---pages
+|   |   Dashboard.jsx
+|   |   PreMarketBriefing.jsx
+|   |   
+|   +---insights
+|   |       Analytics.jsx
+|   |       Calendar.jsx
+|   |       Journal.jsx
+|   |       
+|   +---settings
+|   |       Api.jsx
+|   |       General.jsx
+|   |       Import.jsx
+|   |       
+|   \---trading
+|           Chain.jsx
+|           Greeks.jsx
+|           History.jsx
+|           HistoryDistribution.jsx
+|           Positions.jsx
+|           
++---services
+|       flexApi.js
+|       
++---store
+|       migrations.js
+|       reducer.js
+|       useStore.js
+|       
++---styles
+|       animations.css
+|       aura-boost.css
+|       components.css
+|       dashboard.css
+|       fonts.css
+|       global.css
+|       primitives.css
+|       responsive.css
+|       tokens.css
+|       v3-components.css
+|       v4-dashboard.css
+|       v4-shell.css
+|       v5-chain.css
+|       
++---theme
+|       animationVariants.js
+|       GlobalStyles.jsx
+|       themes.js
+|       tokens.js
+|       
+\---utils
+    |   alerts.js
+    |   alertsFeed.js
+    |   attribution.js
+    |   calculations.js
+    |   calendarApi.js
+    |   chainAnalytics.js
+    |   dashboardAdapters.js
+    |   dates.js
+    |   earnings.js
+    |   equity.js
+    |   format.js
+    |   greeks.js
+    |   greeksApi.js
+    |   ibkrParser.js
+    |   internals.js
+    |   ivrank.js
+    |   majorTickers.js
+    |   math.js
+    |   positions.js
+    |   risk.js
+    |   sectors.js
+    |   sniperMeta.js
+    |   stockApi.js
+    |   watchlist.js
+    |   
+    +---fx
+    |       helpers.js
+    |       
+    +---ibkr
+    |       closedTrades.js
+    |       csvReader.js
+    |       merge.js
+    |       sections.js
+    |       
+    +---options
+    |       blackScholes.js
+    |       
+    \---trades
+            detectExitReason.js
+            

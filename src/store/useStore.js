@@ -42,7 +42,13 @@ function loadInitialState() {
   const cashFlows = safeParse(STORAGE_KEYS.cashFlows, []);
   const journalEntries = safeParse(STORAGE_KEYS.journalEntries, []);
 
-  const settings = { liveRate: 0.88, fxMode: 'manual', fxLastUpdated: null, fxSource: null };
+  const settings = {
+    liveRate: 0.88,
+    fxMode: 'manual',
+    fxLastUpdated: null,
+    fxSource: null,
+    dailySnapshots: [],
+  };
   const s = safeParse(STORAGE_KEYS.settings, null);
   if (s) {
     if (s.r) settings.liveRate = s.r;
@@ -55,6 +61,9 @@ function loadInitialState() {
     if (s.ibkrSummary) settings.ibkrSummary = s.ibkrSummary;
     if (s.ibkrLedger) settings.ibkrLedger = s.ibkrLedger;
     if (s.gwAutoConnect !== undefined) settings.gwAutoConnect = s.gwAutoConnect;
+    // Daily snapshots (4K refonte Phase B). Persisté sous le key court `ds`
+    // pour économiser quelques octets sur le payload settings global.
+    if (Array.isArray(s.ds)) settings.dailySnapshots = s.ds;
   }
 
   // Walk the migration chain from the stored version up to CURRENT_SCHEMA_VERSION.
@@ -126,6 +135,9 @@ function persistSettings(settings) {
     if (settings.ibkrSummary) toSave.ibkrSummary = settings.ibkrSummary;
     if (settings.ibkrLedger) toSave.ibkrLedger = settings.ibkrLedger;
     if (settings.gwAutoConnect !== undefined) toSave.gwAutoConnect = settings.gwAutoConnect;
+    if (Array.isArray(settings.dailySnapshots) && settings.dailySnapshots.length > 0) {
+      toSave.ds = settings.dailySnapshots;
+    }
     localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(toSave));
   } catch {
     console.warn('Storage full — settings not persisted');

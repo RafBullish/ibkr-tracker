@@ -1,24 +1,24 @@
 // ═══════════════════════════════════════════════════════════════
-//  TICKER TAPE v5.0 « Institutional Terminal »
+//  TICKER TAPE v5.1 « Institutional Terminal » — 4K refonte
 //
-//  Sticky strip 24 px between CommandBar (32 px) and main content.
+//  Sticky strip (var --shell-tickertape-h) between CommandBar et main.
 //  Scrolls horizontally at ~30 px/s. Hover pauses the marquee.
 //  Click on a ticker navigates to /trading/chain?ticker=X.
 //
 //  Sources :
-//    - 3 indices fixes : SPX / QQQ / VIX via useMarketQuotes
-//      (cascade Finnhub → Yahoo → CBOE, polled every 60 s)
-//    - Positions ouvertes via useOpenPositions (mark price = pos.pc)
+//    - 10 tickers statiques (indices US, crypto, FX, métaux)
+//      via useMarketQuotes (cascade Finnhub → Yahoo → CBOE, 60 s)
+//    - Positions ouvertes via useOpenPositions (mark price = pos.pc),
+//      dédupliquées par rapport aux statiques pour éviter le double
+//      affichage si une position partage un symbole macro (e.g. SPX)
 //
-//  Empty states :
-//    - Aucune position + aucun quote indices → render null (le shell
-//      fonctionne sans ticker tape, pas une zone vide qui flotte)
-//    - Quotes en attente initiale → on affiche les libellés avec ——
-//      pour le prix (jamais de chiffre random — cf. décision Sprint 0
-//      « pas de mock global polluant en prod »)
-//
-//  Sprint 1 livre le squelette + indices + positions. Sprint 5 (Pre-
-//  Market Briefing) ajoutera la watchlist quand le store l'expose.
+//  Mapping display / fetch :
+//    - Le label affiché reste compact (SPX, BTC, USD/CHF, GOLD…)
+//    - Le symbole envoyé à /api/quote utilise le suffixe Yahoo
+//      requis pour les indices (^), forex (=X) et futures (=F).
+//    - La regex serveur autorise A-Z0-9.^=- ; les caractères hors
+//      classe sont déjà neutralisés côté backend (cf. api/quote/
+//      [ticker].js).
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo } from 'react';
@@ -26,12 +26,38 @@ import { useNavigate } from 'react-router-dom';
 import { useOpenPositions } from '../../store/useStore';
 import useMarketQuotes from '../../hooks/useMarketQuotes';
 
-const INDICES = ['SPX', 'QQQ', 'VIX'];
+// Tickers statiques affichés au tout début de la ticker tape.
+//   `display` = libellé visible dans l'UI + clé de dédup positions
+//   `fetch`   = symbole résolu côté /api/quote (suffixe Yahoo si besoin)
+// Ordre intentionnel : indices US → crypto → FX → métaux.
+const STATIC_TICKERS = [
+  // Indices US
+  { display: 'SPX', fetch: 'SPX' },
+  { display: 'NDX', fetch: '^NDX' },
+  { display: 'DJI', fetch: '^DJI' },
+  { display: 'RUT', fetch: '^RUT' },
+  { display: 'VIX', fetch: 'VIX' },
+  // Crypto
+  { display: 'BTC', fetch: 'BTC-USD' },
+  { display: 'ETH', fetch: 'ETH-USD' },
+  // Forex
+  { display: 'USD/CHF', fetch: 'USDCHF=X' },
+  { display: 'EUR/USD', fetch: 'EURUSD=X' },
+  // Métaux (Gold front-month future Yahoo, ≈ XAU/USD spot)
+  { display: 'GOLD', fetch: 'GC=F' },
+];
+
+const STATIC_FETCH_SYMBOLS = STATIC_TICKERS.map((t) => t.fetch);
+const STATIC_DISPLAY_SET = new Set(STATIC_TICKERS.map((t) => t.display.toUpperCase()));
 
 const fmtPrice = (v) => {
   if (v == null || !Number.isFinite(v)) return '——';
   if (Math.abs(v) >= 10000) {
     return v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  }
+  // FX rates need 4 decimals to be useful (USD/CHF, EUR/USD).
+  if (Math.abs(v) < 10) {
+    return v.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
   }
   return v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
@@ -43,34 +69,41 @@ const fmtPctChange = (v) => {
 };
 
 function buildItems(positions, quotes) {
-  const indexItems = INDICES.map((sym) => {
-    const q = quotes[sym];
+  const staticItems = STATIC_TICKERS.map(({ display, fetch }) => {
+    const q = quotes[fetch];
     return {
-      key: `idx-${sym}`,
-      ticker: sym,
+      key: `idx-${display}`,
+      ticker: display,
       type: 'index',
       price: q?.price ?? null,
       changePct: q?.changePercent ?? null,
     };
   });
 
-  const positionItems = positions.map((pos) => {
-    const price = typeof pos.pc === 'number' && Number.isFinite(pos.pc) ? pos.pc : null;
-    const entry = typeof pos.pi === 'number' && Number.isFinite(pos.pi) ? pos.pi : null;
-    let changePct = null;
-    if (price != null && entry != null && entry !== 0) {
-      changePct = ((price - entry) / entry) * 100;
-    }
-    return {
-      key: `pos-${pos.id}`,
-      ticker: pos.tk,
-      type: 'position',
-      price,
-      changePct,
-    };
-  });
+  // Dédup : on ignore les positions dont le ticker matche un statique
+  // (e.g. position SPX redondante avec le statique SPX).
+  const positionItems = positions
+    .filter((pos) => {
+      if (!pos?.tk) return false;
+      return !STATIC_DISPLAY_SET.has(String(pos.tk).toUpperCase());
+    })
+    .map((pos) => {
+      const price = typeof pos.pc === 'number' && Number.isFinite(pos.pc) ? pos.pc : null;
+      const entry = typeof pos.pi === 'number' && Number.isFinite(pos.pi) ? pos.pi : null;
+      let changePct = null;
+      if (price != null && entry != null && entry !== 0) {
+        changePct = ((price - entry) / entry) * 100;
+      }
+      return {
+        key: `pos-${pos.id}`,
+        ticker: pos.tk,
+        type: 'position',
+        price,
+        changePct,
+      };
+    });
 
-  return [...indexItems, ...positionItems];
+  return [...staticItems, ...positionItems];
 }
 
 function TickerCell({ item, onClick }) {
@@ -101,11 +134,11 @@ function TickerCell({ item, onClick }) {
 export default function TickerTape() {
   const positions = useOpenPositions();
   const navigate = useNavigate();
-  const { quotes } = useMarketQuotes(INDICES);
+  const { quotes } = useMarketQuotes(STATIC_FETCH_SYMBOLS);
 
   const items = useMemo(() => buildItems(positions, quotes), [positions, quotes]);
 
-  // Always render at least the 3 indices — the bar's value is permanent
+  // Always render at least the 10 statics — the bar's value is permanent
   // visibility of macro context, even when the user has no positions yet.
   // The cells will display "——" until first quote arrives.
   if (items.length === 0) return null;

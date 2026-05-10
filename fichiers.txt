@@ -1,0 +1,1231 @@
+﻿===== src/components/dashboard/DashboardHeroStrip.jsx =====
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+//  DASHBOARD HERO STRIP v5 Sprint B â€” two-tier KPI band (88 px)
+//
+//  3 PRIMARY cells (36 px values) for at-a-glance survival metrics :
+//     NLV Â· Day P&L Â· Available Capital
+//  Hairline-strong separator
+//  6 SECONDARY cells (14 px values) for context :
+//     MTD Â· YTD Â· Realized Â· Unrealized Â· Exposure Â· USD-CHF
+//
+//  Day P&L renders 'â€”â€”' until Sprint C wires the IBKR Account Summary
+//  endpoint. The big 'â€”â€”' in 36 px is intentional â€” it serves as a
+//  constant visual reminder to prioritise the wiring next.
+//
+//  YTD same situation (will render in Sprint C).
+//
+//  VIX / SPX removed from Hero (already in TickerTape + StatusBar =
+//  was triple-display redundancy in Sprint 2.4).
+//
+//  Available Capital uses Option A (cash-based simple) :
+//    max(0, NLV âˆ’ Î£ notional). v1 conservative â€” replaced with real
+//    Excess Liquidity in Sprint C. See useAvailableCapital.js JSDoc.
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
+import useAvailableCapital from '../../hooks/useAvailableCapital';
+
+const fmtUsdCompact = (v) => {
+  if (v == null || !Number.isFinite(v)) return 'â€”â€”';
+  const abs = Math.abs(v);
+  if (abs >= 1_000_000) {
+    return `$${(v / 1_000_000).toLocaleString('en-US', { maximumFractionDigits: 2 })}M`;
+  }
+  if (abs >= 10_000) {
+    return `$${Math.round(v).toLocaleString('en-US')}`;
+  }
+  return `$${v.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+};
+
+const fmtUsdSigned = (v) => {
+  if (v == null || !Number.isFinite(v)) return 'â€”â€”';
+  if (v === 0) return '$0';
+  const sign = v > 0 ? '+' : 'âˆ’';
+  const abs = Math.abs(v);
+  if (abs >= 10_000) {
+    return `${sign}$${Math.round(abs).toLocaleString('en-US')}`;
+  }
+  return `${sign}$${abs.toFixed(0)}`;
+};
+
+const fmtChfCompact = (v) => {
+  if (v == null || !Number.isFinite(v)) return 'â€”â€”';
+  return `${Math.round(v).toLocaleString('de-CH')} CHF`;
+};
+
+const fmtRate = (v) => {
+  if (v == null || !Number.isFinite(v)) return 'â€”â€”';
+  return v.toFixed(4);
+};
+
+const tone = (v) => {
+  if (v == null || !Number.isFinite(v) || v === 0) return 'mute';
+  return v > 0 ? 'profit' : 'loss';
+};
+
+function HeroCell({ tier = 'secondary', label, value, sub, tone: cellTone = 'neutral' }) {
+  return (
+    <div className={`hero-strip__cell hero-strip__cell--${tier}`} data-tone={cellTone}>
+      <span className="hero-strip__label">{label}</span>
+      <span className="hero-strip__value">{value}</span>
+      {sub ? <span className="hero-strip__sub">{sub}</span> : null}
+    </div>
+  );
+}
+
+export default function DashboardHeroStrip() {
+  const metrics = usePortfolioMetrics();
+  const { availableUsd } = useAvailableCapital();
+
+  const nlvUsd = metrics?.netLiquidationValueUsd;
+  const nlvChf = metrics?.netLiquidationValueChf;
+  const realizedUsd = metrics?.realizedPnlUsd;
+  const unrealUsd = metrics?.unrealizedPnlUsd;
+  const mtdUsd = metrics?.monthlyPnlUsd;
+  const exposureUsd = metrics?.totalExposure;
+  const liveRate = metrics?.liveRate;
+
+  return (
+    <div className="hero-strip" role="region" aria-label="Indicateurs du portefeuille">
+      {/* PRIMARY ZONE â€” 3 BIG cells (36 px values) */}
+      <HeroCell
+        tier="primary"
+        label="NLV"
+        value={fmtUsdCompact(nlvUsd)}
+        sub={nlvChf != null ? fmtChfCompact(nlvChf) : null}
+        tone="strong"
+      />
+      <HeroCell
+        tier="primary"
+        label="Day P&L"
+        value="â€”â€”"
+        sub="account summary Ã  cÃ¢bler"
+        tone="mute"
+      />
+      <HeroCell
+        tier="primary"
+        label="Avail. Capital"
+        value={fmtUsdCompact(availableUsd)}
+        sub="capital deployable (v1)"
+        tone={availableUsd != null && availableUsd > 0 ? 'strong' : 'mute'}
+      />
+
+      <div className="hero-strip__separator" aria-hidden="true" />
+
+      {/* SECONDARY ZONE â€” 6 SMALL cells (14 px values) */}
+      <HeroCell label="MTD" value={fmtUsdSigned(mtdUsd)} sub="mois en cours" tone={tone(mtdUsd)} />
+      <HeroCell label="YTD" value="â€”â€”" sub="pÃ©riode fiscale" tone="mute" />
+      <HeroCell
+        label="Realized"
+        value={fmtUsdSigned(realizedUsd)}
+        sub={metrics?.tradeCount != null ? `${metrics.tradeCount} trades` : null}
+        tone={tone(realizedUsd)}
+      />
+      <HeroCell
+        label="Unrealized"
+        value={fmtUsdSigned(unrealUsd)}
+        sub="positions ouvertes"
+        tone={tone(unrealUsd)}
+      />
+      <HeroCell
+        label="Exposure"
+        value={fmtUsdCompact(exposureUsd)}
+        sub="market value"
+        tone="neutral"
+      />
+      <HeroCell label="USD/CHF" value={fmtRate(liveRate)} sub="taux IBKR fix" tone="amber" />
+    </div>
+  );
+}
+===== src/components/charts/MasterChart.jsx =====
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+//  MASTER CHART v4.0 â€” brick 3
+//
+//  Module bento col 1-6 row 1 (240 px). Trois layers visuels dans
+//  un sub-pane 70 % / 30 % :
+//    Top 70 % :
+//      1. Underwater drawdown Area (loss-bg, axe Y dÃ©diÃ© droit)
+//      2. Peak watermark Line (text-tertiary, dashed 2 3, fin)
+//      3. Equity Line (profit, strokeWidth 1.25, dot false)
+//    Bottom 30 % :
+//      4. Daily P&L Bar (fill profit/loss par signe)
+//
+//  Recharts via LazyRecharts (render-prop pattern) â†’ la chunk
+//  recharts (~150 kB gzip) est dynamic-imported uniquement si la
+//  page du module montÃ© est rendue.
+//
+//  Props-driven : data + dailyPnL + mode. Aucun useStore ici, le
+//  module fonctionne identique sur /__playground (fixture) et sur
+//  /dashboard (real store via les hooks useEquityHistory +
+//  useDailyPnL passÃ©s par le parent).
+//
+//  Aucune animation Recharts (isAnimationActive=false). Pas
+//  d'export, pas de zoom, pas de brush â€” scope brick 3 minimum.
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+import { Suspense, lazy, useMemo, useState } from 'react';
+import useLiveTheme from '../../hooks/useLiveTheme';
+import {
+  TIMEFRAMES,
+  computeUnderwaterCurve,
+  computeDailyPnl,
+  filterByTimeframe,
+} from '../../utils/equity';
+
+// Render-prop wrapper qui force le code-split sur 'recharts'. MÃªme
+// pattern qu'Analytics.jsx â€” TODO : extraire en src/components/
+// charts/LazyRecharts.jsx quand un 3e consumer apparaÃ®t.
+const LazyRecharts = lazy(() =>
+  import('recharts').then((mod) => ({ default: ({ children }) => children(mod) }))
+);
+
+const fmtUsd = (v) => {
+  if (v == null || !Number.isFinite(v)) return 'â€”';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+    signDisplay: 'exceptZero',
+  }).format(v);
+};
+
+const fmtPct = (v) => {
+  if (v == null || !Number.isFinite(v)) return 'â€”';
+  return `${v.toFixed(2)} %`;
+};
+
+const fmtAxisDate = (iso) => {
+  // YYYY-MM-DD â†’ DD/MM (compact pour axe X)
+  if (!iso || typeof iso !== 'string') return '';
+  const parts = iso.split('-');
+  if (parts.length !== 3) return iso;
+  return `${parts[2]}/${parts[1]}`;
+};
+
+function MasterTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload || {};
+  return (
+    <div className="master-chart__tooltip">
+      <div className="master-chart__tooltip-date">{row.date}</div>
+      <div className="master-chart__tooltip-row">
+        <span>EQUITY</span>
+        <span className="master-chart__tooltip-val">{fmtUsd(row.equity)}</span>
+      </div>
+      <div className="master-chart__tooltip-row">
+        <span>PEAK</span>
+        <span className="master-chart__tooltip-val">{fmtUsd(row.peak)}</span>
+      </div>
+      <div className="master-chart__tooltip-row">
+        <span>DD</span>
+        <span className={`master-chart__tooltip-val${row.underwaterPct < 0 ? ' is-loss' : ''}`}>
+          {fmtPct(row.underwaterPct)}
+        </span>
+      </div>
+      <div className="master-chart__tooltip-row">
+        <span>DAILY</span>
+        <span
+          className={`master-chart__tooltip-val${
+            row.dailyPnl > 0 ? ' is-profit' : row.dailyPnl < 0 ? ' is-loss' : ''
+          }`}
+        >
+          {fmtUsd(row.dailyPnl)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ChartFallback({ message }) {
+  return <div className="master-chart__empty">{message}</div>;
+}
+
+export default function MasterChart({ data, dailyPnL, mode = 'real', area = 'master' }) {
+  const [range, setRange] = useState('ALL');
+  // Brick 11 : useLiveTheme remplace l'import statique T pour
+  // re-render le chart au changement de thÃ¨me (event ibkr:theme-change).
+  const T = useLiveTheme();
+
+  // 1. Annoter avec running peak / underwater. 2. Merger dailyPnL si
+  //    fourni, sinon dÃ©river du diff. 3. Filtrer au timeframe choisi.
+  //    Tout cohÃ©rent : la fixture (180 daily points) et le real store
+  //    (per-trade-close points) traversent le mÃªme pipeline.
+  const filtered = useMemo(() => {
+    if (!Array.isArray(data) || data.length === 0) return [];
+    const withUnder = computeUnderwaterCurve(data);
+    let merged;
+    if (Array.isArray(dailyPnL) && dailyPnL.length) {
+      const dpMap = new Map(dailyPnL.map((d) => [d.date, d.dailyPnl]));
+      merged = withUnder.map((p) => ({ ...p, dailyPnl: dpMap.get(p.date) ?? 0 }));
+    } else {
+      merged = computeDailyPnl(withUnder);
+    }
+    return filterByTimeframe(merged, range);
+  }, [data, dailyPnL, range]);
+
+  const isEmpty = !filtered.length;
+  const emptyMessage =
+    mode === 'real'
+      ? 'Aucun trade fermÃ© Â· le graphique se peuplera dÃ¨s le premier closing'
+      : 'Fixture vide';
+
+  return (
+    <section className="module master-chart" style={{ gridArea: area }}>
+      <header className="module-header">
+        <span className="module-header__title">Equity Â· Drawdown Â· Daily P&amp;L</span>
+        <div className="module-header__actions tf-pills">
+          {TIMEFRAMES.map((tf) => (
+            <button
+              key={tf}
+              type="button"
+              className="tf-pill"
+              data-active={range === tf || undefined}
+              onClick={() => setRange(tf)}
+              aria-pressed={range === tf}
+            >
+              {tf}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      <div className="master-chart__body">
+        {isEmpty ? (
+          <ChartFallback message={emptyMessage} />
+        ) : (
+          <Suspense fallback={<ChartFallback message="Chargementâ€¦" />}>
+            <LazyRecharts>
+              {(R) => (
+                <>
+                  {/* TOP â€” equity + peak watermark + underwater area */}
+                  <div className="master-chart__top">
+                    <R.ResponsiveContainer width="100%" height="100%">
+                      <R.ComposedChart
+                        syncId="master"
+                        data={filtered}
+                        margin={{ top: 4, right: 8, bottom: 0, left: 8 }}
+                      >
+                        <R.CartesianGrid
+                          stroke={T.chart.grid}
+                          strokeDasharray="0"
+                          vertical={false}
+                        />
+                        <R.XAxis dataKey="date" hide />
+                        <R.YAxis
+                          yAxisId="equity"
+                          orientation="left"
+                          stroke={T.text.tertiary}
+                          tick={{ fontFamily: T.fonts.mono, fontSize: 9, fill: T.text.tertiary }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={42}
+                          tickFormatter={(v) => `${Math.round(v / 100) / 10}k`}
+                        />
+                        <R.YAxis
+                          yAxisId="dd"
+                          orientation="right"
+                          stroke={T.text.tertiary}
+                          tick={{ fontFamily: T.fonts.mono, fontSize: 9, fill: T.text.tertiary }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={32}
+                          domain={['dataMin', 0]}
+                          tickFormatter={(v) => `${v.toFixed(0)}%`}
+                        />
+                        <R.Area
+                          yAxisId="dd"
+                          dataKey="underwaterPct"
+                          type="monotone"
+                          fill={T.lossMuted}
+                          stroke="none"
+                          isAnimationActive={false}
+                        />
+                        <R.Line
+                          yAxisId="equity"
+                          dataKey="peak"
+                          type="monotone"
+                          stroke={T.text.tertiary}
+                          strokeWidth={1}
+                          strokeDasharray="2 3"
+                          dot={false}
+                          isAnimationActive={false}
+                        />
+                        <R.Line
+                          yAxisId="equity"
+                          dataKey="equity"
+                          type="monotone"
+                          stroke={T.profit}
+                          strokeWidth={1.25}
+                          dot={false}
+                          activeDot={{ r: 3, fill: T.profit, stroke: 'none' }}
+                          isAnimationActive={false}
+                        />
+                        <R.Tooltip
+                          content={<MasterTooltip />}
+                          cursor={{ stroke: T.text.tertiary, strokeDasharray: '2 3' }}
+                          isAnimationActive={false}
+                        />
+                      </R.ComposedChart>
+                    </R.ResponsiveContainer>
+                  </div>
+
+                  {/* BOTTOM â€” daily P&L bars */}
+                  <div className="master-chart__bottom">
+                    <R.ResponsiveContainer width="100%" height="100%">
+                      <R.ComposedChart
+                        syncId="master"
+                        data={filtered}
+                        margin={{ top: 2, right: 8, bottom: 16, left: 8 }}
+                      >
+                        <R.CartesianGrid
+                          stroke={T.chart.grid}
+                          strokeDasharray="0"
+                          vertical={false}
+                        />
+                        <R.XAxis
+                          dataKey="date"
+                          stroke={T.text.tertiary}
+                          tick={{ fontFamily: T.fonts.mono, fontSize: 9, fill: T.text.tertiary }}
+                          axisLine={false}
+                          tickLine={false}
+                          tickFormatter={fmtAxisDate}
+                          minTickGap={40}
+                          height={14}
+                        />
+                        <R.YAxis
+                          stroke={T.text.tertiary}
+                          tick={{ fontFamily: T.fonts.mono, fontSize: 9, fill: T.text.tertiary }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={42}
+                          tickFormatter={(v) =>
+                            Math.abs(v) >= 1000 ? `${Math.round(v / 100) / 10}k` : v
+                          }
+                        />
+                        <R.ReferenceLine y={0} stroke={T.text.tertiary} strokeOpacity={0.3} />
+                        <R.Bar dataKey="dailyPnl" isAnimationActive={false} maxBarSize={4}>
+                          {filtered.map((entry, i) => (
+                            <R.Cell
+                              key={`bar-${i}`}
+                              fill={entry.dailyPnl >= 0 ? T.profit : T.loss}
+                            />
+                          ))}
+                        </R.Bar>
+                        <R.Tooltip
+                          content={<MasterTooltip />}
+                          cursor={{ fill: 'transparent' }}
+                          isAnimationActive={false}
+                        />
+                      </R.ComposedChart>
+                    </R.ResponsiveContainer>
+                  </div>
+                </>
+              )}
+            </LazyRecharts>
+          </Suspense>
+        )}
+      </div>
+    </section>
+  );
+}
+===== src/components/dashboard/LivePositions.jsx =====
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+//  LIVE POSITIONS v4 brick 6 + v5 Sprint 1.3 â€” data grid 19 colonnes
+//
+//  Module bento col 1-12 row 2 (160 px). Plein-Ã©cran dashboard,
+//  table dense Excel-style. Header 22 + h-22 thead + N Ã— h-15
+//  rows. Au-delÃ  de ~7 rows : scroll Y interne, jamais sur le
+//  module.
+//
+//  19 colonnes ordre exact spec v5 :
+//    TICKER Â· TYPE Â· STR Â· EXP Â· DTE Â· QTY Â· ENTRY Â· MARK Â·
+//    UNREAL$ Â· UNREAL% Â· Î” Â· Î˜ Â· IVR Â· EDGE Â· C-TIER Â· GATE-NXT Â·
+//    DAYS-IN Â· SPARK 7D Â· ALERT
+//
+//  v5 Sprint 1.3 deltas vs v4 :
+//    - EDGE (was combined "E3C2") split into two cols : EDGE + C-TIER.
+//    - GATE renamed GATE-NXT and reads pos.nextGate object (computed
+//      via computeNextGate util) instead of pos.gates[0]. Renders
+//      "TKR DTE45 in Xd" or "SL35 ARMED" semantics.
+//    - DAYS renamed DAYS-IN for clarity (days-in-trade convention).
+//
+//  Props-driven : <LivePositions data={...} />.
+//  data = output de useLivePositions / buildLivePositions.
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+import { useState } from 'react';
+import PositionSparkline from './PositionSparkline';
+import SniperMetaEditor from './SniperMetaEditor';
+
+const FR_MONTHS = [
+  'Jan',
+  'FÃ©v',
+  'Mar',
+  'Avr',
+  'Mai',
+  'Jun',
+  'Jul',
+  'AoÃ»',
+  'Sep',
+  'Oct',
+  'Nov',
+  'DÃ©c',
+];
+
+const fmtUsd = (v, digits = 0) => {
+  if (v == null || !Number.isFinite(v)) return 'â€”';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: digits,
+    minimumFractionDigits: digits,
+  }).format(v);
+};
+
+const fmtUsdSigned = (v, digits = 2) => {
+  if (v == null || !Number.isFinite(v)) return 'â€”';
+  if (v === 0) return '$0.00';
+  const sign = v > 0 ? '+' : 'âˆ’';
+  return `${sign}$${Math.abs(v).toFixed(digits)}`;
+};
+
+const fmtPctSigned = (v, digits = 2) => {
+  if (v == null || !Number.isFinite(v)) return 'â€”';
+  if (v === 0) return '0.00 %';
+  const sign = v > 0 ? '+' : 'âˆ’';
+  return `${sign}${Math.abs(v).toFixed(digits)} %`;
+};
+
+const fmtNumberSigned = (v, digits = 2) => {
+  if (v == null || !Number.isFinite(v)) return 'â€”';
+  if (v === 0) return '0.00';
+  const sign = v > 0 ? '+' : 'âˆ’';
+  return `${sign}${Math.abs(v).toFixed(digits)}`;
+};
+
+const fmtExp = (iso) => {
+  if (!iso || typeof iso !== 'string') return 'â€”';
+  const parts = iso.split('-');
+  if (parts.length !== 3) return iso;
+  const month = FR_MONTHS[parseInt(parts[1], 10) - 1] || parts[1];
+  const yy = parts[0].slice(-2);
+  return `${month}'${yy}`;
+};
+
+const toneFromSign = (v) => {
+  if (v == null || !Number.isFinite(v) || v === 0) return 'mute';
+  return v > 0 ? 'profit' : 'loss';
+};
+
+const ALERT_TONE = {
+  DTE: 'warn',
+  EARN: 'info',
+  IV: 'warn',
+  PRICE: 'warn',
+  TIME: 'warn',
+};
+
+function IvrCell({ ivr }) {
+  if (ivr == null || !Number.isFinite(ivr)) return <span className="live-pos__mute">â€”</span>;
+  const pct = Math.max(0, Math.min(100, ivr));
+  // High-IV bar color = profit (premium-rich for short premium strategies),
+  // low-IV bar color = mute, mid = neutral.
+  const tone = pct > 70 ? 'profit' : pct < 20 ? 'loss' : 'mute';
+  return (
+    <span className="live-pos__ivr">
+      <span className="live-pos__ivr-num">{Math.round(pct)}</span>
+      <span className="live-pos__ivr-bar">
+        <span
+          className={`live-pos__ivr-fill live-pos__ivr-fill--${tone}`}
+          style={{ width: `${pct}%` }}
+        />
+      </span>
+    </span>
+  );
+}
+
+// v5 Sprint 2.2 : pills clickable when empty â†’ opens SniperMetaEditor.
+// When tagged, the pill renders as a span (no click) â€” re-tagging is
+// done via the row-level "Tag" affordance (Sprint 2.3+ adds an
+// explicit edit button ; for now click on cell still works to retag).
+function EdgePill({ edge, onTag }) {
+  if (!edge) {
+    return (
+      <button type="button" className="live-pos__tag-btn" onClick={onTag} title="Tag Edge Tier">
+        Tag
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className="live-pos__edge-pill live-pos__edge-pill--clickable"
+      onClick={onTag}
+      title="Modifier Edge Tier"
+    >
+      {edge}
+    </button>
+  );
+}
+
+function CTierPill({ cap, onTag }) {
+  if (!cap) {
+    return (
+      <button type="button" className="live-pos__tag-btn" onClick={onTag} title="Tag Capital Tier">
+        Tag
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className="live-pos__ctier-pill live-pos__ctier-pill--clickable"
+      onClick={onTag}
+      title="Modifier Capital Tier"
+    >
+      {cap}
+    </button>
+  );
+}
+
+// v5 Sprint 1.3 : nextGate is { gateType, daysToTrigger, dte } | null.
+// Format : "DTE45 in 12d" / "SL35 ARMED" / "SL35 in 3d".
+function GatePill({ nextGate }) {
+  if (!nextGate) return <span className="live-pos__mute">â€”</span>;
+  const { gateType, daysToTrigger } = nextGate;
+  let suffix;
+  if (daysToTrigger > 0) {
+    suffix = ` ${daysToTrigger}d`;
+  } else if (daysToTrigger === 0) {
+    suffix = ' 0d';
+  } else {
+    suffix = ' ARMED';
+  }
+  const tone = daysToTrigger <= 0 ? 'armed' : daysToTrigger <= 7 ? 'imminent' : 'normal';
+  return (
+    <span className={`live-pos__gate-pill live-pos__gate-pill--${tone}`}>
+      {gateType}
+      <span className="live-pos__gate-pill-sub">{suffix}</span>
+    </span>
+  );
+}
+
+function AlertPill({ alert }) {
+  if (!alert) return <span className="live-pos__mute">â€”</span>;
+  const tone = ALERT_TONE[alert] || 'warn';
+  return <span className={`live-pos__alert-pill live-pos__alert-pill--${tone}`}>{alert}</span>;
+}
+
+function PositionRow({ pos, onTag }) {
+  const isStock = pos.type === 'STK';
+  return (
+    <tr className="live-pos__row">
+      <td className="live-pos__ticker">{pos.ticker || 'â€”'}</td>
+      <td>
+        <span className={`live-pos__type-pill live-pos__type-pill--${pos.type}`}>{pos.type}</span>
+      </td>
+      <td>{isStock ? 'â€”' : pos.strike != null ? `$${pos.strike}` : 'â€”'}</td>
+      <td className="live-pos__mute">{isStock ? 'â€”' : fmtExp(pos.exp)}</td>
+      <td>
+        {isStock || pos.dte == null ? (
+          'â€”'
+        ) : (
+          <>
+            {pos.dte}
+            <span className="live-pos__sub">d</span>
+          </>
+        )}
+      </td>
+      <td>{pos.qty}</td>
+      <td>${pos.entry.toFixed(2)}</td>
+      <td>${pos.mark.toFixed(2)}</td>
+      <td className={`live-pos__cell--${toneFromSign(pos.unrealDollar)}`}>
+        {fmtUsdSigned(pos.unrealDollar, 2)}
+      </td>
+      <td className={`live-pos__cell--${toneFromSign(pos.unrealPct)}`}>
+        {fmtPctSigned(pos.unrealPct, 2)}
+      </td>
+      <td className={`live-pos__cell--${isStock ? 'mute' : toneFromSign(pos.delta)}`}>
+        {isStock || pos.delta == null ? 'â€”' : fmtNumberSigned(pos.delta, 2)}
+      </td>
+      <td className={`live-pos__cell--${isStock ? 'mute' : toneFromSign(pos.theta)}`}>
+        {isStock || pos.theta == null ? 'â€”' : fmtNumberSigned(pos.theta, 2)}
+      </td>
+      <td>
+        <IvrCell ivr={isStock ? null : pos.ivr} />
+      </td>
+      <td>
+        <EdgePill edge={pos.edgeTier} onTag={() => onTag(pos)} />
+      </td>
+      <td>
+        <CTierPill cap={pos.capitalTier} onTag={() => onTag(pos)} />
+      </td>
+      <td>
+        {isStock ? <span className="live-pos__mute">â€”</span> : <GatePill nextGate={pos.nextGate} />}
+      </td>
+      <td>
+        {pos.daysHeld}
+        <span className="live-pos__sub">d</span>
+      </td>
+      <td>
+        <PositionSparkline prices={pos.spark7d} dir={pos.dir} />
+      </td>
+      <td>
+        <AlertPill alert={pos.alert} />
+      </td>
+    </tr>
+  );
+}
+
+export default function LivePositions({ data, area = 'positions' }) {
+  const count = data?.count ?? 0;
+  const totalNotional = data?.totalNotional ?? 0;
+  const totalMaxRisk = data?.totalMaxRisk ?? 0;
+  const positions = data?.positions ?? [];
+  const isEmpty = count === 0;
+
+  // v5 Sprint 2.2 : modal state for per-position Sniper meta tagging.
+  // Opens when the user clicks the EDGE / C-TIER pill or its 'Tag'
+  // placeholder in a row.
+  const [editorPos, setEditorPos] = useState(null);
+
+  const headerHint = isEmpty
+    ? 'Î£ Notional $0 Â· Î£ Max Risk $0'
+    : `Î£ Notional ${fmtUsd(totalNotional, 0)} Â· Î£ Max Risk ${fmtUsdSigned(totalMaxRisk, 0)}`;
+
+  return (
+    <section className="module live-pos" style={{ gridArea: area }}>
+      <header className="module-header">
+        <span className="module-header__title">
+          Live Positions Â· {count} {count === 1 ? 'ouverte' : 'ouvertes'}
+        </span>
+        <span className="module-header__hint">{headerHint}</span>
+      </header>
+      <div className="module-body live-pos__body">
+        {isEmpty ? (
+          <div className="live-pos__empty">Aucune position ouverte</div>
+        ) : (
+          <table className="live-pos__table" aria-label="Live positions">
+            <thead>
+              <tr>
+                <th>Ticker</th>
+                <th>Type</th>
+                <th>Str</th>
+                <th>Exp</th>
+                <th>DTE</th>
+                <th>Qty</th>
+                <th>Entry</th>
+                <th>Mark</th>
+                <th>Unreal $</th>
+                <th>Unreal %</th>
+                <th>Î”</th>
+                <th>Î˜</th>
+                <th>IVR</th>
+                <th>Edge</th>
+                <th>C-Tier</th>
+                <th>Gate Nxt</th>
+                <th>Days In</th>
+                <th>Spark 7D</th>
+                <th>Alert</th>
+              </tr>
+            </thead>
+            <tbody>
+              {positions.map((pos) => (
+                <PositionRow key={pos.id} pos={pos} onTag={setEditorPos} />
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+      <SniperMetaEditor
+        position={editorPos}
+        open={!!editorPos}
+        onClose={() => setEditorPos(null)}
+      />
+    </section>
+  );
+}
+===== src/components/charts/PnLCalendarHeatmap.jsx =====
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+//  PNL CALENDAR HEATMAP v3.0 Â« Midnight Terminal Â»
+//
+//  Two modes:
+//    mode='month' (default) â€” 7-column monthly calendar (5-6 rows),
+//      navigation arrows step Â±1 month. Each cell shows the day
+//      number + compact P&L. Click opens a trade-detail modal.
+//    mode='year'  â€” 52-column Ã— 7-row GitHub-style heatmap for an
+//      entire calendar year. Monday-first; weekend rows greyed.
+//      Month boundaries drawn as subtle vertical dividers.
+//
+//  Both modes share the divergent colour scale via --hm-pos-{0..4}
+//  and --hm-neg-{0..4} tokens, scaled relative to the *visible*
+//  maxAbs P&L for the selected window.
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+import { useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale/fr';
+import Tooltip from '../ui/Tooltip';
+import EmptyState from '../ui/EmptyState';
+
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+function isoDate(year, month, day) {
+  return `${year}-${pad2(month + 1)}-${pad2(day)}`;
+}
+
+// Returns the calendar grid for a given month: array of weeks, each week is
+// an array of 7 entries (Mon..Sun). Entries outside the month are nulls.
+function buildMonthGrid(year, month) {
+  const first = new Date(year, month, 1);
+  const last = new Date(year, month + 1, 0);
+  const daysInMonth = last.getDate();
+
+  // Monday-first: JS 0=Sun..6=Sat â‡’ we want 0=Mon..6=Sun
+  const firstWeekday = (first.getDay() + 6) % 7;
+
+  const cells = [];
+  for (let i = 0; i < firstWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const weeks = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
+}
+
+// Maps a P&L value to one of the 5-band CSS custom properties
+function tokenForPnl(pnl, maxAbs) {
+  if (pnl == null || maxAbs === 0) return 'var(--surface-3)';
+  const ratio = Math.abs(pnl) / maxAbs;
+  const band = ratio <= 0.2 ? 0 : ratio <= 0.4 ? 1 : ratio <= 0.6 ? 2 : ratio <= 0.8 ? 3 : 4;
+  return pnl >= 0 ? `var(--hm-pos-${band})` : `var(--hm-neg-${band})`;
+}
+
+function formatShortPnl(pnl, currency = 'USD') {
+  if (pnl == null) return '';
+  const abs = Math.abs(pnl);
+  const sign = pnl > 0 ? '+' : pnl < 0 ? 'âˆ’' : '';
+  const fmt = new Intl.NumberFormat('en-US', {
+    notation: abs >= 1000 ? 'compact' : 'standard',
+    maximumFractionDigits: abs >= 1000 ? 1 : 0,
+    style: 'currency',
+    currency,
+    currencyDisplay: 'narrowSymbol',
+  });
+  return `${sign}${fmt.format(abs)}`.replace(/^(\+|âˆ’)\$?/, (m, s) => s + (abs >= 1000 ? '$' : '$'));
+}
+
+function formatFullPnl(pnl, currency = 'USD') {
+  if (pnl == null) return 'â€”';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    currencyDisplay: 'narrowSymbol',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    signDisplay: 'always',
+  }).format(pnl);
+}
+
+// Year grid: 7 rows (Mon..Sun) Ã— 53 columns (ISO weeks), Monday-first.
+// Returns { cells: Array<{iso, day, month, weekIndex, weekdayIndex}>, monthBoundaries: number[] }
+function buildYearGrid(year) {
+  const cells = [];
+  const monthBoundaries = []; // week index where month starts
+  let currentMonth = -1;
+
+  // Start at the Monday on or before Jan 1
+  const jan1 = new Date(year, 0, 1);
+  const jan1Weekday = (jan1.getDay() + 6) % 7; // 0=Mon..6=Sun
+  const start = new Date(year, 0, 1 - jan1Weekday);
+
+  // End at the Sunday on or after Dec 31
+  const dec31 = new Date(year, 11, 31);
+  const dec31Weekday = (dec31.getDay() + 6) % 7;
+  const end = new Date(year, 11, 31 + (6 - dec31Weekday));
+
+  let cursor = new Date(start);
+  let weekIndex = 0;
+  let prevWeekday = -1;
+
+  while (cursor <= end) {
+    const weekdayIndex = (cursor.getDay() + 6) % 7;
+    if (prevWeekday >= 0 && weekdayIndex <= prevWeekday) weekIndex++;
+
+    const inYear = cursor.getFullYear() === year;
+    cells.push({
+      iso: inYear ? isoDate(year, cursor.getMonth(), cursor.getDate()) : null,
+      day: cursor.getDate(),
+      month: cursor.getMonth(),
+      weekIndex,
+      weekdayIndex,
+      inYear,
+    });
+
+    if (inYear && cursor.getMonth() !== currentMonth) {
+      monthBoundaries.push({ weekIndex, month: cursor.getMonth() });
+      currentMonth = cursor.getMonth();
+    }
+
+    prevWeekday = weekdayIndex;
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1);
+  }
+
+  return { cells, monthBoundaries, totalWeeks: weekIndex + 1 };
+}
+
+function YearMode({ dayPnlMap, year, onCellClick, currency, onYearChange, onSwitchMode }) {
+  const { cells, monthBoundaries, totalWeeks } = useMemo(() => buildYearGrid(year), [year]);
+
+  const { total, wins, losses, maxAbs } = useMemo(() => {
+    let t = 0,
+      w = 0,
+      l = 0,
+      mx = 0;
+    for (const c of cells) {
+      if (!c.inYear || !c.iso) continue;
+      const v = dayPnlMap?.[c.iso];
+      if (typeof v === 'number' && isFinite(v)) {
+        t += v;
+        if (v > 0) w++;
+        else if (v < 0) l++;
+        if (Math.abs(v) > mx) mx = Math.abs(v);
+      }
+    }
+    return { total: t, wins: w, losses: l, maxAbs: mx };
+  }, [cells, dayPnlMap]);
+
+  const monthLabels = Array.from({ length: 12 }, (_, i) =>
+    format(new Date(2026, i, 1), 'MMM', { locale: fr })
+  );
+
+  return (
+    <div className="pnl-calendar">
+      <div className="pnl-calendar__head">
+        <div className="pnl-calendar__nav">
+          <button
+            type="button"
+            className="pnl-calendar__nav-btn"
+            onClick={() => onYearChange(year - 1)}
+            aria-label="AnnÃ©e prÃ©cÃ©dente"
+          >
+            <ChevronLeft size={14} aria-hidden="true" />
+          </button>
+          <span className="pnl-calendar__month">{year}</span>
+          <button
+            type="button"
+            className="pnl-calendar__nav-btn"
+            onClick={() => onYearChange(year + 1)}
+            aria-label="AnnÃ©e suivante"
+          >
+            <ChevronRight size={14} aria-hidden="true" />
+          </button>
+          {onSwitchMode && (
+            <button
+              type="button"
+              className="pnl-calendar__mode-btn"
+              onClick={onSwitchMode}
+              aria-label="Basculer en vue mensuelle"
+            >
+              Mois
+            </button>
+          )}
+        </div>
+
+        <div className="pnl-calendar__summary">
+          <span
+            className="pnl-calendar__total mono"
+            data-tone={total > 0 ? 'profit' : total < 0 ? 'loss' : 'neutral'}
+          >
+            {formatFullPnl(total, currency)}
+          </span>
+          <span className="pnl-calendar__meta">
+            {wins} gain{wins > 1 ? 's' : ''} Â· {losses} perte{losses > 1 ? 's' : ''}
+          </span>
+        </div>
+      </div>
+
+      {maxAbs === 0 ? (
+        <EmptyState
+          icon={CalendarDays}
+          size="compact"
+          title="Aucune activitÃ© cette annÃ©e"
+          description="SÃ©lectionne une autre annÃ©e ou importe plus de trades."
+        />
+      ) : (
+        <div className="pnl-calendar__year-wrap">
+          {/* Month labels */}
+          <div
+            className="pnl-calendar__year-months"
+            style={{ gridTemplateColumns: `auto repeat(${totalWeeks}, 1fr)` }}
+          >
+            <span /> {/* spacer for weekday column */}
+            {Array.from({ length: totalWeeks }).map((_, wi) => {
+              const boundary = monthBoundaries.find((b) => b.weekIndex === wi);
+              return (
+                <span key={wi} className="pnl-calendar__year-month-label">
+                  {boundary ? monthLabels[boundary.month] : ''}
+                </span>
+              );
+            })}
+          </div>
+          <div
+            className="pnl-calendar__year-grid"
+            style={{ gridTemplateColumns: `auto repeat(${totalWeeks}, 1fr)` }}
+          >
+            {/* Weekday labels column */}
+            <div className="pnl-calendar__year-weekdays">
+              {['Lu', '', 'Me', '', 'Ve', '', 'Di'].map((w, i) => (
+                <span key={i}>{w}</span>
+              ))}
+            </div>
+            {/* Weeks */}
+            {Array.from({ length: totalWeeks }).map((_, wi) => (
+              <div key={wi} className="pnl-calendar__year-week">
+                {Array.from({ length: 7 }).map((_, dayOfWeek) => {
+                  const cell = cells.find(
+                    (c) => c.weekIndex === wi && c.weekdayIndex === dayOfWeek
+                  );
+                  if (!cell || !cell.inYear) {
+                    return (
+                      <span
+                        key={dayOfWeek}
+                        className="pnl-calendar__year-cell pnl-calendar__year-cell--empty"
+                      />
+                    );
+                  }
+                  const v = dayPnlMap?.[cell.iso];
+                  const bg = tokenForPnl(v, maxAbs);
+                  const label =
+                    v != null
+                      ? `${format(new Date(year, cell.month, cell.day), 'EEEE dd MMMM', { locale: fr })} Â· ${formatFullPnl(v, currency)}`
+                      : format(new Date(year, cell.month, cell.day), 'EEEE dd MMMM', {
+                          locale: fr,
+                        });
+                  const tone =
+                    v == null ? 'neutral' : v > 0 ? 'profit' : v < 0 ? 'loss' : 'neutral';
+                  return (
+                    <Tooltip key={dayOfWeek} content={label} side="top">
+                      <button
+                        type="button"
+                        className="pnl-calendar__year-cell"
+                        style={{ background: bg }}
+                        data-weekend={dayOfWeek === 5 || dayOfWeek === 6 || undefined}
+                        data-has-data={v != null || undefined}
+                        data-tone={tone}
+                        onClick={() => v != null && onCellClick?.(cell.iso, v)}
+                        aria-label={label}
+                      />
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function PnLCalendarHeatmap({
+  dayPnlMap,
+  currentMonth,
+  mode: modeProp,
+  onMonthChange,
+  onCellClick,
+  currency = 'USD',
+  className,
+}) {
+  const today = new Date();
+  const [mode, setMode] = useState(modeProp || 'month');
+  const [cursor, setCursor] = useState(() =>
+    currentMonth instanceof Date
+      ? new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
+      : new Date(today.getFullYear(), today.getMonth(), 1)
+  );
+  const [yearCursor, setYearCursor] = useState(() => today.getFullYear());
+
+  // Hooks must be called unconditionally â€” always compute month-mode data,
+  // even when mode==='year' (the values are cheap and discarded in year mode)
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const weeks = useMemo(() => buildMonthGrid(year, month), [year, month]);
+
+  const monthTotal = useMemo(() => {
+    let t = 0,
+      win = 0,
+      loss = 0;
+    weeks.forEach((w) =>
+      w.forEach((d) => {
+        if (!d) return;
+        const v = dayPnlMap?.[isoDate(year, month, d)];
+        if (typeof v === 'number' && isFinite(v)) {
+          t += v;
+          if (v > 0) win++;
+          else if (v < 0) loss++;
+        }
+      })
+    );
+    return { total: t, wins: win, losses: loss };
+  }, [weeks, dayPnlMap, year, month]);
+
+  const maxAbs = useMemo(() => {
+    let m = 0;
+    weeks.forEach((w) =>
+      w.forEach((d) => {
+        if (!d) return;
+        const v = dayPnlMap?.[isoDate(year, month, d)];
+        if (typeof v === 'number' && isFinite(v) && Math.abs(v) > m) m = Math.abs(v);
+      })
+    );
+    return m;
+  }, [weeks, dayPnlMap, year, month]);
+
+  if (mode === 'year') {
+    return (
+      <div className={['pnl-calendar', className].filter(Boolean).join(' ')}>
+        <YearMode
+          dayPnlMap={dayPnlMap}
+          year={yearCursor}
+          onYearChange={setYearCursor}
+          onCellClick={onCellClick}
+          currency={currency}
+          onSwitchMode={() => setMode('month')}
+        />
+      </div>
+    );
+  }
+
+  const goPrev = () => {
+    const next = new Date(year, month - 1, 1);
+    setCursor(next);
+    onMonthChange?.(next);
+  };
+  const goNext = () => {
+    const next = new Date(year, month + 1, 1);
+    setCursor(next);
+    onMonthChange?.(next);
+  };
+
+  const hasAnyData = maxAbs > 0;
+
+  return (
+    <div className={['pnl-calendar', className].filter(Boolean).join(' ')}>
+      <div className="pnl-calendar__head">
+        <div className="pnl-calendar__nav">
+          <button
+            type="button"
+            className="pnl-calendar__nav-btn"
+            onClick={goPrev}
+            aria-label="Mois prÃ©cÃ©dent"
+          >
+            <ChevronLeft size={14} aria-hidden="true" />
+          </button>
+          <span className="pnl-calendar__month">{format(cursor, 'MMMM yyyy', { locale: fr })}</span>
+          <button
+            type="button"
+            className="pnl-calendar__nav-btn"
+            onClick={goNext}
+            aria-label="Mois suivant"
+          >
+            <ChevronRight size={14} aria-hidden="true" />
+          </button>
+          {modeProp == null && (
+            <button
+              type="button"
+              className="pnl-calendar__mode-btn"
+              onClick={() => setMode('year')}
+              aria-label="Basculer en vue annuelle"
+            >
+              AnnÃ©e
+            </button>
+          )}
+        </div>
+
+        <div className="pnl-calendar__summary">
+          <span
+            className="pnl-calendar__total mono"
+            data-tone={monthTotal.total > 0 ? 'profit' : monthTotal.total < 0 ? 'loss' : 'neutral'}
+          >
+            {formatFullPnl(monthTotal.total, currency)}
+          </span>
+          <span className="pnl-calendar__meta">
+            {monthTotal.wins} gain{monthTotal.wins > 1 ? 's' : ''} Â· {monthTotal.losses} perte
+            {monthTotal.losses > 1 ? 's' : ''}
+          </span>
+        </div>
+      </div>
+
+      {!hasAnyData ? (
+        <EmptyState
+          icon={CalendarDays}
+          size="compact"
+          title="Aucune activitÃ© ce mois"
+          description="Passe Ã  un mois antÃ©rieur ou importe plus de trades."
+        />
+      ) : (
+        <div
+          className="pnl-calendar__grid"
+          role="grid"
+          aria-label={`Calendrier ${format(cursor, 'MMMM yyyy', { locale: fr })}`}
+        >
+          <div className="pnl-calendar__weekdays" aria-hidden="true">
+            {['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'].map((w) => (
+              <span key={w}>{w}</span>
+            ))}
+          </div>
+          {weeks.map((w, wi) => (
+            <div key={wi} className="pnl-calendar__week" role="row">
+              {w.map((d, di) => {
+                if (!d) {
+                  return (
+                    <span
+                      key={di}
+                      className="pnl-calendar__cell pnl-calendar__cell--empty"
+                      role="gridcell"
+                      aria-hidden="true"
+                    />
+                  );
+                }
+                const iso = isoDate(year, month, d);
+                const v = dayPnlMap?.[iso];
+                const bg = tokenForPnl(v, maxAbs);
+                const isToday = iso === format(today, 'yyyy-MM-dd');
+                const tooltipText =
+                  v != null
+                    ? `${format(new Date(year, month, d), 'EEEE dd MMMM', { locale: fr })} Â· ${formatFullPnl(v, currency)}`
+                    : format(new Date(year, month, d), 'EEEE dd MMMM', { locale: fr });
+                const shortLabel = v != null ? formatShortPnl(v, currency) : '';
+                const tone = v == null ? 'neutral' : v > 0 ? 'profit' : v < 0 ? 'loss' : 'neutral';
+                return (
+                  <Tooltip key={di} content={tooltipText} side="top">
+                    <button
+                      type="button"
+                      className="pnl-calendar__cell"
+                      style={{ background: bg }}
+                      data-today={isToday || undefined}
+                      data-has-data={v != null || undefined}
+                      data-tone={tone}
+                      onClick={() => v != null && onCellClick?.(iso, v)}
+                      aria-label={tooltipText}
+                      role="gridcell"
+                    >
+                      <span className="pnl-calendar__day-num">{d}</span>
+                      {shortLabel && (
+                        <span className="pnl-calendar__day-pnl mono">{shortLabel}</span>
+                      )}
+                    </button>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

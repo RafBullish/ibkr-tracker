@@ -1,50 +1,51 @@
 // ═══════════════════════════════════════════════════════════════
-//  COMMAND BAR v4.0 « Institutional Terminal »
+//  COMMAND BAR v4.2 — 4K refonte Phase B.2 (sentence-case tabs, 64 px)
 //
-//  Top bar 32 px sticky. Three zones :
-//    1. Left  (≥ 220 px)  — QC▎TERMINAL logo + breadcrumb
-//    2. Centre (flex 1)   — 9 navigation pills (4-letter codes)
-//    3. Right (~280 px)   — palette de commandes (⌘K) + StatusBadge
+//  Top bar 64 px sticky. Three zones :
+//    1. Left  (≥ 220 px)  — QC mini-badge + QUANTUMCALL + breadcrumb
+//    2. Centre (flex 1)   — 10 navigation tabs (mots entiers, sentence
+//                           case, underline teal sur l'onglet actif)
+//    3. Right (~280 px)   — search bar (icône seule) + ModePill REAL
 //
-//  Pills 4-letter inspired by Bloomberg Terminal function codes
-//  (DASH, POS, HIST, GRKS, CHN, ANLY, CAL, JRNL, IMP). Tooltip au
-//  survol affiche le libellé français complet et le raccourci ⌘N.
-//  Hidden on mobile (BottomNav prend le relais).
+//  Anciennement les tabs étaient des codes 4-lettres (DASH, POS…).
+//  Phase B.2 les remplace par des mots entiers (Dashboard, Positions…),
+//  text-transform: none, font-size 13 px. L'underline 2 px ancre la
+//  tab active à la border-bottom du shell. Tooltips supprimés —
+//  le mot entier est déjà autodescriptif.
 //
-//  Breadcrumb français — l'identifiant 4-lettres reste neutre dans
-//  les pills mais le label long est toujours en FR conformément à
-//  la convention CLAUDE.md « All UI strings are French ».
-//
-//  Theme picker is hosted by StatusBar, not here, to keep the top
-//  zone focused on navigation + actions.
+//  Theme picker reste hosté par StatusBar.
 // ═══════════════════════════════════════════════════════════════
 
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import StatusBadge from '../ui/StatusBadge';
 import Tooltip from '../ui/Tooltip';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import { useOpenPositions, useSettings } from '../../store/useStore';
 import { FRESHNESS } from '../../constants/timing';
 import { FEATURE_GREEK_CENTER } from '../../constants/featureFlags';
 
+// `tab`   — label affiché dans la nav (sentence case, mots entiers)
+// `label` — libellé long en français pour aria-label + tooltip
+// 4K refonte Phase B.2 : on délaisse les codes 4-lettres Bloomberg-
+// style au profit de mots entiers, plus lisibles en 4K et moins
+// dépendants du tooltip pour l'auto-description.
 const NAV = [
-  { code: 'DASH', label: 'Tableau de bord', path: '/dashboard', shortcut: '⌘1' },
-  { code: 'PREM', label: 'Pré-marché', path: '/premarket', shortcut: '' },
-  { code: 'POS', label: 'Positions', path: '/trading/positions', shortcut: '⌘2' },
-  { code: 'HIST', label: 'Historique', path: '/trading/history', shortcut: '⌘3' },
+  { tab: 'Dashboard', label: 'Tableau de bord', path: '/dashboard', shortcut: '⌘1' },
+  { tab: 'Premarket', label: 'Pré-marché', path: '/premarket', shortcut: '' },
+  { tab: 'Positions', label: 'Positions', path: '/trading/positions', shortcut: '⌘2' },
+  { tab: 'History', label: 'Historique', path: '/trading/history', shortcut: '⌘3' },
   {
-    code: 'GRKS',
+    tab: 'Greeks',
     label: 'Greeks Center',
     path: '/trading/greeks',
     shortcut: '⌘4',
     flag: 'GREEK_CENTER',
   },
-  { code: 'CHN', label: 'Chain Options', path: '/trading/chain', shortcut: '⌘5' },
-  { code: 'ANLY', label: 'Analytics', path: '/insights/analytics', shortcut: '⌘6' },
-  { code: 'CAL', label: 'Calendrier', path: '/insights/calendar', shortcut: '⌘7' },
-  { code: 'JRNL', label: 'Journal', path: '/insights/journal', shortcut: '⌘8' },
-  { code: 'IMP', label: 'Import', path: '/settings/import', shortcut: '⌘9' },
+  { tab: 'Chain', label: 'Chain Options', path: '/trading/chain', shortcut: '⌘5' },
+  { tab: 'Analytics', label: 'Analytics', path: '/insights/analytics', shortcut: '⌘6' },
+  { tab: 'Calendar', label: 'Calendrier', path: '/insights/calendar', shortcut: '⌘7' },
+  { tab: 'Journal', label: 'Journal', path: '/insights/journal', shortcut: '⌘8' },
+  { tab: 'Import', label: 'Import', path: '/settings/import', shortcut: '⌘9' },
 ];
 
 const BREADCRUMB_MAP = {
@@ -74,14 +75,38 @@ function QCLogo({ onClick }) {
       type="button"
       onClick={onClick}
       className="cmdbar__logo"
-      aria-label="QuantumCall Terminal — accueil"
+      aria-label="QuantumCall — accueil"
     >
-      <span className="cmdbar__logo-mark">QC</span>
-      <span className="cmdbar__logo-bar" aria-hidden="true">
-        ▎
+      <span className="cmdbar__logo-mark" aria-hidden="true">
+        QC
       </span>
-      <span className="cmdbar__logo-name">TERMINAL</span>
+      <span className="cmdbar__logo-name">QUANTUMCALL</span>
     </button>
+  );
+}
+
+function ModePill({ variant }) {
+  // 4K refonte Phase B — REAL/PAPER pill with leading dot.
+  // `variant` is one of 'live' | 'real' | 'paper' (cf. CommandBar logic).
+  // Visual semantics : 'live' uses profit accent at full intensity,
+  // 'real' uses profit (slightly muted), 'paper' uses amber to flag
+  // that the data shown is fixture / pre-trade.
+  const labels = { live: 'LIVE', real: 'REAL', paper: 'PAPER' };
+  const titles = {
+    live: 'Données IBKR temps réel actives',
+    real: 'Positions réelles · données stockées localement',
+    paper: 'Mode paper — aucune position réelle',
+  };
+  return (
+    <span
+      className="cmdbar__mode-pill"
+      data-mode={variant}
+      role="status"
+      title={titles[variant] || ''}
+    >
+      <span className="cmdbar__mode-dot" aria-hidden="true" />
+      <span>{labels[variant] || variant?.toUpperCase()}</span>
+    </span>
   );
 }
 
@@ -114,21 +139,20 @@ export default function CommandBar({ onOpenCommand }) {
         <QCLogo onClick={() => navigate('/dashboard')} />
         {breadcrumb && !isMobile && (
           <>
-            <span className="cmdbar__sep" aria-hidden="true">
-              ·
-            </span>
+            <span className="cmdbar__divider" aria-hidden="true" />
             <span className="cmdbar__crumb">{breadcrumb}</span>
           </>
         )}
       </div>
 
-      {/* CENTRE — navigation pills */}
+      {/* CENTRE — navigation tabs (sentence case, underline indicator) */}
       {!isCompact && (
         <nav className="cmdbar__nav" aria-label="Navigation principale">
           {navItems.map((n) => {
             const active = isActive(n.path, pathname);
+            const tipContent = n.shortcut ? `${n.label} (${n.shortcut})` : n.label;
             return (
-              <Tooltip key={n.code} content={`${n.label} (${n.shortcut})`}>
+              <Tooltip key={n.path} content={tipContent}>
                 <button
                   type="button"
                   className="nav-pill"
@@ -137,7 +161,7 @@ export default function CommandBar({ onOpenCommand }) {
                   aria-current={active ? 'page' : undefined}
                   aria-label={n.label}
                 >
-                  {n.code}
+                  {n.tab}
                 </button>
               </Tooltip>
             );
@@ -154,8 +178,7 @@ export default function CommandBar({ onOpenCommand }) {
           aria-label="Ouvrir la palette de commandes"
           title="Palette de commandes (⌘K) · Aide-mémoire (⌘/)"
         >
-          <Search size={12} aria-hidden="true" strokeWidth={2} />
-          {!isMobile && <span className="cmdbar__search-label">Rechercher…</span>}
+          <Search size={14} aria-hidden="true" strokeWidth={2} />
           {!isMobile && (
             <kbd className="cmdbar__kbd" aria-hidden="true">
               ⌘K
@@ -181,7 +204,7 @@ export default function CommandBar({ onOpenCommand }) {
             </kbd>
           </Tooltip>
         )}
-        <StatusBadge variant={modeVariant} size="sm" />
+        <ModePill variant={modeVariant} />
       </div>
     </header>
   );

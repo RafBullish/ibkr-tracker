@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx vite *)",
+      "Bash(grep -E '^\\\\+.*#[0-9a-fA-F]{3,6}')",
+      "Bash(grep -E \"^\\\\+.*#[0-9a-fA-F]{3,6}\")"
+    ]
+  }
+}
