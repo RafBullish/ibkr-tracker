@@ -1,60 +1,52 @@
 // ═══════════════════════════════════════════════════════════════
-//  DASHBOARD v4.0 → v5 Sprint 2.1 — Bento 12-col / 5-rows
+//  DASHBOARD v6 — 4K refonte Phase C.1 — Bloomberg-dense bento
 //
-//  12/12 modules vivants après ajout du Sniper Gate Monitor (Sprint 2).
+//  Grid 6 rows :
+//    Row 1 (380px) : MasterChart col 1-7 | RiskMatrix col 8-12
+//    Row 2 (320px) : LivePositions col 1-12
+//    Row 3 (220px) : SniperGateMonitor col 1-12
+//    Row 4 (300px) : TradeHistoryPlaceholder — Phase C.2
+//    Row 5 (320px) : Watchlist col 1-6 | CalendarMiniPlaceholder col 7-12 — Phase C.3
+//    Row 6 (220px) : IVRankMovers col 1-4 | SectorHeatmap col 5-8 | AlertsFeed col 9-12
 //
-//  Bricks v4 livrées :
-//    ROW 1 : MASTER + RISK + GREEKS                  (brick 3-5)
-//    ROW 2 : LIVE POSITIONS                          (brick 6)
-//    ROW 3 : WATCH + EARN + HEAT + IVR               (brick 7)
-//    ROW 4 : INTRN + SKEW + ALERT                    (brick 8)
+//  Phase C.1 retire 4 modules du dashboard (leurs fichiers restent
+//  pour Greeks/Chain/Premarket) :
+//    GreeksAggregate · EarningsCalendar · MarketInternals · VolatilitySkew
 //
-//  v5 Sprint 2.1 :
-//    ROW 5 (NEW)  : SNIPER GATE MONITOR — 1 row par option, 6 jauges
-//                   par row (SL35/DTE45/E-J2/E+J30/TP/TR), pulse
-//                   armed-red à fill≥95.
-//
-//  Hooks real-store qui retournent encore stub (brick 7-8) — les
-//  modules affichent leur empty state sur /dashboard. La brick
-//  data-source ultérieure remplacera les stubs par vrais feeds.
+//  RiskMatrix reçoit maintenant un objet metrics fusionné :
+//    { ...usePortfolioMetrics(), ...useRiskMatrix(), equityHistory }
+//  afin d'accéder à toutes les métriques (sharpe, sortino, sqn, cagr,
+//  rMultiples, currentStreak…) sans dupliquer les hook-calls dans
+//  RiskMatrix lui-même.
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo } from 'react';
 import DashboardKPICards from '../components/dashboard/DashboardKPICards';
-import MasterChart from '../components/charts/MasterChart';
+import EquityChart from '../components/charts/EquityChart';
+import DailyPnLChart from '../components/charts/DailyPnLChart';
 import RiskMatrix from '../components/dashboard/RiskMatrix';
-import GreeksAggregate from '../components/dashboard/GreeksAggregate';
 import LivePositions from '../components/dashboard/LivePositions';
 import SniperGateMonitor from '../components/dashboard/SniperGateMonitor';
 import Watchlist from '../components/dashboard/Watchlist';
-import EarningsCalendar from '../components/dashboard/EarningsCalendar';
 import SectorHeatmap from '../components/dashboard/SectorHeatmap';
 import IVRankMovers from '../components/dashboard/IVRankMovers';
-import MarketInternals from '../components/dashboard/MarketInternals';
-import VolatilitySkew from '../components/dashboard/VolatilitySkew';
 import AlertsFeed from '../components/dashboard/AlertsFeed';
+import TradeHistoryPlaceholder from '../components/dashboard/TradeHistoryPlaceholder';
+import CalendarMiniPlaceholder from '../components/dashboard/CalendarMiniPlaceholder';
 import useEquityHistory from '../hooks/useEquityHistory';
 import useDailyPnL from '../hooks/useDailyPnL';
 import useRiskMatrix from '../hooks/useRiskMatrix';
-import useGreeksAggregate from '../hooks/useGreeksAggregate';
 import useLivePositions from '../hooks/useLivePositions';
 import useSniperGates from '../hooks/useSniperGates';
 import useWatchlist from '../hooks/useWatchlist';
-import useEarningsCalendar from '../hooks/useEarningsCalendar';
 import useSectorHeatmap from '../hooks/useSectorHeatmap';
 import useIVMovers from '../hooks/useIVMovers';
-import useMarketInternals from '../hooks/useMarketInternals';
-import useVolSkew from '../hooks/useVolSkew';
 import useAlertsFeed from '../hooks/useAlertsFeed';
 import useAvailableCapital from '../hooks/useAvailableCapital';
 import { usePortfolioMetrics, useKPIs } from '../hooks/usePortfolioMetrics';
-import { useOpenPositions, useDispatch } from '../store/useStore';
+import { useOpenPositions, useDispatch, useClosedTrades } from '../store/useStore';
 
-// 4K refonte Phase B — daily snapshot writer.
-// Construit le payload du jour à partir des hooks portfolio existants
-// et dispatche UPDATE_DAILY_SNAPSHOT. Le reducer est idempotent par
-// date : un appel répété avec les mêmes valeurs renvoie la même
-// référence d'état (pas de re-render storm). FIFO 60 jours côté store.
+// 4K refonte Phase B — daily snapshot writer (inchangé).
 function useDailySnapshotWriter() {
   const dispatch = useDispatch();
   const metrics = usePortfolioMetrics();
@@ -110,43 +102,48 @@ function useDailySnapshotWriter() {
 export default function Dashboard() {
   const equityHistory = useEquityHistory();
   const dailyPnL = useDailyPnL();
-  const riskMetrics = useRiskMatrix();
-  const greeks = useGreeksAggregate();
+  const closedTrades = useClosedTrades();
+  const portfolioMetrics = usePortfolioMetrics();
+  const riskMatrixData = useRiskMatrix();
   const positions = useLivePositions();
   const gates = useSniperGates();
   const watchlist = useWatchlist();
-  const earnings = useEarningsCalendar();
   const sectors = useSectorHeatmap();
   const ivMovers = useIVMovers();
-  const internals = useMarketInternals();
-  const volSkew = useVolSkew();
   const alerts = useAlertsFeed();
 
-  const openPositions = useOpenPositions();
-  const ownedTickers = useMemo(
-    () => new Set((openPositions || []).map((p) => p.tk).filter(Boolean)),
-    [openPositions]
+  // Merge portfolioMetrics (sharpe/sortino/sqn/cagr/recovery/rMultiples/
+  // streaks/breakEven/fees/fxImpact/monthly) + riskMatrixData
+  // (currentDDPct/maxDDYtdPct/recoveryPctValue/vol30dPct) + equityHistory
+  // pour que RiskMatrix puisse tout dériver via un seul objet `metrics`.
+  const riskMetrics = useMemo(
+    () => ({ ...portfolioMetrics, ...riskMatrixData, equityHistory }),
+    [portfolioMetrics, riskMatrixData, equityHistory]
   );
 
-  // Persiste un snapshot quotidien des métriques pour alimenter les
-  // sparklines du nouveau bloc KPI cards (cf. useDailySnapshot.js).
+  // Persiste un snapshot quotidien des métriques (cf. useDailySnapshot.js).
   useDailySnapshotWriter();
 
   return (
     <div className="dash-shell">
       <DashboardKPICards />
       <div className="dash-grid">
-        <MasterChart data={equityHistory} dailyPnL={dailyPnL} mode="real" area="master" />
+        <EquityChart data={equityHistory} area="equity" />
+        <DailyPnLChart
+          data={equityHistory}
+          dailyPnL={dailyPnL}
+          closedTrades={closedTrades}
+          liveRate={portfolioMetrics?.liveRate}
+          area="dailypnl"
+        />
         <RiskMatrix metrics={riskMetrics} area="risk" />
-        <GreeksAggregate data={greeks} area="greeks" />
         <LivePositions data={positions} area="positions" />
         <SniperGateMonitor data={gates} area="gates" />
+        <TradeHistoryPlaceholder area="history" />
         <Watchlist data={watchlist} area="watch" />
-        <EarningsCalendar data={earnings} ownedTickers={ownedTickers} maxDte={7} area="earn" />
-        <SectorHeatmap data={sectors} area="heat" />
+        <CalendarMiniPlaceholder area="calendar" />
         <IVRankMovers data={ivMovers} area="ivr" />
-        <MarketInternals data={internals} area="intrn" />
-        <VolatilitySkew data={volSkew} area="skew" />
+        <SectorHeatmap data={sectors} area="heat" />
         <AlertsFeed data={alerts} area="alert" />
       </div>
     </div>

@@ -7,46 +7,126 @@
    when needed.
    ════════════════════════════════════════════════════════════════ */
 
-/* ─── Grid container ─────────────────────────────────────────── */
-/* Hairline gap pattern: 1px gap entre cellules + parent peint avec
-   var(--border-strong) → la couleur de bordure transparaît dans les
-   « gouttières » entre modules. Chaque module garde un fond opaque
-   --bg-elev-1 et n'a PLUS de border propre — visuellement c'est une
-   ligne 1 px parfaitement uniforme entre tous les modules, sans
-   doublon de bordure aux jointures.
-   Avantage vs. border 1px par module : zéro double-trait, et le
-   gap reste exactement 1 px en toutes circonstances. */
+/* ─── Grid container — Phase C.1 (6 rows Bloomberg-dense) ─────────
+   Le pattern « hairline gap » (1 px gap + bg border-strong) est
+   abandonné Phase C.1 au profit d'un gap 8 px + radius 4 px par
+   module. Chaque module porte sa propre border-radius via .module
+   ci-dessous (refactor section .module : border 1 var(--border)).
+
+   Areas (cf. brief Phase C complet — Phase C.1 livre Rows 1/2/3/6
+   en modules réels + Rows 4/5 en placeholders) :
+     Row 1 : equity 1-3 | dailypnl 4-6 | risk 7-12   (Phase C.1.7 split)
+     Row 2 : positions full
+     Row 3 : gates full
+     Row 4 : history full (Phase C.2)
+     Row 5 : watch col 1-6 | calendar col 7-12 (Phase C.3)
+     Row 6 : ivr col 1-4 | heat col 5-8 | alert col 9-12
+
+   Phase C.1.6 — `max-width: none` et `margin: 0` explicites pour
+   surcharger le legacy `.dash-grid { max-width: 1920px; margin: 0
+   auto; }` défini dans src/styles/dashboard.css:128.
+
+   Heights gérées par les sélecteurs attribute ci-dessous (pattern
+   inline `style={{ gridArea: 'xxx' }}` déjà émis par les modules). */
 .dash-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  /* v5 Sprint 2.1 : insertion d'une 5e row pour SniperGateMonitor.
-     Total : 240 + 160 + 130 + 200 + 200 = 930 px (était 800 px en v4).
-     Sur 1080p le shell occupe 1080 - 32 (CmdBar) - 24 (TickerTape) -
-     22 (StatusBar) = 1002 px → tient sans scroll. Sur 900p le scroll
-     vertical s'active à l'intérieur du <main> (acceptable). */
-  grid-template-rows: 240px 160px 130px 200px 200px;
+  grid-auto-rows: auto;
   grid-template-areas:
-    "master master master master master master risk     risk     risk     greeks greeks greeks"
+    "equity equity equity dailypnl dailypnl dailypnl risk risk risk risk risk risk"
     "positions positions positions positions positions positions positions positions positions positions positions positions"
-    "gates  gates  gates  gates  gates  gates  gates  gates  gates  gates  gates  gates"
-    "watch watch watch earn earn earn heat heat heat ivr ivr ivr"
-    "intrn intrn intrn skew skew skew alert alert alert alert alert alert";
-  gap: 1px;
-  height: 100%;
+    "gates gates gates gates gates gates gates gates gates gates gates gates"
+    "history history history history history history history history history history history history"
+    "watch watch watch watch watch watch calendar calendar calendar calendar calendar calendar"
+    "ivr ivr ivr ivr heat heat heat heat alert alert alert alert";
+  gap: 8px;
+  padding: 0 4px 4px;
   width: 100%;
-  background: var(--border-strong);
+  max-width: none; /* override legacy dashboard.css:128 (1920px) */
+  margin: 0;       /* override legacy dashboard.css:129 (auto) */
+  background: transparent;
   font-family: var(--font-mono);
 }
 
-/* ─── Module shell ───────────────────────────────────────────── */
+/* Heights par grid-area — Phase C.1.7 : row 1 à 480 px (split en
+   2 charts trading-grade + RiskMatrix). */
+.dash-grid > [style*="grid-area: equity"] {
+  height: 480px;
+}
+.dash-grid > [style*="grid-area: dailypnl"] {
+  height: 480px;
+}
+.dash-grid > [style*="grid-area: risk"] {
+  height: 480px;
+}
+/* Legacy alias `master` (au cas où MasterChart est encore monté
+   ailleurs) — height par défaut alignée sur Row 1. */
+.dash-grid > [style*="grid-area: master"] {
+  height: 480px;
+}
+.dash-grid > [style*="grid-area: positions"] {
+  height: 320px;
+}
+.dash-grid > [style*="grid-area: gates"] {
+  height: 220px;
+}
+.dash-grid > [style*="grid-area: history"] {
+  height: 300px;
+}
+.dash-grid > [style*="grid-area: watch"] {
+  height: 320px;
+}
+.dash-grid > [style*="grid-area: calendar"] {
+  height: 320px;
+}
+.dash-grid > [style*="grid-area: ivr"] {
+  height: 220px;
+}
+.dash-grid > [style*="grid-area: heat"] {
+  height: 220px;
+}
+.dash-grid > [style*="grid-area: alert"] {
+  height: 220px;
+}
+
+/* ─── Module shell — Phase C.1 (border + radius par module) ───── */
 .module {
   display: flex;
   flex-direction: column;
   background: var(--bg-elev-1);
-  border-radius: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
   overflow: hidden;
   min-width: 0;
   min-height: 0;
+}
+
+/* Placeholder Phase C.1 — TradeHistory, CalendarMini.
+   Layout vertical centré, message minimaliste. Le user comprend
+   visuellement qu'il s'agit d'un slot en attente. */
+.module-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 20px;
+}
+
+.module-placeholder__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.module-placeholder__sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
 }
 
 .module-header {
@@ -269,6 +349,368 @@
   color: var(--loss);
 }
 
+/* ════════════════════════════════════════════════════════════════
+   TRADING CHARTS — Phase C.1.7 split MasterChart en 2 modules
+   Pattern unifié `.trading-chart` partagé par EquityChart +
+   DailyPnLChart. Header / sub-header KPI strip / body Recharts /
+   footer 3 cells.
+   ════════════════════════════════════════════════════════════════ */
+
+.trading-chart {
+  background: var(--bg-elev-1);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  /* Phase C.1.8 polish — hover border subtle (cohérence KPI cards). */
+  transition: border-color 120ms ease-out;
+}
+
+.trading-chart:hover {
+  border-color: var(--border-strong);
+}
+
+.trading-chart__header {
+  height: 36px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: color-mix(in srgb, var(--bg-base) 50%, transparent);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.trading-chart__title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.trading-chart__title {
+  font-size: 12px;
+  color: var(--text-secondary);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.trading-chart__sub {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trading-chart__range-selector {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 1px;
+  background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+  padding: 2px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.trading-chart__range-btn {
+  padding: 3px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+  line-height: 1;
+}
+
+.trading-chart__range-btn:hover {
+  color: var(--text-secondary);
+}
+
+.trading-chart__range-btn:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.trading-chart__range-btn[data-active] {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-weight: 500;
+}
+
+.trading-chart__subheader {
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.trading-chart__kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.trading-chart__kpi--right {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.trading-chart__kpi-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.trading-chart__kpi-value {
+  font-size: 18px;
+  color: var(--text-primary);
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: tabular-nums slashed-zero;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Phase C.1.8 polish — transition douce sur le color quand
+     range change ou que le signe pivote. */
+  transition: color 200ms ease;
+}
+
+.trading-chart__kpi-value--profit {
+  color: var(--profit);
+}
+.trading-chart__kpi-value--loss {
+  color: var(--loss);
+}
+.trading-chart__kpi-value--mute {
+  color: var(--text-secondary);
+}
+
+.trading-chart__kpi-divider {
+  width: 1px;
+  background: var(--border);
+  margin: 4px 0;
+  flex-shrink: 0;
+}
+
+.trading-chart__body {
+  flex: 1;
+  min-height: 0;
+  padding: 8px 8px 4px;
+  position: relative;
+  /* Phase C.1.7 polish — crosshair cursor over the chart canvas
+     pour signaler que le tooltip suit le curseur (pattern trading-
+     terminal classique). */
+  cursor: crosshair;
+}
+
+.trading-chart__footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  flex-shrink: 0;
+  gap: 0;
+}
+
+.trading-chart__footer-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0 10px;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+
+.trading-chart__footer-cell:first-child {
+  padding-left: 0;
+}
+.trading-chart__footer-cell:last-child {
+  padding-right: 0;
+  border-right: none;
+}
+
+.trading-chart__footer-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.trading-chart__footer-value {
+  /* Phase C.1.8 polish — 14 px pour aligner avec KPI cards typo. */
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums slashed-zero;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trading-chart__footer-value--profit {
+  color: var(--profit);
+}
+.trading-chart__footer-value--loss {
+  color: var(--loss);
+}
+.trading-chart__footer-value--mute {
+  color: var(--text-tertiary);
+}
+
+.trading-chart__tooltip {
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--bg-base) 70%, transparent);
+}
+
+.trading-chart__tooltip-date {
+  color: var(--text-primary);
+  font-weight: 500;
+  margin-bottom: 4px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.trading-chart__tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 11px;
+}
+
+.trading-chart__tooltip-row > span:first-child {
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.trading-chart__tooltip-val {
+  color: var(--text-primary);
+}
+
+.trading-chart__tooltip-val.is-profit {
+  color: var(--profit);
+}
+.trading-chart__tooltip-val.is-loss {
+  color: var(--loss);
+}
+
+.trading-chart__empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+/* ─── Phase C.1.8 — Badges conditionnels Cumul P&L header ────── */
+
+.trading-chart__warn-badge,
+.trading-chart__ath-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+  margin-left: 6px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.trading-chart__warn-badge {
+  background: color-mix(in srgb, var(--accent-amber) 12%, transparent);
+  color: var(--accent-amber);
+}
+
+.trading-chart__warn-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: trading-chart-warn-pulse 2s ease-in-out infinite;
+}
+
+@keyframes trading-chart-warn-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trading-chart__warn-dot {
+    animation: none;
+  }
+}
+
+.trading-chart__ath-badge {
+  background: color-mix(in srgb, var(--profit) 12%, transparent);
+  color: var(--profit);
+}
+
+/* ─── Phase C.1.8 — Animation fade-in mount des modules Row 1 ── */
+
+@keyframes dash-module-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.trading-chart,
+.risk-matrix {
+  animation: dash-module-fade-in 240ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trading-chart,
+  .risk-matrix {
+    animation: none;
+  }
+}
+
 /* Module header hint (right-aligned mute label, e.g. 'YTD') */
 .module-header__hint {
   font-family: var(--font-mono);
@@ -281,84 +723,686 @@
 }
 
 /* ════════════════════════════════════════════════════════════════
-   RISK MATRIX — brick 4
-   14 lignes denses h-15. Header 22 + 14×15 = 232 px → tient dans 240.
+   RISK MATRIX v7 — 4K refonte Phase C.1.5 (Bloomberg-dense V3)
+   Layout 3-col avec visuels intégrés (gauges horizontales, DD
+   sparkline 60j, streak pattern 13 trades, donut WR, monthly bars).
+   Hauteur 520 px, fonts agrandis pour lisibilité 4K.
    ════════════════════════════════════════════════════════════════ */
 
-.risk-matrix__body {
-  /* v4 : 14 lignes tenaient pile dans 240 - 22 = 218 px (overflow hidden).
-     v5 Sprint 2.3 : 17 lignes -> 17 × 15 = 255 px ; on autorise le scroll
-     vertical interne pour les 3 dernières lignes exposure (Sprint 2.3).
-     Le scroll bar est styled discret via theme tokens. */
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 0;
-}
-
-.risk-matrix__table {
-  width: 100%;
-  border-collapse: collapse;
+.risk-matrix {
+  /* Phase C.1.7 : aligned with the 2 charts à 480 px (row 1). */
+  height: 480px;
+  background: var(--bg-elev-1);
+  border: 1px solid var(--border);
+  border-radius: 4px;
   font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 14px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.risk-matrix__table tr {
-  height: var(--row-h-15);
+.risk-matrix__header {
+  display: flex;
+  align-items: stretch;
+  background: color-mix(in srgb, var(--bg-base) 60%, transparent);
+  height: 38px;
+  flex-shrink: 0;
   border-bottom: 1px solid var(--border);
-  transition: background 80ms ease-out;
 }
 
-.risk-matrix__table tr:last-child {
+.risk-matrix__action {
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  border: none;
+  border-right: 1px solid var(--border);
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: color 120ms ease-out;
+}
+
+.risk-matrix__action--active {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  color: var(--accent);
+}
+
+.risk-matrix__action:hover {
+  color: var(--text-secondary);
+}
+
+.risk-matrix__action--active:hover {
+  color: var(--accent);
+}
+
+.risk-matrix__action:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.risk-matrix__title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 22px;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.risk-matrix__subheader {
+  padding: 10px 20px;
+  background: color-mix(in srgb, var(--text-primary) 2%, transparent);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.risk-matrix__ctx-val {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.risk-matrix__dot {
+  color: var(--text-tertiary);
+  margin: 0 6px;
+}
+
+.risk-matrix__context {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+
+.risk-matrix__context--right {
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.risk-matrix__ctx-trades {
+  color: var(--text-tertiary);
+}
+
+/* Phase C.1.6 — badges TIER + EDGE agrandis pour 4K. */
+.risk-matrix__tier-badge {
+  background: color-mix(in srgb, var(--accent-amber) 8%, transparent);
+  color: var(--accent-amber);
+  padding: 4px 12px;
+  border-radius: 2px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+}
+
+.risk-matrix__edge-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 2px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+}
+
+.risk-matrix__edge-badge[data-tone="profit"] {
+  background: color-mix(in srgb, var(--profit) 8%, transparent);
+  color: var(--profit);
+}
+
+.risk-matrix__edge-badge[data-tone="amber"] {
+  background: color-mix(in srgb, var(--accent-amber) 8%, transparent);
+  color: var(--accent-amber);
+}
+
+.risk-matrix__edge-badge[data-tone="loss"] {
+  background: color-mix(in srgb, var(--loss) 8%, transparent);
+  color: var(--loss);
+}
+
+.risk-matrix__edge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.risk-matrix__body {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  flex: 1;
+  overflow: hidden;
+}
+
+.risk-matrix__col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.risk-matrix__col--left,
+.risk-matrix__col--mid {
+  border-right: 1px solid var(--border);
+}
+
+.risk-matrix__section-head {
+  padding: 7px 18px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.risk-matrix__section-head-info {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  text-transform: none;
+}
+
+.risk-matrix__section-head--accent {
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+  color: var(--accent);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.risk-matrix__section-head--loss {
+  background: color-mix(in srgb, var(--loss) 4%, transparent);
+  color: var(--loss);
+  border-bottom: 1px solid color-mix(in srgb, var(--loss) 12%, transparent);
+}
+
+.risk-matrix__section-head--pushdown {
+  margin-top: auto;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.risk-matrix__row {
+  display: grid;
+  padding: 6px 18px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 4%, transparent);
+  font-variant-numeric: tabular-nums slashed-zero;
+  align-items: center;
+  gap: 6px;
+}
+
+.risk-matrix__row--cols-4 {
+  grid-template-columns: 1.8fr 1fr 0.9fr 1fr;
+}
+
+.risk-matrix__row--cols-3 {
+  grid-template-columns: 1.5fr 1fr 1fr;
+}
+
+/* Phase C.1.6 — Performance rows : 5e colonne Gauge agrandie. */
+.risk-matrix__row--cols-perf {
+  grid-template-columns: 1.8fr 0.9fr 0.8fr 0.9fr 1.5fr;
+}
+
+.risk-matrix__row--th {
+  padding: 6px 18px;
+  background: color-mix(in srgb, var(--text-primary) 2%, transparent);
+  color: var(--text-tertiary);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+.risk-matrix__row--alert-loss {
+  background: color-mix(in srgb, var(--loss) 4%, transparent);
+}
+
+/* Phase C.1.8 — hover row subtle (n'affecte pas les th rows). */
+.risk-matrix__row:not(.risk-matrix__row--th):hover {
+  background: color-mix(in srgb, var(--text-primary) 2.5%, transparent);
+  transition: background 120ms ease;
+}
+
+.risk-matrix__row--alert-loss:hover {
+  background: color-mix(in srgb, var(--loss) 6%, transparent);
+}
+
+.risk-matrix__cell--right {
+  text-align: right;
+}
+
+.risk-matrix__cell--value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.risk-matrix__cell--mute {
+  color: var(--text-tertiary);
+}
+.risk-matrix__cell--profit {
+  color: var(--profit);
+}
+.risk-matrix__cell--loss {
+  color: var(--loss);
+}
+.risk-matrix__cell--amber {
+  color: var(--accent-amber);
+}
+.risk-matrix__cell--profit-bold {
+  color: var(--profit);
+  font-weight: 500;
+}
+.risk-matrix__cell--loss-bold {
+  color: var(--loss);
+  font-weight: 500;
+}
+
+.risk-matrix__histogram {
+  padding: 8px 12px 4px;
+  display: flex;
+  align-items: end;
+  gap: 2px;
+  height: 60px;
+  flex-shrink: 0;
+}
+
+.risk-matrix__histogram-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.risk-matrix__histogram-bar {
+  flex: 1;
+  border-radius: 0;
+  min-height: 1px;
+}
+
+.risk-matrix__histogram-bar--loss {
+  background: var(--loss);
+  opacity: 0.85;
+}
+.risk-matrix__histogram-bar--loss-strong {
+  background: var(--loss);
+  opacity: 1;
+}
+.risk-matrix__histogram-bar--zero {
+  background: var(--text-tertiary);
+}
+.risk-matrix__histogram-bar--profit {
+  background: var(--profit);
+  opacity: 0.85;
+}
+.risk-matrix__histogram-bar--profit-strong {
+  background: var(--profit);
+  opacity: 1;
+}
+
+.risk-matrix__histogram-axis {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 12px 6px;
+  font-size: 9px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+/* ─── Phase C.1.5 — Performance gauge horizontale (col Range) ─── */
+
+.risk-matrix__gauge {
+  height: 6px;
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border-radius: 1px;
+  overflow: visible;
+  position: relative;
+  margin-left: 12px;
+}
+
+.risk-matrix__gauge-fill {
+  height: 100%;
+  border-radius: 1px;
+  transition: width 240ms ease;
+}
+
+.risk-matrix__gauge-fill[data-tone="profit"] {
+  background: var(--profit);
+}
+.risk-matrix__gauge-fill[data-tone="loss"] {
+  background: var(--loss);
+}
+.risk-matrix__gauge-fill[data-tone="amber"] {
+  background: var(--accent-amber);
+}
+
+.risk-matrix__gauge-marker {
+  position: absolute;
+  top: -2.5px;
+  width: 1.5px;
+  height: 11px;
+  background: color-mix(in srgb, var(--accent) 50%, transparent);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* ─── Phase C.1.5 — Subzones (DD spark, Streak pattern, WR, Monthly) ── */
+
+.risk-matrix__subzone {
+  padding: 10px 18px;
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 4%, transparent);
+  flex-shrink: 0;
+}
+
+.risk-matrix__subzone--push {
+  margin-top: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   border-bottom: none;
 }
 
-.risk-matrix__table tr:hover {
-  background: var(--row-hover);
-}
-
-.risk-matrix__label {
-  padding: 0 8px;
-  text-align: left;
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  width: 60%;
-}
-
-.risk-matrix__cell {
-  padding: 0 8px;
-  text-align: right;
-  white-space: nowrap;
+.risk-matrix__subzone-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-size: 11px;
-  line-height: 1;
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+  margin-bottom: 7px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
 }
 
-.risk-matrix__num {
+/* ─── DD sparkline 60j ────────────────────────────────────────── */
+
+.risk-matrix__dd-spark {
+  width: 100%;
+  height: 30px;
+  display: block;
+}
+
+.risk-matrix__dd-spark--empty {
+  background: color-mix(in srgb, var(--text-primary) 2%, transparent);
+}
+
+.risk-matrix__dd-spark-line {
+  stroke: var(--loss);
+}
+
+.risk-matrix__dd-spark-area {
+  fill: var(--loss);
+  fill-opacity: 0.4;
+}
+
+.risk-matrix__dd-spark-ref {
+  stroke: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  fill: none;
+}
+
+/* ─── Streak pattern 13 bars ──────────────────────────────────── */
+
+.risk-matrix__streak-pattern {
+  display: flex;
+  gap: 3px;
+  align-items: stretch;
+  height: 28px;
+}
+
+.risk-matrix__streak-bar {
+  flex: 1;
+  height: 100%;
+  border-radius: 1px;
+  min-width: 4px;
+}
+
+.risk-matrix__streak-bar--win {
+  background: var(--profit);
+}
+.risk-matrix__streak-bar--loss {
+  background: var(--loss);
+}
+.risk-matrix__streak-bar--even {
+  background: var(--text-tertiary);
+}
+
+.risk-matrix__streak-bar--active-win {
+  background: var(--profit);
+  border: 1px solid var(--profit);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--profit) 40%, transparent);
+  opacity: 0.95;
+}
+
+.risk-matrix__streak-bar--active-loss {
+  background: var(--loss);
+  border: 1px solid var(--loss);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--loss) 40%, transparent);
+  opacity: 0.95;
+}
+
+.risk-matrix__streak-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+}
+
+/* ─── Win Rate gauge zone (donut + ratio bar) ────────────────── */
+
+.risk-matrix__winrate-zone {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 18px;
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--text-primary) 6%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 4%, transparent);
+  flex-shrink: 0;
+}
+
+.risk-matrix__winrate-donut {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+}
+
+.risk-matrix__winrate-donut-bg {
+  stroke: color-mix(in srgb, var(--loss) 22%, transparent);
+}
+
+.risk-matrix__winrate-donut-fg {
+  stroke: var(--profit);
+}
+
+.risk-matrix__winrate-donut-label {
+  fill: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.risk-matrix__winrate-donut-value {
+  fill: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.risk-matrix__winrate-stats {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: var(--font-mono);
+  min-width: 0;
+}
+
+.risk-matrix__winrate-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+}
+
+.risk-matrix__winrate-label {
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+}
+
+.risk-matrix__winrate-amount {
   font-weight: 500;
 }
 
-.risk-matrix__sub {
-  font-size: 9px;
-  color: var(--text-tertiary);
-  margin-left: 6px;
-  letter-spacing: 0.02em;
+.risk-matrix__winrate-ratio {
+  height: 5px;
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border-radius: 1px;
+  display: flex;
+  overflow: hidden;
 }
 
-/* Tones — appliqués sur la cell (le num l'hérite) */
-.risk-matrix__cell--profit .risk-matrix__num {
-  color: var(--profit);
+.risk-matrix__winrate-ratio-win {
+  background: var(--profit);
 }
-.risk-matrix__cell--loss .risk-matrix__num {
-  color: var(--loss);
+
+.risk-matrix__winrate-ratio-loss {
+  background: var(--loss);
 }
-.risk-matrix__cell--warn .risk-matrix__num {
-  color: var(--warning);
+
+.risk-matrix__winrate-pf {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  margin-top: 2px;
 }
-.risk-matrix__cell--mute .risk-matrix__num {
-  color: var(--text-secondary);
+
+.risk-matrix__winrate-pf-val {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ─── Monthly P&L 6M zone ─────────────────────────────────────── */
+
+.risk-matrix__monthly-zone {
+  padding: 12px 18px;
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 0;
+}
+
+.risk-matrix__monthly-bars {
+  display: flex;
+  align-items: end;
+  gap: 5px;
+  height: 32px;
+  margin-top: 4px;
+}
+
+.risk-matrix__monthly-bar {
+  flex: 1;
+  transition: height 240ms ease;
+  border-radius: 1px;
+  min-height: 2px;
+}
+
+.risk-matrix__monthly-bar--profit {
+  background: var(--profit);
+}
+
+.risk-matrix__monthly-bar--loss {
+  background: var(--loss);
+}
+
+.risk-matrix__monthly-bar--neutral {
+  background: var(--text-tertiary);
+  opacity: 0.55;
+}
+
+.risk-matrix__monthly-labels {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 5px;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.risk-matrix__monthly-label {
+  flex: 1;
+  text-align: center;
+}
+
+/* Sub-zone tone helpers (réutilisés par les Δ inline et les
+   header info à droite des subzones). */
+.risk-matrix__cell--neutral {
+  color: var(--text-primary);
+}
+.risk-matrix__cell--accent {
+  color: var(--accent);
+}
+
+.risk-matrix__footer {
+  height: 28px;
+  background: color-mix(in srgb, var(--bg-base) 60%, transparent);
+  border-top: 1px solid var(--border);
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  flex-shrink: 0;
+  letter-spacing: 0.04em;
+}
+
+.risk-matrix__footer-cmd-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.risk-matrix__footer-cmd-label {
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+}
+
+.risk-matrix__footer-cmd {
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  font-weight: 500;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -1791,6 +2835,9 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
+  /* Phase C.1.6 : explicite pour éviter toute contrainte parent. */
+  max-width: none;
+  margin: 0;
   background: var(--border-strong);
   gap: 1px;
 }
@@ -1804,7 +2851,8 @@
   display: grid;
   grid-template-columns: 1.85fr 1fr 1fr 1fr 1fr 1fr 1fr;
   gap: 8px;
-  padding: 14px 16px;
+  /* Phase C.1.6 : padding latéral 4 px pour aligner avec .dash-grid. */
+  padding: 14px 4px;
   background: var(--bg-base);
   flex-shrink: 0;
   font-family: var(--font-mono);
