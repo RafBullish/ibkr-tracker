@@ -1,17 +1,21 @@
 // ═══════════════════════════════════════════════════════════════
-//  DASHBOARD v6 — 4K refonte Phase C.1 — Bloomberg-dense bento
+//  DASHBOARD v6 — 4K refonte Phase C.1 / C.2 — Bloomberg-dense bento
 //
-//  Grid 6 rows :
-//    Row 1 (380px) : MasterChart col 1-7 | RiskMatrix col 8-12
-//    Row 2 (320px) : LivePositions col 1-12
-//    Row 3 (220px) : SniperGateMonitor col 1-12
-//    Row 4 (300px) : TradeHistoryPlaceholder — Phase C.2
-//    Row 5 (320px) : Watchlist col 1-6 | CalendarMiniPlaceholder col 7-12 — Phase C.3
-//    Row 6 (220px) : IVRankMovers col 1-4 | SectorHeatmap col 5-8 | AlertsFeed col 9-12
+//  Grid 5 rows (Phase C.2.10 — SniperGate retiré, reconstruction
+//  ultérieure) :
+//    Row 1 (520px) : Equity col 1-3 | Cumul P&L col 4-6 | RiskMatrix col 7-12
+//    Row 2 (auto)  : LivePositions col 1-12 (19 cols Phase C.1 originale)
+//    Row 3 (480px) : TradeHistory col 1-12 (14 cols Phase C.2)
+//    Row 4 (180px) : Watchlist col 1-6 | CalendarMiniPlaceholder col 7-12
+//    Row 5 (160px) : IVRankMovers col 1-4 | SectorHeatmap col 5-8 | AlertsFeed col 9-12
 //
 //  Phase C.1 retire 4 modules du dashboard (leurs fichiers restent
 //  pour Greeks/Chain/Premarket) :
 //    GreeksAggregate · EarningsCalendar · MarketInternals · VolatilitySkew
+//
+//  Phase C.2.10 retire SniperGateMonitor du dashboard. Le composant
+//  reste sur disque pour reconstruction Phase C.3+ (hook + JSX
+//  pourront être ré-introduits sans dépendances cassées).
 //
 //  RiskMatrix reçoit maintenant un objet metrics fusionné :
 //    { ...usePortfolioMetrics(), ...useRiskMatrix(), equityHistory }
@@ -26,18 +30,16 @@ import EquityChart from '../components/charts/EquityChart';
 import DailyPnLChart from '../components/charts/DailyPnLChart';
 import RiskMatrix from '../components/dashboard/RiskMatrix';
 import LivePositions from '../components/dashboard/LivePositions';
-import SniperGateMonitor from '../components/dashboard/SniperGateMonitor';
 import Watchlist from '../components/dashboard/Watchlist';
 import SectorHeatmap from '../components/dashboard/SectorHeatmap';
 import IVRankMovers from '../components/dashboard/IVRankMovers';
 import AlertsFeed from '../components/dashboard/AlertsFeed';
-import TradeHistoryPlaceholder from '../components/dashboard/TradeHistoryPlaceholder';
+import TradeHistory from '../components/dashboard/TradeHistory';
 import CalendarMiniPlaceholder from '../components/dashboard/CalendarMiniPlaceholder';
 import useEquityHistory from '../hooks/useEquityHistory';
 import useDailyPnL from '../hooks/useDailyPnL';
 import useRiskMatrix from '../hooks/useRiskMatrix';
 import useLivePositions from '../hooks/useLivePositions';
-import useSniperGates from '../hooks/useSniperGates';
 import useWatchlist from '../hooks/useWatchlist';
 import useSectorHeatmap from '../hooks/useSectorHeatmap';
 import useIVMovers from '../hooks/useIVMovers';
@@ -106,7 +108,6 @@ export default function Dashboard() {
   const portfolioMetrics = usePortfolioMetrics();
   const riskMatrixData = useRiskMatrix();
   const positions = useLivePositions();
-  const gates = useSniperGates();
   const watchlist = useWatchlist();
   const sectors = useSectorHeatmap();
   const ivMovers = useIVMovers();
@@ -138,8 +139,7 @@ export default function Dashboard() {
         />
         <RiskMatrix metrics={riskMetrics} area="risk" />
         <LivePositions data={positions} area="positions" />
-        <SniperGateMonitor data={gates} area="gates" />
-        <TradeHistoryPlaceholder area="history" />
+        <TradeHistory data={closedTrades} liveRate={portfolioMetrics?.liveRate ?? 1} area="history" />
         <Watchlist data={watchlist} area="watch" />
         <CalendarMiniPlaceholder area="calendar" />
         <IVRankMovers data={ivMovers} area="ivr" />

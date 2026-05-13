@@ -297,6 +297,7 @@
    gère son spacing via padding interne + border-right. align-items
    stretch pour que les hairlines remontent du haut au bas. */
 .statusbar {
+  /* Phase C.2.8 — font 12→13 pour cohérence avec densité 4K. */
   display: flex;
   align-items: stretch;
   height: var(--shell-statusbar-h);
@@ -306,7 +307,7 @@
   border-top: 1px solid var(--shell-hairline);
   flex-shrink: 0;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-secondary);
   position: relative;
   z-index: 10;
@@ -362,7 +363,8 @@
 }
 
 .statusbar__label {
-  font-size: 10px;
+  /* Phase C.2.8 — bumpé 10→11 pour 4K. */
+  font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-tertiary);
@@ -370,7 +372,8 @@
 }
 
 .statusbar__value {
-  font-size: 11px;
+  /* Phase C.2.8 — bumpé 11→12 pour 4K. */
+  font-size: 12px;
   font-variant-numeric: tabular-nums slashed-zero;
   color: var(--text-primary);
 }

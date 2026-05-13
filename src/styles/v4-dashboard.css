@@ -32,10 +32,12 @@
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   grid-auto-rows: auto;
+  /* Phase C.2.10 — SniperGateMonitor retiré du dashboard. Grid
+     simplifié en 5 rows. Ordre : Row 1 charts+risk → Row 2 positions
+     → Row 3 history → Row 4 watch+calendar → Row 5 ivr+heat+alert. */
   grid-template-areas:
     "equity equity equity dailypnl dailypnl dailypnl risk risk risk risk risk risk"
     "positions positions positions positions positions positions positions positions positions positions positions positions"
-    "gates gates gates gates gates gates gates gates gates gates gates gates"
     "history history history history history history history history history history history history"
     "watch watch watch watch watch watch calendar calendar calendar calendar calendar calendar"
     "ivr ivr ivr ivr heat heat heat heat alert alert alert alert";
@@ -48,45 +50,59 @@
   font-family: var(--font-mono);
 }
 
-/* Heights par grid-area — Phase C.1.7 : row 1 à 480 px (split en
-   2 charts trading-grade + RiskMatrix). */
+/* Heights par grid-area — Phase C.2.6 : row 1 à 520 px (4K scale,
+   était 480) — split en 2 charts trading-grade + RiskMatrix. */
 .dash-grid > [style*="grid-area: equity"] {
-  height: 480px;
+  height: 520px;
 }
 .dash-grid > [style*="grid-area: dailypnl"] {
-  height: 480px;
+  height: 520px;
 }
 .dash-grid > [style*="grid-area: risk"] {
-  height: 480px;
+  height: 520px;
 }
 /* Legacy alias `master` (au cas où MasterChart est encore monté
    ailleurs) — height par défaut alignée sur Row 1. */
 .dash-grid > [style*="grid-area: master"] {
-  height: 480px;
+  height: 520px;
 }
+/* Phase C.2.5 / C.2.6 — positions auto-height : se compacte
+   automatiquement quand 1 seul trade actif (économie d'espace
+   visuel), scrolle dans la limite max quand plein.
+   Phase C.2.10-V3 : sub-header (~40 px) + footer (56 px) ajoutés
+   → bump min-height 130→240, max-height 320→420 pour accommoder
+   header 40 + sub 40 + thead 36 + ≥1 row + footer 56 = ~210 mini.
+   Phase C.2.10-V3.3 ROLLBACK : height:auto a fait disparaître le module.
+   Phase C.2.10-V3.4 : min-height ajusté 240→204 pour matcher exactement
+   la hauteur du module avec 1 row (header 40 + sub 40 + thead 36 +
+   row 32 + footer 56). Plus de vide visible entre la dernière row et
+   le footer. Max-height 420 garde le scroll interne quand 5+ positions. */
 .dash-grid > [style*="grid-area: positions"] {
-  height: 320px;
-}
-.dash-grid > [style*="grid-area: gates"] {
-  height: 220px;
+  height: auto;
+  min-height: 204px;
+  max-height: 420px;
 }
 .dash-grid > [style*="grid-area: history"] {
-  height: 300px;
+  height: 480px;
 }
+/* Phase C.2.8 — rows 5 et 6 compactées : placeholders (Watchlist,
+   Calendar, IVR Movers, Sectors, AlertsFeed) ne méritent pas 220-
+   240 px tant qu'ils sont vides. Phase C.3 les regonflera s'il
+   faut. */
 .dash-grid > [style*="grid-area: watch"] {
-  height: 320px;
+  height: 180px;
 }
 .dash-grid > [style*="grid-area: calendar"] {
-  height: 320px;
+  height: 180px;
 }
 .dash-grid > [style*="grid-area: ivr"] {
-  height: 220px;
+  height: 160px;
 }
 .dash-grid > [style*="grid-area: heat"] {
-  height: 220px;
+  height: 160px;
 }
 .dash-grid > [style*="grid-area: alert"] {
-  height: 220px;
+  height: 160px;
 }
 
 /* ─── Module shell — Phase C.1 (border + radius par module) ───── */
@@ -101,17 +117,17 @@
   min-height: 0;
 }
 
-/* Placeholder Phase C.1 — TradeHistory, CalendarMini.
-   Layout vertical centré, message minimaliste. Le user comprend
-   visuellement qu'il s'agit d'un slot en attente. */
+/* Placeholder Phase C.1 (compacté C.2.8) — TradeHistory legacy,
+   CalendarMini. Layout vertical centré, message minimaliste. Le
+   user comprend visuellement qu'il s'agit d'un slot en attente. */
 .module-placeholder {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 20px;
+  gap: 4px;
+  padding: 12px 16px;
 }
 
 .module-placeholder__label {
@@ -127,6 +143,7 @@
   font-size: 10px;
   color: var(--text-tertiary);
   letter-spacing: 0.04em;
+  opacity: 0.7;
 }
 
 .module-header {
@@ -474,7 +491,7 @@
 }
 
 .trading-chart__kpi-label {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-tertiary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -483,7 +500,8 @@
 }
 
 .trading-chart__kpi-value {
-  font-size: 18px;
+  /* Phase C.2.6 — bumpé 18→22 pour 4K (matche KPI Cards typo). */
+  font-size: 22px;
   color: var(--text-primary);
   font-weight: 500;
   line-height: 1;
@@ -561,8 +579,8 @@
 }
 
 .trading-chart__footer-value {
-  /* Phase C.1.8 polish — 14 px pour aligner avec KPI cards typo. */
-  font-size: 14px;
+  /* Phase C.2.6 — bumpé 14→15 pour 4K. */
+  font-size: 15px;
   color: var(--text-secondary);
   font-weight: 500;
   font-variant-numeric: tabular-nums slashed-zero;
@@ -582,6 +600,12 @@
 }
 
 .trading-chart__tooltip {
+  /* Phase C.2.7 / C.2.8 — !important pour gagner contre tout style
+     inline wrapperStyle Recharts qui pourrait élargir. word-break +
+     white-space normal au cas où le contenu (ticker long) déborde. */
+  max-width: 200px !important;
+  word-break: break-word;
+  white-space: normal;
   background: var(--bg-elev-2);
   border: 1px solid var(--border);
   border-radius: 3px;
@@ -700,13 +724,15 @@
 }
 
 .trading-chart,
-.risk-matrix {
+.risk-matrix,
+.trade-history {
   animation: dash-module-fade-in 240ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .trading-chart,
-  .risk-matrix {
+  .risk-matrix,
+  .trade-history {
     animation: none;
   }
 }
@@ -730,8 +756,8 @@
    ════════════════════════════════════════════════════════════════ */
 
 .risk-matrix {
-  /* Phase C.1.7 : aligned with the 2 charts à 480 px (row 1). */
-  height: 480px;
+  /* Phase C.2.6 : aligned with row 1 à 520 px (4K scale, était 480). */
+  height: 520px;
   background: var(--bg-elev-1);
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -1599,6 +1625,11 @@
    ════════════════════════════════════════════════════════════════ */
 
 .live-pos__body {
+  /* Phase C.2.7 — padding vertical 4px ajoute respiration sur 4K
+     quand 1-2 rows ; flex:1 garanti le fill du module-body.
+     Phase C.2.10-V3.2 : padding retiré pour matcher .trade-history__body
+     (flush layout). Le 4 px de breath créait un décalage vs trade-history
+     qui faisait apparaître le module-header visuellement plus haut. */
   padding: 0;
   overflow: auto;
   flex: 1;
@@ -1618,10 +1649,13 @@
 }
 
 .live-pos__table {
+  /* Phase C.2.6 / C.2.9 — bumpé 10→13 pour 4K, table-layout fixed
+     pour widths déterministes (cohérence avec TradeHistory C.2.7). */
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 13px;
   font-variant-numeric: tabular-nums slashed-zero;
 }
 
@@ -1631,33 +1665,31 @@
   z-index: 1;
 }
 
+/* Phase C.2.9 — base th : padding/font/sticky cohérents avec
+   TradeHistory pattern. text-align géré par les modifiers
+   --left/--center/--right ci-dessous (chaque th doit en porter un). */
+.live-pos__th,
 .live-pos__table thead th {
-  height: 22px;
-  padding: 0 6px;
-  font-size: 9px;
+  height: 30px;
+  padding: 0 10px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-tertiary);
   background: var(--bg-elev-1);
   border-bottom: 1px solid var(--border);
-  text-align: right;
   white-space: nowrap;
-}
-
-.live-pos__table thead th:nth-child(-n + 2) {
-  text-align: left;
-}
-
-.live-pos__table thead th:nth-child(14),
-.live-pos__table thead th:nth-child(15),
-.live-pos__table thead th:nth-child(17),
-.live-pos__table thead th:nth-child(18) {
-  text-align: center;
+  vertical-align: middle;
 }
 
 .live-pos__row {
-  height: var(--row-h-15);
+  /* Phase C.2.6 / C.2.7 — height var(--row-h-15) 22 → 36 override
+     pour matcher la densité TradeHistory et donner plus d'air.
+     Phase C.2.10-V3.2 : remplacé 36→32 pour matcher exactement la
+     hauteur des rows TradeHistory (td height: 32px). Le 4 px diff
+     créait un dilatement vertical visible vs trade-history. */
+  height: 32px;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
   transition: background 80ms ease-out;
@@ -1668,25 +1700,46 @@
 }
 
 .live-pos__row:hover {
-  background: var(--row-hover);
+  /* Phase C.2.9 — bumpé pour visibilité 4K (cohérence TradeHistory). */
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
 }
 
+.live-pos__td,
 .live-pos__table tbody td {
-  padding: 0 6px;
-  text-align: right;
+  padding: 0 10px;
   white-space: nowrap;
   color: var(--text-secondary);
+  vertical-align: middle;
 }
 
-.live-pos__table tbody td:nth-child(-n + 2) {
+/* Phase C.2.9 — source-unique alignement th/td (cohérence
+   TradeHistory C.2.8). Chaque th et chaque td porte un modifier. */
+.live-pos__th--left,
+.live-pos__td--left {
   text-align: left;
 }
 
-.live-pos__table tbody td:nth-child(14),
-.live-pos__table tbody td:nth-child(15),
-.live-pos__table tbody td:nth-child(17),
-.live-pos__table tbody td:nth-child(18) {
+.live-pos__th--center,
+.live-pos__td--center {
   text-align: center;
+}
+
+.live-pos__th--right,
+.live-pos__td--right {
+  text-align: right;
+}
+
+/* Phase C.2.9 — gridlines verticales subtiles entre cols (cohérence
+   TradeHistory). 3% opacity. */
+.live-pos__table thead th + th,
+.live-pos__table tbody td + td {
+  border-left: 1px solid color-mix(in srgb, var(--text-primary) 3%, transparent);
+}
+
+/* Divider visible avant Unreal $ (sépare cols neutres / cols P&L). */
+.live-pos__th--divider,
+.live-pos__td--divider {
+  border-left: 1px solid color-mix(in srgb, var(--text-primary) 9%, transparent) !important;
 }
 
 .live-pos__ticker {
@@ -1695,7 +1748,7 @@
 }
 
 .live-pos__sub {
-  font-size: 8px;
+  font-size: 10px;
   color: var(--text-tertiary);
   margin-left: 1px;
   letter-spacing: 0.02em;
@@ -2392,12 +2445,12 @@
   .dash-grid {
     grid-template-columns: 1fr;
     grid-template-rows: repeat(12, 200px);
+    /* Phase C.2.10 — SniperGate retiré du dashboard. */
     grid-template-areas:
       "master"
       "risk"
       "greeks"
       "positions"
-      "gates"
       "watch"
       "earn"
       "heat"
@@ -2418,8 +2471,11 @@
    ════════════════════════════════════════════════════════════════ */
 
 .sniper-gates__body {
-  padding: 0;
+  /* Phase C.2.7 — padding vertical 4px (cohérence avec live-pos). */
+  padding: 4px 0;
   overflow: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .sniper-gates__empty {
@@ -2436,17 +2492,19 @@
   width: 100%;
   border-collapse: collapse;
   font-family: var(--font-mono);
-  font-size: 10px;
+  /* Phase C.2.6 — bumpé 10→13 pour 4K. */
+  font-size: 13px;
   font-variant-numeric: tabular-nums slashed-zero;
   color: var(--text-secondary);
 }
 
 .sniper-gates__table thead th {
-  height: 22px;
-  padding: 0 8px;
+  /* Phase C.2.6 — height 22→30, font 9→11. */
+  height: 30px;
+  padding: 0 10px;
   background: var(--bg-elev-1);
   border-bottom: var(--hairline);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2459,13 +2517,14 @@
 }
 
 .sniper-gates__row {
-  height: var(--row-data, 26px);
+  /* Phase C.2.6 / C.2.7 — override var(--row-data) 26 → 36. */
+  height: 36px;
   cursor: pointer;
   transition: background-color 80ms ease-out;
 }
 
 .sniper-gates__row td {
-  padding: 0 8px;
+  padding: 0 10px;
   border-bottom: var(--hairline);
   vertical-align: middle;
   white-space: nowrap;
@@ -2482,7 +2541,7 @@
 }
 
 .sniper-gates__type {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
   color: var(--accent-amber, #ffa028);
@@ -2498,7 +2557,7 @@
 .sniper-gates__sub {
   margin-left: 2px;
   color: var(--text-tertiary);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .sniper-gates__unreal--profit {
@@ -3729,6 +3788,310 @@
 }
 
 /* ════════════════════════════════════════════════════════════════
+   LIVE POSITIONS — sub-header + sparkline placeholder (Phase C.2.9)
+
+   Sub-header context (Σ Δ · Σ Θ · Avg DTE · badge OPEN N) calé sur
+   le pattern .trade-history__subheader pour cohérence visuelle des
+   2 modules tables actives.
+
+   Sparkline placeholder : SVG line 80×22 + dot amber pulsant pour
+   signaler "data 7J option price à câbler API ultérieurement".
+   ════════════════════════════════════════════════════════════════ */
+
+.live-pos__subheader {
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  /* Phase C.2.10-V3.1 : gap 16→18 pour matcher .trade-history__subheader. */
+  gap: 18px;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+}
+
+.live-pos__ctx {
+  white-space: nowrap;
+}
+
+/* Phase C.2.10-V3.1 : font-variant-numeric retiré pour matcher
+   exactement .trade-history__ctx-val. Le font-mono hérité de
+   .live-pos donne déjà des chiffres tabulaires (JetBrains Mono
+   est monospace), donc la prop devenait redondante + créait un
+   décalage visuel non désiré vs trade-history. */
+.live-pos__ctx-val {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Phase C.2.10-V3 — modifiers tone pour ctx-val (profit/loss/mute),
+   miroir de .trade-history__ctx-val--*. */
+.live-pos__ctx-val--profit {
+  color: var(--profit);
+}
+
+.live-pos__ctx-val--loss {
+  color: var(--loss);
+}
+
+.live-pos__ctx-val--mute {
+  color: var(--text-tertiary);
+}
+
+.live-pos__dot {
+  color: var(--text-tertiary);
+  opacity: 0.5;
+}
+
+.live-pos__ctx-spacer {
+  flex: 1;
+}
+
+/* Phase C.2.10-V3 — badge neutre par défaut, couleur via modifier
+   (--accent pour OPEN N ; extensible vers --wins/--losses si besoin). */
+.live-pos__ctx-badge {
+  padding: 4px 12px;
+  border-radius: 2px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.live-pos__ctx-badge--accent {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--accent);
+}
+
+.live-pos__spark-placeholder {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-tertiary);
+}
+
+.live-pos__spark-svg {
+  /* Phase C.2.9-FIN polish E — cohérence avec trade-history SVG. */
+  width: 92px;
+  height: 24px;
+  display: block;
+}
+
+.live-pos__spark-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-amber);
+  box-shadow: 0 0 4px color-mix(in srgb, var(--accent-amber) 50%, transparent);
+  opacity: 0.7;
+  animation: live-pos-spark-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes live-pos-spark-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-pos__spark-dot {
+    animation: none;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LIVE POSITIONS + SNIPER GATE — header scope override (Phase C.2.7)
+
+   Bumper le `.module-header` UNIQUEMENT pour ces 2 modules actifs
+   pour matcher la densité TradeHistory (header 40px, font 13px).
+   Scopé via child selector `>` pour ne pas casser AlertsFeed /
+   Watchlist / IVRMovers / etc qui gardent le .module-header
+   global à 32 px / 12 px.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Phase C.2.10-V3 — padding 18→14 pour matcher .trade-history__header
+   (cohérence visuelle des 2 modules tables actives).
+   Phase C.2.10-V3.2 : ajout min-height/max-height pour pin la
+   hauteur à 40px (height seul peut être contourné par le content
+   intrinsèque + overflow visible des wrappers). Box-sizing border-box
+   global rend padding 0 14px inclus dans les 40 px. */
+.live-pos > .module-header,
+.sniper-gates > .module-header {
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  padding: 0 14px;
+}
+
+.live-pos > .module-header .module-header__title,
+.sniper-gates > .module-header .module-header__title {
+  font-size: 13px;
+  letter-spacing: 0.14em;
+}
+
+.live-pos > .module-header .module-header__hint,
+.sniper-gates > .module-header .module-header__hint {
+  font-size: 12px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LIVE POSITIONS — Phase C.2.10-V3 harmonisation TradeHistory
+
+   Wrapper, sticky header blur, hover rows, gridlines, paddings,
+   font-size 14 px : tout calé sur le pattern .trade-history pour
+   que les 2 modules tables actives soient visuellement jumeaux.
+   Les 19 colonnes du tbody restent intactes (zéro modif JSX).
+
+   Footer agrégé 6 cells (Σ UNREAL · Σ NOTIONAL · Σ MAX RISK ·
+   Σ Δ $ · Σ Θ $/J · CLOSEST DTE).
+   ════════════════════════════════════════════════════════════════ */
+
+/* Wrapper section — cohérence avec .trade-history. Les rules
+   .module (line ~103) couvrent déjà bg/border/radius/overflow ;
+   on ajoute flex/direction pour compose le footer en flex-end.
+   Phase C.2.10-V3.1 : font-family mono ajouté pour matcher
+   .trade-history (qui set font-mono sur la section) — sans ça
+   le sub-header/footer héritent d'Inter Tight UI du body, qui
+   rend les valeurs visuellement plus larges et fait overflow
+   les 56 px du footer (line-box plus haute en UI vs mono). */
+.live-pos {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-mono);
+}
+
+/* Thead sticky blur — miroir de .trade-history__table thead.
+   Surcharge la règle ligne 1653 (background plain → blur+bg-base). */
+.live-pos__table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: color-mix(in srgb, var(--bg-base) 80%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 1px 0 0 var(--border);
+}
+
+/* Th paddings + height — surcharge la règle ligne 1663. */
+.live-pos__table thead th {
+  padding: 10px 14px;
+  height: 36px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  vertical-align: middle;
+  background: transparent;
+}
+
+/* Tbody rows : hover + cursor + transition uniformes. La règle
+   .live-pos__row ligne 1677 garde height 36px ; on ajoute le hover
+   bg renforcé pour matcher TradeHistory. */
+.live-pos__table tbody tr {
+  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 4%, transparent);
+  transition: background 120ms ease;
+  cursor: pointer;
+}
+
+.live-pos__table tbody tr:hover {
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+/* Td paddings + font + line-height — surcharge la règle ligne 1696
+   (padding 0 10 → 6 14, ajoute font 14 + line 1.3).
+   Phase C.2.10-V3.2 : ajout de height: 32px pour matcher exactement
+   .trade-history__td (ligne 4496). Sans height explicite, la row
+   dépendait du tr (line 1683) et faisait 36 vs 32 trade-history. */
+.live-pos__table tbody td {
+  padding: 6px 14px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  vertical-align: middle;
+  font-size: 14px;
+  line-height: 1.3;
+  height: 32px;
+}
+
+/* Gridlines verticales subtiles entre cols (existant ligne 1722
+   déjà OK : 3% opacity). Ré-affirmé ici pour clarté visuelle de
+   l'ensemble du bloc. */
+.live-pos__table thead th + th,
+.live-pos__table tbody td + td {
+  border-left: 1px solid color-mix(in srgb, var(--text-primary) 3%, transparent);
+}
+
+/* ─── Footer agrégé 6 cells (miroir .trade-history__footer) ──── */
+
+.live-pos__footer {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  padding: 10px 14px;
+  height: 56px;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0;
+}
+
+.live-pos__footer-cell {
+  display: flex;
+  flex-direction: column;
+  /* Phase C.2.10-V3.1 : gap 2→3 pour matcher .trade-history__footer-cell. */
+  gap: 3px;
+  padding: 0 14px;
+  border-right: 1px solid var(--border);
+  justify-content: center;
+}
+
+.live-pos__footer-cell:first-child {
+  padding-left: 0;
+}
+
+.live-pos__footer-cell:last-child {
+  padding-right: 0;
+  border-right: none;
+}
+
+.live-pos__footer-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* Phase C.2.10-V3.1 : font-variant-numeric retiré pour matcher
+   exactement .trade-history__footer-value. Même raison que
+   .live-pos__ctx-val : font-mono hérité couvre le besoin. */
+.live-pos__footer-value {
+  font-size: 15px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.live-pos__footer-value--profit {
+  color: var(--profit);
+}
+
+.live-pos__footer-value--loss {
+  color: var(--loss);
+}
+
+.live-pos__footer-value--mute {
+  color: var(--text-tertiary);
+}
+
+/* ════════════════════════════════════════════════════════════════
    MODULE EMPTY STATE — v5 Sprint polish
    2-line typography pattern for empty modules across the dashboard.
    Applied alongside the per-module class (e.g. .alerts-feed__empty
@@ -3737,12 +4100,14 @@
    ════════════════════════════════════════════════════════════════ */
 
 .module-empty {
+  /* Phase C.2.8 — gap/padding compactés (rows 5/6 passent à
+     160-180 px, pas la peine de réserver 40 px de padding). */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 16px 24px;
+  gap: 4px;
+  padding: 8px 20px;
   text-align: center;
   height: 100%;
   font-family: var(--font-mono);
@@ -3757,9 +4122,581 @@
 }
 
 .module-empty__sub {
+  /* Phase C.2.8 — opacity 0.7 pour discrétion. */
   font-size: 10px;
   letter-spacing: 0.02em;
   color: var(--text-tertiary);
   max-width: 320px;
   line-height: 1.45;
+  opacity: 0.7;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TRADE HISTORY — Phase C.2 / C.2.5 / C.2.6 (Bloomberg dense + 4K)
+
+   Table dense 12 cols (les 3 cols Edge / C-Tier / Exit Reason ont
+   été fusionnées en 1 col "Sniper" placeholder Phase C.2.6.2),
+   header sticky avec backdrop-blur + shadow, body scrollable,
+   footer agrégé 6 cells (Σ P&L · Win Rate · Avg Win · Avg Loss ·
+   Σ Comm · Best Day).
+
+   Phase C.2.5 :
+     - Sub-header (Σ Hold · Best Ticker · Worst Ticker + badge W/L)
+     - Border-left 3 px (était 2 px) sur les rows profit/loss
+     - Top 3 gains / pertes : background subtle via data-top-gain /
+       data-top-loss + hover renforcé
+     - Divider visuel avant la colonne P&L Net (border-left subtle)
+
+   Phase C.2.6 (4K scale-up) :
+     - Heights / paddings / fonts bumpés pour matcher la densité
+       des KPI Cards (font 14 base, footer 15, header 15)
+     - Sub-header 4 contextes (+ Σ Window + PF Window)
+     - Badge unique remplacé par 2 badges séparés (WINS / LOSSES)
+     - Margin-top 6 px sur la grid cell pour séparer Row 3 (active)
+       de Row 4 (historique)
+   ════════════════════════════════════════════════════════════════ */
+
+.trade-history {
+  height: 480px;
+  background: var(--bg-elev-1);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--font-mono);
+}
+
+/* Phase C.2.6.7 polish — gap visuel discret entre la zone active
+   (Row 3 SniperGate) et la zone historique (Row 4 TradeHistory).
+   La grid `gap: 8px` existant est conservé, le margin-top ajoute
+   un breath supplémentaire spécifique. */
+.dash-grid > [style*="grid-area: history"] {
+  margin-top: 6px;
+}
+
+.trade-history__header {
+  /* Phase C.2.8 — padding 18→14 aligné avec table tbody td padding. */
+  height: 40px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: color-mix(in srgb, var(--bg-base) 50%, transparent);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.trade-history__title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.trade-history__title {
+  font-size: 15px;
+  color: var(--text-secondary);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.trade-history__sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+}
+
+.trade-history__range-selector {
+  display: flex;
+  gap: 1px;
+  background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+  padding: 2px;
+  border-radius: 3px;
+}
+
+.trade-history__range-selector button {
+  padding: 5px 11px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background 120ms ease;
+}
+
+.trade-history__range-selector button:hover {
+  color: var(--text-secondary);
+}
+
+/* Phase C.2.8 — hover state explicite (only on inactive buttons). */
+.trade-history__range-selector button:hover:not([data-active]) {
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+
+.trade-history__range-selector button[data-active] {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-weight: 500;
+}
+
+/* ─── Sub-header context (Phase C.2.5 / 4K scale C.2.6) ──────── */
+
+.trade-history__subheader {
+  /* Phase C.2.8 — padding 18→14 aligné avec table tbody td padding. */
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+}
+
+.trade-history__ctx {
+  white-space: nowrap;
+}
+
+.trade-history__ctx-val {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.trade-history__ctx-val--profit {
+  color: var(--profit);
+}
+
+.trade-history__ctx-val--loss {
+  color: var(--loss);
+}
+
+.trade-history__ctx-val--mute {
+  color: var(--text-tertiary);
+}
+
+.trade-history__dot {
+  color: var(--text-tertiary);
+  opacity: 0.5;
+}
+
+.trade-history__ctx-spacer {
+  flex: 1;
+}
+
+.trade-history__ctx-badge {
+  padding: 4px 12px;
+  border-radius: 2px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Phase C.2.6.7 — 2 badges séparés Wins/Losses pour clarté
+   (remplace l'ancien badge unique "EDGE+ XW · YL"). */
+.trade-history__ctx-badge--wins {
+  background: color-mix(in srgb, var(--profit) 8%, transparent);
+  color: var(--profit);
+}
+
+.trade-history__ctx-badge--losses {
+  background: color-mix(in srgb, var(--loss) 8%, transparent);
+  color: var(--loss);
+}
+
+/* ─── Body + table ───────────────────────────────────────────── */
+
+.trade-history__body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.trade-history__body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.trade-history__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.trade-history__body::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  border-radius: 3px;
+}
+
+.trade-history__body::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+
+.trade-history__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  /* Phase C.2.7 — fixed layout pour widths déterministes (sans ça
+     le navigateur recalcule selon le contenu : cols Type = "—"
+     partout se rétrécissent → cells décalées vs headers). */
+  table-layout: fixed;
+}
+
+/* Phase C.2.10-V3 — widths colgroup 13 cols (somme = 100%).
+   Spark P&L col droppée (random walk synthétique sur trade fermé =
+   info inventée, aucune valeur trading). Redistribution sur les
+   colonnes restantes pour donner plus d'air à P&L / Sniper. */
+.trade-history__col-ticker { width: 5%; }
+.trade-history__col-type { width: 6%; }
+.trade-history__col-strike { width: 7%; }
+.trade-history__col-dteentry { width: 6%; }
+.trade-history__col-entry { width: 7%; }
+.trade-history__col-exit { width: 7%; }
+.trade-history__col-hold { width: 5%; }
+.trade-history__col-entrydol { width: 8%; }
+.trade-history__col-exitdol { width: 8%; }
+.trade-history__col-comm { width: 8%; }
+.trade-history__col-pnl { width: 11%; }
+.trade-history__col-pnlpct { width: 10%; }
+.trade-history__col-sniper { width: 12%; }
+
+.trade-history__table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: color-mix(in srgb, var(--bg-base) 80%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 1px 0 0 var(--border);
+}
+
+/* Phase C.2.8 — base th/td : padding + vertical-align + heights
+   uniformes. text-align géré par les modifiers --left/--center/--right
+   ci-dessous (chaque th et chaque td DOIT en porter un). */
+.trade-history__table thead th,
+.trade-history__th {
+  padding: 10px 14px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  vertical-align: middle;
+  height: 36px;
+}
+
+/* Phase C.2.8 — alignement source-unique : header et cell partagent
+   le même modifier → garantit l'alignement vertical th vs td. */
+.trade-history__th--left,
+.trade-history__td--left {
+  text-align: left;
+}
+
+.trade-history__th--center,
+.trade-history__td--center {
+  text-align: center;
+}
+
+.trade-history__th--right,
+.trade-history__td--right {
+  text-align: right;
+  /* tabular-nums : chiffres à largeur fixe → cells numériques
+     parfaitement alignées verticalement. */
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+/* Phase C.2.7 — gridlines verticales subtiles entre cols pour
+   guider l'œil sur 4K. 3% opacity = juste visible, pas distrayant. */
+.trade-history__table thead th + th,
+.trade-history__table tbody td + td {
+  border-left: 1px solid color-mix(in srgb, var(--text-primary) 3%, transparent);
+}
+
+/* Divider visible avant P&L Net + avant Sniper (sépare zones
+   numériques neutres / P&L colorées / Sniper placeholder). Le
+   !important override les gridlines voisines par spécificité
+   plus forte sans avoir à doubler les sélecteurs. */
+.trade-history__th--divider,
+.trade-history__td--divider {
+  border-left: 1px solid color-mix(in srgb, var(--text-primary) 9%, transparent) !important;
+}
+
+/* Phase C.2.8 — padding-right supplémentaire sur la dernière col
+   (Sniper) pour donner de l'air contre le bord droit du module. */
+.trade-history__table thead th:last-child,
+.trade-history__table tbody td:last-child {
+  padding-right: 18px;
+}
+
+.trade-history__table tbody tr {
+  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 4%, transparent);
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    border-left-color 120ms ease;
+}
+
+.trade-history__table tbody tr:hover {
+  /* Phase C.2.8 — bumpé 3→5 pour visibilité sur 4K. */
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+.trade-history__tr--profit {
+  border-left-color: color-mix(in srgb, var(--profit) 55%, transparent);
+}
+
+.trade-history__tr--loss {
+  border-left-color: color-mix(in srgb, var(--loss) 55%, transparent);
+}
+
+/* Phase C.2.5 — top 3 gains / pertes : background subtle constant
+   + hover renforcé. Pulse one-shot au mount via animation. */
+.trade-history__table tbody tr[data-top-gain] {
+  background: color-mix(in srgb, var(--profit) 3%, transparent);
+  animation: trade-history-top-gain-pulse 1200ms ease-out 1;
+}
+
+.trade-history__table tbody tr[data-top-loss] {
+  background: color-mix(in srgb, var(--loss) 3%, transparent);
+  animation: trade-history-top-loss-pulse 1200ms ease-out 1;
+}
+
+.trade-history__table tbody tr[data-top-gain]:hover {
+  /* Phase C.2.8 — bumpé 7→10. */
+  background: color-mix(in srgb, var(--profit) 10%, transparent);
+}
+
+.trade-history__table tbody tr[data-top-loss]:hover {
+  background: color-mix(in srgb, var(--loss) 10%, transparent);
+}
+
+@keyframes trade-history-top-gain-pulse {
+  0% {
+    background: color-mix(in srgb, var(--profit) 10%, transparent);
+  }
+  100% {
+    background: color-mix(in srgb, var(--profit) 3%, transparent);
+  }
+}
+
+@keyframes trade-history-top-loss-pulse {
+  0% {
+    background: color-mix(in srgb, var(--loss) 10%, transparent);
+  }
+  100% {
+    background: color-mix(in srgb, var(--loss) 3%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trade-history__table tbody tr[data-top-gain],
+  .trade-history__table tbody tr[data-top-loss] {
+    animation: none;
+  }
+}
+
+.trade-history__table tbody td,
+.trade-history__td {
+  /* Phase C.2.7 / C.2.8 — base td : padding + height + vertical-align
+     uniformes. text-align via __td--left/--center/--right (chaque
+     td en porte un). Line-height explicite pour densité. */
+  padding: 6px 14px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  line-height: 1.3;
+  vertical-align: middle;
+  height: 32px;
+}
+
+/* (.trade-history__td--right text-align géré plus haut par la règle
+   source-unique combinant th--right + td--right.) */
+
+.trade-history__td--mute {
+  color: var(--text-tertiary);
+}
+
+.trade-history__td--profit {
+  color: var(--profit);
+  font-weight: 500;
+}
+
+.trade-history__td--loss {
+  color: var(--loss);
+  font-weight: 500;
+}
+
+.trade-history__td--ticker {
+  color: var(--text-primary);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.trade-history__badge {
+  /* Phase C.2.8 — padding 3/9→4/10, font 11→12, weight 500→600. */
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 2px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+/* Phase C.2.6.2 / C.2.7.3 / C.2.8.7 — col Sniper placeholder pill
+   amber. Les 3 cols Edge / C-Tier / Exit Reason ont été fusionnées
+   ici en attendant la dérivation Phase C.3+. Pill arrondie amber +
+   dot pulsant pour signaler "data live waiting" sémantique. */
+.trade-history__td--sniper {
+  font-family: var(--font-mono);
+}
+
+.trade-history__sniper-placeholder {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent-amber) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 12%, transparent);
+  color: var(--accent-amber);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+  text-transform: lowercase;
+}
+
+.trade-history__sniper-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-amber);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent-amber) 60%, transparent);
+  animation: trade-history-sniper-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes trade-history-sniper-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trade-history__sniper-dot {
+    animation: none;
+  }
+}
+
+/* Phase C.2.10-V3 — Spark P&L col supprimée. Composant TradeSparkline
+   + CSS associé (.trade-history__td--spark, .trade-history__spark-svg,
+   .trade-history__spark-mute) retirés. La sparkline 7J reste utile sur
+   LivePositions (trades vivants = données qui bougent réellement). */
+
+.trade-history__badge--call {
+  background: color-mix(in srgb, var(--profit) 10%, transparent);
+  color: var(--profit);
+}
+
+.trade-history__badge--put {
+  background: color-mix(in srgb, var(--loss) 10%, transparent);
+  color: var(--loss);
+}
+
+.trade-history__badge--stock {
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  color: var(--text-secondary);
+}
+
+/* ─── Empty state ────────────────────────────────────────────── */
+
+.trade-history__empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.trade-history__empty-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.trade-history__empty-sub {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+/* ─── Footer agrégé (6 cells — Phase C.2.5, 4K scale C.2.6, padding
+   aligné table C.2.8) ──────────────────────────────────────── */
+
+.trade-history__footer {
+  /* Phase C.2.8 — padding latéral 14px aligné avec .trade-history__td.
+     Hauteur 56px (était 48) pour donner air aux 2 lignes label+value. */
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  flex-shrink: 0;
+  height: 56px;
+  gap: 0;
+  align-items: center;
+}
+
+.trade-history__footer-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0 14px;
+  border-right: 1px solid var(--border);
+  justify-content: center;
+}
+
+.trade-history__footer-cell:first-child {
+  padding-left: 0;
+}
+
+.trade-history__footer-cell:last-child {
+  padding-right: 0;
+  border-right: none;
+}
+
+.trade-history__footer-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.trade-history__footer-value {
+  font-size: 15px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.trade-history__footer-value--profit {
+  color: var(--profit);
+}
+
+.trade-history__footer-value--loss {
+  color: var(--loss);
+}
+
+.trade-history__footer-value--mute {
+  color: var(--text-tertiary);
 }

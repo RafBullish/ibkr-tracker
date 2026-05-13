@@ -357,6 +357,9 @@ export default function DailyPnLChart({
                       content={<CumulTooltip />}
                       cursor={{ stroke: T.text.tertiary, strokeDasharray: '2 3' }}
                       isAnimationActive={false}
+                      allowEscapeViewBox={{ x: false, y: false }}
+                      offset={20}
+                      wrapperStyle={{ pointerEvents: 'none', maxWidth: 220, zIndex: 5 }}
                     />
                   </R.ComposedChart>
                 </R.ResponsiveContainer>

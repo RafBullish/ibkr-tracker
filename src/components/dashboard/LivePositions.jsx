@@ -18,11 +18,18 @@
 //      "TKR DTE45 in Xd" or "SL35 ARMED" semantics.
 //    - DAYS renamed DAYS-IN for clarity (days-in-trade convention).
 //
+//  Phase C.2.10-V3 — harmonisation design sur TradeHistory :
+//    + Sub-header riche (Σ Δ · Σ Θ · Σ Unreal · Best · Worst + OPEN N).
+//    + Footer agrégé 6 cells (Σ UNREAL · Σ NOTIONAL · Σ MAX RISK ·
+//      Σ Δ $ · Σ Θ $/J · CLOSEST DTE).
+//    + Style table aligné sur TradeHistory (thead blur sticky,
+//      hover row, gridlines, paddings). Les 19 colonnes intactes.
+//
 //  Props-driven : <LivePositions data={...} />.
 //  data = output de useLivePositions / buildLivePositions.
 // ═══════════════════════════════════════════════════════════════
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import PositionSparkline from './PositionSparkline';
 import SniperMetaEditor from './SniperMetaEditor';
 
@@ -258,6 +265,104 @@ export default function LivePositions({ data, area = 'positions' }) {
   // placeholder in a row.
   const [editorPos, setEditorPos] = useState(null);
 
+  // Phase C.2.10-V3 — stats agrégés pour sub-header + footer.
+  // Une seule passe sur positions calcule toutes les dérivations
+  // (Σ Δ qty-pondéré, Σ Θ qty-pondéré, Σ Unreal $, best/worst
+  // unreal, deltaDollar agrégé, thetaDollar agrégé, closestDte).
+  // Le brief autorise explicitement la fusion subheader+footer.
+  const stats = useMemo(() => {
+    if (!positions.length) {
+      return {
+        totalDelta: 0,
+        totalTheta: 0,
+        totalUnreal: 0,
+        bestUnreal: null,
+        worstUnreal: null,
+        openCount: 0,
+        deltaDollar: 0,
+        thetaDollar: 0,
+        closestDte: null,
+      };
+    }
+
+    let totalDelta = 0;
+    let totalTheta = 0;
+    let totalUnreal = 0;
+    let bestUnreal = null;
+    let worstUnreal = null;
+    let deltaDollar = 0;
+    let thetaDollar = 0;
+    let closestDte = null;
+
+    for (const p of positions) {
+      const qty = Number.isFinite(p.qty) ? p.qty : 0;
+      const mark = Number.isFinite(p.mark) ? p.mark : 0;
+      const isOption = p.type === 'CALL' || p.type === 'PUT';
+      const mu = isOption ? 100 : 1;
+
+      if (Number.isFinite(p.delta)) {
+        totalDelta += p.delta * qty;
+        // delta dollar = delta × qty × mu × prix sous-jacent. Sans
+        // spot price API on approxime via mark — ordre de grandeur
+        // correct pour exposition directionnelle agrégée.
+        deltaDollar += p.delta * qty * mu * mark;
+      }
+      if (Number.isFinite(p.theta)) {
+        totalTheta += p.theta * qty;
+        thetaDollar += p.theta * qty * mu;
+      }
+
+      if (Number.isFinite(p.unrealDollar)) {
+        totalUnreal += p.unrealDollar;
+        if (!bestUnreal || p.unrealDollar > bestUnreal.value) {
+          bestUnreal = { ticker: p.ticker, value: p.unrealDollar };
+        }
+        if (!worstUnreal || p.unrealDollar < worstUnreal.value) {
+          worstUnreal = { ticker: p.ticker, value: p.unrealDollar };
+        }
+      }
+
+      if (Number.isFinite(p.dte)) {
+        if (!closestDte || p.dte < closestDte.dte) {
+          closestDte = { ticker: p.ticker, dte: p.dte };
+        }
+      }
+    }
+
+    // 1 seule position : on n'affiche que Best (pas Worst sur le
+    // même trade — éviter la redondance trompeuse).
+    if (
+      bestUnreal &&
+      worstUnreal &&
+      bestUnreal.ticker === worstUnreal.ticker &&
+      positions.length === 1
+    ) {
+      worstUnreal = null;
+    }
+
+    return {
+      totalDelta,
+      totalTheta,
+      totalUnreal,
+      // Best n'a de sens que profit > 0 ; Worst que loss < 0.
+      bestUnreal: bestUnreal && bestUnreal.value > 0 ? bestUnreal : null,
+      worstUnreal: worstUnreal && worstUnreal.value < 0 ? worstUnreal : null,
+      openCount: positions.length,
+      deltaDollar,
+      thetaDollar,
+      closestDte,
+    };
+  }, [positions]);
+
+  // CLOSEST DTE color logic : ≤14j = loss (urgent expiry),
+  // ≤45j = profit (sweet spot Sniper OTM v1), >45 = neutre.
+  const closestDteClass =
+    stats.closestDte && stats.closestDte.dte <= 14
+      ? 'live-pos__footer-value--loss'
+      : stats.closestDte && stats.closestDte.dte <= 45
+        ? 'live-pos__footer-value--profit'
+        : '';
+
   const headerHint = isEmpty
     ? 'Σ Notional $0 · Σ Max Risk $0'
     : `Σ Notional ${fmtUsd(totalNotional, 0)} · Σ Max Risk ${fmtUsdSigned(totalMaxRisk, 0)}`;
@@ -270,6 +375,60 @@ export default function LivePositions({ data, area = 'positions' }) {
         </span>
         <span className="module-header__hint">{headerHint}</span>
       </header>
+
+      {!isEmpty && (
+        <div className="live-pos__subheader">
+          <div className="live-pos__ctx">
+            Σ Δ{' '}
+            <span
+              className={`live-pos__ctx-val live-pos__ctx-val--${toneFromSign(stats.totalDelta)}`}
+            >
+              {fmtNumberSigned(stats.totalDelta, 2)}
+            </span>
+          </div>
+          <div className="live-pos__dot">·</div>
+          <div className="live-pos__ctx">
+            Σ Θ{' '}
+            <span
+              className={`live-pos__ctx-val live-pos__ctx-val--${toneFromSign(stats.totalTheta)}`}
+            >
+              {fmtNumberSigned(stats.totalTheta, 2)} / j
+            </span>
+          </div>
+          <div className="live-pos__dot">·</div>
+          <div className="live-pos__ctx">
+            Σ Unreal{' '}
+            <span
+              className={`live-pos__ctx-val live-pos__ctx-val--${toneFromSign(stats.totalUnreal)}`}
+            >
+              {fmtUsdSigned(stats.totalUnreal, 2)}
+            </span>
+          </div>
+          <div className="live-pos__dot">·</div>
+          <div className="live-pos__ctx">
+            Best{' '}
+            <span className="live-pos__ctx-val live-pos__ctx-val--profit">
+              {stats.bestUnreal
+                ? `${stats.bestUnreal.ticker} ${fmtUsdSigned(stats.bestUnreal.value, 0)}`
+                : '—'}
+            </span>
+          </div>
+          <div className="live-pos__dot">·</div>
+          <div className="live-pos__ctx">
+            Worst{' '}
+            <span className="live-pos__ctx-val live-pos__ctx-val--loss">
+              {stats.worstUnreal
+                ? `${stats.worstUnreal.ticker} ${fmtUsdSigned(stats.worstUnreal.value, 0)}`
+                : '—'}
+            </span>
+          </div>
+          <div className="live-pos__ctx-spacer" />
+          <div className="live-pos__ctx-badge live-pos__ctx-badge--accent">
+            OPEN {stats.openCount}
+          </div>
+        </div>
+      )}
+
       <div className="module-body live-pos__body">
         {isEmpty ? (
           <div className="live-pos__empty">Aucune position ouverte</div>
@@ -306,6 +465,56 @@ export default function LivePositions({ data, area = 'positions' }) {
           </table>
         )}
       </div>
+
+      {!isEmpty && (
+        <footer className="live-pos__footer">
+          <div className="live-pos__footer-cell">
+            <span className="live-pos__footer-label">Σ UNREAL $</span>
+            <span
+              className={`live-pos__footer-value live-pos__footer-value--${toneFromSign(stats.totalUnreal)}`}
+            >
+              {fmtUsdSigned(stats.totalUnreal, 2)}
+            </span>
+          </div>
+          <div className="live-pos__footer-cell">
+            <span className="live-pos__footer-label">Σ NOTIONAL</span>
+            <span className="live-pos__footer-value">
+              {fmtUsd(totalNotional, 0)}
+            </span>
+          </div>
+          <div className="live-pos__footer-cell">
+            <span className="live-pos__footer-label">Σ MAX RISK</span>
+            <span className="live-pos__footer-value live-pos__footer-value--loss">
+              {fmtUsdSigned(totalMaxRisk, 0)}
+            </span>
+          </div>
+          <div className="live-pos__footer-cell">
+            <span className="live-pos__footer-label">Σ Δ $</span>
+            <span
+              className={`live-pos__footer-value live-pos__footer-value--${toneFromSign(stats.deltaDollar)}`}
+            >
+              {fmtUsdSigned(stats.deltaDollar, 0)}
+            </span>
+          </div>
+          <div className="live-pos__footer-cell">
+            <span className="live-pos__footer-label">Σ Θ $ / J</span>
+            <span
+              className={`live-pos__footer-value live-pos__footer-value--${toneFromSign(stats.thetaDollar)}`}
+            >
+              {fmtUsdSigned(stats.thetaDollar, 0)}
+            </span>
+          </div>
+          <div className="live-pos__footer-cell">
+            <span className="live-pos__footer-label">CLOSEST DTE</span>
+            <span className={`live-pos__footer-value ${closestDteClass}`}>
+              {stats.closestDte
+                ? `${stats.closestDte.ticker} ${stats.closestDte.dte}j`
+                : '—'}
+            </span>
+          </div>
+        </footer>
+      )}
+
       <SniperMetaEditor
         position={editorPos}
         open={!!editorPos}
