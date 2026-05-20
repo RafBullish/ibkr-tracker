@@ -8,11 +8,15 @@
    ════════════════════════════════════════════════════════════════ */
 
 /* ─── Shell-level vars ───────────────────────────────────────────── */
+/* 4K refonte 2026-05-10 : hauteurs shell agrandies. Phase B.2 bump
+   le cmdbar de 56→64 pour accommoder les tabs en mots entiers full-
+   height avec underline ancré à la border-bottom du shell.
+   Le fallback de --shell-tickertape-h reste aligné sur --tickertape. */
 :root {
-  --shell-cmdbar-h: 32px;
-  --shell-tickertape-h: var(--tickertape, 24px);
-  --shell-statusbar-h: 22px;
-  --shell-pill-h: 22px;
+  --shell-cmdbar-h: 64px;
+  --shell-tickertape-h: var(--tickertape, 44px);
+  --shell-statusbar-h: 36px;
+  --shell-pill-h: 36px;
   --shell-hairline: var(--border);
 }
 
@@ -24,8 +28,8 @@
   display: flex;
   align-items: center;
   height: var(--shell-cmdbar-h);
-  padding: 0 var(--space-3);
-  gap: var(--space-3);
+  padding: 0 var(--space-5);
+  gap: var(--space-4);
   background: var(--bg-elev-1);
   border-bottom: 1px solid var(--shell-hairline);
   flex-shrink: 0;
@@ -45,18 +49,18 @@
 .cmdbar__logo {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   background: transparent;
   border: 0;
   padding: 0;
   cursor: pointer;
   font-family: var(--font-mono);
   color: var(--text-primary);
-  transition: color 120ms ease-out;
+  transition: filter 120ms ease-out;
 }
 
-.cmdbar__logo:hover {
-  color: var(--accent);
+.cmdbar__logo:hover .cmdbar__logo-name {
+  color: var(--text-primary);
 }
 
 .cmdbar__logo:focus-visible {
@@ -64,91 +68,116 @@
   outline-offset: 2px;
 }
 
+/* 4K refonte Phase B.2 — QC mini-badge teal, agrandi 28 px. */
 .cmdbar__logo-mark {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: var(--bg-base);
+  border-radius: 5px;
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.05em;
   line-height: 1;
-}
-
-.cmdbar__logo-bar {
-  font-size: 14px;
-  line-height: 1;
-  color: var(--text-tertiary);
+  flex-shrink: 0;
 }
 
 .cmdbar__logo-name {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  /* Légère uplift de contraste vs --text-secondary : 70 % --text-primary
+     dilué par 30 % transparent → couleur theme-aware un cran plus dense. */
+  color: color-mix(in srgb, var(--text-primary) 70%, transparent);
   line-height: 1;
+  transition: color 120ms ease-out;
 }
 
-.cmdbar__sep {
-  color: var(--text-tertiary);
-  font-size: 11px;
-  line-height: 1;
+/* Vertical hairline divider — replaces the legacy "·" character */
+.cmdbar__divider {
+  display: inline-block;
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  flex-shrink: 0;
 }
 
 .cmdbar__crumb {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   white-space: nowrap;
 }
 
 .cmdbar__nav {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 2px;
   flex: 1 1 auto;
   justify-content: center;
   min-width: 0;
+  height: 100%;
 }
 
+/* 4K refonte Phase B.2 — tabs full-height (64 px), mots entiers,
+   text-transform: none. L'underline 2 px s'ancre à bottom: 0 du tab
+   et touche la border-bottom du shell. */
 .nav-pill {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: var(--shell-pill-h);
-  padding: 0 var(--space-2);
+  height: 100%;
+  padding: 0 18px;
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: none;
   color: var(--text-secondary);
   background: transparent;
-  border: 1px solid transparent;
+  border: none;
   border-radius: 0;
   cursor: pointer;
-  transition:
-    color 80ms ease-out,
-    background 80ms ease-out,
-    border-color 80ms ease-out;
+  transition: color 120ms ease-out;
   white-space: nowrap;
 }
 
 .nav-pill:hover {
-  background: var(--row-hover);
   color: var(--text-primary);
-  border-color: var(--border);
+  background: transparent;
 }
 
 .nav-pill:focus-visible {
   outline: 1px solid var(--accent);
-  outline-offset: 1px;
+  outline-offset: -2px;
 }
 
-.nav-pill[data-active] {
-  background: var(--row-hover);
-  color: var(--text-primary);
-  border-color: var(--accent);
-  font-weight: 600;
+.nav-pill[data-active],
+.nav-pill[aria-current="page"] {
+  color: var(--accent);
+  background: transparent;
+  font-weight: 500;
+}
+
+.nav-pill[data-active]::after,
+.nav-pill[aria-current="page"]::after {
+  /* Trait ancré à la bordure inférieure du shell — le pill prend
+     toute la hauteur du cmdbar, donc bottom: 0 fait coïncider le
+     trait avec la border-bottom du shell. */
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
 }
 
 .cmdbar__right {
@@ -158,29 +187,32 @@
   flex-shrink: 0;
 }
 
+/* 4K refonte Phase B.2 — search bar agrandie (34 px, 12 px font). */
 .cmdbar__search {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: var(--shell-pill-h);
-  padding: 0 8px;
+  gap: 8px;
+  height: 34px;
+  padding: 0 14px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.04em;
   color: var(--text-tertiary);
-  background: var(--bg-elev-2);
+  background: var(--bg-glass);
   border: 1px solid var(--border);
-  border-radius: 0;
+  border-radius: 5px;
   cursor: pointer;
   transition:
-    color 80ms ease-out,
-    border-color 80ms ease-out;
-  min-width: 22px;
+    color 120ms ease-out,
+    border-color 120ms ease-out,
+    background 120ms ease-out;
+  min-width: 34px;
 }
 
 .cmdbar__search:hover {
   color: var(--text-secondary);
   border-color: var(--border-strong);
+  background: var(--bg-glass-hover);
 }
 
 .cmdbar__search:focus-visible {
@@ -188,24 +220,56 @@
   outline-offset: 1px;
 }
 
-.cmdbar__search-label {
-  font-size: 10px;
-}
-
 .cmdbar__kbd {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 14px;
-  padding: 0 4px;
+  padding: 2px 7px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--text-tertiary);
   background: var(--bg-base);
   border: 1px solid var(--border);
-  border-radius: 0;
+  border-radius: 3px;
   line-height: 1;
+}
+
+/* 4K refonte Phase B.2 — Mode pill REAL / PAPER / LIVE agrandie 30 px. */
+.cmdbar__mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 5px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cmdbar__mode-pill[data-mode="live"],
+.cmdbar__mode-pill[data-mode="real"] {
+  color: var(--profit);
+  background: color-mix(in srgb, var(--profit) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--profit) 25%, transparent);
+}
+
+.cmdbar__mode-pill[data-mode="paper"] {
+  color: var(--accent-amber);
+  background: color-mix(in srgb, var(--accent-amber) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 25%, transparent);
+}
+
+.cmdbar__mode-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
 }
 
 @media (max-width: 1023px) {
@@ -228,17 +292,22 @@
    STATUS BAR (bottom, 22px)
    ════════════════════════════════════════════════════════════════ */
 
+/* 4K refonte Phase B — StatusBar 3 zones avec separators internes.
+   Le gap/padding sont à 0 sur la racine ; chaque .statusbar__cell
+   gère son spacing via padding interne + border-right. align-items
+   stretch pour que les hairlines remontent du haut au bas. */
 .statusbar {
+  /* Phase C.2.8 — font 12→13 pour cohérence avec densité 4K. */
   display: flex;
-  align-items: center;
+  align-items: stretch;
   height: var(--shell-statusbar-h);
-  padding: 0 8px;
-  gap: 12px;
+  padding: 0;
+  gap: 0;
   background: var(--bg-elev-1);
   border-top: 1px solid var(--shell-hairline);
   flex-shrink: 0;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 13px;
   color: var(--text-secondary);
   position: relative;
   z-index: 10;
@@ -246,9 +315,14 @@
 
 .statusbar__zone {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: stretch;
+  gap: 0;
   min-width: 0;
+}
+
+.statusbar__zone--left {
+  /* Anchor la zone gauche au bord de la statusbar avec un divider
+     terminal qui sépare cette zone de la zone centrale. */
 }
 
 .statusbar__zone--center {
@@ -260,11 +334,26 @@
   margin-left: auto;
 }
 
+/* Cellule de base — chaque feed / clock / rate / pnl / theme. */
+.statusbar__cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  height: 100%;
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.statusbar__zone > .statusbar__cell:last-child {
+  border-right: none;
+}
+
+/* Le séparateur ancien (.statusbar__divider) n'est plus rendu —
+   la sépration vient désormais du border-right de chaque cell.
+   Le legacy span span "·" n'est plus émis non plus. */
 .statusbar__divider {
-  width: 1px;
-  height: 12px;
-  background: var(--border);
-  flex-shrink: 0;
+  display: none;
 }
 
 .statusbar__group {
@@ -274,16 +363,19 @@
 }
 
 .statusbar__label {
-  font-size: 9px;
+  /* Phase C.2.8 — bumpé 10→11 pour 4K. */
+  font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-tertiary);
+  font-weight: 500;
 }
 
 .statusbar__value {
-  font-size: 10px;
+  /* Phase C.2.8 — bumpé 11→12 pour 4K. */
+  font-size: 12px;
   font-variant-numeric: tabular-nums slashed-zero;
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .statusbar__value--profit {
@@ -297,47 +389,70 @@
   font-weight: 600;
 }
 
-.statusbar__dot {
+/* ── Feed cells (IBKR / FNHB / CBOE) — 4K refonte Phase B ────── */
+
+.statusbar__feed {
+  gap: 6px;
+}
+
+.statusbar__feed-dot {
   display: inline-block;
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--text-tertiary);
   flex-shrink: 0;
+  transition: background 120ms ease-out;
 }
-.statusbar__dot--ok {
+
+.statusbar__feed[data-status="live"] .statusbar__feed-dot {
   background: var(--profit);
-  box-shadow: 0 0 4px var(--profit);
 }
-.statusbar__dot--warn {
-  background: var(--warning);
+.statusbar__feed[data-status="syncing"] .statusbar__feed-dot {
+  background: var(--accent-amber);
 }
-.statusbar__dot--err {
+.statusbar__feed[data-status="error"] .statusbar__feed-dot {
   background: var(--loss);
 }
-
-/* Brick 11 fix : sur Daylight (light theme) le bg du status bar
-   est var(--bg-elev-1) = #f4f5f7 (gris très clair). Le glow
-   box-shadow `0 0 4px var(--profit)` se dilue sur fond clair
-   (l'effet halo perd son punch). On retire le glow Daylight ;
-   le dot solide reste lisible — la couleur var(--profit) #00875a
-   est dark green et contraste bien sur le fond clair sans halo. */
-[data-theme="daylight"] .statusbar__dot--ok {
-  box-shadow: none;
-}
-.statusbar__dot--off {
+.statusbar__feed[data-status="offline"] .statusbar__feed-dot {
   background: var(--text-tertiary);
-  opacity: 0.5;
+  opacity: 0.55;
 }
+
+/* IBKR feed principal — halo subtile sur le dot.
+   color-mix s'adapte automatiquement au thème (--profit varie). */
+.statusbar__feed--featured .statusbar__feed-dot {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--profit) 18%, transparent);
+}
+
+[data-theme="daylight"] .statusbar__feed--featured .statusbar__feed-dot {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--profit) 14%, transparent);
+}
+
+.statusbar__feed-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.statusbar__feed[data-status="live"] .statusbar__feed-label {
+  color: var(--profit);
+}
+
+.statusbar__feed[data-status="error"] .statusbar__feed-label {
+  color: var(--loss);
+}
+
+/* ── Horloges fuseaux ─────────────────────────────────────────── */
 
 .statusbar__clock {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
+  gap: 6px;
 }
 
 .statusbar__clock-code {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -345,36 +460,73 @@
 }
 
 .statusbar__clock-time {
-  font-size: 10px;
+  font-size: 11px;
   font-variant-numeric: tabular-nums slashed-zero;
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
-.statusbar__clock-session {
-  font-size: 9px;
+.statusbar__clock-badge {
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  margin-left: 2px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 2px;
 }
-.statusbar__clock-session--open {
+
+.statusbar__clock-badge[data-state="closed"] {
+  color: var(--loss);
+  background: color-mix(in srgb, var(--loss) 12%, transparent);
+}
+
+.statusbar__clock-badge[data-state="open"] {
+  color: var(--profit);
+  background: color-mix(in srgb, var(--profit) 12%, transparent);
+}
+
+/* ── Cells de droite : rate · P&L · theme ────────────────────── */
+
+.statusbar__rate,
+.statusbar__pnl,
+.statusbar__pos {
+  gap: 6px;
+}
+
+.statusbar__pnl .statusbar__value {
+  font-weight: 500;
+}
+.statusbar__pnl--profit .statusbar__value {
   color: var(--profit);
 }
-.statusbar__clock-session--closed {
+.statusbar__pnl--loss .statusbar__value {
+  color: var(--loss);
+}
+.statusbar__pnl--mute .statusbar__value {
   color: var(--text-tertiary);
 }
 
-.statusbar__version {
-  font-size: 9px;
-  letter-spacing: 0.04em;
-  color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
+.statusbar__theme {
+  padding: 0 10px;
 }
 
-/* ── ThemeSwitcher compressed for status bar (22px) ──────────── */
+/* Legacy classes — kept as dead CSS for the moment, marked no-render.
+   Garbage-collect-them dans une session de cleanup ultérieure. */
+.statusbar__dot,
+.statusbar__dot--ok,
+.statusbar__dot--warn,
+.statusbar__dot--err,
+.statusbar__dot--off,
+.statusbar__clock-session,
+.statusbar__version,
+.statusbar__group--gate {
+  /* Pas de styles — leur sélecteur n'est plus émis par le JSX. */
+}
+
+/* ── ThemeSwitcher compressed for status bar (36px row, 4K refonte) ──────────── */
 .theme-switcher__trigger.statusbar__theme-switcher {
-  height: 18px;
+  height: 28px;
   padding: 0 6px;
-  font-size: 9px;
+  font-size: 11px;
   font-family: var(--font-mono);
   letter-spacing: 0.04em;
   border-radius: 0;
@@ -382,8 +534,8 @@
 }
 
 .theme-switcher__trigger.statusbar__theme-switcher svg {
-  width: 11px;
-  height: 11px;
+  width: 14px;
+  height: 14px;
 }
 
 @media (max-width: 1023px) {
@@ -416,7 +568,7 @@
   overflow: hidden;
   flex-shrink: 0;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1;
   z-index: 9;
   /* Edge fade — subtle gradient mask on left/right so cells slide in/out cleanly */
@@ -506,7 +658,7 @@
     "tnum" 1,
     "zero" 1;
   font-variant-numeric: tabular-nums slashed-zero;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .tickertape__chg[data-semantic="bull"] {

@@ -36,18 +36,31 @@
    ═══════════════════════════════════════════════════════════════════ */
 :root {
   /* ── v5 Institutional density (Bloomberg/IBKR/TOS-class) ─────── */
+  /* 4K refonte 2026-05-10 : densité agrandie pour usage 4K personnel.
+     Anciennes valeurs en commentaire pour retour rapide si besoin :
+       row-compact 22 · row-data 26 · row-default 32 · row-tall 48
+       header-row 24 · toolbar 32 · statusbar 22 · tickertape 24
+       cell-pad-x 8 · cell-pad-y 3 · row-h-15 15 */
   /* Row heights (data grids) */
-  --row-compact: 22px; /* TickerTape, watchlist mini, status strip */
-  --row-data: 26px; /* LivePositions, Chain, Greeks tables */
-  --row-default: 32px; /* Earnings 1-line, news compact */
-  --row-tall: 48px; /* 2-line cells (titre + source) */
-  --header-row: 24px; /* sticky table headers (≤ row, never more) */
-  --toolbar: 32px; /* CommandBar */
-  --statusbar: 22px; /* StatusBar (footer strip) */
-  --tickertape: 24px; /* TickerTape (under CommandBar) */
+  --row-compact: 28px; /* TickerTape, watchlist mini, status strip */
+  --row-data: 32px; /* LivePositions, Chain, Greeks tables */
+  --row-default: 40px; /* Earnings 1-line, news compact */
+  --row-tall: 56px; /* 2-line cells (titre + source) */
+  --header-row: 32px; /* sticky table headers (≤ row, never more) */
+  --toolbar: 44px; /* CommandBar */
+  --statusbar: 36px; /* StatusBar (footer strip) */
+  --tickertape: 44px; /* TickerTape (under CommandBar) */
   /* Cell padding */
-  --cell-pad-x: 8px;
-  --cell-pad-y: 3px;
+  --cell-pad-x: 12px;
+  --cell-pad-y: 6px;
+  /* Row helpers (Risk Matrix, Greeks Agg, Live Positions rows).
+     --row-h-15 conservé comme alias rétro-compat — toutes les
+     références CSS existantes (.risk-matrix__table tr, .greeks-agg__
+     table tbody tr, .live-pos__row, .watchlist__row, .iv-movers__row,
+     .earnings-cal__row, .alerts-feed__row) basculent automatiquement
+     en 22 px sans renommage. */
+  --row-h-22: 22px;
+  --row-h-15: 22px;
   /* Hairlines (canonical Bloomberg-grade separators) */
   --hairline: 1px solid rgba(255, 255, 255, 0.06);
   --hairline-strong: 1px solid rgba(255, 255, 255, 0.12);

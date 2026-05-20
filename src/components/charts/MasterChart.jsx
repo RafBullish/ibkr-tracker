@@ -1,40 +1,28 @@
 // ═══════════════════════════════════════════════════════════════
-//  MASTER CHART v4.0 — brick 3
+//  MASTER CHART v5 — Phase C.1 (sans drawdown)
 //
-//  Module bento col 1-6 row 1 (240 px). Trois layers visuels dans
-//  un sub-pane 70 % / 30 % :
-//    Top 70 % :
-//      1. Underwater drawdown Area (loss-bg, axe Y dédié droit)
-//      2. Peak watermark Line (text-tertiary, dashed 2 3, fin)
-//      3. Equity Line (profit, strokeWidth 1.25, dot false)
-//    Bottom 30 % :
-//      4. Daily P&L Bar (fill profit/loss par signe)
+//  Module bento col 1-7 row 1 (380 px). Deux sub-panes :
+//    Top 70 % : Equity Line (profit color, strokeWidth 1.25)
+//    Bottom 30 % : Daily P&L Bars (vert/rouge selon signe)
 //
-//  Recharts via LazyRecharts (render-prop pattern) → la chunk
-//  recharts (~150 kB gzip) est dynamic-imported uniquement si la
-//  page du module monté est rendue.
+//  Suppression Phase C.1 :
+//    - underwater drawdown area (axe Y droit + Area underwaterPct)
+//    - peak watermark line (Line dashed sur top-pane)
+//    - tooltip rows PEAK + DD
+//    - import computeUnderwaterCurve
 //
-//  Props-driven : data + dailyPnL + mode. Aucun useStore ici, le
-//  module fonctionne identique sur /__playground (fixture) et sur
-//  /dashboard (real store via les hooks useEquityHistory +
-//  useDailyPnL passés par le parent).
+//  Le drawdown est désormais exclusivement consommé par RiskMatrix
+//  (Bloomberg-dense table). Le master chart redevient un equity
+//  + daily P&L pur, sans second axe ni surcouche.
 //
-//  Aucune animation Recharts (isAnimationActive=false). Pas
-//  d'export, pas de zoom, pas de brush — scope brick 3 minimum.
+//  Recharts via LazyRecharts (code-split). Aucune animation
+//  (isAnimationActive=false). Pas d'export, pas de zoom.
 // ═══════════════════════════════════════════════════════════════
 
 import { Suspense, lazy, useMemo, useState } from 'react';
 import useLiveTheme from '../../hooks/useLiveTheme';
-import {
-  TIMEFRAMES,
-  computeUnderwaterCurve,
-  computeDailyPnl,
-  filterByTimeframe,
-} from '../../utils/equity';
+import { TIMEFRAMES, computeDailyPnl, filterByTimeframe } from '../../utils/equity';
 
-// Render-prop wrapper qui force le code-split sur 'recharts'. Même
-// pattern qu'Analytics.jsx — TODO : extraire en src/components/
-// charts/LazyRecharts.jsx quand un 3e consumer apparaît.
 const LazyRecharts = lazy(() =>
   import('recharts').then((mod) => ({ default: ({ children }) => children(mod) }))
 );
@@ -47,11 +35,6 @@ const fmtUsd = (v) => {
     maximumFractionDigits: 0,
     signDisplay: 'exceptZero',
   }).format(v);
-};
-
-const fmtPct = (v) => {
-  if (v == null || !Number.isFinite(v)) return '—';
-  return `${v.toFixed(2)} %`;
 };
 
 const fmtAxisDate = (iso) => {
@@ -73,16 +56,6 @@ function MasterTooltip({ active, payload }) {
         <span className="master-chart__tooltip-val">{fmtUsd(row.equity)}</span>
       </div>
       <div className="master-chart__tooltip-row">
-        <span>PEAK</span>
-        <span className="master-chart__tooltip-val">{fmtUsd(row.peak)}</span>
-      </div>
-      <div className="master-chart__tooltip-row">
-        <span>DD</span>
-        <span className={`master-chart__tooltip-val${row.underwaterPct < 0 ? ' is-loss' : ''}`}>
-          {fmtPct(row.underwaterPct)}
-        </span>
-      </div>
-      <div className="master-chart__tooltip-row">
         <span>DAILY</span>
         <span
           className={`master-chart__tooltip-val${
@@ -102,23 +75,19 @@ function ChartFallback({ message }) {
 
 export default function MasterChart({ data, dailyPnL, mode = 'real', area = 'master' }) {
   const [range, setRange] = useState('ALL');
-  // Brick 11 : useLiveTheme remplace l'import statique T pour
-  // re-render le chart au changement de thème (event ibkr:theme-change).
   const T = useLiveTheme();
 
-  // 1. Annoter avec running peak / underwater. 2. Merger dailyPnL si
-  //    fourni, sinon dériver du diff. 3. Filtrer au timeframe choisi.
-  //    Tout cohérent : la fixture (180 daily points) et le real store
-  //    (per-trade-close points) traversent le même pipeline.
+  // Pipeline simplifié Phase C.1 : pas de computeUnderwaterCurve, on
+  // merge directement le dailyPnL fourni avec equityHistory + on
+  // filtre par timeframe.
   const filtered = useMemo(() => {
     if (!Array.isArray(data) || data.length === 0) return [];
-    const withUnder = computeUnderwaterCurve(data);
     let merged;
     if (Array.isArray(dailyPnL) && dailyPnL.length) {
       const dpMap = new Map(dailyPnL.map((d) => [d.date, d.dailyPnl]));
-      merged = withUnder.map((p) => ({ ...p, dailyPnl: dpMap.get(p.date) ?? 0 }));
+      merged = data.map((p) => ({ ...p, dailyPnl: dpMap.get(p.date) ?? 0 }));
     } else {
-      merged = computeDailyPnl(withUnder);
+      merged = computeDailyPnl(data);
     }
     return filterByTimeframe(merged, range);
   }, [data, dailyPnL, range]);
@@ -132,7 +101,7 @@ export default function MasterChart({ data, dailyPnL, mode = 'real', area = 'mas
   return (
     <section className="module master-chart" style={{ gridArea: area }}>
       <header className="module-header">
-        <span className="module-header__title">Equity · Drawdown · Daily P&amp;L</span>
+        <span className="module-header__title">Equity · Daily P&amp;L</span>
         <div className="module-header__actions tf-pills">
           {TIMEFRAMES.map((tf) => (
             <button
@@ -157,7 +126,7 @@ export default function MasterChart({ data, dailyPnL, mode = 'real', area = 'mas
             <LazyRecharts>
               {(R) => (
                 <>
-                  {/* TOP — equity + peak watermark + underwater area */}
+                  {/* TOP — equity line (pure, sans peak ni underwater) */}
                   <div className="master-chart__top">
                     <R.ResponsiveContainer width="100%" height="100%">
                       <R.ComposedChart
@@ -180,35 +149,6 @@ export default function MasterChart({ data, dailyPnL, mode = 'real', area = 'mas
                           tickLine={false}
                           width={42}
                           tickFormatter={(v) => `${Math.round(v / 100) / 10}k`}
-                        />
-                        <R.YAxis
-                          yAxisId="dd"
-                          orientation="right"
-                          stroke={T.text.tertiary}
-                          tick={{ fontFamily: T.fonts.mono, fontSize: 9, fill: T.text.tertiary }}
-                          axisLine={false}
-                          tickLine={false}
-                          width={32}
-                          domain={['dataMin', 0]}
-                          tickFormatter={(v) => `${v.toFixed(0)}%`}
-                        />
-                        <R.Area
-                          yAxisId="dd"
-                          dataKey="underwaterPct"
-                          type="monotone"
-                          fill={T.lossMuted}
-                          stroke="none"
-                          isAnimationActive={false}
-                        />
-                        <R.Line
-                          yAxisId="equity"
-                          dataKey="peak"
-                          type="monotone"
-                          stroke={T.text.tertiary}
-                          strokeWidth={1}
-                          strokeDasharray="2 3"
-                          dot={false}
-                          isAnimationActive={false}
                         />
                         <R.Line
                           yAxisId="equity"
@@ -249,7 +189,7 @@ export default function MasterChart({ data, dailyPnL, mode = 'real', area = 'mas
                           axisLine={false}
                           tickLine={false}
                           tickFormatter={fmtAxisDate}
-                          minTickGap={40}
+                          minTickGap={60}
                           height={14}
                         />
                         <R.YAxis

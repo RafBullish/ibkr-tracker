@@ -7,59 +7,156 @@
    when needed.
    ════════════════════════════════════════════════════════════════ */
 
-/* ─── Grid container ─────────────────────────────────────────── */
-/* Hairline gap pattern: 1px gap entre cellules + parent peint avec
-   var(--border-strong) → la couleur de bordure transparaît dans les
-   « gouttières » entre modules. Chaque module garde un fond opaque
-   --bg-elev-1 et n'a PLUS de border propre — visuellement c'est une
-   ligne 1 px parfaitement uniforme entre tous les modules, sans
-   doublon de bordure aux jointures.
-   Avantage vs. border 1px par module : zéro double-trait, et le
-   gap reste exactement 1 px en toutes circonstances. */
+/* ─── Grid container — Phase C.1 (6 rows Bloomberg-dense) ─────────
+   Le pattern « hairline gap » (1 px gap + bg border-strong) est
+   abandonné Phase C.1 au profit d'un gap 8 px + radius 4 px par
+   module. Chaque module porte sa propre border-radius via .module
+   ci-dessous (refactor section .module : border 1 var(--border)).
+
+   Areas (cf. brief Phase C complet — Phase C.1 livre Rows 1/2/3/6
+   en modules réels + Rows 4/5 en placeholders) :
+     Row 1 : equity 1-3 | dailypnl 4-6 | risk 7-12   (Phase C.1.7 split)
+     Row 2 : positions full
+     Row 3 : gates full
+     Row 4 : history full (Phase C.2)
+     Row 5 : watch col 1-6 | calendar col 7-12 (Phase C.3)
+     Row 6 : ivr col 1-4 | heat col 5-8 | alert col 9-12
+
+   Phase C.1.6 — `max-width: none` et `margin: 0` explicites pour
+   surcharger le legacy `.dash-grid { max-width: 1920px; margin: 0
+   auto; }` défini dans src/styles/dashboard.css:128.
+
+   Heights gérées par les sélecteurs attribute ci-dessous (pattern
+   inline `style={{ gridArea: 'xxx' }}` déjà émis par les modules). */
 .dash-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  /* v5 Sprint 2.1 : insertion d'une 5e row pour SniperGateMonitor.
-     Total : 240 + 160 + 130 + 200 + 200 = 930 px (était 800 px en v4).
-     Sur 1080p le shell occupe 1080 - 32 (CmdBar) - 24 (TickerTape) -
-     22 (StatusBar) = 1002 px → tient sans scroll. Sur 900p le scroll
-     vertical s'active à l'intérieur du <main> (acceptable). */
-  grid-template-rows: 240px 160px 130px 200px 200px;
+  grid-auto-rows: auto;
+  /* Phase C.2.10 — SniperGateMonitor retiré du dashboard. Grid
+     simplifié en 5 rows. Ordre : Row 1 charts+risk → Row 2 positions
+     → Row 3 history → Row 4 watch+calendar → Row 5 ivr+heat+alert. */
   grid-template-areas:
-    "master master master master master master risk     risk     risk     greeks greeks greeks"
+    "equity equity equity dailypnl dailypnl dailypnl risk risk risk risk risk risk"
     "positions positions positions positions positions positions positions positions positions positions positions positions"
-    "gates  gates  gates  gates  gates  gates  gates  gates  gates  gates  gates  gates"
-    "watch watch watch earn earn earn heat heat heat ivr ivr ivr"
-    "intrn intrn intrn skew skew skew alert alert alert alert alert alert";
-  gap: 1px;
-  height: 100%;
+    "history history history history history history history history history history history history"
+    "watch watch watch watch watch watch calendar calendar calendar calendar calendar calendar"
+    "ivr ivr ivr ivr heat heat heat heat alert alert alert alert";
+  gap: 8px;
+  padding: 0 4px 4px;
   width: 100%;
-  background: var(--border-strong);
+  max-width: none; /* override legacy dashboard.css:128 (1920px) */
+  margin: 0;       /* override legacy dashboard.css:129 (auto) */
+  background: transparent;
   font-family: var(--font-mono);
 }
 
-/* ─── Module shell ───────────────────────────────────────────── */
+/* Heights par grid-area — Phase C.2.6 : row 1 à 520 px (4K scale,
+   était 480) — split en 2 charts trading-grade + RiskMatrix. */
+.dash-grid > [style*="grid-area: equity"] {
+  height: 520px;
+}
+.dash-grid > [style*="grid-area: dailypnl"] {
+  height: 520px;
+}
+.dash-grid > [style*="grid-area: risk"] {
+  height: 520px;
+}
+/* Legacy alias `master` (au cas où MasterChart est encore monté
+   ailleurs) — height par défaut alignée sur Row 1. */
+.dash-grid > [style*="grid-area: master"] {
+  height: 520px;
+}
+/* Phase C.2.5 / C.2.6 — positions auto-height : se compacte
+   automatiquement quand 1 seul trade actif (économie d'espace
+   visuel), scrolle dans la limite max quand plein.
+   Phase C.2.10-V3 : sub-header (~40 px) + footer (56 px) ajoutés
+   → bump min-height 130→240, max-height 320→420 pour accommoder
+   header 40 + sub 40 + thead 36 + ≥1 row + footer 56 = ~210 mini.
+   Phase C.2.10-V3.3 ROLLBACK : height:auto a fait disparaître le module.
+   Phase C.2.10-V3.4 : min-height ajusté 240→204 pour matcher exactement
+   la hauteur du module avec 1 row (header 40 + sub 40 + thead 36 +
+   row 32 + footer 56). Plus de vide visible entre la dernière row et
+   le footer. Max-height 420 garde le scroll interne quand 5+ positions. */
+.dash-grid > [style*="grid-area: positions"] {
+  height: auto;
+  min-height: 204px;
+  max-height: 420px;
+}
+.dash-grid > [style*="grid-area: history"] {
+  height: 480px;
+}
+/* Phase C.2.8 — rows 5 et 6 compactées : placeholders (Watchlist,
+   Calendar, IVR Movers, Sectors, AlertsFeed) ne méritent pas 220-
+   240 px tant qu'ils sont vides. Phase C.3 les regonflera s'il
+   faut. */
+.dash-grid > [style*="grid-area: watch"] {
+  height: 180px;
+}
+.dash-grid > [style*="grid-area: calendar"] {
+  height: 180px;
+}
+.dash-grid > [style*="grid-area: ivr"] {
+  height: 160px;
+}
+.dash-grid > [style*="grid-area: heat"] {
+  height: 160px;
+}
+.dash-grid > [style*="grid-area: alert"] {
+  height: 160px;
+}
+
+/* ─── Module shell — Phase C.1 (border + radius par module) ───── */
 .module {
   display: flex;
   flex-direction: column;
   background: var(--bg-elev-1);
-  border-radius: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
   overflow: hidden;
   min-width: 0;
   min-height: 0;
+}
+
+/* Placeholder Phase C.1 (compacté C.2.8) — TradeHistory legacy,
+   CalendarMini. Layout vertical centré, message minimaliste. Le
+   user comprend visuellement qu'il s'agit d'un slot en attente. */
+.module-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 16px;
+}
+
+.module-placeholder__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.module-placeholder__sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  opacity: 0.7;
 }
 
 .module-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  height: 22px;
-  padding: 0 8px;
+  height: 32px;
+  padding: 0 12px;
   background: var(--bg-elev-1);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -102,10 +199,11 @@
   user-select: none;
 }
 
-/* ─── Token additionnel pour Risk Matrix (brick 4) ───────────── */
-:root {
-  --row-h-15: 15px;
-}
+/* ─── Token --row-h-15 → définition canonique migrée vers tokens.css ─────
+   4K refonte 2026-05-10 : on a déplacé --row-h-15 (et ajouté --row-h-22)
+   dans src/styles/tokens.css §A « v5 Institutional density ». Le local
+   override 15px qui vivait ici a été retiré pour que toutes les rows
+   héritent automatiquement de la nouvelle valeur 22 px. */
 
 /* ════════════════════════════════════════════════════════════════
    MASTER CHART — brick 3
@@ -117,7 +215,7 @@
   font-weight: 600;
   color: var(--text-primary);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -268,10 +366,381 @@
   color: var(--loss);
 }
 
+/* ════════════════════════════════════════════════════════════════
+   TRADING CHARTS — Phase C.1.7 split MasterChart en 2 modules
+   Pattern unifié `.trading-chart` partagé par EquityChart +
+   DailyPnLChart. Header / sub-header KPI strip / body Recharts /
+   footer 3 cells.
+   ════════════════════════════════════════════════════════════════ */
+
+.trading-chart {
+  background: var(--bg-elev-1);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  /* Phase C.1.8 polish — hover border subtle (cohérence KPI cards). */
+  transition: border-color 120ms ease-out;
+}
+
+.trading-chart:hover {
+  border-color: var(--border-strong);
+}
+
+.trading-chart__header {
+  height: 36px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: color-mix(in srgb, var(--bg-base) 50%, transparent);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.trading-chart__title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.trading-chart__title {
+  font-size: 12px;
+  color: var(--text-secondary);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.trading-chart__sub {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trading-chart__range-selector {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 1px;
+  background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+  padding: 2px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.trading-chart__range-btn {
+  padding: 3px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+  line-height: 1;
+}
+
+.trading-chart__range-btn:hover {
+  color: var(--text-secondary);
+}
+
+.trading-chart__range-btn:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.trading-chart__range-btn[data-active] {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-weight: 500;
+}
+
+.trading-chart__subheader {
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.trading-chart__kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.trading-chart__kpi--right {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.trading-chart__kpi-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.trading-chart__kpi-value {
+  /* Phase C.2.6 — bumpé 18→22 pour 4K (matche KPI Cards typo). */
+  font-size: 22px;
+  color: var(--text-primary);
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: tabular-nums slashed-zero;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Phase C.1.8 polish — transition douce sur le color quand
+     range change ou que le signe pivote. */
+  transition: color 200ms ease;
+}
+
+.trading-chart__kpi-value--profit {
+  color: var(--profit);
+}
+.trading-chart__kpi-value--loss {
+  color: var(--loss);
+}
+.trading-chart__kpi-value--mute {
+  color: var(--text-secondary);
+}
+
+.trading-chart__kpi-divider {
+  width: 1px;
+  background: var(--border);
+  margin: 4px 0;
+  flex-shrink: 0;
+}
+
+.trading-chart__body {
+  flex: 1;
+  min-height: 0;
+  padding: 8px 8px 4px;
+  position: relative;
+  /* Phase C.1.7 polish — crosshair cursor over the chart canvas
+     pour signaler que le tooltip suit le curseur (pattern trading-
+     terminal classique). */
+  cursor: crosshair;
+}
+
+.trading-chart__footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  flex-shrink: 0;
+  gap: 0;
+}
+
+.trading-chart__footer-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0 10px;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+
+.trading-chart__footer-cell:first-child {
+  padding-left: 0;
+}
+.trading-chart__footer-cell:last-child {
+  padding-right: 0;
+  border-right: none;
+}
+
+.trading-chart__footer-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.trading-chart__footer-value {
+  /* Phase C.2.6 — bumpé 14→15 pour 4K. */
+  font-size: 15px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums slashed-zero;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trading-chart__footer-value--profit {
+  color: var(--profit);
+}
+.trading-chart__footer-value--loss {
+  color: var(--loss);
+}
+.trading-chart__footer-value--mute {
+  color: var(--text-tertiary);
+}
+
+.trading-chart__tooltip {
+  /* Phase C.2.7 / C.2.8 — !important pour gagner contre tout style
+     inline wrapperStyle Recharts qui pourrait élargir. word-break +
+     white-space normal au cas où le contenu (ticker long) déborde. */
+  max-width: 200px !important;
+  word-break: break-word;
+  white-space: normal;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--bg-base) 70%, transparent);
+}
+
+.trading-chart__tooltip-date {
+  color: var(--text-primary);
+  font-weight: 500;
+  margin-bottom: 4px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.trading-chart__tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 11px;
+}
+
+.trading-chart__tooltip-row > span:first-child {
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.trading-chart__tooltip-val {
+  color: var(--text-primary);
+}
+
+.trading-chart__tooltip-val.is-profit {
+  color: var(--profit);
+}
+.trading-chart__tooltip-val.is-loss {
+  color: var(--loss);
+}
+
+.trading-chart__empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+/* ─── Phase C.1.8 — Badges conditionnels Cumul P&L header ────── */
+
+.trading-chart__warn-badge,
+.trading-chart__ath-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+  margin-left: 6px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.trading-chart__warn-badge {
+  background: color-mix(in srgb, var(--accent-amber) 12%, transparent);
+  color: var(--accent-amber);
+}
+
+.trading-chart__warn-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: trading-chart-warn-pulse 2s ease-in-out infinite;
+}
+
+@keyframes trading-chart-warn-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trading-chart__warn-dot {
+    animation: none;
+  }
+}
+
+.trading-chart__ath-badge {
+  background: color-mix(in srgb, var(--profit) 12%, transparent);
+  color: var(--profit);
+}
+
+/* ─── Phase C.1.8 — Animation fade-in mount des modules Row 1 ── */
+
+@keyframes dash-module-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.trading-chart,
+.risk-matrix,
+.trade-history {
+  animation: dash-module-fade-in 240ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trading-chart,
+  .risk-matrix,
+  .trade-history {
+    animation: none;
+  }
+}
+
 /* Module header hint (right-aligned mute label, e.g. 'YTD') */
 .module-header__hint {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -280,84 +749,686 @@
 }
 
 /* ════════════════════════════════════════════════════════════════
-   RISK MATRIX — brick 4
-   14 lignes denses h-15. Header 22 + 14×15 = 232 px → tient dans 240.
+   RISK MATRIX v7 — 4K refonte Phase C.1.5 (Bloomberg-dense V3)
+   Layout 3-col avec visuels intégrés (gauges horizontales, DD
+   sparkline 60j, streak pattern 13 trades, donut WR, monthly bars).
+   Hauteur 520 px, fonts agrandis pour lisibilité 4K.
    ════════════════════════════════════════════════════════════════ */
 
-.risk-matrix__body {
-  /* v4 : 14 lignes tenaient pile dans 240 - 22 = 218 px (overflow hidden).
-     v5 Sprint 2.3 : 17 lignes -> 17 × 15 = 255 px ; on autorise le scroll
-     vertical interne pour les 3 dernières lignes exposure (Sprint 2.3).
-     Le scroll bar est styled discret via theme tokens. */
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 0;
-}
-
-.risk-matrix__table {
-  width: 100%;
-  border-collapse: collapse;
+.risk-matrix {
+  /* Phase C.2.6 : aligned with row 1 à 520 px (4K scale, était 480). */
+  height: 520px;
+  background: var(--bg-elev-1);
+  border: 1px solid var(--border);
+  border-radius: 4px;
   font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 14px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.risk-matrix__table tr {
-  height: var(--row-h-15);
+.risk-matrix__header {
+  display: flex;
+  align-items: stretch;
+  background: color-mix(in srgb, var(--bg-base) 60%, transparent);
+  height: 38px;
+  flex-shrink: 0;
   border-bottom: 1px solid var(--border);
-  transition: background 80ms ease-out;
 }
 
-.risk-matrix__table tr:last-child {
+.risk-matrix__action {
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  border: none;
+  border-right: 1px solid var(--border);
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: color 120ms ease-out;
+}
+
+.risk-matrix__action--active {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  color: var(--accent);
+}
+
+.risk-matrix__action:hover {
+  color: var(--text-secondary);
+}
+
+.risk-matrix__action--active:hover {
+  color: var(--accent);
+}
+
+.risk-matrix__action:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.risk-matrix__title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 22px;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.risk-matrix__subheader {
+  padding: 10px 20px;
+  background: color-mix(in srgb, var(--text-primary) 2%, transparent);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.risk-matrix__ctx-val {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.risk-matrix__dot {
+  color: var(--text-tertiary);
+  margin: 0 6px;
+}
+
+.risk-matrix__context {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+
+.risk-matrix__context--right {
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.risk-matrix__ctx-trades {
+  color: var(--text-tertiary);
+}
+
+/* Phase C.1.6 — badges TIER + EDGE agrandis pour 4K. */
+.risk-matrix__tier-badge {
+  background: color-mix(in srgb, var(--accent-amber) 8%, transparent);
+  color: var(--accent-amber);
+  padding: 4px 12px;
+  border-radius: 2px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+}
+
+.risk-matrix__edge-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 2px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+}
+
+.risk-matrix__edge-badge[data-tone="profit"] {
+  background: color-mix(in srgb, var(--profit) 8%, transparent);
+  color: var(--profit);
+}
+
+.risk-matrix__edge-badge[data-tone="amber"] {
+  background: color-mix(in srgb, var(--accent-amber) 8%, transparent);
+  color: var(--accent-amber);
+}
+
+.risk-matrix__edge-badge[data-tone="loss"] {
+  background: color-mix(in srgb, var(--loss) 8%, transparent);
+  color: var(--loss);
+}
+
+.risk-matrix__edge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.risk-matrix__body {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  flex: 1;
+  overflow: hidden;
+}
+
+.risk-matrix__col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.risk-matrix__col--left,
+.risk-matrix__col--mid {
+  border-right: 1px solid var(--border);
+}
+
+.risk-matrix__section-head {
+  padding: 7px 18px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.risk-matrix__section-head-info {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  text-transform: none;
+}
+
+.risk-matrix__section-head--accent {
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+  color: var(--accent);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.risk-matrix__section-head--loss {
+  background: color-mix(in srgb, var(--loss) 4%, transparent);
+  color: var(--loss);
+  border-bottom: 1px solid color-mix(in srgb, var(--loss) 12%, transparent);
+}
+
+.risk-matrix__section-head--pushdown {
+  margin-top: auto;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.risk-matrix__row {
+  display: grid;
+  padding: 6px 18px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 4%, transparent);
+  font-variant-numeric: tabular-nums slashed-zero;
+  align-items: center;
+  gap: 6px;
+}
+
+.risk-matrix__row--cols-4 {
+  grid-template-columns: 1.8fr 1fr 0.9fr 1fr;
+}
+
+.risk-matrix__row--cols-3 {
+  grid-template-columns: 1.5fr 1fr 1fr;
+}
+
+/* Phase C.1.6 — Performance rows : 5e colonne Gauge agrandie. */
+.risk-matrix__row--cols-perf {
+  grid-template-columns: 1.8fr 0.9fr 0.8fr 0.9fr 1.5fr;
+}
+
+.risk-matrix__row--th {
+  padding: 6px 18px;
+  background: color-mix(in srgb, var(--text-primary) 2%, transparent);
+  color: var(--text-tertiary);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+.risk-matrix__row--alert-loss {
+  background: color-mix(in srgb, var(--loss) 4%, transparent);
+}
+
+/* Phase C.1.8 — hover row subtle (n'affecte pas les th rows). */
+.risk-matrix__row:not(.risk-matrix__row--th):hover {
+  background: color-mix(in srgb, var(--text-primary) 2.5%, transparent);
+  transition: background 120ms ease;
+}
+
+.risk-matrix__row--alert-loss:hover {
+  background: color-mix(in srgb, var(--loss) 6%, transparent);
+}
+
+.risk-matrix__cell--right {
+  text-align: right;
+}
+
+.risk-matrix__cell--value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.risk-matrix__cell--mute {
+  color: var(--text-tertiary);
+}
+.risk-matrix__cell--profit {
+  color: var(--profit);
+}
+.risk-matrix__cell--loss {
+  color: var(--loss);
+}
+.risk-matrix__cell--amber {
+  color: var(--accent-amber);
+}
+.risk-matrix__cell--profit-bold {
+  color: var(--profit);
+  font-weight: 500;
+}
+.risk-matrix__cell--loss-bold {
+  color: var(--loss);
+  font-weight: 500;
+}
+
+.risk-matrix__histogram {
+  padding: 8px 12px 4px;
+  display: flex;
+  align-items: end;
+  gap: 2px;
+  height: 60px;
+  flex-shrink: 0;
+}
+
+.risk-matrix__histogram-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.risk-matrix__histogram-bar {
+  flex: 1;
+  border-radius: 0;
+  min-height: 1px;
+}
+
+.risk-matrix__histogram-bar--loss {
+  background: var(--loss);
+  opacity: 0.85;
+}
+.risk-matrix__histogram-bar--loss-strong {
+  background: var(--loss);
+  opacity: 1;
+}
+.risk-matrix__histogram-bar--zero {
+  background: var(--text-tertiary);
+}
+.risk-matrix__histogram-bar--profit {
+  background: var(--profit);
+  opacity: 0.85;
+}
+.risk-matrix__histogram-bar--profit-strong {
+  background: var(--profit);
+  opacity: 1;
+}
+
+.risk-matrix__histogram-axis {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 12px 6px;
+  font-size: 9px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+/* ─── Phase C.1.5 — Performance gauge horizontale (col Range) ─── */
+
+.risk-matrix__gauge {
+  height: 6px;
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border-radius: 1px;
+  overflow: visible;
+  position: relative;
+  margin-left: 12px;
+}
+
+.risk-matrix__gauge-fill {
+  height: 100%;
+  border-radius: 1px;
+  transition: width 240ms ease;
+}
+
+.risk-matrix__gauge-fill[data-tone="profit"] {
+  background: var(--profit);
+}
+.risk-matrix__gauge-fill[data-tone="loss"] {
+  background: var(--loss);
+}
+.risk-matrix__gauge-fill[data-tone="amber"] {
+  background: var(--accent-amber);
+}
+
+.risk-matrix__gauge-marker {
+  position: absolute;
+  top: -2.5px;
+  width: 1.5px;
+  height: 11px;
+  background: color-mix(in srgb, var(--accent) 50%, transparent);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* ─── Phase C.1.5 — Subzones (DD spark, Streak pattern, WR, Monthly) ── */
+
+.risk-matrix__subzone {
+  padding: 10px 18px;
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 4%, transparent);
+  flex-shrink: 0;
+}
+
+.risk-matrix__subzone--push {
+  margin-top: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   border-bottom: none;
 }
 
-.risk-matrix__table tr:hover {
-  background: var(--row-hover);
-}
-
-.risk-matrix__label {
-  padding: 0 8px;
-  text-align: left;
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  width: 60%;
-}
-
-.risk-matrix__cell {
-  padding: 0 8px;
-  text-align: right;
-  white-space: nowrap;
+.risk-matrix__subzone-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-size: 11px;
-  line-height: 1;
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+  margin-bottom: 7px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
 }
 
-.risk-matrix__num {
+/* ─── DD sparkline 60j ────────────────────────────────────────── */
+
+.risk-matrix__dd-spark {
+  width: 100%;
+  height: 30px;
+  display: block;
+}
+
+.risk-matrix__dd-spark--empty {
+  background: color-mix(in srgb, var(--text-primary) 2%, transparent);
+}
+
+.risk-matrix__dd-spark-line {
+  stroke: var(--loss);
+}
+
+.risk-matrix__dd-spark-area {
+  fill: var(--loss);
+  fill-opacity: 0.4;
+}
+
+.risk-matrix__dd-spark-ref {
+  stroke: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  fill: none;
+}
+
+/* ─── Streak pattern 13 bars ──────────────────────────────────── */
+
+.risk-matrix__streak-pattern {
+  display: flex;
+  gap: 3px;
+  align-items: stretch;
+  height: 28px;
+}
+
+.risk-matrix__streak-bar {
+  flex: 1;
+  height: 100%;
+  border-radius: 1px;
+  min-width: 4px;
+}
+
+.risk-matrix__streak-bar--win {
+  background: var(--profit);
+}
+.risk-matrix__streak-bar--loss {
+  background: var(--loss);
+}
+.risk-matrix__streak-bar--even {
+  background: var(--text-tertiary);
+}
+
+.risk-matrix__streak-bar--active-win {
+  background: var(--profit);
+  border: 1px solid var(--profit);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--profit) 40%, transparent);
+  opacity: 0.95;
+}
+
+.risk-matrix__streak-bar--active-loss {
+  background: var(--loss);
+  border: 1px solid var(--loss);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--loss) 40%, transparent);
+  opacity: 0.95;
+}
+
+.risk-matrix__streak-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+}
+
+/* ─── Win Rate gauge zone (donut + ratio bar) ────────────────── */
+
+.risk-matrix__winrate-zone {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 18px;
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--text-primary) 6%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 4%, transparent);
+  flex-shrink: 0;
+}
+
+.risk-matrix__winrate-donut {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+}
+
+.risk-matrix__winrate-donut-bg {
+  stroke: color-mix(in srgb, var(--loss) 22%, transparent);
+}
+
+.risk-matrix__winrate-donut-fg {
+  stroke: var(--profit);
+}
+
+.risk-matrix__winrate-donut-label {
+  fill: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.risk-matrix__winrate-donut-value {
+  fill: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.risk-matrix__winrate-stats {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: var(--font-mono);
+  min-width: 0;
+}
+
+.risk-matrix__winrate-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+}
+
+.risk-matrix__winrate-label {
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+}
+
+.risk-matrix__winrate-amount {
   font-weight: 500;
 }
 
-.risk-matrix__sub {
-  font-size: 9px;
-  color: var(--text-tertiary);
-  margin-left: 6px;
-  letter-spacing: 0.02em;
+.risk-matrix__winrate-ratio {
+  height: 5px;
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border-radius: 1px;
+  display: flex;
+  overflow: hidden;
 }
 
-/* Tones — appliqués sur la cell (le num l'hérite) */
-.risk-matrix__cell--profit .risk-matrix__num {
-  color: var(--profit);
+.risk-matrix__winrate-ratio-win {
+  background: var(--profit);
 }
-.risk-matrix__cell--loss .risk-matrix__num {
-  color: var(--loss);
+
+.risk-matrix__winrate-ratio-loss {
+  background: var(--loss);
 }
-.risk-matrix__cell--warn .risk-matrix__num {
-  color: var(--warning);
+
+.risk-matrix__winrate-pf {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  margin-top: 2px;
 }
-.risk-matrix__cell--mute .risk-matrix__num {
-  color: var(--text-secondary);
+
+.risk-matrix__winrate-pf-val {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ─── Monthly P&L 6M zone ─────────────────────────────────────── */
+
+.risk-matrix__monthly-zone {
+  padding: 12px 18px;
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 0;
+}
+
+.risk-matrix__monthly-bars {
+  display: flex;
+  align-items: end;
+  gap: 5px;
+  height: 32px;
+  margin-top: 4px;
+}
+
+.risk-matrix__monthly-bar {
+  flex: 1;
+  transition: height 240ms ease;
+  border-radius: 1px;
+  min-height: 2px;
+}
+
+.risk-matrix__monthly-bar--profit {
+  background: var(--profit);
+}
+
+.risk-matrix__monthly-bar--loss {
+  background: var(--loss);
+}
+
+.risk-matrix__monthly-bar--neutral {
+  background: var(--text-tertiary);
+  opacity: 0.55;
+}
+
+.risk-matrix__monthly-labels {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 5px;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.risk-matrix__monthly-label {
+  flex: 1;
+  text-align: center;
+}
+
+/* Sub-zone tone helpers (réutilisés par les Δ inline et les
+   header info à droite des subzones). */
+.risk-matrix__cell--neutral {
+  color: var(--text-primary);
+}
+.risk-matrix__cell--accent {
+  color: var(--accent);
+}
+
+.risk-matrix__footer {
+  height: 28px;
+  background: color-mix(in srgb, var(--bg-base) 60%, transparent);
+  border-top: 1px solid var(--border);
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  flex-shrink: 0;
+  letter-spacing: 0.04em;
+}
+
+.risk-matrix__footer-cmd-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.risk-matrix__footer-cmd-label {
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+}
+
+.risk-matrix__footer-cmd {
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  font-weight: 500;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -554,6 +1625,11 @@
    ════════════════════════════════════════════════════════════════ */
 
 .live-pos__body {
+  /* Phase C.2.7 — padding vertical 4px ajoute respiration sur 4K
+     quand 1-2 rows ; flex:1 garanti le fill du module-body.
+     Phase C.2.10-V3.2 : padding retiré pour matcher .trade-history__body
+     (flush layout). Le 4 px de breath créait un décalage vs trade-history
+     qui faisait apparaître le module-header visuellement plus haut. */
   padding: 0;
   overflow: auto;
   flex: 1;
@@ -573,10 +1649,13 @@
 }
 
 .live-pos__table {
+  /* Phase C.2.6 / C.2.9 — bumpé 10→13 pour 4K, table-layout fixed
+     pour widths déterministes (cohérence avec TradeHistory C.2.7). */
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 13px;
   font-variant-numeric: tabular-nums slashed-zero;
 }
 
@@ -586,33 +1665,31 @@
   z-index: 1;
 }
 
+/* Phase C.2.9 — base th : padding/font/sticky cohérents avec
+   TradeHistory pattern. text-align géré par les modifiers
+   --left/--center/--right ci-dessous (chaque th doit en porter un). */
+.live-pos__th,
 .live-pos__table thead th {
-  height: 22px;
-  padding: 0 6px;
-  font-size: 9px;
+  height: 30px;
+  padding: 0 10px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-tertiary);
   background: var(--bg-elev-1);
   border-bottom: 1px solid var(--border);
-  text-align: right;
   white-space: nowrap;
-}
-
-.live-pos__table thead th:nth-child(-n + 2) {
-  text-align: left;
-}
-
-.live-pos__table thead th:nth-child(14),
-.live-pos__table thead th:nth-child(15),
-.live-pos__table thead th:nth-child(17),
-.live-pos__table thead th:nth-child(18) {
-  text-align: center;
+  vertical-align: middle;
 }
 
 .live-pos__row {
-  height: var(--row-h-15);
+  /* Phase C.2.6 / C.2.7 — height var(--row-h-15) 22 → 36 override
+     pour matcher la densité TradeHistory et donner plus d'air.
+     Phase C.2.10-V3.2 : remplacé 36→32 pour matcher exactement la
+     hauteur des rows TradeHistory (td height: 32px). Le 4 px diff
+     créait un dilatement vertical visible vs trade-history. */
+  height: 32px;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
   transition: background 80ms ease-out;
@@ -623,25 +1700,46 @@
 }
 
 .live-pos__row:hover {
-  background: var(--row-hover);
+  /* Phase C.2.9 — bumpé pour visibilité 4K (cohérence TradeHistory). */
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
 }
 
+.live-pos__td,
 .live-pos__table tbody td {
-  padding: 0 6px;
-  text-align: right;
+  padding: 0 10px;
   white-space: nowrap;
   color: var(--text-secondary);
+  vertical-align: middle;
 }
 
-.live-pos__table tbody td:nth-child(-n + 2) {
+/* Phase C.2.9 — source-unique alignement th/td (cohérence
+   TradeHistory C.2.8). Chaque th et chaque td porte un modifier. */
+.live-pos__th--left,
+.live-pos__td--left {
   text-align: left;
 }
 
-.live-pos__table tbody td:nth-child(14),
-.live-pos__table tbody td:nth-child(15),
-.live-pos__table tbody td:nth-child(17),
-.live-pos__table tbody td:nth-child(18) {
+.live-pos__th--center,
+.live-pos__td--center {
   text-align: center;
+}
+
+.live-pos__th--right,
+.live-pos__td--right {
+  text-align: right;
+}
+
+/* Phase C.2.9 — gridlines verticales subtiles entre cols (cohérence
+   TradeHistory). 3% opacity. */
+.live-pos__table thead th + th,
+.live-pos__table tbody td + td {
+  border-left: 1px solid color-mix(in srgb, var(--text-primary) 3%, transparent);
+}
+
+/* Divider visible avant Unreal $ (sépare cols neutres / cols P&L). */
+.live-pos__th--divider,
+.live-pos__td--divider {
+  border-left: 1px solid color-mix(in srgb, var(--text-primary) 9%, transparent) !important;
 }
 
 .live-pos__ticker {
@@ -650,7 +1748,7 @@
 }
 
 .live-pos__sub {
-  font-size: 8px;
+  font-size: 10px;
   color: var(--text-tertiary);
   margin-left: 1px;
   letter-spacing: 0.02em;
@@ -1347,12 +2445,12 @@
   .dash-grid {
     grid-template-columns: 1fr;
     grid-template-rows: repeat(12, 200px);
+    /* Phase C.2.10 — SniperGate retiré du dashboard. */
     grid-template-areas:
       "master"
       "risk"
       "greeks"
       "positions"
-      "gates"
       "watch"
       "earn"
       "heat"
@@ -1373,8 +2471,11 @@
    ════════════════════════════════════════════════════════════════ */
 
 .sniper-gates__body {
-  padding: 0;
+  /* Phase C.2.7 — padding vertical 4px (cohérence avec live-pos). */
+  padding: 4px 0;
   overflow: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .sniper-gates__empty {
@@ -1391,17 +2492,19 @@
   width: 100%;
   border-collapse: collapse;
   font-family: var(--font-mono);
-  font-size: 10px;
+  /* Phase C.2.6 — bumpé 10→13 pour 4K. */
+  font-size: 13px;
   font-variant-numeric: tabular-nums slashed-zero;
   color: var(--text-secondary);
 }
 
 .sniper-gates__table thead th {
-  height: 22px;
-  padding: 0 8px;
+  /* Phase C.2.6 — height 22→30, font 9→11. */
+  height: 30px;
+  padding: 0 10px;
   background: var(--bg-elev-1);
   border-bottom: var(--hairline);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1414,13 +2517,14 @@
 }
 
 .sniper-gates__row {
-  height: var(--row-data, 26px);
+  /* Phase C.2.6 / C.2.7 — override var(--row-data) 26 → 36. */
+  height: 36px;
   cursor: pointer;
   transition: background-color 80ms ease-out;
 }
 
 .sniper-gates__row td {
-  padding: 0 8px;
+  padding: 0 10px;
   border-bottom: var(--hairline);
   vertical-align: middle;
   white-space: nowrap;
@@ -1437,7 +2541,7 @@
 }
 
 .sniper-gates__type {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
   color: var(--accent-amber, #ffa028);
@@ -1453,7 +2557,7 @@
 .sniper-gates__sub {
   margin-left: 2px;
   color: var(--text-tertiary);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .sniper-gates__unreal--profit {
@@ -1767,14 +2871,22 @@
 }
 
 /* ════════════════════════════════════════════════════════════════
-   DASHBOARD HERO STRIP — v5 Sprint B (two-tier hierarchy)
-   Top-of-page KPI band, 88 px row.
-   - 3 PRIMARY cells (36 px values) for survival metrics
-   - hairline-strong separator
-   - 6 SECONDARY cells (14 px values) for context
-   Tier-driven font-size via .hero-strip__cell--{primary,secondary}.
-   Tone-driven color via [data-tone] (preserved from Sprint 2.4).
-   Above the bento grid. .dash-shell flex-column wraps both.
+   DASHBOARD KPI CARDS — v4 (4K refonte Phase B.3 polish final)
+   Sept cards en grid 1.85fr · 1fr × 6, hauteur 200 px.
+   Pattern UNIFIÉ 4 zones (justify-content: space-between) :
+     1. top    : label + indicator droite (pill | hint | range selector)
+     2. money  : valeur USD (28 / 40 px) + ligne CHF (11 / 13 px)
+     3. visual : sparkline / fill bar / donut SVG
+     4. footer : 2 ou 3 cells avec border-right + top-border 6 % opacity
+
+   Variantes :
+     .dash-kpi-card--hero  — 1.85 fr, value 40 px, hero-mid grid
+                             0.95fr 1.3fr, border-left 3 px accent.
+     .dash-kpi-card--wr    — Win Rate avec wr-mid grid 1fr auto.
+
+   Tones via [data-tone] : profit / loss / accent / amber / neutral.
+   Pill tones via classes : profit / loss / amber / accent / mute.
+   Tous les colors via var(--*) — aucun hex hardcoded.
    ════════════════════════════════════════════════════════════════ */
 
 .dash-shell {
@@ -1782,217 +2894,874 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
+  /* Phase C.1.6 : explicite pour éviter toute contrainte parent. */
+  max-width: none;
+  margin: 0;
   background: var(--border-strong);
   gap: 1px;
 }
 
 .dash-shell .dash-grid {
-  /* When inside .dash-shell, the grid takes the remaining vertical
-     space below the hero strip and shrinks if necessary. */
   flex: 1;
   min-height: 0;
 }
 
-.hero-strip {
-  display: flex;
-  align-items: stretch;
-  height: 88px;
+.dash-kpi-cards {
+  display: grid;
+  grid-template-columns: 1.85fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  gap: 8px;
+  /* Phase C.1.6 : padding latéral 4 px pour aligner avec .dash-grid. */
+  padding: 14px 4px;
+  background: var(--bg-base);
   flex-shrink: 0;
-  background: var(--bg-elev-1);
   font-family: var(--font-mono);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
 }
 
-.hero-strip__cell {
+.dash-kpi-card {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  flex: 1 1 0;
-  min-width: 130px;
-  padding: 0 14px;
-  border-right: var(--hairline);
+  justify-content: space-between;
+  height: 240px;
+  padding: 16px 16px;
+  background: var(--bg-elev-1);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  min-width: 0;
   position: relative;
-  transition: background-color 120ms ease-out;
+  transition:
+    border-color 120ms ease-out,
+    background-color 120ms ease-out;
 }
 
-.hero-strip__cell:last-child {
-  border-right: none;
+.dash-kpi-card:hover {
+  border-color: var(--border-strong);
 }
 
-.hero-strip__cell:hover {
-  background: var(--bg-elev-2);
+.dash-kpi-card--hero {
+  padding: 16px 20px;
+  border-left: 3px solid var(--accent);
 }
 
-/* ─── Tier modifiers (Sprint B) ──────────────────────────────── */
+/* ── Zone 1 : top (label + indicator droite) ──────────────────── */
 
-.hero-strip__cell--primary {
-  flex: 1.5 1 0;
-  min-width: 200px;
-  padding: 0 18px;
-}
-
-.hero-strip__cell--primary .hero-strip__label {
-  font-size: 11px;
-  margin-bottom: 4px;
-}
-
-.hero-strip__cell--primary .hero-strip__value {
-  font-size: 36px;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
-}
-
-.hero-strip__cell--primary .hero-strip__sub {
-  font-size: 11px;
-  margin-top: 4px;
-}
-
-.hero-strip__cell--secondary {
-  flex: 1 1 0;
-  min-width: 110px;
-  padding: 0 12px;
-}
-
-.hero-strip__cell--secondary .hero-strip__value {
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0;
-}
-
-/* ─── Visual separator between primary and secondary zones ───── */
-
-.hero-strip__separator {
-  width: 1px;
-  background: var(--border-strong);
-  margin: 14px 4px;
+.dash-kpi-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   flex-shrink: 0;
 }
 
-.hero-strip__label {
-  font-size: 9px;
+.dash-kpi-card__top-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.dash-kpi-card__label {
+  font-size: 11px;
   font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Hint "neutral" (sans Pill component) — version pillée subtile pour
+   matcher visuellement les pills colorées en top-right. */
+.dash-kpi-card__hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
-  margin-bottom: 2px;
   white-space: nowrap;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  padding: 3px 7px;
+  border-radius: 2px;
 }
 
-.hero-strip__value {
-  font-size: 18px;
+.dash-kpi-card__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.dash-kpi-card__live-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--profit);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--profit) 18%, transparent);
+}
+
+.dash-kpi-card__live-text {
+  color: var(--profit);
   font-weight: 600;
-  letter-spacing: -0.005em;
-  color: var(--text-primary);
-  font-feature-settings:
-    "tnum" 1,
-    "zero" 1;
-  font-variant-numeric: tabular-nums slashed-zero;
-  line-height: 1.1;
-  white-space: nowrap;
-}
-
-.hero-strip__sub {
   font-size: 9px;
-  color: var(--text-tertiary);
-  margin-top: 2px;
-  font-feature-settings:
-    "tnum" 1,
-    "zero" 1;
-  font-variant-numeric: tabular-nums slashed-zero;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-/* Tone variants — colored value + accent bar at the left edge */
-.hero-strip__cell[data-tone="profit"] .hero-strip__value {
+/* ── Pill (indicator droite : profit / loss / amber / accent / mute) */
+
+.dash-kpi-card__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+/* Pill hero — delta NLV avec arrow + montant + % */
+.dash-kpi-card__pill--hero {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.dash-kpi-card__pill--hero.dash-kpi-card__pill--profit {
+  background: color-mix(in srgb, var(--profit) 12%, transparent);
+}
+
+.dash-kpi-card__pill--hero.dash-kpi-card__pill--loss {
+  background: color-mix(in srgb, var(--loss) 12%, transparent);
+}
+
+.dash-kpi-card__pill--hero .dash-kpi-card__pill-sub {
+  opacity: 0.85;
+  font-size: 12px;
+}
+
+.dash-kpi-card__pill--profit {
+  background: color-mix(in srgb, var(--profit) 10%, transparent);
   color: var(--profit);
 }
-.hero-strip__cell[data-tone="profit"]::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: var(--profit);
-}
-
-.hero-strip__cell[data-tone="loss"] .hero-strip__value {
+.dash-kpi-card__pill--loss {
+  background: color-mix(in srgb, var(--loss) 10%, transparent);
   color: var(--loss);
 }
-.hero-strip__cell[data-tone="loss"]::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: var(--loss);
+.dash-kpi-card__pill--amber {
+  background: color-mix(in srgb, var(--accent-amber) 10%, transparent);
+  color: var(--accent-amber);
 }
-
-.hero-strip__cell[data-tone="strong"] .hero-strip__value {
-  color: var(--text-primary);
-  font-weight: 700;
+.dash-kpi-card__pill--accent {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
 }
-.hero-strip__cell[data-tone="strong"]::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: var(--accent-amber, #ffa028);
-}
-
-.hero-strip__cell[data-tone="amber"] .hero-strip__value {
-  color: var(--accent-amber, #ffa028);
-}
-.hero-strip__cell[data-tone="amber"]::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 1px;
-  background: var(--accent-amber, #ffa028);
-  opacity: 0.6;
-}
-
-.hero-strip__cell[data-tone="mute"] .hero-strip__value {
+.dash-kpi-card__pill--mute {
+  background: color-mix(in srgb, var(--text-tertiary) 10%, transparent);
   color: var(--text-tertiary);
+}
+
+.dash-kpi-card__pill-sub {
+  opacity: 0.8;
+  font-weight: 400;
+}
+
+/* ── Range selector (NLV hero) ────────────────────────────────── */
+
+.dash-kpi-card__range {
+  display: inline-flex;
+  align-items: stretch;
+  background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+  padding: 2px;
+  gap: 0;
+}
+
+.dash-kpi-card__range-btn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition:
+    color 120ms ease-out,
+    background-color 120ms ease-out;
+  line-height: 1;
+  border-radius: 2px;
+}
+
+.dash-kpi-card__range-btn:hover {
+  color: var(--text-secondary);
+}
+
+.dash-kpi-card__range-btn:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.dash-kpi-card__range-btn.is-active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
   font-weight: 500;
 }
 
-.hero-strip__cell[data-tone="neutral"] .hero-strip__value {
+/* ── Zone 2 : money (USD + CHF) ──────────────────────────────── */
+
+.dash-kpi-card__money {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dash-kpi-card__value {
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums slashed-zero;
+  line-height: 1;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-kpi-card--hero .dash-kpi-card__value {
+  font-size: 44px;
+  letter-spacing: -0.01em;
+}
+
+.dash-kpi-card__chf {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 7px;
+  font-variant-numeric: tabular-nums slashed-zero;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-kpi-card--hero .dash-kpi-card__chf {
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+/* Tones — la couleur du value + chf suit le data-tone du card */
+.dash-kpi-card[data-tone="profit"] .dash-kpi-card__value,
+.dash-kpi-card[data-tone="profit"] .dash-kpi-card__chf {
+  color: var(--profit);
+}
+.dash-kpi-card[data-tone="loss"] .dash-kpi-card__value,
+.dash-kpi-card[data-tone="loss"] .dash-kpi-card__chf {
+  color: var(--loss);
+}
+.dash-kpi-card[data-tone="neutral"] .dash-kpi-card__value,
+.dash-kpi-card[data-tone="mute"] .dash-kpi-card__value,
+.dash-kpi-card[data-tone="accent"] .dash-kpi-card__value,
+.dash-kpi-card[data-tone="amber"] .dash-kpi-card__value {
+  color: var(--text-primary);
+}
+.dash-kpi-card[data-tone="neutral"] .dash-kpi-card__chf,
+.dash-kpi-card[data-tone="mute"] .dash-kpi-card__chf,
+.dash-kpi-card[data-tone="accent"] .dash-kpi-card__chf,
+.dash-kpi-card[data-tone="amber"] .dash-kpi-card__chf {
+  color: var(--text-secondary);
+}
+
+/* ── Zone 3 : visual (sparkline | bar | donut) ───────────────── */
+
+.dash-kpi-card__visual {
+  width: 100%;
+  min-width: 0;
+}
+
+.dash-kpi-card__visual .sparkline {
+  height: 32px;
+}
+
+/* ── Zone 3a : fill bar (Avail Capital / Exposure) ───────────── */
+
+.dash-kpi-card__bar-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dash-kpi-card__bar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.dash-kpi-card__bar-pct {
+  font-weight: 500;
+}
+
+.dash-kpi-card__bar-pct--accent {
+  color: var(--accent);
+}
+.dash-kpi-card__bar-pct--amber {
+  color: var(--accent-amber);
+}
+
+.dash-kpi-card__bar-denom {
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dash-kpi-card__bar {
+  height: 8px;
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border-radius: 2px;
+  overflow: visible;
+  position: relative;
+  display: flex;
+}
+
+.dash-kpi-card__bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 240ms ease;
+}
+
+.dash-kpi-card__bar-fill--accent {
+  background: var(--accent);
+}
+
+.dash-kpi-card__bar-fill--amber {
+  background: var(--accent-amber);
+}
+
+/* Rest of bar (capital déployable résiduel) — semi-transparent accent.
+   Phase B.4 : passé de 15 % → 18 % pour mieux distinguer le segment
+   "non consommé" sur le bar agrandi. */
+.dash-kpi-card__bar-rest {
+  flex: 1;
+  height: 100%;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* Marker vertical à un pct précis (ex : plafond Sniper 70 % NLV).
+   Phase B.4 : 14 px de haut (était 10), background solide var(--loss). */
+.dash-kpi-card__bar-marker {
+  position: absolute;
+  top: -3px;
+  width: 1.5px;
+  height: 14px;
+  background: var(--loss);
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+/* Label "CAP" au-dessus du marker — signal du plafond Sniper. */
+.dash-kpi-card__bar-cap-label {
+  position: absolute;
+  top: -15px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  color: var(--loss);
+  font-weight: 500;
+  transform: translateX(-50%);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.dash-kpi-card__bar--with-marker {
+  margin-top: 16px; /* laisser place au label CAP qui déborde */
+}
+
+/* ── Zone 4 : footer (grid 2 / 3 / 4 cells avec border-right) ───
+
+   Phase B.4 :
+     - padding-top 12 (was 10)
+     - top border 7 % (was 6 %)
+     - cell-label 10 px / weight 500 (was 9 px / 400)
+     - cell-value 13 px (was 11)
+     - variant --4 pour NLV (HIGH / LOW / PEAK / ALL-TIME) */
+
+.dash-kpi-card__footer {
+  display: grid;
+  gap: 0;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--text-primary) 7%, transparent);
+  font-family: var(--font-mono);
+}
+
+.dash-kpi-card__footer--2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.dash-kpi-card__footer--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.dash-kpi-card__footer--4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.dash-kpi-card__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.dash-kpi-card__footer--2 .dash-kpi-card__cell:nth-child(1),
+.dash-kpi-card__footer--3 .dash-kpi-card__cell:not(:last-child),
+.dash-kpi-card__footer--4 .dash-kpi-card__cell:not(:last-child) {
+  border-right: 1px solid color-mix(in srgb, var(--text-primary) 6%, transparent);
+  padding-right: 8px;
+}
+
+.dash-kpi-card__footer--2 .dash-kpi-card__cell:nth-child(2),
+.dash-kpi-card__footer--3 .dash-kpi-card__cell:not(:first-child),
+.dash-kpi-card__footer--4 .dash-kpi-card__cell:not(:first-child) {
+  padding-left: 8px;
+}
+
+.dash-kpi-card__cell-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-kpi-card__cell-value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums slashed-zero;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-kpi-card__cell-value--profit {
+  color: var(--profit);
+}
+.dash-kpi-card__cell-value--loss {
+  color: var(--loss);
+}
+.dash-kpi-card__cell-value--accent {
+  color: var(--accent);
+}
+.dash-kpi-card__cell-value--amber {
+  color: var(--accent-amber);
+}
+.dash-kpi-card__cell-value--mute {
+  color: var(--text-tertiary);
+}
+.dash-kpi-card__cell-value--neutral {
+  color: var(--text-primary);
+}
+
+/* ── Hero card mid-zone : value/CHF/delta à gauche, spark à droite */
+
+.dash-kpi-card--hero .dash-kpi-card__hero-mid {
+  display: grid;
+  grid-template-columns: 0.95fr 1.3fr;
+  gap: 16px;
+  align-items: center;
+  flex: 1;
+  min-height: 0;
+}
+
+.dash-kpi-card__hero-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.dash-kpi-card__hero-text .dash-kpi-card__pill {
+  margin-top: 10px;
+}
+
+.dash-kpi-card__hero-spark {
+  height: 100px;
+  width: 100%;
+  min-width: 0;
+  position: relative;
+}
+
+.dash-kpi-card__hero-spark .sparkline,
+.dash-kpi-card__hero-spark .sparkline-wrap {
+  height: 100px;
+}
+
+/* ── Win Rate card mid-zone : value+W·L à gauche, donut à droite */
+
+.dash-kpi-card--wr .dash-kpi-card__wr-mid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 0;
+}
+
+.dash-kpi-card__wr-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dash-kpi-card__wr-value {
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.dash-kpi-card__wr-sub {
+  margin-top: 9px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums slashed-zero;
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.dash-kpi-card__wr-w {
+  color: var(--profit);
+  font-weight: 500;
+}
+.dash-kpi-card__wr-l {
+  color: var(--loss);
+  font-weight: 500;
+}
+.dash-kpi-card__wr-sep {
+  color: var(--text-tertiary);
+  margin: 0 5px;
+}
+
+.dash-kpi-card__wr-donut {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Donut SVG primitive (Phase B.4 : 74×74, r=28, stroke 7) ──── */
+
+.dash-kpi-donut__bg {
+  stroke: color-mix(in srgb, var(--loss) 22%, transparent);
+}
+
+.dash-kpi-donut__fg {
+  stroke: var(--profit);
+}
+
+.dash-kpi-donut__label {
+  fill: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+.dash-kpi-donut__value {
+  fill: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+/* ── Sparkline colour modifiers ─────────────────────────────── */
+
+.sparkline {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.spark-profit {
+  color: var(--profit);
+}
+.spark-loss {
+  color: var(--loss);
+}
+.spark-accent {
+  color: var(--accent);
+}
+.spark-amber {
+  color: var(--accent-amber);
+}
+.spark-neutral {
+  color: var(--text-secondary);
+}
+.sparkline--flat {
+  color: var(--text-tertiary);
+}
+
+/* Phase B.3 — gridlines + zero line en couleur neutre (pas
+   tributaires de currentColor pour éviter de re-teinter avec la
+   couleur sémantique du sparkline). */
+.sparkline-grid {
+  stroke: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  fill: none;
+}
+
+.sparkline-zero {
+  stroke: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  fill: none;
+}
+
+/* Phase B.3 — wrapper pour axisLabels (mini-labels max top + min
+   bottom collés à droite, padding 1 4 sur fond bg-elev-1). */
+.sparkline-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.sparkline-wrap .sparkline {
+  width: 100%;
+  height: 100%;
+}
+
+.sparkline-wrap__axis {
+  position: absolute;
+  right: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums slashed-zero;
+  color: var(--text-secondary);
+  background: var(--bg-elev-1);
+  padding: 1px 4px;
+  border-radius: 2px;
+  line-height: 1;
+  pointer-events: none;
+  letter-spacing: 0.02em;
+}
+
+.sparkline-wrap__axis--max {
+  top: 0;
+}
+
+.sparkline-wrap__axis--min {
+  bottom: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Phase B.4 — Info blocks (Day P&L / Exposure / Win Rate)
+   Pattern : étiquette gauche + valeur droite, border-left coloré
+   matchant le tone. Réutilisable across cards.
+   ════════════════════════════════════════════════════════════════ */
+
+.dash-kpi-card__info-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dash-kpi-card__info-slot {
+  margin-top: 8px;
+}
+
+.dash-kpi-card__info-slot--tight {
+  margin-top: 6px;
+}
+
+.dash-kpi-card__info-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--text-primary) 2.5%, transparent);
+  border-radius: 3px;
+  border-left: 2px solid var(--text-tertiary);
+}
+
+.dash-kpi-card__info-block--loss {
+  border-left-color: color-mix(in srgb, var(--loss) 50%, transparent);
+}
+
+.dash-kpi-card__info-block--accent {
+  border-left-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.dash-kpi-card__info-block--profit {
+  border-left-color: color-mix(in srgb, var(--profit) 50%, transparent);
+}
+
+.dash-kpi-card__info-block--amber {
+  border-left-color: color-mix(in srgb, var(--accent-amber) 50%, transparent);
+}
+
+.dash-kpi-card__info-block--mute {
+  border-left-color: var(--text-tertiary);
+  opacity: 0.7;
+}
+
+.dash-kpi-card__info-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.dash-kpi-card__info-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums slashed-zero;
+  white-space: nowrap;
+}
+
+.dash-kpi-card__info-value--loss {
+  color: var(--loss);
+}
+
+.dash-kpi-card__info-value--accent {
+  color: var(--accent);
+}
+
+.dash-kpi-card__info-value--profit {
+  color: var(--profit);
+}
+
+.dash-kpi-card__info-value--amber {
+  color: var(--accent-amber);
+  letter-spacing: 0.08em;
+}
+
+.dash-kpi-card__info-value--mute {
+  color: var(--text-tertiary);
+}
+
+/* Tier-block dans Exposure : padding plus serré pour tenir
+   à côté du bar + marker. */
+.dash-kpi-card__info-slot--tight .dash-kpi-card__info-block {
+  padding: 6px 10px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Phase B.4 — Sparkline avec overlay pill (Unrealized / Realized)
+   Le sparkline garde sa taille naturelle, l'overlay flotte top-right.
+   ════════════════════════════════════════════════════════════════ */
+
+.dash-kpi-card__spark-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.dash-kpi-card__spark-overlay {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-tertiary);
+  background: color-mix(in srgb, var(--bg-elev-1) 85%, transparent);
+  padding: 1px 5px;
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Phase B.4 — Avail Capital block : mini-spark trend + bar
+   ════════════════════════════════════════════════════════════════ */
+
+.dash-kpi-card__avail-block {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.dash-kpi-card__avail-spark {
+  height: 28px;
+  width: 100%;
+}
+
+.dash-kpi-card__avail-spark .sparkline {
+  height: 28px;
+}
+
+/* Exposure block : groupe le bar-row + bar + marker label + tier block. */
+.dash-kpi-card__expo-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ─── Mobile fallback : stack cards linearly ────────────────── */
+
+@media (max-width: 1023px) {
+  .dash-kpi-cards {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 12px;
+  }
+  .dash-kpi-card--hero {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 767px) {
-  .hero-strip {
-    height: 72px;
+  .dash-kpi-cards {
+    grid-template-columns: 1fr 1fr;
   }
-  .hero-strip__cell--primary {
-    min-width: 140px;
-    padding: 0 12px;
+  .dash-kpi-card {
+    height: 220px;
+    padding: 14px;
   }
-  .hero-strip__cell--primary .hero-strip__value {
-    font-size: 28px;
+  .dash-kpi-card--hero .dash-kpi-card__value {
+    font-size: 32px;
   }
-  .hero-strip__cell--primary .hero-strip__label,
-  .hero-strip__cell--primary .hero-strip__sub {
-    font-size: 10px;
+  /* Sur mobile le range selector 6 segments prend trop de place — on
+     le masque, le user voit le range par défaut (30J). */
+  .dash-kpi-card--hero .dash-kpi-card__range {
+    display: none;
   }
-  .hero-strip__cell--secondary {
-    min-width: 90px;
-    padding: 0 8px;
+  /* Footer 4-cells passe en 2×2 pour respirer */
+  .dash-kpi-card__footer--4 {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 8px;
   }
-  .hero-strip__cell--secondary .hero-strip__value {
-    font-size: 12px;
+  .dash-kpi-card__footer--4 .dash-kpi-card__cell:not(:last-child) {
+    border-right: none;
+    padding-right: 0;
   }
-  .hero-strip__separator {
-    margin: 10px 2px;
+  .dash-kpi-card__footer--4 .dash-kpi-card__cell:not(:first-child) {
+    padding-left: 0;
   }
 }
 
@@ -2019,6 +3788,310 @@
 }
 
 /* ════════════════════════════════════════════════════════════════
+   LIVE POSITIONS — sub-header + sparkline placeholder (Phase C.2.9)
+
+   Sub-header context (Σ Δ · Σ Θ · Avg DTE · badge OPEN N) calé sur
+   le pattern .trade-history__subheader pour cohérence visuelle des
+   2 modules tables actives.
+
+   Sparkline placeholder : SVG line 80×22 + dot amber pulsant pour
+   signaler "data 7J option price à câbler API ultérieurement".
+   ════════════════════════════════════════════════════════════════ */
+
+.live-pos__subheader {
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  /* Phase C.2.10-V3.1 : gap 16→18 pour matcher .trade-history__subheader. */
+  gap: 18px;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+}
+
+.live-pos__ctx {
+  white-space: nowrap;
+}
+
+/* Phase C.2.10-V3.1 : font-variant-numeric retiré pour matcher
+   exactement .trade-history__ctx-val. Le font-mono hérité de
+   .live-pos donne déjà des chiffres tabulaires (JetBrains Mono
+   est monospace), donc la prop devenait redondante + créait un
+   décalage visuel non désiré vs trade-history. */
+.live-pos__ctx-val {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Phase C.2.10-V3 — modifiers tone pour ctx-val (profit/loss/mute),
+   miroir de .trade-history__ctx-val--*. */
+.live-pos__ctx-val--profit {
+  color: var(--profit);
+}
+
+.live-pos__ctx-val--loss {
+  color: var(--loss);
+}
+
+.live-pos__ctx-val--mute {
+  color: var(--text-tertiary);
+}
+
+.live-pos__dot {
+  color: var(--text-tertiary);
+  opacity: 0.5;
+}
+
+.live-pos__ctx-spacer {
+  flex: 1;
+}
+
+/* Phase C.2.10-V3 — badge neutre par défaut, couleur via modifier
+   (--accent pour OPEN N ; extensible vers --wins/--losses si besoin). */
+.live-pos__ctx-badge {
+  padding: 4px 12px;
+  border-radius: 2px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.live-pos__ctx-badge--accent {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--accent);
+}
+
+.live-pos__spark-placeholder {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-tertiary);
+}
+
+.live-pos__spark-svg {
+  /* Phase C.2.9-FIN polish E — cohérence avec trade-history SVG. */
+  width: 92px;
+  height: 24px;
+  display: block;
+}
+
+.live-pos__spark-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-amber);
+  box-shadow: 0 0 4px color-mix(in srgb, var(--accent-amber) 50%, transparent);
+  opacity: 0.7;
+  animation: live-pos-spark-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes live-pos-spark-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-pos__spark-dot {
+    animation: none;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LIVE POSITIONS + SNIPER GATE — header scope override (Phase C.2.7)
+
+   Bumper le `.module-header` UNIQUEMENT pour ces 2 modules actifs
+   pour matcher la densité TradeHistory (header 40px, font 13px).
+   Scopé via child selector `>` pour ne pas casser AlertsFeed /
+   Watchlist / IVRMovers / etc qui gardent le .module-header
+   global à 32 px / 12 px.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Phase C.2.10-V3 — padding 18→14 pour matcher .trade-history__header
+   (cohérence visuelle des 2 modules tables actives).
+   Phase C.2.10-V3.2 : ajout min-height/max-height pour pin la
+   hauteur à 40px (height seul peut être contourné par le content
+   intrinsèque + overflow visible des wrappers). Box-sizing border-box
+   global rend padding 0 14px inclus dans les 40 px. */
+.live-pos > .module-header,
+.sniper-gates > .module-header {
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  padding: 0 14px;
+}
+
+.live-pos > .module-header .module-header__title,
+.sniper-gates > .module-header .module-header__title {
+  font-size: 13px;
+  letter-spacing: 0.14em;
+}
+
+.live-pos > .module-header .module-header__hint,
+.sniper-gates > .module-header .module-header__hint {
+  font-size: 12px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LIVE POSITIONS — Phase C.2.10-V3 harmonisation TradeHistory
+
+   Wrapper, sticky header blur, hover rows, gridlines, paddings,
+   font-size 14 px : tout calé sur le pattern .trade-history pour
+   que les 2 modules tables actives soient visuellement jumeaux.
+   Les 19 colonnes du tbody restent intactes (zéro modif JSX).
+
+   Footer agrégé 6 cells (Σ UNREAL · Σ NOTIONAL · Σ MAX RISK ·
+   Σ Δ $ · Σ Θ $/J · CLOSEST DTE).
+   ════════════════════════════════════════════════════════════════ */
+
+/* Wrapper section — cohérence avec .trade-history. Les rules
+   .module (line ~103) couvrent déjà bg/border/radius/overflow ;
+   on ajoute flex/direction pour compose le footer en flex-end.
+   Phase C.2.10-V3.1 : font-family mono ajouté pour matcher
+   .trade-history (qui set font-mono sur la section) — sans ça
+   le sub-header/footer héritent d'Inter Tight UI du body, qui
+   rend les valeurs visuellement plus larges et fait overflow
+   les 56 px du footer (line-box plus haute en UI vs mono). */
+.live-pos {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-mono);
+}
+
+/* Thead sticky blur — miroir de .trade-history__table thead.
+   Surcharge la règle ligne 1653 (background plain → blur+bg-base). */
+.live-pos__table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: color-mix(in srgb, var(--bg-base) 80%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 1px 0 0 var(--border);
+}
+
+/* Th paddings + height — surcharge la règle ligne 1663. */
+.live-pos__table thead th {
+  padding: 10px 14px;
+  height: 36px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  vertical-align: middle;
+  background: transparent;
+}
+
+/* Tbody rows : hover + cursor + transition uniformes. La règle
+   .live-pos__row ligne 1677 garde height 36px ; on ajoute le hover
+   bg renforcé pour matcher TradeHistory. */
+.live-pos__table tbody tr {
+  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 4%, transparent);
+  transition: background 120ms ease;
+  cursor: pointer;
+}
+
+.live-pos__table tbody tr:hover {
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+/* Td paddings + font + line-height — surcharge la règle ligne 1696
+   (padding 0 10 → 6 14, ajoute font 14 + line 1.3).
+   Phase C.2.10-V3.2 : ajout de height: 32px pour matcher exactement
+   .trade-history__td (ligne 4496). Sans height explicite, la row
+   dépendait du tr (line 1683) et faisait 36 vs 32 trade-history. */
+.live-pos__table tbody td {
+  padding: 6px 14px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  vertical-align: middle;
+  font-size: 14px;
+  line-height: 1.3;
+  height: 32px;
+}
+
+/* Gridlines verticales subtiles entre cols (existant ligne 1722
+   déjà OK : 3% opacity). Ré-affirmé ici pour clarté visuelle de
+   l'ensemble du bloc. */
+.live-pos__table thead th + th,
+.live-pos__table tbody td + td {
+  border-left: 1px solid color-mix(in srgb, var(--text-primary) 3%, transparent);
+}
+
+/* ─── Footer agrégé 6 cells (miroir .trade-history__footer) ──── */
+
+.live-pos__footer {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  padding: 10px 14px;
+  height: 56px;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0;
+}
+
+.live-pos__footer-cell {
+  display: flex;
+  flex-direction: column;
+  /* Phase C.2.10-V3.1 : gap 2→3 pour matcher .trade-history__footer-cell. */
+  gap: 3px;
+  padding: 0 14px;
+  border-right: 1px solid var(--border);
+  justify-content: center;
+}
+
+.live-pos__footer-cell:first-child {
+  padding-left: 0;
+}
+
+.live-pos__footer-cell:last-child {
+  padding-right: 0;
+  border-right: none;
+}
+
+.live-pos__footer-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* Phase C.2.10-V3.1 : font-variant-numeric retiré pour matcher
+   exactement .trade-history__footer-value. Même raison que
+   .live-pos__ctx-val : font-mono hérité couvre le besoin. */
+.live-pos__footer-value {
+  font-size: 15px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.live-pos__footer-value--profit {
+  color: var(--profit);
+}
+
+.live-pos__footer-value--loss {
+  color: var(--loss);
+}
+
+.live-pos__footer-value--mute {
+  color: var(--text-tertiary);
+}
+
+/* ════════════════════════════════════════════════════════════════
    MODULE EMPTY STATE — v5 Sprint polish
    2-line typography pattern for empty modules across the dashboard.
    Applied alongside the per-module class (e.g. .alerts-feed__empty
@@ -2027,12 +4100,14 @@
    ════════════════════════════════════════════════════════════════ */
 
 .module-empty {
+  /* Phase C.2.8 — gap/padding compactés (rows 5/6 passent à
+     160-180 px, pas la peine de réserver 40 px de padding). */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 16px 24px;
+  gap: 4px;
+  padding: 8px 20px;
   text-align: center;
   height: 100%;
   font-family: var(--font-mono);
@@ -2047,9 +4122,581 @@
 }
 
 .module-empty__sub {
+  /* Phase C.2.8 — opacity 0.7 pour discrétion. */
   font-size: 10px;
   letter-spacing: 0.02em;
   color: var(--text-tertiary);
   max-width: 320px;
   line-height: 1.45;
+  opacity: 0.7;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TRADE HISTORY — Phase C.2 / C.2.5 / C.2.6 (Bloomberg dense + 4K)
+
+   Table dense 12 cols (les 3 cols Edge / C-Tier / Exit Reason ont
+   été fusionnées en 1 col "Sniper" placeholder Phase C.2.6.2),
+   header sticky avec backdrop-blur + shadow, body scrollable,
+   footer agrégé 6 cells (Σ P&L · Win Rate · Avg Win · Avg Loss ·
+   Σ Comm · Best Day).
+
+   Phase C.2.5 :
+     - Sub-header (Σ Hold · Best Ticker · Worst Ticker + badge W/L)
+     - Border-left 3 px (était 2 px) sur les rows profit/loss
+     - Top 3 gains / pertes : background subtle via data-top-gain /
+       data-top-loss + hover renforcé
+     - Divider visuel avant la colonne P&L Net (border-left subtle)
+
+   Phase C.2.6 (4K scale-up) :
+     - Heights / paddings / fonts bumpés pour matcher la densité
+       des KPI Cards (font 14 base, footer 15, header 15)
+     - Sub-header 4 contextes (+ Σ Window + PF Window)
+     - Badge unique remplacé par 2 badges séparés (WINS / LOSSES)
+     - Margin-top 6 px sur la grid cell pour séparer Row 3 (active)
+       de Row 4 (historique)
+   ════════════════════════════════════════════════════════════════ */
+
+.trade-history {
+  height: 480px;
+  background: var(--bg-elev-1);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--font-mono);
+}
+
+/* Phase C.2.6.7 polish — gap visuel discret entre la zone active
+   (Row 3 SniperGate) et la zone historique (Row 4 TradeHistory).
+   La grid `gap: 8px` existant est conservé, le margin-top ajoute
+   un breath supplémentaire spécifique. */
+.dash-grid > [style*="grid-area: history"] {
+  margin-top: 6px;
+}
+
+.trade-history__header {
+  /* Phase C.2.8 — padding 18→14 aligné avec table tbody td padding. */
+  height: 40px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: color-mix(in srgb, var(--bg-base) 50%, transparent);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.trade-history__title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.trade-history__title {
+  font-size: 15px;
+  color: var(--text-secondary);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.trade-history__sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+}
+
+.trade-history__range-selector {
+  display: flex;
+  gap: 1px;
+  background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+  padding: 2px;
+  border-radius: 3px;
+}
+
+.trade-history__range-selector button {
+  padding: 5px 11px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background 120ms ease;
+}
+
+.trade-history__range-selector button:hover {
+  color: var(--text-secondary);
+}
+
+/* Phase C.2.8 — hover state explicite (only on inactive buttons). */
+.trade-history__range-selector button:hover:not([data-active]) {
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+
+.trade-history__range-selector button[data-active] {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-weight: 500;
+}
+
+/* ─── Sub-header context (Phase C.2.5 / 4K scale C.2.6) ──────── */
+
+.trade-history__subheader {
+  /* Phase C.2.8 — padding 18→14 aligné avec table tbody td padding. */
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+}
+
+.trade-history__ctx {
+  white-space: nowrap;
+}
+
+.trade-history__ctx-val {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.trade-history__ctx-val--profit {
+  color: var(--profit);
+}
+
+.trade-history__ctx-val--loss {
+  color: var(--loss);
+}
+
+.trade-history__ctx-val--mute {
+  color: var(--text-tertiary);
+}
+
+.trade-history__dot {
+  color: var(--text-tertiary);
+  opacity: 0.5;
+}
+
+.trade-history__ctx-spacer {
+  flex: 1;
+}
+
+.trade-history__ctx-badge {
+  padding: 4px 12px;
+  border-radius: 2px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Phase C.2.6.7 — 2 badges séparés Wins/Losses pour clarté
+   (remplace l'ancien badge unique "EDGE+ XW · YL"). */
+.trade-history__ctx-badge--wins {
+  background: color-mix(in srgb, var(--profit) 8%, transparent);
+  color: var(--profit);
+}
+
+.trade-history__ctx-badge--losses {
+  background: color-mix(in srgb, var(--loss) 8%, transparent);
+  color: var(--loss);
+}
+
+/* ─── Body + table ───────────────────────────────────────────── */
+
+.trade-history__body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.trade-history__body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.trade-history__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.trade-history__body::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  border-radius: 3px;
+}
+
+.trade-history__body::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+
+.trade-history__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  /* Phase C.2.7 — fixed layout pour widths déterministes (sans ça
+     le navigateur recalcule selon le contenu : cols Type = "—"
+     partout se rétrécissent → cells décalées vs headers). */
+  table-layout: fixed;
+}
+
+/* Phase C.2.10-V3 — widths colgroup 13 cols (somme = 100%).
+   Spark P&L col droppée (random walk synthétique sur trade fermé =
+   info inventée, aucune valeur trading). Redistribution sur les
+   colonnes restantes pour donner plus d'air à P&L / Sniper. */
+.trade-history__col-ticker { width: 5%; }
+.trade-history__col-type { width: 6%; }
+.trade-history__col-strike { width: 7%; }
+.trade-history__col-dteentry { width: 6%; }
+.trade-history__col-entry { width: 7%; }
+.trade-history__col-exit { width: 7%; }
+.trade-history__col-hold { width: 5%; }
+.trade-history__col-entrydol { width: 8%; }
+.trade-history__col-exitdol { width: 8%; }
+.trade-history__col-comm { width: 8%; }
+.trade-history__col-pnl { width: 11%; }
+.trade-history__col-pnlpct { width: 10%; }
+.trade-history__col-sniper { width: 12%; }
+
+.trade-history__table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: color-mix(in srgb, var(--bg-base) 80%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 1px 0 0 var(--border);
+}
+
+/* Phase C.2.8 — base th/td : padding + vertical-align + heights
+   uniformes. text-align géré par les modifiers --left/--center/--right
+   ci-dessous (chaque th et chaque td DOIT en porter un). */
+.trade-history__table thead th,
+.trade-history__th {
+  padding: 10px 14px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  vertical-align: middle;
+  height: 36px;
+}
+
+/* Phase C.2.8 — alignement source-unique : header et cell partagent
+   le même modifier → garantit l'alignement vertical th vs td. */
+.trade-history__th--left,
+.trade-history__td--left {
+  text-align: left;
+}
+
+.trade-history__th--center,
+.trade-history__td--center {
+  text-align: center;
+}
+
+.trade-history__th--right,
+.trade-history__td--right {
+  text-align: right;
+  /* tabular-nums : chiffres à largeur fixe → cells numériques
+     parfaitement alignées verticalement. */
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+/* Phase C.2.7 — gridlines verticales subtiles entre cols pour
+   guider l'œil sur 4K. 3% opacity = juste visible, pas distrayant. */
+.trade-history__table thead th + th,
+.trade-history__table tbody td + td {
+  border-left: 1px solid color-mix(in srgb, var(--text-primary) 3%, transparent);
+}
+
+/* Divider visible avant P&L Net + avant Sniper (sépare zones
+   numériques neutres / P&L colorées / Sniper placeholder). Le
+   !important override les gridlines voisines par spécificité
+   plus forte sans avoir à doubler les sélecteurs. */
+.trade-history__th--divider,
+.trade-history__td--divider {
+  border-left: 1px solid color-mix(in srgb, var(--text-primary) 9%, transparent) !important;
+}
+
+/* Phase C.2.8 — padding-right supplémentaire sur la dernière col
+   (Sniper) pour donner de l'air contre le bord droit du module. */
+.trade-history__table thead th:last-child,
+.trade-history__table tbody td:last-child {
+  padding-right: 18px;
+}
+
+.trade-history__table tbody tr {
+  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 4%, transparent);
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    border-left-color 120ms ease;
+}
+
+.trade-history__table tbody tr:hover {
+  /* Phase C.2.8 — bumpé 3→5 pour visibilité sur 4K. */
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+.trade-history__tr--profit {
+  border-left-color: color-mix(in srgb, var(--profit) 55%, transparent);
+}
+
+.trade-history__tr--loss {
+  border-left-color: color-mix(in srgb, var(--loss) 55%, transparent);
+}
+
+/* Phase C.2.5 — top 3 gains / pertes : background subtle constant
+   + hover renforcé. Pulse one-shot au mount via animation. */
+.trade-history__table tbody tr[data-top-gain] {
+  background: color-mix(in srgb, var(--profit) 3%, transparent);
+  animation: trade-history-top-gain-pulse 1200ms ease-out 1;
+}
+
+.trade-history__table tbody tr[data-top-loss] {
+  background: color-mix(in srgb, var(--loss) 3%, transparent);
+  animation: trade-history-top-loss-pulse 1200ms ease-out 1;
+}
+
+.trade-history__table tbody tr[data-top-gain]:hover {
+  /* Phase C.2.8 — bumpé 7→10. */
+  background: color-mix(in srgb, var(--profit) 10%, transparent);
+}
+
+.trade-history__table tbody tr[data-top-loss]:hover {
+  background: color-mix(in srgb, var(--loss) 10%, transparent);
+}
+
+@keyframes trade-history-top-gain-pulse {
+  0% {
+    background: color-mix(in srgb, var(--profit) 10%, transparent);
+  }
+  100% {
+    background: color-mix(in srgb, var(--profit) 3%, transparent);
+  }
+}
+
+@keyframes trade-history-top-loss-pulse {
+  0% {
+    background: color-mix(in srgb, var(--loss) 10%, transparent);
+  }
+  100% {
+    background: color-mix(in srgb, var(--loss) 3%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trade-history__table tbody tr[data-top-gain],
+  .trade-history__table tbody tr[data-top-loss] {
+    animation: none;
+  }
+}
+
+.trade-history__table tbody td,
+.trade-history__td {
+  /* Phase C.2.7 / C.2.8 — base td : padding + height + vertical-align
+     uniformes. text-align via __td--left/--center/--right (chaque
+     td en porte un). Line-height explicite pour densité. */
+  padding: 6px 14px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  line-height: 1.3;
+  vertical-align: middle;
+  height: 32px;
+}
+
+/* (.trade-history__td--right text-align géré plus haut par la règle
+   source-unique combinant th--right + td--right.) */
+
+.trade-history__td--mute {
+  color: var(--text-tertiary);
+}
+
+.trade-history__td--profit {
+  color: var(--profit);
+  font-weight: 500;
+}
+
+.trade-history__td--loss {
+  color: var(--loss);
+  font-weight: 500;
+}
+
+.trade-history__td--ticker {
+  color: var(--text-primary);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.trade-history__badge {
+  /* Phase C.2.8 — padding 3/9→4/10, font 11→12, weight 500→600. */
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 2px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+/* Phase C.2.6.2 / C.2.7.3 / C.2.8.7 — col Sniper placeholder pill
+   amber. Les 3 cols Edge / C-Tier / Exit Reason ont été fusionnées
+   ici en attendant la dérivation Phase C.3+. Pill arrondie amber +
+   dot pulsant pour signaler "data live waiting" sémantique. */
+.trade-history__td--sniper {
+  font-family: var(--font-mono);
+}
+
+.trade-history__sniper-placeholder {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent-amber) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 12%, transparent);
+  color: var(--accent-amber);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+  text-transform: lowercase;
+}
+
+.trade-history__sniper-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-amber);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent-amber) 60%, transparent);
+  animation: trade-history-sniper-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes trade-history-sniper-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trade-history__sniper-dot {
+    animation: none;
+  }
+}
+
+/* Phase C.2.10-V3 — Spark P&L col supprimée. Composant TradeSparkline
+   + CSS associé (.trade-history__td--spark, .trade-history__spark-svg,
+   .trade-history__spark-mute) retirés. La sparkline 7J reste utile sur
+   LivePositions (trades vivants = données qui bougent réellement). */
+
+.trade-history__badge--call {
+  background: color-mix(in srgb, var(--profit) 10%, transparent);
+  color: var(--profit);
+}
+
+.trade-history__badge--put {
+  background: color-mix(in srgb, var(--loss) 10%, transparent);
+  color: var(--loss);
+}
+
+.trade-history__badge--stock {
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  color: var(--text-secondary);
+}
+
+/* ─── Empty state ────────────────────────────────────────────── */
+
+.trade-history__empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.trade-history__empty-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.trade-history__empty-sub {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+/* ─── Footer agrégé (6 cells — Phase C.2.5, 4K scale C.2.6, padding
+   aligné table C.2.8) ──────────────────────────────────────── */
+
+.trade-history__footer {
+  /* Phase C.2.8 — padding latéral 14px aligné avec .trade-history__td.
+     Hauteur 56px (était 48) pour donner air aux 2 lignes label+value. */
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  flex-shrink: 0;
+  height: 56px;
+  gap: 0;
+  align-items: center;
+}
+
+.trade-history__footer-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0 14px;
+  border-right: 1px solid var(--border);
+  justify-content: center;
+}
+
+.trade-history__footer-cell:first-child {
+  padding-left: 0;
+}
+
+.trade-history__footer-cell:last-child {
+  padding-right: 0;
+  border-right: none;
+}
+
+.trade-history__footer-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.trade-history__footer-value {
+  font-size: 15px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.trade-history__footer-value--profit {
+  color: var(--profit);
+}
+
+.trade-history__footer-value--loss {
+  color: var(--loss);
+}
+
+.trade-history__footer-value--mute {
+  color: var(--text-tertiary);
 }

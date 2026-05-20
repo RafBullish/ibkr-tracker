@@ -1,4 +1,4 @@
-# Logs
+﻿# Logs
 logs
 *.log
 npm-debug.log*
@@ -34,3 +34,10 @@ Thumbs.db
 .env.*.local
 !.env.example
 .vercel
+
+# Local dev artifacts
+.claude/
+.tmp.driveupload/
+fichiers.txt
+tree.txt
+phase-*.txt
