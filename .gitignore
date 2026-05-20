@@ -40,4 +40,4 @@ Thumbs.db
 .tmp.driveupload/
 fichiers.txt
 tree.txt
-phase-c-files.txt
+phase-*.txt
