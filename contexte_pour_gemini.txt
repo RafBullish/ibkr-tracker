@@ -1,0 +1,1190 @@
+# contexte_pour_gemini — Radiographie technique du projet ibkr-tracker
+
+> Généré le 2026-05-20 par audit en lecture seule de la base de code locale.
+> Branche analysée : claude/audit-gemini-context-ODlhB
+
+## Table des matières
+1. Informations générales
+2. Stack technique & environnement
+3. Architecture des fichiers
+4. État du Dashboard & flux de données
+5. Features implémentées
+6. Qualité du code & dette technique
+7. Extraction du code critique (intégral)
+8. Évaluation honnête (code review senior)
+9. Avertissement méthodologique
+
+================================================================
+## 1. Informations générales
+================================================================
+
+- Nom repo            : ibkr-tracker (owner RafBullish)
+- Nom interne         : quantumcall — v2.0.0 (package.json)
+- But                 : Terminal de trading / suivi de portefeuille Interactive
+                        Brokers (IBKR) : import des données broker, analyse PnL,
+                        Greeks, risque, options, journal de trading.
+- URL de production   : https://ibkr-tracker-delta.vercel.app
+                        (déduite de ALLOWED_ORIGINS dans .env.example ; pas de
+                        README ni de homepage Vercel explicites)
+- Remote Git          : RafBullish/ibkr-tracker (servi via proxy local)
+- Branche courante    : claude/audit-gemini-context-ODlhB
+- Historique Git      : 1 SEUL COMMIT — f563c0e "Initial commit" — RafBullish
+                        — 2026-05-10 20:31:37 +0200
+- Working tree        : propre (aucune modification non commitée)
+
+### MON RESSENTI ET NIVEAU ACTUEL
+(À remplir par l'utilisateur avant d'envoyer à Gemini : mon niveau d'autonomie
+en code actuel, mes pratiques avec l'IA, ce qui me frustre le plus dans le code
+en ce moment)
+
+================================================================
+## 2. Stack technique & environnement
+================================================================
+
+### Framework & build
+- React 19.2.0 (react-dom 19.2.0, react-is 19.2.4) — composants fonctionnels
+  + hooks uniquement.
+- Vite 7.3.1 + @vitejs/plugin-react 5.1.1 — bundler/dev-server.
+- JavaScript pur (PAS de TypeScript). Aucun tsconfig.json. @types/react est
+  présent en devDependencies mais sert uniquement à l'IntelliSense — pas de
+  compilation TS.
+- Node 22.22.2, npm 10.9.7 (pas de .nvmrc ; versions non figées).
+  .npmrc : legacy-peer-deps=true.
+- vite.config.js (310 lignes) contient un plugin maison vercelDevApi qui
+  exécute les serverless functions api/**/*.js dans le dev-server (résolution
+  de routes statiques + dynamiques [param].js, shim req/res façon Vercel).
+
+### Dépendances de production (rôle en 3 mots)
+| Package                       | Version  | Rôle                  |
+|-------------------------------|----------|-----------------------|
+| react / react-dom / react-is  | 19.2.x   | Cœur UI               |
+| react-router-dom              | 7.13.1   | Routing SPA           |
+| zustand                       | 5.0.12   | State global          |
+| recharts                      | 3.8.0    | Graphiques data-viz   |
+| @tanstack/react-table         | 8.21.3   | Tables headless       |
+| @tanstack/react-virtual       | 3.13.23  | Virtualisation listes |
+| @radix-ui/react-dialog        | 1.1.15   | Primitive modale      |
+| @radix-ui/react-dropdown-menu | 2.1.16   | Primitive menu        |
+| @radix-ui/react-tooltip       | 1.2.8    | Primitive tooltip     |
+| framer-motion                 | 12.38.0  | Animations            |
+| @number-flow/react            | 0.6.0    | Animation chiffres    |
+| lucide-react                  | 0.577.0  | Icônes SVG            |
+| date-fns                      | 4.1.0    | Manipulation dates    |
+| @fontsource/inter-tight       | 5.2.7    | Police UI             |
+| @fontsource/jetbrains-mono    | 5.2.8    | Police chiffres       |
+| @vercel/analytics             | 2.0.1    | Télémétrie audience   |
+| @vercel/speed-insights        | 2.0.0    | Métriques perf        |
+
+### devDependencies
+vite, @vitejs/plugin-react, @types/react, @types/react-dom.
+AUCUN ESLint, Prettier, Vitest, Jest, ni TypeScript.
+
+### Système de styling
+CSS pur, pas de Tailwind / SASS / CSS-in-JS. 12 feuilles de style globales
+(~16 300 lignes) importées dans l'ordre dans src/main.jsx, plus un
+design-system à variables CSS (tokens.css). Le miroir JS des tokens vit dans
+src/theme/tokens.js.
+
+### Backend / serverless — routes /api/* (12 fonctions, ~1 000 lignes)
+| Route                       | Fonction                                       |
+|-----------------------------|------------------------------------------------|
+| api/quote/[ticker].js       | Cotation action (Finnhub)                      |
+| api/finnhub/[ticker].js     | Données ticker Finnhub                         |
+| api/finnhub/earnings.js     | Calendrier résultats                           |
+| api/finnhub/economic.js     | Calendrier macro-éco                           |
+| api/yahoo/[ticker].js       | Cotation Yahoo (fallback)                      |
+| api/cboe/[ticker].js        | Chaîne d'options CBOE                          |
+| api/fx/usdchf.js            | Taux USD/CHF (Twelve Data -> Frankfurter/ECB)  |
+| api/flex/sync.js            | Sync IBKR Flex Query                           |
+| api/health/finnhub.js       | Health-check API                               |
+| api/_cors.js                | Allowlist CORS (pas de fallback permissif)     |
+| api/_rateLimit.js           | Rate limiting                                  |
+| api/_yahooAuth.js           | Auth/crumb Yahoo                               |
+
+### Variables d'environnement attendues (.env.example)
+| Variable                  | Statut                       | Usage                       |
+|---------------------------|------------------------------|-----------------------------|
+| FINNHUB_KEY               | REQUISE — serveur            | quotes/earnings/economic    |
+| TWELVE_DATA_KEY           | optionnelle — serveur        | fallback FX USD/CHF         |
+| ALLOWED_ORIGINS           | REQUISE en prod — serveur    | allowlist CORS              |
+| VITE_FEATURE_GREEK_CENTER | feature flag — exposé navig. | active route /trading/greeks|
+
+Aucune clé secrète n'est exposée côté client : les secrets sont consommés
+uniquement dans api/** via process.env. Côté front, seules import.meta.env.DEV
+et VITE_FEATURE_GREEK_CENTER sont lues. Bon réflexe de sécurité.
+
+================================================================
+## 3. Architecture des fichiers
+================================================================
+
+### Arborescence src/ (3 niveaux)
+src/
+├── App.jsx                 routing + providers
+├── main.jsx                entrée, imports CSS
+├── components/
+│   ├── charts/   (10)      MasterChart, OptionsChainTable, PnLCalendarHeatmap…
+│   ├── dashboard/(17)      modules bento du Dashboard
+│   ├── fx/       (1)       FxStaleBanner
+│   ├── history/  (1)       PerformanceAttribution
+│   ├── layout/   (7)       AppShell, CommandBar, StatusBar, TickerTape…
+│   ├── trades/   (1)       AddTradeModal
+│   └── ui/       (25)      GlassCard, DataTable, Modal, ErrorBoundary…
+├── constants/    (2)       featureFlags, timing
+├── data/         (1)       macroEvents2026
+├── hooks/        (31)      hooks custom (data + dérivés)
+├── pages/
+│   ├── Dashboard.jsx
+│   ├── PreMarketBriefing.jsx
+│   ├── insights/ (3)       Analytics, Calendar, Journal
+│   ├── settings/ (3)       Api, General, Import
+│   └── trading/  (5)       Chain, Greeks, History, HistoryDistribution, Positions
+├── services/     (1)       flexApi.js (client IBKR Flex)
+├── store/        (3)       useStore.js, reducer.js, migrations.js
+├── styles/       (12 .css) design-system + couches legacy
+├── theme/        (4)       tokens.js, themes.js, GlobalStyles, animationVariants
+└── utils/        (~35)     calculs, parsers, FX, options, IBKR…
+
+Volume : ~23 660 lignes JS/JSX + ~16 260 lignes CSS ≈ 39 900 lignes,
+hors node_modules.
+
+### Pages (lignes)
+| Page                          | Lignes |
+|-------------------------------|--------|
+| insights/Calendar.jsx         | 1234   |
+| trading/Positions.jsx         | 880    |
+| trading/History.jsx           | 787    |
+| settings/General.jsx          | 769    |
+| trading/Chain.jsx             | 717    |
+| insights/Journal.jsx          | 601    |
+| settings/Import.jsx           | 453    |
+| PreMarketBriefing.jsx         | 438    |
+| trading/Greeks.jsx            | 437    |
+| insights/Analytics.jsx        | 435    |
+| settings/Api.jsx              | 192    |
+| Dashboard.jsx                 | 91     |
+| trading/HistoryDistribution.jsx | petit |
+
+### Flux de données (global)
+Source de vérité unique = store Zustand (src/store/useStore.js), persisté dans
+localStorage (clés ibkr_u_o/c/f/j/s, écritures debouncées et reference-gated).
+5 slices : openPositions, closedTrades, cashFlows, journalEntries, settings.
+
+- Entrée des données :
+  (a) import IBKR Flex via services/flexApi.js + api/flex/sync.js
+      -> actions SYNC_FLEX / SYNC_IBKR ;
+  (b) import CSV/JSON via utils/ibkrParser.js + utils/ibkr/*
+      -> action IMPORT_DATA ;
+  (c) saisie manuelle via AddTradeModal
+      -> ADD_POSITION / ADD_CLOSED_TRADE.
+- Transformations : dispatch(action) -> reducer.js (pur, (state, action) =>
+  state) ; versionnage de schéma via migrations.js.
+- Sortie vers l'UI : sélecteurs granulaires (useOpenPositions, useClosedTrades,
+  useSettings…) ; les ~31 hooks custom dérivent les métriques
+  (usePortfolioMetrics, useTradingMetrics, useEquityHistory…).
+- Données live externes : hooks (useFx, useMarketQuotes, useCalendarFeeds,
+  useApiStatus) -> routes /api/* -> APIs tierces (Finnhub, Yahoo, CBOE,
+  Twelve Data).
+
+================================================================
+## 4. État du Dashboard & flux de données
+================================================================
+
+src/pages/Dashboard.jsx (91 lignes) est volontairement mince : il appelle
+13 hooks et rend un DashboardHeroStrip + une grille bento de 12 modules.
+Architecture grille v4/v5 : 12 colonnes x 5 rows, grid-template-areas nommées.
+
+### Modules et état réel des données
+| Module            | Hook                          | État                          |
+|-------------------|-------------------------------|-------------------------------|
+| MasterChart       | useEquityHistory, useDailyPnL | Live (store réel)             |
+| RiskMatrix        | useRiskMatrix                 | Live (store réel)             |
+| GreeksAggregate   | useGreeksAggregate            | Live (store réel)             |
+| LivePositions     | useLivePositions              | Live (store réel)             |
+| SniperGateMonitor | useSniperGates                | Live (store réel)             |
+| Watchlist         | useWatchlist                  | STUB -> empty state           |
+| EarningsCalendar  | useEarningsCalendar           | STUB -> empty state           |
+| SectorHeatmap     | useSectorHeatmap              | STUB -> empty state           |
+| IVRankMovers      | useIVMovers                   | STUB -> empty state           |
+| MarketInternals   | useMarketInternals            | STUB -> renvoie null          |
+| VolatilitySkew    | useVolSkew                    | STUB -> renvoie null          |
+| AlertsFeed        | useAlertsFeed                 | STUB -> renvoie []            |
+
+CONSTAT CLÉ POUR L'AUDIT UX : 7 modules sur 12 sont alimentés par des hooks
+stub explicitement documentés (« brick 7 / brick 8 ») et affichent un empty
+state. Seuls 5 modules (Master, Risk, Greeks, Positions, Gates) montrent des
+données réelles aujourd'hui.
+
+### Structure de la grille (src/styles/v4-dashboard.css)
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);            /* COLONNES = fractions -> scalent OK */
+  grid-template-rows: 240px 160px 130px 200px 200px; /* ROWS = PIXELS FIXES -> ne scalent PAS */
+  grid-template-areas:
+    "master master master master master master risk risk risk greeks greeks greeks"
+    "positions positions positions positions positions positions positions positions positions positions positions positions"
+    "gates gates gates gates gates gates gates gates gates gates gates gates"
+    "watch watch watch earn earn earn heat heat heat ivr ivr ivr"
+    "intrn intrn intrn skew skew skew alert alert alert alert alert alert";
+  gap: 1px;
+  height: 100%;
+}
+.dash-shell { display: flex; flex-direction: column; height: 100%; gap: 1px; }
+.dash-shell .dash-grid { flex: 1; min-height: 0; } /* la grille étire, rows restent fixes en px */
+/* Mobile <768px : grid-template-columns: 1fr ; rows: repeat(12, 200px) ; modules empilés */
+
+POINT D'ATTENTION 4K / zoom 90 % (Phase C.3.0) : les colonnes sont en fr
+(scalables), mais les 5 hauteurs de rows sont codées en pixels fixes
+(240/160/130/200/200). Sur un écran 4K, la grille s'étire en largeur mais les
+rangées restent à hauteur fixe — c'est le point dur du futur scale. Aucune
+unité auto, aucun minmax(), aucun clamp(). Toute refonte responsive 4K devra
+remplacer ces px par fr / minmax() / clamp().
+
+================================================================
+## 5. Features implémentées
+================================================================
+
+Import / synchronisation broker
+- Import IBKR Flex Query (services/flexApi.js + api/flex/sync.js) avec
+  dédoublonnage par signature de trade/flux.
+- Parsing CSV IBKR multi-sections (utils/ibkr/{csvReader,sections,closedTrades,
+  merge}.js, ibkrParser.js).
+- Import/export JSON de sauvegarde (IMPORT_DATA).
+- Saisie manuelle de trades (AddTradeModal), agrégation multi-lots avec prix
+  moyen pondéré.
+- Système de migration de schéma versionné (migrations.js).
+
+Positions & historique
+- Positions ouvertes : prix live, clôture partielle/totale (CLOSE_POSITION).
+- Historique des trades clos, détection automatique du motif de sortie
+  (utils/trades/detectExitReason.js), confirmation/override manuel.
+- Distribution d'historique (HistoryDistribution.jsx), heatmap calendaire PnL.
+
+Analyse & calculs
+- Métriques portefeuille & trading (usePortfolioMetrics, useTradingMetrics,
+  win-rate, etc.).
+- Greeks (utils/greeks.js, greeksApi.js) et pricing Black-Scholes
+  (utils/options/blackScholes.js).
+- Risque (utils/risk.js, RiskMatrix), kill-switch journalier, capital
+  disponible.
+- Attribution de performance, analyse de chaîne d'options (chainAnalytics.js),
+  IV rank, skew, internals de marché, sectors.
+- Conversion FX USD/CHF (manuelle ou auto, bannière de taux périmé).
+
+Marché & calendriers
+- Cotations actions (Finnhub/Yahoo), chaîne d'options (CBOE).
+- Calendrier de résultats et calendrier macro 2026, TickerTape live,
+  Pre-Market Briefing.
+- Gates « Sniper » paramétrables (SniperMetaEditor, useSniperGates,
+  useNextGate).
+
+Journal & insights
+- Journal de trading (CRUD), pages Analytics et Calendar.
+
+UI / Shell
+- Shell « Institutional Terminal » top-down (CommandBar, TickerTape, StatusBar,
+  BottomNav mobile).
+- Command Palette (Cmd+K), cheatsheet clavier (Cmd+/), navigation Cmd+1-9.
+- 2 thèmes (midnight/daylight), mode colorblind, reduced-motion, ThemeSwitcher.
+- Tables virtualisées, skeletons de chargement, toasts, ErrorBoundary,
+  tooltips/modales Radix.
+
+================================================================
+## 6. Qualité du code & dette technique
+================================================================
+
+| Aspect            | Constat                                                  |
+|-------------------|----------------------------------------------------------|
+| Tests             | AUCUN (0 fichier .test/.spec). Aucune couverture.        |
+| Linter / formatter| AUCUN (pas d'ESLint, Prettier, Biome, EditorConfig).     |
+| CI/CD             | AUCUN (.github/ absent).                                 |
+| TypeScript        | Non. Données aux clés cryptiques (p.tk, p.as, p.ct,      |
+|                   | p.pi, p.fxi…) documentées uniquement en commentaires.    |
+| Gestion d'erreurs | 69 blocs try/catch ; ErrorBoundary global + autour des   |
+|                   | routes lazy + FxStaleBanner. Persistance localStorage    |
+|                   | protégée (safeParse, catch storage-full).                |
+| Sécurité          | Solide : secrets uniquement côté serveur (process.env),  |
+|                   | CSP stricte + HSTS + X-Frame-Options DENY + nosniff dans |
+|                   | vercel.json, allowlist CORS sans fallback permissif,     |
+|                   | rate limiting. Aucun secret en dur détecté côté client.  |
+| Performance       | manualChunks Rollup (recharts/radix/motion/table/vendor),|
+|                   | routes lazy (Chain, Greeks, Analytics), LazyMotion,      |
+|                   | virtualisation TanStack, 138 useMemo + 25 useCallback.   |
+|                   | MAIS 0 React.memo et 305 objets style={{…}} inline       |
+|                   | (recréés à chaque render).                               |
+| TODO/FIXME/HACK   | Seulement 3 (MasterChart.jsx, useAvailableCapital.js,    |
+|                   | utils/fx/helpers.js).                                    |
+| console.* oubliés | 6 console.log, 8 console.warn/error (la plupart          |
+|                   | légitimes : storage full, erreurs middleware).           |
+| Hex en dur        | ~15 occurrences hors fichiers de tokens : WinRateDonut,  |
+| (règle "zéro hex")| VolatilitySkew, GreekEvolutionChart, Calendar. Règle     |
+|                   | globalement respectée, quelques fuites dans les charts.  |
+| Code mort /       | C'EST LA DETTE PRINCIPALE. 12 feuilles CSS empilées avec |
+| dette CSS         | dépendance à l'ordre d'import : v3-components.css (5494), |
+|                   | components.css (2394), dashboard.css (1286 — probablement|
+|                   | legacy, doublonne v4-dashboard.css), aura-boost.css (873)|
+|                   | tokens.css contient une "SECTION B — LEGACY MAPPING"     |
+|                   | d'~150 alias explicitement marqués "cleanup deferred".   |
+|                   | Plusieurs couches versionnées (v3/v4/v5) coexistent.     |
+
+### Top 10 fichiers les plus longs
+| Fichier                    | Lignes |
+|----------------------------|--------|
+| styles/v3-components.css   | 5494   |
+| styles/components.css      | 2394   |
+| styles/v4-dashboard.css    | 2055   |
+| styles/v5-chain.css        | 1505   |
+| styles/dashboard.css       | 1286   |
+| pages/insights/Calendar.jsx| 1234   |
+| pages/trading/Positions.jsx| 880    |
+| styles/aura-boost.css      | 873    |
+| pages/trading/History.jsx  | 787    |
+| pages/settings/General.jsx | 769    |
+
+### Fichiers JS/JSX > 500 lignes (candidats refacto)
+Calendar.jsx (1234), Positions.jsx (880), History.jsx (787), General.jsx (769),
+Chain.jsx (717), Journal.jsx (601), utils/calculations.js (543).
+
+================================================================
+## 7. Extraction du code critique (intégral)
+================================================================
+
+### 7.1 — src/App.jsx (routing + providers, 97 lignes)
+------------------------------------------------------------
+import { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { LazyMotion, domAnimation } from 'framer-motion';
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
+import AppShell from './components/layout/AppShell';
+import ErrorBoundary from './components/ui/ErrorBoundary';
+import GlassCard from './components/ui/GlassCard';
+import { useFxAutoRefresh } from './hooks/useFxAutoRefresh';
+import FxStaleBanner from './components/fx/FxStaleBanner';
+import { FEATURE_GREEK_CENTER } from './constants/featureFlags';
+import Dashboard from './pages/Dashboard';
+import PreMarketBriefing from './pages/PreMarketBriefing';
+import Positions from './pages/trading/Positions';
+import History from './pages/trading/History';
+import Journal from './pages/insights/Journal';
+import Calendar from './pages/insights/Calendar';
+import General from './pages/settings/General';
+import Import from './pages/settings/Import';
+import Api from './pages/settings/Api';
+
+const Chain = lazy(() => import('./pages/trading/Chain'));
+const Greeks = lazy(() => import('./pages/trading/Greeks'));
+const Analytics = lazy(() => import('./pages/insights/Analytics'));
+
+const Loader = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
+    <GlassCard style={{ padding: '40px 60px', textAlign: 'center' }}>
+      <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--text-muted)' }}>
+        Chargement…
+      </div>
+    </GlassCard>
+  </div>
+);
+
+export default function App() {
+  useFxAutoRefresh();
+  return (
+    <LazyMotion features={domAnimation}>
+      <BrowserRouter>
+        <ErrorBoundary>
+          <FxStaleBanner />
+          <Routes>
+            <Route element={<AppShell />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/premarket" element={<PreMarketBriefing />} />
+              <Route path="/trading/positions" element={<Positions />} />
+              <Route path="/trading/history" element={<History />} />
+              <Route path="/trading/orders" element={<Navigate to="/trading/history" replace />} />
+              <Route path="/trading/chain" element={
+                <ErrorBoundary><Suspense fallback={<Loader />}><Chain /></Suspense></ErrorBoundary>
+              } />
+              {FEATURE_GREEK_CENTER && (
+                <Route path="/trading/greeks" element={
+                  <ErrorBoundary><Suspense fallback={<Loader />}><Greeks /></Suspense></ErrorBoundary>
+                } />
+              )}
+              <Route path="/insights/analytics" element={
+                <ErrorBoundary><Suspense fallback={<Loader />}><Analytics /></Suspense></ErrorBoundary>
+              } />
+              <Route path="/insights/journal" element={<Journal />} />
+              <Route path="/insights/calendar" element={<Calendar />} />
+              <Route path="/settings/general" element={<General />} />
+              <Route path="/settings/import" element={<Import />} />
+              <Route path="/settings/api" element={<Api />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Route>
+          </Routes>
+        </ErrorBoundary>
+      </BrowserRouter>
+      <VercelAnalytics />
+      <SpeedInsights />
+    </LazyMotion>
+  );
+}
+
+### 7.2 — src/components/layout/AppShell.jsx (layout principal, 183 lignes)
+------------------------------------------------------------
+// APP SHELL v10.0 « Institutional Terminal v4 »
+// Chrome top-down (pas de sidebar verticale) :
+//   1. CommandBar (32px sticky top) — logo + nav pills + Cmd+K
+//   2. SubNav (mobile only)
+//   3. <main> (flex 1, scrollable)
+//   4. StatusBar (22px sticky bottom)
+//   5. BottomNav (mobile only)
+//   6. CommandPalette (modal, Cmd+K)
+import { useState, useEffect } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import GlobalStyles from '../../theme/GlobalStyles';
+import AmbientBackground from './AmbientBackground';
+import CommandBar from './CommandBar';
+import TickerTape from './TickerTape';
+import StatusBar from './StatusBar';
+import BottomNav from './BottomNav';
+import CommandPalette from '../ui/CommandPalette';
+import CheatsheetModal from '../ui/CheatsheetModal';
+import useMediaQuery from '../../hooks/useMediaQuery';
+import { FEATURE_GREEK_CENTER } from '../../constants/featureFlags';
+
+const NAV_PATHS = [
+  '/dashboard', '/trading/positions', '/trading/history',
+  FEATURE_GREEK_CENTER ? '/trading/greeks' : null,
+  '/trading/chain', '/insights/analytics', '/insights/calendar',
+  '/insights/journal', '/settings/import',
+];
+
+function SubNav({ pathname, navigate }) {
+  let tabs = [];
+  if (pathname.startsWith('/trading')) {
+    tabs = [
+      { path: '/trading/positions', label: 'Positions' },
+      { path: '/trading/history', label: 'Historique' },
+      ...(FEATURE_GREEK_CENTER ? [{ path: '/trading/greeks', label: 'Greeks' }] : []),
+      { path: '/trading/chain', label: 'Chain' },
+    ];
+  } else if (pathname.startsWith('/insights')) {
+    tabs = [
+      { path: '/insights/analytics', label: 'Analytics' },
+      { path: '/insights/journal', label: 'Journal' },
+      { path: '/insights/calendar', label: 'Calendrier' },
+    ];
+  } else if (pathname.startsWith('/settings')) {
+    tabs = [
+      { path: '/settings/general', label: 'General' },
+      { path: '/settings/import', label: 'Import' },
+      { path: '/settings/api', label: 'API' },
+    ];
+  }
+  if (tabs.length === 0) return null;
+  return (
+    <nav className="sub-nav" aria-label="Sous-navigation">
+      {tabs.map((tab) => (
+        <button key={tab.path} type="button" className="sub-nav__tab"
+          data-active={pathname === tab.path || undefined}
+          onClick={() => navigate(tab.path)}>
+          {tab.label}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+export default function AppShell() {
+  const [cmdOpen, setCmdOpen] = useState(false);
+  const [cheatOpen, setCheatOpen] = useState(false);
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const isMobile = useMediaQuery('(max-width: 767px)');
+
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setCmdOpen((p) => !p); return; }
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') { e.preventDefault(); setCheatOpen((p) => !p); return; }
+      if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '9') {
+        e.preventDefault();
+        const target = NAV_PATHS[parseInt(e.key, 10) - 1];
+        if (target) navigate(target);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [navigate]);
+
+  useEffect(() => {
+    const open = () => setCmdOpen(true);
+    window.addEventListener('ibkr:open-command', open);
+    return () => window.removeEventListener('ibkr:open-command', open);
+  }, []);
+
+  useEffect(() => {
+    const open = () => setCheatOpen(true);
+    window.addEventListener('qc:open-cheatsheet', open);
+    return () => window.removeEventListener('qc:open-cheatsheet', open);
+  }, []);
+
+  return (
+    <div className="app-shell" style={{
+      display: 'flex', flexDirection: 'column', height: '100vh',
+      overflow: 'hidden', position: 'relative',
+    }}>
+      <AmbientBackground />
+      <a href="#main-content" className="skip-to-content">Aller au contenu principal</a>
+      <GlobalStyles />
+      <CommandBar onOpenCommand={() => setCmdOpen(true)} />
+      <TickerTape />
+      {isMobile && <SubNav pathname={pathname} navigate={navigate} />}
+      <main id="main-content" key={pathname} tabIndex={-1} className="app-main"
+        style={{
+          flex: 1, overflowY: 'auto', padding: isMobile ? '0 0 80px' : '0',
+          background: 'transparent', scrollBehavior: 'smooth',
+          overscrollBehavior: 'contain', position: 'relative', zIndex: 2, minHeight: 0,
+        }}>
+        <Outlet />
+      </main>
+      <StatusBar />
+      {isMobile && <BottomNav />}
+      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
+      <CheatsheetModal open={cheatOpen} onClose={() => setCheatOpen(false)} />
+    </div>
+  );
+}
+
+### 7.3 — src/pages/Dashboard.jsx (vue centrale, 91 lignes)
+------------------------------------------------------------
+// DASHBOARD v4.0 -> v5 Sprint 2.1 — Bento 12-col / 5-rows
+// 12/12 modules. Hooks brick 7-8 retournent encore stub -> empty state.
+import { useMemo } from 'react';
+import DashboardHeroStrip from '../components/dashboard/DashboardHeroStrip';
+import MasterChart from '../components/charts/MasterChart';
+import RiskMatrix from '../components/dashboard/RiskMatrix';
+import GreeksAggregate from '../components/dashboard/GreeksAggregate';
+import LivePositions from '../components/dashboard/LivePositions';
+import SniperGateMonitor from '../components/dashboard/SniperGateMonitor';
+import Watchlist from '../components/dashboard/Watchlist';
+import EarningsCalendar from '../components/dashboard/EarningsCalendar';
+import SectorHeatmap from '../components/dashboard/SectorHeatmap';
+import IVRankMovers from '../components/dashboard/IVRankMovers';
+import MarketInternals from '../components/dashboard/MarketInternals';
+import VolatilitySkew from '../components/dashboard/VolatilitySkew';
+import AlertsFeed from '../components/dashboard/AlertsFeed';
+import useEquityHistory from '../hooks/useEquityHistory';
+import useDailyPnL from '../hooks/useDailyPnL';
+import useRiskMatrix from '../hooks/useRiskMatrix';
+import useGreeksAggregate from '../hooks/useGreeksAggregate';
+import useLivePositions from '../hooks/useLivePositions';
+import useSniperGates from '../hooks/useSniperGates';
+import useWatchlist from '../hooks/useWatchlist';
+import useEarningsCalendar from '../hooks/useEarningsCalendar';
+import useSectorHeatmap from '../hooks/useSectorHeatmap';
+import useIVMovers from '../hooks/useIVMovers';
+import useMarketInternals from '../hooks/useMarketInternals';
+import useVolSkew from '../hooks/useVolSkew';
+import useAlertsFeed from '../hooks/useAlertsFeed';
+import { useOpenPositions } from '../store/useStore';
+
+export default function Dashboard() {
+  const equityHistory = useEquityHistory();
+  const dailyPnL = useDailyPnL();
+  const riskMetrics = useRiskMatrix();
+  const greeks = useGreeksAggregate();
+  const positions = useLivePositions();
+  const gates = useSniperGates();
+  const watchlist = useWatchlist();
+  const earnings = useEarningsCalendar();
+  const sectors = useSectorHeatmap();
+  const ivMovers = useIVMovers();
+  const internals = useMarketInternals();
+  const volSkew = useVolSkew();
+  const alerts = useAlertsFeed();
+
+  const openPositions = useOpenPositions();
+  const ownedTickers = useMemo(
+    () => new Set((openPositions || []).map((p) => p.tk).filter(Boolean)),
+    [openPositions]
+  );
+
+  return (
+    <div className="dash-shell">
+      <DashboardHeroStrip />
+      <div className="dash-grid">
+        <MasterChart data={equityHistory} dailyPnL={dailyPnL} mode="real" area="master" />
+        <RiskMatrix metrics={riskMetrics} area="risk" />
+        <GreeksAggregate data={greeks} area="greeks" />
+        <LivePositions data={positions} area="positions" />
+        <SniperGateMonitor data={gates} area="gates" />
+        <Watchlist data={watchlist} area="watch" />
+        <EarningsCalendar data={earnings} ownedTickers={ownedTickers} maxDte={7} area="earn" />
+        <SectorHeatmap data={sectors} area="heat" />
+        <IVRankMovers data={ivMovers} area="ivr" />
+        <MarketInternals data={internals} area="intrn" />
+        <VolatilitySkew data={volSkew} area="skew" />
+        <AlertsFeed data={alerts} area="alert" />
+      </div>
+    </div>
+  );
+}
+
+### 7.4 — src/styles/tokens.css (design-system, INTÉGRAL — 606 lignes)
+------------------------------------------------------------
+/* ════════════════════════════════════════════════════════════════
+   QuantumCall — Design System v5 « Institutional Terminal »
+   Single source of truth. Two themes (midnight default, daylight),
+   colorblind override, reduced-motion override.
+   SECTION A  :root            v2 base + Midnight default + v5 density
+   SECTION B  :root (legacy)   aliases for non-refactored pages
+   SECTION C  [data-theme=daylight]
+   SECTION D  [data-colorblind=true]
+   SECTION E  @media reduced-motion
+   ════════════════════════════════════════════════════════════════ */
+
+/* SECTION A — DESIGN SYSTEM v2 (base + Midnight default) */
+:root {
+  /* v5 Institutional density (Bloomberg/IBKR/TOS-class) */
+  --row-compact: 22px;
+  --row-data: 26px;
+  --row-default: 32px;
+  --row-tall: 48px;
+  --header-row: 24px;
+  --toolbar: 32px;
+  --statusbar: 22px;
+  --tickertape: 24px;
+  --cell-pad-x: 8px;
+  --cell-pad-y: 3px;
+  --hairline: 1px solid rgba(255, 255, 255, 0.06);
+  --hairline-strong: 1px solid rgba(255, 255, 255, 0.12);
+  --module-gap: 1px;
+  --accent-amber: #ffa028;
+  --accent-amber-soft: rgba(255, 160, 40, 0.08);
+  --accent-amber-strong: rgba(255, 160, 40, 0.18);
+
+  /* Typography */
+  --font-sans: "Inter Tight", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  /* Échelle nombres v2 (JetBrains Mono) */
+  --num-xs: 10px;
+  --num-sm: 12px;
+  --num-md: 14px;
+  --num-lg: 18px;
+  --num-xl: 24px;
+  --num-2xl: 32px;
+  /* Échelle texte legacy (Inter Tight) */
+  --text-2xs: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 32px;
+  /* Poids */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --tracking-label: 0.04em;
+
+  /* Espacement (4px grid) */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-9: 36px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-0-5: 2px;
+  --space-1-5: 6px;
+  --space-2-5: 10px;
+
+  /* Bordures + radius v2 */
+  --border-width: 1px;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Couleurs sémantiques v2 (Midnight = défaut) */
+  --profit: #16c784;
+  --profit-bg: rgba(22, 199, 132, 0.08);
+  --loss: #ea3943;
+  --loss-bg: rgba(234, 57, 67, 0.08);
+  --warning: #f0b90b;
+  --warning-bg: rgba(240, 185, 11, 0.08);
+  --neutral: #8b92a5;
+  --accent: #4a7fff;
+  --accent-bg: rgba(74, 127, 255, 0.08);
+
+  /* Fonds Midnight */
+  --bg-base: #0d1117;
+  --bg-elev-1: #14181f;
+  --bg-elev-2: #1c2129;
+  --bg-elev-3: #232934;
+
+  /* Textes Midnight */
+  --text-primary: #e6e8ec;
+  --text-secondary: #9ba1ae;
+  --text-tertiary: #7a8290;
+  --text-inverse: #0d1117;
+  --text-on-accent: #ffffff;
+  --text-on-danger: #ffffff;
+}
+
+/* SECTION B — LEGACY MAPPING (Midnight) — ~150 alias, cleanup deferred */
+:root {
+  --color-profit: var(--profit);
+  --color-profit-muted: var(--profit-bg);
+  --color-profit-subtle: rgba(22, 199, 132, 0.05);
+  --color-profit-glow: rgba(22, 199, 132, 0.18);
+  --success: var(--profit);
+  --success-muted: var(--profit-bg);
+  --color-loss: var(--loss);
+  --color-loss-muted: var(--loss-bg);
+  --color-loss-subtle: rgba(234, 57, 67, 0.05);
+  --color-loss-glow: rgba(234, 57, 67, 0.18);
+  --danger: var(--loss);
+  --danger-muted: var(--loss-bg);
+  --color-accent: var(--accent);
+  --color-accent-muted: var(--accent-bg);
+  --color-accent-subtle: rgba(74, 127, 255, 0.05);
+  --color-warning: var(--warning);
+  --color-warning-muted: var(--warning-bg);
+  --color-info: #60a5fa;
+  --color-info-muted: rgba(96, 165, 250, 0.1);
+  --color-neutral: var(--neutral);
+  --color-neutral-muted: rgba(139, 146, 165, 0.1);
+  --profit-border: rgba(22, 199, 132, 0.25);
+  --profit-glow: rgba(22, 199, 132, 0.18);
+  --profit-muted: var(--profit-bg);
+  --profit-subtle: rgba(22, 199, 132, 0.05);
+  --loss-border: rgba(234, 57, 67, 0.25);
+  --loss-glow: rgba(234, 57, 67, 0.18);
+  --loss-muted: var(--loss-bg);
+  --loss-subtle: rgba(234, 57, 67, 0.05);
+  --accent-border: rgba(74, 127, 255, 0.25);
+  --accent-glow: rgba(74, 127, 255, 0.2);
+  --accent-hover: #6593ff;
+  --accent-muted: var(--accent-bg);
+  --accent-subtle: rgba(74, 127, 255, 0.05);
+  --accent-gradient: linear-gradient(135deg, var(--accent), #6593ff);
+  --warning-border: rgba(240, 185, 11, 0.25);
+  --warning-muted: var(--warning-bg);
+  --neutral-bg: rgba(139, 146, 165, 0.1);
+  --neutral-muted: var(--neutral-bg);
+  --profit-text: #4ade80;
+  --loss-text: #f87171;
+  --accent-text: #60a5fa;
+  --warning-text: #fbbf24;
+  --info: #60a5fa;
+  --info-bg: rgba(96, 165, 250, 0.1);
+  --info-border: rgba(96, 165, 250, 0.25);
+  --info-text: #93c5fd;
+  --info-muted: var(--info-bg);
+  --profit-alt: #3b82f6;
+  --loss-alt: #f97316;
+  /* PHANTOM VARS */
+  --card-bg: var(--bg-elev-1);
+  --card-bg-hover: var(--bg-elev-2);
+  --card-bg-hero: var(--bg-elev-1);
+  --card-bg-hero-hover: var(--bg-elev-2);
+  --card-border: var(--border);
+  --card-border-hover: var(--border-strong);
+  --card-border-hero: var(--border-strong);
+  --card-inner-glow: none;
+  --card-shimmer: transparent;
+  --card-radius: var(--radius-lg);
+  --row-hover: rgba(255, 255, 255, 0.04);
+  --bg-input: var(--bg-elev-1);
+  --accent-light: var(--accent);
+  --accent-dim: var(--accent-bg);
+  --profit-dim: var(--profit-bg);
+  --profit-medium: rgba(22, 199, 132, 0.5);
+  --loss-dim: var(--loss-bg);
+  /* Surfaces 5-level -> 4-level mapping */
+  --surface-0: var(--bg-base);
+  --surface-1: var(--bg-elev-1);
+  --surface-2: var(--bg-elev-1);
+  --surface-3: var(--bg-elev-2);
+  --surface-4: var(--bg-elev-3);
+  --surface-base: var(--bg-base);
+  --surface-raised: var(--bg-elev-1);
+  --surface-overlay: var(--bg-elev-1);
+  --surface-elevated: var(--bg-elev-1);
+  --surface-highest: var(--bg-elev-2);
+  --bg-surface: var(--bg-elev-1);
+  --bg-surface-elevated: var(--bg-elev-2);
+  --bg-surface-overlay: var(--bg-elev-1);
+  --bg-surface-raised: var(--bg-elev-1);
+  --bg-elevated: var(--bg-elev-2);
+  --bg-hover: var(--bg-elev-3);
+  --bg-active: var(--bg-elev-3);
+  --bg-glass: rgba(255, 255, 255, 0.05);
+  --bg-glass-hover: rgba(255, 255, 255, 0.07);
+  --text-muted: var(--text-tertiary);
+  --text-disabled: #48484d;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: var(--border);
+  --border-hover: var(--border-strong);
+  --border-focus: var(--accent);
+  --border-active: rgba(74, 127, 255, 0.45);
+  --border-accent: rgba(74, 127, 255, 0.25);
+  --radius-xs: 4px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-3xl: 20px;
+  --radius-full: 9999px;
+  --radius-pill: 9999px;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-bg-strong: rgba(20, 25, 38, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-hover: rgba(255, 255, 255, 0.16);
+  --glass-blur: 12px;
+  --glass-blur-hero: 16px;
+  --glass-saturate: 180%;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.5);
+  --shadow-card: var(--shadow-md);
+  --shadow-elevated: var(--shadow-lg);
+  --shadow-hero: var(--shadow-xl);
+  --shadow-modal: var(--shadow-xl);
+  --shadow-glow-accent: 0 0 32px var(--accent-glow);
+  --shadow-glow-profit: 0 0 24px var(--profit-glow);
+  --shadow-glow-loss: 0 0 24px var(--loss-glow);
+  --font-ui: var(--font-sans);
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-base: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 24px;
+  --fs-3xl: 32px;
+  --fs-4xl: 40px;
+  --fs-5xl: 48px;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --weight-normal: 400;
+  --weight-bold: 700;
+  --lh-tight: 1.2;
+  --lh-normal: 1.5;
+  --lh-loose: 1.75;
+  --leading-tight: 1.2;
+  --leading-normal: 1.4;
+  --leading-relaxed: 1.6;
+  --ls-tight: -0.02em;
+  --ls-tighter: -0.03em;
+  --ls-normal: 0;
+  --ls-wide: 0.02em;
+  --ls-wider: 0.04em;
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.04em;
+  --text-display: 48px;
+  --font-size-xs: 10px;
+  --font-size-sm: 11px;
+  --font-size-base: 13px;
+  --font-size-lg: 15px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 32px;
+  --font-size-hero: 48px;
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
+  --duration-instant: 100ms;
+  --duration-normal: 200ms;
+  --duration-slower: 450ms;
+  --ease-out: cubic-bezier(0.61, 1, 0.88, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --spring-stiffness: 300;
+  --spring-damping: 24;
+  --transition-fast: 120ms ease;
+  --transition-medium: 200ms ease;
+  --transition-slow: 350ms ease;
+  --z-base: 1;
+  --z-elevated: 10;
+  --z-fixed: 30;
+  --z-overlay: 40;
+  --z-popover: 60;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal-backdrop: 900;
+  --z-modal: 1000;
+  --z-toast: 1100;
+  --z-tooltip: 1200;
+  --sidebar-width: 240px;
+  --sidebar-width-collapsed: 64px;
+  --sidebar-collapsed: 64px;
+  --topbar-height: 92px;
+  --topbar-height-mobile: 56px;
+  --header-height: 92px;
+  --cockpit-height: 44px;
+  --container-max-width: 1920px;
+  --mobile-bottomnav-height: 64px;
+  --bento-gap: 16px;
+  --bento-gap-dense: 12px;
+  --bento-gap-wide: 20px;
+  --card-padding: 16px;
+  --card-padding-lg: 24px;
+  --table-row-height: 40px;
+  --table-row-dense: 36px;
+  --gauge-size: 68px;
+  --gauge-stroke: 5px;
+  --chart-c1: var(--accent);
+  --chart-c2: var(--profit);
+  --chart-c3: #60a5fa;
+  --chart-c4: #a78bfa;
+  --chart-c5: var(--loss);
+  --chart-tooltip-bg: rgba(20, 25, 38, 0.95);
+  --chart-grid: rgba(255, 255, 255, 0.04);
+  --greek-delta: var(--accent);
+  --greek-gamma: #a78bfa;
+  --greek-theta: var(--loss);
+  --greek-vega: #60a5fa;
+  --orb-violet: rgba(139, 92, 246, 0.06);
+  --orb-cyan: rgba(34, 211, 238, 0.05);
+  --orb-blue: rgba(59, 130, 246, 0.06);
+  --hm-pos-0: rgba(22, 199, 132, 0.12);
+  --hm-pos-1: rgba(22, 199, 132, 0.28);
+  --hm-pos-2: rgba(22, 199, 132, 0.48);
+  --hm-pos-3: rgba(22, 199, 132, 0.7);
+  --hm-pos-4: var(--profit);
+  --hm-neg-0: rgba(234, 57, 67, 0.12);
+  --hm-neg-1: rgba(234, 57, 67, 0.28);
+  --hm-neg-2: rgba(234, 57, 67, 0.48);
+  --hm-neg-3: rgba(234, 57, 67, 0.7);
+  --hm-neg-4: var(--loss);
+  --hm-neutral: var(--bg-elev-2);
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.18);
+  --modal-overlay: rgba(0, 0, 0, 0.78);
+}
+
+/* SECTION C — DAYLIGHT OVERRIDE */
+[data-theme="daylight"] {
+  --profit: #00875a;
+  --profit-bg: rgba(0, 135, 90, 0.08);
+  --loss: #c9252d;
+  --loss-bg: rgba(201, 37, 45, 0.08);
+  --warning: #b36f00;
+  --warning-bg: rgba(179, 111, 0, 0.08);
+  --accent: #1f5ac9;
+  --accent-bg: rgba(31, 90, 201, 0.08);
+  --neutral: #5c6370;
+  --bg-base: #fcfcfd;
+  --bg-elev-1: #f4f5f7;
+  --bg-elev-2: #ecedf0;
+  --bg-elev-3: #e0e2e7;
+  --text-primary: #1a1d26;
+  --text-secondary: #475569;
+  --text-tertiary: #64748b;
+  --text-inverse: #fcfcfd;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.16);
+  --profit-border: rgba(0, 135, 90, 0.3);
+  --profit-glow: rgba(0, 135, 90, 0.15);
+  --profit-text: #059669;
+  --profit-medium: rgba(0, 135, 90, 0.5);
+  --profit-subtle: rgba(0, 135, 90, 0.05);
+  --profit-muted: var(--profit-bg);
+  --loss-border: rgba(201, 37, 45, 0.3);
+  --loss-glow: rgba(201, 37, 45, 0.15);
+  --loss-text: #dc2626;
+  --loss-subtle: rgba(201, 37, 45, 0.05);
+  --loss-muted: var(--loss-bg);
+  --accent-border: rgba(31, 90, 201, 0.25);
+  --accent-glow: rgba(31, 90, 201, 0.15);
+  --accent-hover: #1d4ed8;
+  --accent-text: #1d4ed8;
+  --accent-subtle: rgba(31, 90, 201, 0.05);
+  --accent-muted: var(--accent-bg);
+  --accent-gradient: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  --warning-border: rgba(179, 111, 0, 0.25);
+  --warning-text: #b45309;
+  --warning-muted: var(--warning-bg);
+  --color-profit-subtle: rgba(0, 135, 90, 0.05);
+  --color-profit-glow: rgba(0, 135, 90, 0.15);
+  --color-loss-subtle: rgba(201, 37, 45, 0.05);
+  --color-loss-glow: rgba(201, 37, 45, 0.15);
+  --color-accent-subtle: rgba(31, 90, 201, 0.05);
+  --color-info: #0ea5e9;
+  --color-info-muted: rgba(14, 165, 233, 0.1);
+  --info: #0ea5e9;
+  --info-bg: rgba(14, 165, 233, 0.1);
+  --info-border: rgba(14, 165, 233, 0.25);
+  --info-text: #0369a1;
+  --info-muted: var(--info-bg);
+  --row-hover: rgba(0, 0, 0, 0.04);
+  --border-active: rgba(31, 90, 201, 0.35);
+  --border-accent: rgba(31, 90, 201, 0.25);
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --bg-glass: rgba(255, 255, 255, 0.7);
+  --bg-glass-hover: rgba(255, 255, 255, 0.85);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-bg-strong: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-border-hover: rgba(15, 23, 42, 0.16);
+  --glass-blur: 14px;
+  --glass-saturate: 150%;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12);
+  --shadow-xl: 0 24px 64px rgba(15, 23, 42, 0.15);
+  --hm-pos-0: rgba(0, 135, 90, 0.08);
+  --hm-pos-1: rgba(0, 135, 90, 0.22);
+  --hm-pos-2: rgba(0, 135, 90, 0.42);
+  --hm-pos-3: rgba(0, 135, 90, 0.65);
+  --hm-pos-4: var(--profit);
+  --hm-neg-0: rgba(201, 37, 45, 0.08);
+  --hm-neg-1: rgba(201, 37, 45, 0.22);
+  --hm-neg-2: rgba(201, 37, 45, 0.42);
+  --hm-neg-3: rgba(201, 37, 45, 0.65);
+  --hm-neg-4: var(--loss);
+  --hm-neutral: var(--bg-elev-2);
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: rgba(15, 23, 42, 0.12);
+  --scrollbar-thumb-hover: rgba(15, 23, 42, 0.22);
+  --chart-tooltip-bg: rgba(15, 23, 42, 0.95);
+  --chart-grid: rgba(15, 23, 42, 0.05);
+  --modal-overlay: rgba(15, 23, 42, 0.4);
+  --orb-violet: rgba(139, 92, 246, 0.06);
+  --orb-cyan: rgba(34, 211, 238, 0.05);
+  --orb-blue: rgba(59, 130, 246, 0.06);
+  --text-disabled: #94a3b8;
+}
+
+/* SECTION D — COLORBLIND OVERRIDE (profit/loss -> blue/orange) */
+[data-colorblind="true"] {
+  --profit: var(--profit-alt);
+  --profit-bg: rgba(59, 130, 246, 0.08);
+  --profit-border: rgba(59, 130, 246, 0.25);
+  --profit-glow: rgba(59, 130, 246, 0.18);
+  --profit-text: var(--profit-alt);
+  --loss: var(--loss-alt);
+  --loss-bg: rgba(249, 115, 22, 0.08);
+  --loss-border: rgba(249, 115, 22, 0.25);
+  --loss-glow: rgba(249, 115, 22, 0.18);
+  --loss-text: var(--loss-alt);
+}
+
+/* SECTION E — REDUCED MOTION OVERRIDE */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+    --duration-instant: 0ms;
+    --duration-normal: 0ms;
+    --duration-slower: 0ms;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+NOTE POUR LE SCALE 4K (Phase C.3.0) : le système typographique a DEUX échelles
+concurrentes non unifiées — --num-* / --text-* (Section A, v2) ET --fs-* /
+--font-size-* (Section B, legacy). Les espacements sont une grille 4px fixe
+(--space-1..20), sans clamp() ni unité fluide. Un rescale mathématique cohérent
+devra d'abord CHOISIR une seule échelle de référence ; appliquer un facteur de
+zoom 90 % aveuglément sur les deux échelles produira des incohérences.
+
+================================================================
+## 8. Évaluation honnête (code review senior)
+================================================================
+
+### 3 points forts
+1. Couche state exemplaire. Zustand + reducer pur + sélecteurs granulaires +
+   système de migration versionné + persistance localStorage debouncée et
+   reference-gated. C'est propre, testable et au-dessus du niveau attendu.
+2. Logique métier bien extraite de l'UI. ~35 modules utils/ + 31 hooks isolent
+   les calculs (Black-Scholes, Greeks, parsers IBKR, attribution, FX) hors des
+   composants. La séparation logique/présentation est réelle dans la couche JSX.
+3. Hygiène de production sérieuse. CSP/HSTS/anti-clickjacking, allowlist CORS
+   sans fallback permissif, rate limiting, secrets exclusivement côté serveur,
+   feature flags, ErrorBoundary, code-splitting (lazy + manualChunks),
+   accessibilité (skip-link, reduced-motion, colorblind). Documentation in-code
+   remarquable.
+
+### 3 points faibles / dette technique
+1. Zéro test sur du code qui calcule de l'argent. calculations.js (543 l.),
+   greeks.js, blackScholes.js, parsers IBKR : aucune vérification automatique.
+   C'est le risque n°1.
+2. CSS hors de contrôle. 12 feuilles, ~16k lignes, couches versionnées
+   superposées (v3-components 5494 l., dashboard.css 1286 l. probablement morte,
+   ~150 alias "legacy" dans tokens.css), cascade dépendante de l'ordre d'import.
+   Deux échelles typographiques rivales. C'est le frein direct à toute refonte
+   visuelle.
+3. Dashboard à moitié construit + pages géantes. 7/12 modules sont des stubs en
+   empty state ; Calendar.jsx (1234 l.), Positions.jsx (880 l.), History.jsx
+   (787 l.) mélangent logique et UI. Aucun linter/formatter/CI, pas de
+   TypeScript malgré des structures de données aux clés cryptiques.
+
+### 3 améliorations prioritaires (avant la Phase C.3.0)
+1. Consolider le CSS d'abord. Supprimer les feuilles mortes (dashboard.css),
+   auditer v3-components.css, fusionner vers tokens + 2-3 couches, unifier la
+   typo sur une seule échelle. Une refonte visuelle par-dessus 12 cascades
+   fragiles échouera.
+2. Trancher le sort des 7 modules stub. Soit câbler les données, soit les
+   retirer de la grille. Auditer l'UX d'empty states permanents est du temps
+   perdu.
+3. Tester la "money math" (calculations, greeks, blackScholes, parsers IBKR) et
+   ajouter ESLint + Prettier ; passer la grille dash-grid en fr/minmax()/clamp()
+   pour le 4K.
+
+### Niveau d'autonomie du développeur
+Évaluation : INTERMÉDIAIRE (avec exécution fortement amplifiée par l'IA).
+
+Justification : la base de code montre une maturité architecturale supérieure à
+un débutant — store/reducer/migrations propres, plugin Vite maison, sécurité
+prod soignée, design-system tokenisé. Le développeur maîtrise clairement le
+domaine métier (options, Greeks, IBKR Flex). Mais plusieurs signaux pointent une
+exécution massivement assistée par IA plutôt qu'une autonomie "confirmée" :
+volume (~40k lignes) et niveau de finition incohérents avec ~3-5 mois
+d'apprentissage en solo, style de commentaires extrêmement dense et méthodologie
+"brick / Sprint" très structurée, et surtout les angles morts classiques d'un
+dev encore en montée en compétence (aucun test, aucun linter, pas de TS, CSS
+legacy non nettoyé, 7 modules laissés en stub). En clair : capable de DIRIGER
+une architecture solide et de juger le résultat — donc clairement au-delà du
+débutant — mais pas encore de PRODUIRE SEUL ce volume à ce niveau sans IA. La
+marche vers "confirmé" passe par les fondamentaux d'ingénierie manquants (tests,
+lint, typage, gestion de la dette).
+
+================================================================
+## 9. Avertissement méthodologique
+================================================================
+
+L'historique Git ne contient qu'UN SEUL COMMIT (Initial commit, 2026-05-10).
+Les demandes type "30 derniers commits", "fichiers les plus modifiés",
+"features ajoutées depuis fin avril" NE PEUVENT PAS être tracées via Git : tout
+l'historique antérieur a été aplati dans ce commit unique. Les évolutions
+"récentes" décrites en sections 4-5 (Sniper Gate Monitor, useWatchlist, refonte
+KPI, bricks v4/v5) sont INFÉRÉES des commentaires de code ("v4 brick 7-8",
+"v5 Sprint 1-10", "Sprint C"), pas de l'historique de versionnage. Aucune
+ChartCrosshairContext n'existe dans le code actuel.
+
+POINT LE PLUS IMPORTANT À TRANSMETTRE À GEMINI : le vrai blocage de la refonte
+4K est la couche CSS (12 feuilles legacy en cascade + rows de grille en pixels
+fixes + double échelle typo), pas la couche React qui est, elle, raisonnablement
+modulaire.
