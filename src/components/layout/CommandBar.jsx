@@ -104,7 +104,12 @@ function ModePill({ variant }) {
       role="status"
       title={titles[variant] || ''}
     >
-      <span className="cmdbar__mode-dot" aria-hidden="true" />
+      <span
+        className={`cmdbar__mode-dot${
+          variant === 'live' || variant === 'real' ? ' cmdbar__live-dot' : ''
+        }`}
+        aria-hidden="true"
+      />
       <span>{labels[variant] || variant?.toUpperCase()}</span>
     </span>
   );
@@ -137,7 +142,7 @@ export default function CommandBar({ onOpenCommand }) {
       {/* LEFT — logo + breadcrumb */}
       <div className="cmdbar__left">
         <QCLogo onClick={() => navigate('/dashboard')} />
-        {breadcrumb && !isMobile && (
+        {breadcrumb && !isMobile && pathname !== '/dashboard' && (
           <>
             <span className="cmdbar__divider" aria-hidden="true" />
             <span className="cmdbar__crumb">{breadcrumb}</span>

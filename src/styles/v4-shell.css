@@ -14,10 +14,10 @@
    Le fallback de --shell-tickertape-h reste aligné sur --tickertape. */
 :root {
   --shell-cmdbar-h: 64px;
-  --shell-tickertape-h: var(--tickertape, 44px);
+  --shell-tickertape-h: var(--tickertape, 40px);
   --shell-statusbar-h: 36px;
   --shell-pill-h: 36px;
-  --shell-hairline: var(--border);
+  --shell-hairline: var(--qc-border-subtle);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -28,12 +28,12 @@
   display: flex;
   align-items: center;
   height: var(--shell-cmdbar-h);
-  padding: 0 var(--space-5);
-  gap: var(--space-4);
+  padding: 0 var(--qc-space-5);
+  gap: var(--qc-space-4);
   background: var(--bg-elev-1);
   border-bottom: 1px solid var(--shell-hairline);
   flex-shrink: 0;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   position: relative;
   z-index: 10;
 }
@@ -41,7 +41,7 @@
 .cmdbar__left {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--qc-space-2);
   min-width: 220px;
   flex-shrink: 0;
 }
@@ -54,17 +54,17 @@
   border: 0;
   padding: 0;
   cursor: pointer;
-  font-family: var(--font-mono);
-  color: var(--text-primary);
+  font-family: var(--qc-font-mono);
+  color: var(--qc-text-primary);
   transition: filter 120ms ease-out;
 }
 
 .cmdbar__logo:hover .cmdbar__logo-name {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
 }
 
 .cmdbar__logo:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1px solid var(--qc-accent);
   outline-offset: 2px;
 }
 
@@ -75,8 +75,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent);
-  color: var(--bg-base);
+  background: var(--qc-accent);
+  color: var(--qc-bg-base);
   border-radius: 5px;
   font-weight: 500;
   font-size: 12px;
@@ -92,7 +92,7 @@
   text-transform: uppercase;
   /* Légère uplift de contraste vs --text-secondary : 70 % --text-primary
      dilué par 30 % transparent → couleur theme-aware un cran plus dense. */
-  color: color-mix(in srgb, var(--text-primary) 70%, transparent);
+  color: color-mix(in srgb, var(--qc-text-primary) 70%, transparent);
   line-height: 1;
   transition: color 120ms ease-out;
 }
@@ -102,7 +102,7 @@
   display: inline-block;
   width: 1px;
   height: 20px;
-  background: var(--border);
+  background: var(--qc-border-subtle);
   flex-shrink: 0;
 }
 
@@ -111,7 +111,7 @@
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   white-space: nowrap;
 }
 
@@ -135,12 +135,12 @@
   justify-content: center;
   height: 100%;
   padding: 0 18px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 13px;
   font-weight: 400;
   letter-spacing: 0.04em;
   text-transform: none;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   background: transparent;
   border: none;
   border-radius: 0;
@@ -150,18 +150,18 @@
 }
 
 .nav-pill:hover {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   background: transparent;
 }
 
 .nav-pill:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1px solid var(--qc-accent);
   outline-offset: -2px;
 }
 
 .nav-pill[data-active],
 .nav-pill[aria-current="page"] {
-  color: var(--accent);
+  color: var(--qc-accent);
   background: transparent;
   font-weight: 500;
 }
@@ -177,13 +177,13 @@
   right: 18px;
   bottom: 0;
   height: 2px;
-  background: var(--accent);
+  background: var(--qc-accent);
 }
 
 .cmdbar__right {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--qc-space-2);
   flex-shrink: 0;
 }
 
@@ -194,12 +194,12 @@
   gap: 8px;
   height: 34px;
   padding: 0 14px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 12px;
   letter-spacing: 0.04em;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   background: var(--bg-glass);
-  border: 1px solid var(--border);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 5px;
   cursor: pointer;
   transition:
@@ -210,13 +210,13 @@
 }
 
 .cmdbar__search:hover {
-  color: var(--text-secondary);
-  border-color: var(--border-strong);
+  color: var(--qc-text-secondary);
+  border-color: var(--qc-border-strong);
   background: var(--bg-glass-hover);
 }
 
 .cmdbar__search:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1px solid var(--qc-accent);
   outline-offset: 1px;
 }
 
@@ -225,12 +225,12 @@
   align-items: center;
   justify-content: center;
   padding: 2px 7px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 11px;
   font-weight: 500;
-  color: var(--text-tertiary);
-  background: var(--bg-base);
-  border: 1px solid var(--border);
+  color: var(--qc-text-tertiary);
+  background: var(--qc-bg-base);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 3px;
   line-height: 1;
 }
@@ -243,7 +243,7 @@
   height: 30px;
   padding: 0 12px;
   border-radius: 5px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -253,9 +253,9 @@
 
 .cmdbar__mode-pill[data-mode="live"],
 .cmdbar__mode-pill[data-mode="real"] {
-  color: var(--profit);
-  background: color-mix(in srgb, var(--profit) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--profit) 25%, transparent);
+  color: var(--qc-profit);
+  background: color-mix(in srgb, var(--qc-profit) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--qc-profit) 25%, transparent);
 }
 
 .cmdbar__mode-pill[data-mode="paper"] {
@@ -280,7 +280,7 @@
 
 @media (max-width: 767px) {
   .cmdbar {
-    padding: 0 var(--space-2);
+    padding: 0 var(--qc-space-2);
   }
   .cmdbar__crumb,
   .cmdbar__sep {
@@ -306,9 +306,9 @@
   background: var(--bg-elev-1);
   border-top: 1px solid var(--shell-hairline);
   flex-shrink: 0;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 13px;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   position: relative;
   z-index: 10;
 }
@@ -341,7 +341,7 @@
   gap: 8px;
   padding: 0 14px;
   height: 100%;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid var(--qc-border-subtle);
   white-space: nowrap;
 }
 
@@ -367,7 +367,7 @@
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   font-weight: 500;
 }
 
@@ -375,17 +375,17 @@
   /* Phase C.2.8 — bumpé 11→12 pour 4K. */
   font-size: 12px;
   font-variant-numeric: tabular-nums slashed-zero;
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
 }
 
 .statusbar__value--profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 .statusbar__value--loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 .statusbar__value--strong {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   font-weight: 600;
 }
 
@@ -400,49 +400,49 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--text-tertiary);
+  background: var(--qc-text-tertiary);
   flex-shrink: 0;
   transition: background 120ms ease-out;
 }
 
 .statusbar__feed[data-status="live"] .statusbar__feed-dot {
-  background: var(--profit);
+  background: var(--qc-profit);
 }
 .statusbar__feed[data-status="syncing"] .statusbar__feed-dot {
   background: var(--accent-amber);
 }
 .statusbar__feed[data-status="error"] .statusbar__feed-dot {
-  background: var(--loss);
+  background: var(--qc-loss);
 }
 .statusbar__feed[data-status="offline"] .statusbar__feed-dot {
-  background: var(--text-tertiary);
+  background: var(--qc-text-tertiary);
   opacity: 0.55;
 }
 
 /* IBKR feed principal — halo subtile sur le dot.
    color-mix s'adapte automatiquement au thème (--profit varie). */
 .statusbar__feed--featured .statusbar__feed-dot {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--profit) 18%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--qc-profit) 18%, transparent);
 }
 
 [data-theme="daylight"] .statusbar__feed--featured .statusbar__feed-dot {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--profit) 14%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--qc-profit) 14%, transparent);
 }
 
 .statusbar__feed-label {
   font-size: 11px;
   letter-spacing: 0.08em;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   text-transform: uppercase;
 }
 
 .statusbar__feed[data-status="live"] .statusbar__feed-label {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 
 .statusbar__feed[data-status="error"] .statusbar__feed-label {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 
 /* ── Horloges fuseaux ─────────────────────────────────────────── */
@@ -456,13 +456,13 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 .statusbar__clock-time {
   font-size: 11px;
   font-variant-numeric: tabular-nums slashed-zero;
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
 }
 
 .statusbar__clock-badge {
@@ -475,13 +475,13 @@
 }
 
 .statusbar__clock-badge[data-state="closed"] {
-  color: var(--loss);
-  background: color-mix(in srgb, var(--loss) 12%, transparent);
+  color: var(--qc-loss);
+  background: color-mix(in srgb, var(--qc-loss) 12%, transparent);
 }
 
 .statusbar__clock-badge[data-state="open"] {
-  color: var(--profit);
-  background: color-mix(in srgb, var(--profit) 12%, transparent);
+  color: var(--qc-profit);
+  background: color-mix(in srgb, var(--qc-profit) 12%, transparent);
 }
 
 /* ── Cells de droite : rate · P&L · theme ────────────────────── */
@@ -496,13 +496,13 @@
   font-weight: 500;
 }
 .statusbar__pnl--profit .statusbar__value {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 .statusbar__pnl--loss .statusbar__value {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 .statusbar__pnl--mute .statusbar__value {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 .statusbar__theme {
@@ -527,7 +527,7 @@
   height: 28px;
   padding: 0 6px;
   font-size: 11px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   letter-spacing: 0.04em;
   border-radius: 0;
   gap: 4px;
@@ -554,131 +554,152 @@
   }
 }
 
-/* ════════════════════════════════════════════════════════════════
-   TICKER TAPE (24px, between CommandBar and main) — v5 Sprint 1.4
-   Scrolls horizontally infinite at 30 px/s. Hover pauses.
-   Click on a ticker navigates to /trading/chain?ticker=X.
-   ════════════════════════════════════════════════════════════════ */
+/* ============================================================
+   TICKER TAPE B1.7 — Single-track seamless marquee
+   translateX(-50%) sur contenu dupliqué = loop mathématiquement parfait
+   ============================================================ */
 
-.tickertape {
+.ticker-tape {
   position: relative;
-  height: var(--shell-tickertape-h);
-  background: var(--bg-elev-1);
-  border-bottom: var(--hairline);
+  height: var(--qc-ticker-h);
+  background: var(--qc-bg-surface);
+  border-bottom: 1px solid var(--qc-border-subtle);
   overflow: hidden;
-  flex-shrink: 0;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  line-height: 1;
-  z-index: 9;
-  /* Edge fade — subtle gradient mask on left/right so cells slide in/out cleanly */
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 48px, #000 calc(100% - 48px), transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 48px, #000 calc(100% - 48px), transparent 100%);
 }
 
-.tickertape__track {
+.ticker-tape__viewport {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.ticker-tape__track {
   display: inline-flex;
-  align-items: center;
+  align-items: stretch;
   height: 100%;
   white-space: nowrap;
-  /* The track holds 2× items; -50% translation == 1 full cycle */
-  animation: tickertape-marquee 90s linear infinite;
   will-change: transform;
+  animation: ticker-marquee 90s linear infinite;
 }
 
-.tickertape:hover .tickertape__track {
+.ticker-tape:hover .ticker-tape__track {
   animation-play-state: paused;
 }
 
-@keyframes tickertape-marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
+@keyframes ticker-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
-.tickertape__cell {
+/* Reduced-motion : contenu unique, scroll manuel, pas d'animation */
+.ticker-tape--reduced .ticker-tape__viewport {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.ticker-tape--reduced .ticker-tape__track {
+  animation: none;
+  transform: none;
+}
+
+.ticker-tape--reduced .ticker-tape__viewport::-webkit-scrollbar {
+  height: 4px;
+}
+
+.ticker-tape--reduced .ticker-tape__viewport::-webkit-scrollbar-thumb {
+  background: var(--qc-border-default);
+  border-radius: 2px;
+}
+
+/* ===== CELLULE — B1.10 strict Bloomberg terminal look ===== */
+.ticker-cell {
   display: inline-flex;
   align-items: center;
   height: 100%;
-  padding: 0 var(--cell-pad-x, 8px);
-  background: transparent;
-  border: 0;
-  border-right: var(--hairline);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: inherit;
-  color: var(--text-secondary);
-  letter-spacing: 0.02em;
-  transition:
-    color 120ms ease-out,
-    background-color 120ms ease-out;
+  padding: 0 24px;
+  border-right: 1px solid var(--qc-border-subtle);
+  min-width: 220px;
+  flex-shrink: 0;
+  line-height: 1;
 }
 
-.tickertape__cell:hover {
-  background: var(--bg-elev-2);
-  color: var(--text-primary);
+/* Groupe data (symbole + prix + change%) aligné sur baseline commune */
+.ticker-cell__data {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
 }
 
-.tickertape__cell:focus-visible {
-  outline: 1px solid var(--accent);
-  outline-offset: -1px;
+.ticker-cell__symbol {
+  font-family: var(--qc-font-sans);
+  font-size: 15px;
+  font-weight: var(--qc-fw-bold);
+  color: var(--qc-text-secondary);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  line-height: 1;
 }
 
-.tickertape__cell[data-type="index"] .tickertape__sym {
-  color: var(--accent-amber, #ffa028);
+.ticker-cell__value {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 18px;
+  font-weight: var(--qc-fw-medium);
+  color: var(--qc-text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1;
 }
 
-.tickertape__cell[data-type="position"] .tickertape__sym {
-  color: var(--text-primary);
-  font-weight: 600;
+.ticker-cell__change {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  font-weight: var(--qc-fw-regular);
+  letter-spacing: -0.01em;
+  line-height: 1;
+  position: relative;
 }
 
-.tickertape__sym {
-  font-feature-settings:
-    "tnum" 1,
-    "zero" 1;
-  font-variant-numeric: tabular-nums slashed-zero;
-  margin-right: 6px;
+.ticker-cell__sparkline {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  width: 56px;
+  flex-shrink: 0;
+  opacity: 0.85;
 }
 
-.tickertape__px {
-  font-feature-settings:
-    "tnum" 1,
-    "zero" 1;
-  font-variant-numeric: tabular-nums slashed-zero;
+.ticker-cell__sparkline svg {
+  display: block;
+}
+
+/* ===== B1.10 polish — triangle directionnel + badge glow plat ===== */
+.ticker-cell__arrow {
+  font-size: 10px;
   margin-right: 4px;
-  color: var(--text-primary);
+  display: inline-block;
 }
 
-.tickertape__chg {
-  font-feature-settings:
-    "tnum" 1,
-    "zero" 1;
-  font-variant-numeric: tabular-nums slashed-zero;
-  font-size: 11px;
+/* Badge glow sur mouvements forts (|change%| > 2) — fond plat translucide
+   dérivé du token via color-mix (theme-aware). Marge négative pour aligner
+   le badge sur la baseline du chiffre malgré son padding. */
+.ticker-cell__change--glow {
+  padding: 2px 6px;
+  border-radius: var(--qc-radius-sm);
+  margin-left: -6px;
 }
 
-.tickertape__chg[data-semantic="bull"] {
-  color: var(--profit);
+.ticker-cell__change--glow.qc-profit {
+  background: color-mix(in srgb, var(--qc-profit) 15%, transparent);
 }
 
-.tickertape__chg[data-semantic="bear"] {
-  color: var(--loss);
-}
-
-.tickertape__chg[data-semantic="neutral"] {
-  color: var(--text-tertiary);
-}
-
-/* Reduce motion : freeze the marquee, but keep cells visible */
-@media (prefers-reduced-motion: reduce) {
-  .tickertape__track {
-    animation: none;
-    transform: translateX(0);
-  }
+.ticker-cell__change--glow.qc-loss {
+  background: color-mix(in srgb, var(--qc-loss) 15%, transparent);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -691,7 +712,7 @@
 }
 
 .statusbar__phase--open .statusbar__value {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 
 .statusbar__phase--pre .statusbar__value,
@@ -700,7 +721,7 @@
 }
 
 .statusbar__phase--closed .statusbar__value {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 .statusbar__group--gate .statusbar__value {
@@ -726,6 +747,32 @@
 }
 
 .cmdbar__kbd--help:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1px solid var(--qc-accent);
   outline-offset: 1px;
+}
+
+/* ============================================================
+   LIVE INDICATOR — Pulse subtil sur le dot uniquement
+   Brick B1 refonte
+   ============================================================ */
+
+.cmdbar__live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--qc-profit);
+  animation: cmdbar-live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes cmdbar-live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cmdbar__live-dot {
+    animation: none;
+    opacity: 1;
+  }
 }

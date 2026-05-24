@@ -18,11 +18,11 @@ body,
   padding: 0;
   min-height: 100%;
   background: var(--surface-0);
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
 }
 
 html {
-  font-family: var(--font-ui);
+  font-family: var(--qc-font-sans);
   font-size: var(--fs-base);
   line-height: var(--lh-normal);
   -webkit-text-size-adjust: 100%;
@@ -36,10 +36,10 @@ html {
 }
 
 body {
-  font-family: var(--font-ui);
+  font-family: var(--qc-font-sans);
   font-size: var(--fs-base);
   line-height: var(--lh-normal);
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   background: var(--surface-0);
   overflow-x: hidden;
   min-height: 100vh;
@@ -88,7 +88,7 @@ a {
 }
 
 a:hover {
-  color: var(--accent);
+  color: var(--qc-accent);
 }
 
 img,
@@ -106,8 +106,8 @@ select {
 
 hr {
   border: 0;
-  border-top: 1px solid var(--border-subtle);
-  margin: var(--space-4) 0;
+  border-top: 1px solid var(--qc-border-subtle);
+  margin: var(--qc-space-4) 0;
 }
 
 /* ── Scrollbars — custom, theme-aware ───────────────────── */
@@ -139,13 +139,13 @@ hr {
 
 /* ── Selection ─────────────────────────────────────────── */
 ::selection {
-  background: var(--accent-bg);
-  color: var(--text-primary);
+  background: var(--qc-info-bg);
+  color: var(--qc-text-primary);
 }
 
 /* ── Focus rings — WCAG 2.2 ────────────────────────────── */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--qc-accent);
   outline-offset: 2px;
   border-radius: var(--radius-xs);
 }
@@ -158,19 +158,19 @@ hr {
 .skip-to-content {
   position: absolute;
   top: -9999px;
-  left: var(--space-4);
+  left: var(--qc-space-4);
   z-index: var(--z-tooltip);
-  padding: var(--space-3) var(--space-4);
-  background: var(--accent);
+  padding: var(--qc-space-3) var(--qc-space-4);
+  background: var(--qc-accent);
   color: var(--text-on-accent);
-  border-radius: var(--radius-md);
+  border-radius: var(--qc-radius-md);
   font-weight: var(--fw-semibold);
   font-size: var(--fs-sm);
 }
 
 .skip-to-content:focus,
 .skip-to-content:focus-visible {
-  top: var(--space-4);
+  top: var(--qc-space-4);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -183,13 +183,13 @@ hr {
 
 .font-mono,
 .mono {
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-variant-numeric: tabular-nums lining-nums slashed-zero;
   font-feature-settings: "tnum", "zero";
 }
 
 .font-ui {
-  font-family: var(--font-ui);
+  font-family: var(--qc-font-sans);
 }
 
 .uppercase-label {
@@ -197,7 +197,7 @@ hr {
   letter-spacing: var(--ls-wider);
   font-size: var(--fs-xs);
   font-weight: var(--fw-medium);
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   line-height: var(--lh-tight);
 }
 
@@ -214,26 +214,26 @@ hr {
   color: var(--warning-text);
 }
 .text-neutral {
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 .text-primary {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
 }
 .text-muted {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 .bg-profit {
-  background: var(--profit-bg);
+  background: var(--qc-profit-bg);
 }
 .bg-loss {
-  background: var(--loss-bg);
+  background: var(--qc-loss-bg);
 }
 .bg-accent {
-  background: var(--accent-bg);
+  background: var(--qc-info-bg);
 }
 .bg-warning {
-  background: var(--warning-bg);
+  background: var(--qc-warning-bg);
 }
 
 /* ── Visually hidden (a11y, for SR-only content) ──────── */
@@ -324,7 +324,7 @@ hr {
    ═══════════════════════════════════════════════════════════════ */
 @keyframes flash-profit {
   0% {
-    background-color: var(--profit-bg);
+    background-color: var(--qc-profit-bg);
   }
   100% {
     background-color: transparent;
@@ -333,7 +333,7 @@ hr {
 
 @keyframes flash-loss {
   0% {
-    background-color: var(--loss-bg);
+    background-color: var(--qc-loss-bg);
   }
   100% {
     background-color: transparent;
@@ -364,7 +364,7 @@ hr {
   color: var(--loss-text);
 }
 .is-neutral {
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 .hide-desktop {

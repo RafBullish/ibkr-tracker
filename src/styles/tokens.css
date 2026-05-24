@@ -1,619 +1,339 @@
-/* ════════════════════════════════════════════════════════════════
-   QuantumCall — Design System v5 « Institutional Terminal »
-   Single source of truth. Two themes (midnight default, daylight),
-   colorblind override, reduced-motion override.
-
-   v5 Sprint 1 :
-     - Carbon theme key collapsed back into midnight (palette inspiration
-       merged : Bloomberg-amber accents, density tokens, hairlines).
-       Users on `carbon` migrate via LEGACY_MAP in src/theme/tokens.js.
-     - Institutional density tokens added at top of :root :
-         --row-compact 22  --row-data 26  --row-default 32  --row-tall 48
-         --header-row 24   --toolbar 32   --statusbar 22   --tickertape 24
-         --cell-pad-x 8    --cell-pad-y 3
-         --hairline (1px white-alpha 6%)  --hairline-strong (white-alpha 12%)
-         --accent-amber #FFA028 (Bloomberg Sunshade — neutral data highlight)
-
-   Architecture
-     SECTION A  :root                       v2 base + Midnight default + v5 density
-     SECTION B  :root (legacy block)        aliases for non-refactored pages
-     SECTION C  [data-theme='daylight']     Midnight → Daylight overrides
-     SECTION D  [data-colorblind='true']    profit/loss → blue/orange
-     SECTION E  @media reduced-motion       collapse durations to 0
-
-   Notes
-     - Numbers in JetBrains Mono : use --num-xs..2xl  (NEW v2)
-     - Labels / prose in Inter Tight : use --text-2xs..3xl  (legacy preserved)
-     - Spacing : --space-N legacy (4px grid)
-     - v2 semantic colors unified (profit #16C784, loss #EA3943, etc.)
-     - --text-tertiary kept at #7A8290 (WCAG AA 4.7:1) — NOT spec #5C6370
-     - Phantom vars (--card-*, --row-hover, --bg-input, --*-dim) now defined.
-     - Legacy mapping cleanup deferred to v6.
-   ════════════════════════════════════════════════════════════════ */
-
-/* ═══════════════════════════════════════════════════════════════════
-   SECTION A — DESIGN SYSTEM v2 (base + Midnight default)
-   ═══════════════════════════════════════════════════════════════════ */
 :root {
-  /* ── v5 Institutional density (Bloomberg/IBKR/TOS-class) ─────── */
-  /* 4K refonte 2026-05-10 : densité agrandie pour usage 4K personnel.
-     Anciennes valeurs en commentaire pour retour rapide si besoin :
-       row-compact 22 · row-data 26 · row-default 32 · row-tall 48
-       header-row 24 · toolbar 32 · statusbar 22 · tickertape 24
-       cell-pad-x 8 · cell-pad-y 3 · row-h-15 15 */
-  /* Row heights (data grids) */
-  --row-compact: 28px; /* TickerTape, watchlist mini, status strip */
-  --row-data: 32px; /* LivePositions, Chain, Greeks tables */
-  --row-default: 40px; /* Earnings 1-line, news compact */
-  --row-tall: 56px; /* 2-line cells (titre + source) */
-  --header-row: 32px; /* sticky table headers (≤ row, never more) */
-  --toolbar: 44px; /* CommandBar */
-  --statusbar: 36px; /* StatusBar (footer strip) */
-  --tickertape: 44px; /* TickerTape (under CommandBar) */
-  /* Cell padding */
-  --cell-pad-x: 12px;
-  --cell-pad-y: 6px;
-  /* Row helpers (Risk Matrix, Greeks Agg, Live Positions rows).
-     --row-h-15 conservé comme alias rétro-compat — toutes les
-     références CSS existantes (.risk-matrix__table tr, .greeks-agg__
-     table tbody tr, .live-pos__row, .watchlist__row, .iv-movers__row,
-     .earnings-cal__row, .alerts-feed__row) basculent automatiquement
-     en 22 px sans renommage. */
-  --row-h-22: 22px;
-  --row-h-15: 22px;
-  /* Hairlines (canonical Bloomberg-grade separators) */
-  --hairline: 1px solid rgba(255, 255, 255, 0.06);
-  --hairline-strong: 1px solid rgba(255, 255, 255, 0.12);
-  /* Module gap (bento layout — keep 1px for terminal density) */
-  --module-gap: 1px;
-  /* Bloomberg-amber accent (neutral data highlight, NOT directional)
-     Use for : focused ticker, active mnemonic, ITM tint, alert non-bull/bear */
-  --accent-amber: #ffa028;
-  --accent-amber-soft: rgba(255, 160, 40, 0.08);
-  --accent-amber-strong: rgba(255, 160, 40, 0.18);
+  /* ===== BACKGROUNDS ===== */
+  --qc-bg-base: #0A0A0A;
+  --qc-bg-surface: #111111;
+  --qc-bg-elevated: #161616;
 
-  /* ── Typography ──────────────────────────────────────────────── */
-  --font-sans: "Inter Tight", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  /* ===== BORDERS ===== */
+  --qc-border-subtle: #1A1A1A;
+  --qc-border-default: #262626;
+  --qc-border-strong: #404040;
 
-  /* Échelle nombres NEW v2 (chiffres, JetBrains Mono) */
-  --num-xs: 10px;
-  --num-sm: 12px;
-  --num-md: 14px;
-  --num-lg: 18px;
-  --num-xl: 24px;
-  --num-2xl: 32px;
+  /* ===== TEXT ===== */
+  --qc-text-primary: #FFFFFF;
+  --qc-text-secondary: #A1A1AA;
+  --qc-text-tertiary: #52525B;
+  --qc-text-disabled: #3F3F46;
 
-  /* Échelle texte legacy (labels / prose, Inter Tight) — preserved 1:1 */
+  /* ===== SEMANTIC ===== */
+  --qc-profit: #10B981;
+  --qc-profit-bg: rgba(16, 185, 129, 0.10);
+  --qc-loss: #EF4444;
+  --qc-loss-bg: rgba(239, 68, 68, 0.10);
+  --qc-warning: #F59E0B;
+  --qc-warning-bg: rgba(245, 158, 11, 0.10);
+  --qc-info: #06B6D4;
+  --qc-info-bg: rgba(6, 182, 212, 0.10);
+  --qc-accent: #06B6D4;
+
+  /* ===== TYPOGRAPHY ===== */
+  --qc-font-sans: 'Inter', system-ui, sans-serif;
+  --qc-font-mono: 'Geist Mono', 'JetBrains Mono', ui-monospace, monospace;
+
+  --qc-fs-caption: 11px;
+  --qc-fs-label: 12px;
+  --qc-fs-body: 14px;
+  --qc-fs-kpi-sec: 24px;
+  --qc-fs-kpi-hero: 48px;
+  --qc-fs-display: 64px;
+
+  --qc-fw-regular: 400;
+  --qc-fw-medium: 500;
+  --qc-fw-bold: 600;
+
+  /* ===== SPACING (4px grid) ===== */
+  --qc-space-1: 4px;
+  --qc-space-2: 8px;
+  --qc-space-3: 12px;
+  --qc-space-4: 16px;
+  --qc-space-5: 20px;
+  --qc-space-6: 24px;
+  --qc-space-8: 32px;
+
+  /* ===== RADIUS ===== */
+  --qc-radius-sm: 2px;
+  --qc-radius-md: 4px;
+  --qc-radius-lg: 6px;
+
+  /* ===== LAYOUT CHROME ===== */
+  --qc-hero-strip-h: 168px;
+  --qc-ticker-h: 56px;
+
+  /* ===== TRANSITIONS ===== */
+  --qc-transition-fast: 120ms ease-out;
+  --qc-transition-base: 200ms ease-out;
+}
+
+/* ===== GLOBAL RESET FINANCIAL DATA ===== */
+.qc-num,
+.qc-price,
+.qc-pct,
+.qc-money {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "calt" 0;
+}
+
+/* ===== UTILITY CLASSES ===== */
+.qc-profit { color: var(--qc-profit); }
+.qc-loss { color: var(--qc-loss); }
+.qc-warning { color: var(--qc-warning); }
+.qc-info { color: var(--qc-info); }
+.qc-text-secondary { color: var(--qc-text-secondary); }
+.qc-text-tertiary { color: var(--qc-text-tertiary); }
+
+/* ============================================================
+   LEGACY COMPAT LAYER — Phase 0.6
+   ⚠️ Temporaire. Chaque brick B1-B5 doit supprimer les alias
+   qu'elle n'utilise plus. Objectif : 0 alias d'ici fin Phase 1.
+   ============================================================ */
+
+:root {
+  /* --- Surfaces & glass --- */
+  --bg-elev-1: var(--qc-bg-surface);
+  --bg-elev-2: var(--qc-bg-elevated);
+  --bg-glass: var(--qc-bg-surface);
+  --bg-glass-hover: var(--qc-bg-elevated);
+  --bg-input: var(--qc-bg-surface);
+  --bg-surface-elevated: var(--qc-bg-elevated);
+  --bg-surface-overlay: var(--qc-bg-elevated);
+  --bg-surface-raised: var(--qc-bg-elevated);
+  --surface-0: var(--qc-bg-base);
+  --surface-1: var(--qc-bg-surface);
+  --surface-2: var(--qc-bg-elevated);
+  --surface-3: #1A1A1A;
+  --surface-4: #1F1F1F;
+  --surface-elevated: var(--qc-bg-elevated);
+  --glass-bg: var(--qc-bg-surface);
+  --glass-bg-strong: var(--qc-bg-elevated);
+  --glass-blur: blur(8px);
+  --glass-blur-hero: blur(12px);
+  --glass-border: var(--qc-border-subtle);
+  --glass-border-hover: var(--qc-border-default);
+  --glass-saturate: saturate(1.2);
+
+  /* --- Accent variantes --- */
+  --accent-amber: var(--qc-warning);
+  --accent-border: var(--qc-accent);
+  --accent-dim: rgba(6, 182, 212, 0.6);
+  --accent-gradient: linear-gradient(135deg, var(--qc-accent), #0891B2);
+  --accent-hover: #0891B2;
+  --accent-light: rgba(6, 182, 212, 0.15);
+  --accent-subtle: rgba(6, 182, 212, 0.08);
+  --accent-text: var(--qc-accent);
+  --aura-gradient: linear-gradient(135deg, var(--qc-accent), var(--qc-profit));
+
+  /* --- Profit/Loss/Warning variantes --- */
+  --profit-border: var(--qc-profit);
+  --profit-dim: rgba(16, 185, 129, 0.6);
+  --profit-medium: rgba(16, 185, 129, 0.4);
+  --profit-text: var(--qc-profit);
+  --loss-border: var(--qc-loss);
+  --loss-dim: rgba(239, 68, 68, 0.6);
+  --loss-glow: rgba(239, 68, 68, 0.3);
+  --loss-text: var(--qc-loss);
+  --warning-border: var(--qc-warning);
+  --warning-text: var(--qc-warning);
+  --color-loss-subtle: rgba(239, 68, 68, 0.08);
+  --color-profit-subtle: rgba(16, 185, 129, 0.08);
+  --color-accent-subtle: rgba(6, 182, 212, 0.08);
+
+  /* --- Border accent/focus --- */
+  --border-accent: var(--qc-accent);
+  --border-focus: var(--qc-accent);
+
+  /* --- Cards system --- */
+  --card-bg: var(--qc-bg-surface);
+  --card-bg-hero: var(--qc-bg-elevated);
+  --card-bg-hero-hover: #1A1A1A;
+  --card-bg-hover: var(--qc-bg-elevated);
+  --card-border: var(--qc-border-subtle);
+  --card-border-hero: var(--qc-border-default);
+  --card-border-hover: var(--qc-border-default);
+  --card-inner-glow: rgba(255, 255, 255, 0.02);
+  --card-radius: var(--qc-radius-md);
+  --card-shimmer: rgba(255, 255, 255, 0.03);
+
+  /* --- Chips system --- */
+  --chip-bg: var(--qc-bg-elevated);
+  --chip-bg-active: rgba(6, 182, 212, 0.15);
+  --chip-bg-hover: #1A1A1A;
+  --chip-border: var(--qc-border-subtle);
+  --chip-border-active: var(--qc-accent);
+  --chip-color: var(--qc-text-secondary);
+  --chip-font-size: 11px;
+  --chip-font-weight: 500;
+  --chip-padding-x: 8px;
+  --chip-padding-y: 4px;
+  --chip-radius: var(--qc-radius-md);
+  --chip-text: var(--qc-text-secondary);
+  --chip-text-active: var(--qc-accent);
+
+  /* --- Typo legacy (font-size scales) --- */
+  --fs-xs: 10px;
+  --fs-sm: 11px;
+  --fs-base: 12px;
+  --fs-md: 13px;
+  --fs-lg: 14px;
+  --fs-xl: 16px;
+  --fs-2xl: 18px;
+  --fs-3xl: 22px;
+  --fs-4xl: 28px;
+  --fs-5xl: 36px;
   --text-2xs: 10px;
   --text-xs: 11px;
   --text-sm: 12px;
   --text-base: 13px;
   --text-md: 14px;
   --text-lg: 16px;
-  --text-xl: 20px;
-  --text-2xl: 24px;
-  --text-3xl: 32px;
+  --text-2xl: 22px;
+  --text-3xl: 28px;
+  --font-size-hero: 48px;
 
-  /* Poids */
-  --weight-regular: 400;
-  --weight-medium: 500;
-  --weight-semibold: 600;
-
-  /* Tracking labels uppercase */
-  --tracking-label: 0.04em;
-
-  /* ── Espacement (4px grid, legacy preserved) ─────────────────── */
-  --space-0: 0;
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-7: 28px;
-  --space-8: 32px;
-  --space-9: 36px; /* NEW: was missing, used 1× in components.css:2033 */
-  --space-10: 40px;
-  --space-12: 48px;
-  --space-14: 56px;
-  --space-16: 64px;
-  --space-20: 80px;
-  --space-0-5: 2px;
-  --space-1-5: 6px;
-  --space-2-5: 10px;
-
-  /* ── Bordures + radius v2 ────────────────────────────────────── */
-  --border-width: 1px;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-
-  /* ── Couleurs sémantiques v2 (Midnight = défaut) ─────────────── */
-  --profit: #16c784;
-  --profit-bg: rgba(22, 199, 132, 0.08);
-  --loss: #ea3943;
-  --loss-bg: rgba(234, 57, 67, 0.08);
-  --warning: #f0b90b;
-  --warning-bg: rgba(240, 185, 11, 0.08);
-  --neutral: #8b92a5;
-  --accent: #4a7fff;
-  --accent-bg: rgba(74, 127, 255, 0.08);
-
-  /* ── Fonds Midnight ──────────────────────────────────────────── */
-  --bg-base: #0d1117;
-  --bg-elev-1: #14181f;
-  --bg-elev-2: #1c2129;
-  --bg-elev-3: #232934;
-
-  /* ── Textes Midnight (text-tertiary corrected WCAG AA 4.7:1) ─── */
-  --text-primary: #e6e8ec;
-  --text-secondary: #9ba1ae;
-  --text-tertiary: #7a8290;
-  --text-inverse: #0d1117;
-
-  /* Theme-independent text on accent/danger */
-  --text-on-accent: #ffffff;
-  --text-on-danger: #ffffff;
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   SECTION B — LEGACY MAPPING (Midnight)
-   Aliases for ~150 variables used by non-refactored pages (S4-S7).
-   Cleanup deferred to S8.
-   ═══════════════════════════════════════════════════════════════════ */
-:root {
-  /* ── Color aliases (point to v2 bases) ───────────────────────── */
-  --color-profit: var(--profit);
-  --color-profit-muted: var(--profit-bg);
-  --color-profit-subtle: rgba(22, 199, 132, 0.05);
-  --color-profit-glow: rgba(22, 199, 132, 0.18);
-  --success: var(--profit);
-  --success-muted: var(--profit-bg);
-
-  --color-loss: var(--loss);
-  --color-loss-muted: var(--loss-bg);
-  --color-loss-subtle: rgba(234, 57, 67, 0.05);
-  --color-loss-glow: rgba(234, 57, 67, 0.18);
-  --danger: var(--loss);
-  --danger-muted: var(--loss-bg);
-
-  --color-accent: var(--accent);
-  --color-accent-muted: var(--accent-bg);
-  --color-accent-subtle: rgba(74, 127, 255, 0.05);
-  --color-warning: var(--warning);
-  --color-warning-muted: var(--warning-bg);
-  --color-info: #60a5fa;
-  --color-info-muted: rgba(96, 165, 250, 0.1);
-  --color-neutral: var(--neutral);
-  --color-neutral-muted: rgba(139, 146, 165, 0.1);
-
-  /* ── Color variants (recalculated rgba from v2 bases) ────────── */
-  --profit-border: rgba(22, 199, 132, 0.25);
-  --profit-glow: rgba(22, 199, 132, 0.18);
-  --profit-muted: var(--profit-bg);
-  --profit-subtle: rgba(22, 199, 132, 0.05);
-
-  --loss-border: rgba(234, 57, 67, 0.25);
-  --loss-glow: rgba(234, 57, 67, 0.18);
-  --loss-muted: var(--loss-bg);
-  --loss-subtle: rgba(234, 57, 67, 0.05);
-
-  --accent-border: rgba(74, 127, 255, 0.25);
-  --accent-glow: rgba(74, 127, 255, 0.2);
-  --accent-hover: #6593ff;
-  --accent-muted: var(--accent-bg);
-  --accent-subtle: rgba(74, 127, 255, 0.05);
-  --accent-gradient: linear-gradient(135deg, var(--accent), #6593ff);
-
-  --warning-border: rgba(240, 185, 11, 0.25);
-  --warning-muted: var(--warning-bg);
-
-  --neutral-bg: rgba(139, 146, 165, 0.1);
-  --neutral-muted: var(--neutral-bg);
-
-  /* Text variants — option (c) literal, conserved */
-  --profit-text: #4ade80;
-  --loss-text: #f87171;
-  --accent-text: #60a5fa;
-  --warning-text: #fbbf24;
-
-  /* Info family (preserved literal — flag for S8 review) */
-  --info: #60a5fa;
-  --info-bg: rgba(96, 165, 250, 0.1);
-  --info-border: rgba(96, 165, 250, 0.25);
-  --info-text: #93c5fd;
-  --info-muted: var(--info-bg);
-
-  /* Colorblind alternates (referenced by Section D) */
-  --profit-alt: #3b82f6;
-  --loss-alt: #f97316;
-
-  /* ── PHANTOM VARS (revealing previously broken styles) ───────── */
-  --card-bg: var(--bg-elev-1);
-  --card-bg-hover: var(--bg-elev-2);
-  --card-bg-hero: var(--bg-elev-1);
-  --card-bg-hero-hover: var(--bg-elev-2);
-  --card-border: var(--border);
-  --card-border-hover: var(--border-strong);
-  --card-border-hero: var(--border-strong);
-  --card-inner-glow: none;
-  --card-shimmer: transparent;
-  --card-radius: var(--radius-lg);
-
-  --row-hover: rgba(255, 255, 255, 0.04);
-  --bg-input: var(--bg-elev-1);
-
-  --accent-light: var(--accent);
-  --accent-dim: var(--accent-bg);
-  --profit-dim: var(--profit-bg);
-  --profit-medium: rgba(22, 199, 132, 0.5);
-  --loss-dim: var(--loss-bg);
-
-  /* ── Surfaces 5-level → 4-level mapping (D3 confirmed) ───────── */
-  --surface-0: var(--bg-base);
-  --surface-1: var(--bg-elev-1);
-  --surface-2: var(--bg-elev-1); /* surface-1 == surface-2 (intended) */
-  --surface-3: var(--bg-elev-2);
-  --surface-4: var(--bg-elev-3);
-  --surface-base: var(--bg-base);
-  --surface-raised: var(--bg-elev-1);
-  --surface-overlay: var(--bg-elev-1);
-  --surface-elevated: var(--bg-elev-1);
-  --surface-highest: var(--bg-elev-2);
-
-  /* Background aliases */
-  --bg-surface: var(--bg-elev-1);
-  --bg-surface-elevated: var(--bg-elev-2);
-  --bg-surface-overlay: var(--bg-elev-1);
-  --bg-surface-raised: var(--bg-elev-1);
-  --bg-elevated: var(--bg-elev-2);
-  --bg-hover: var(--bg-elev-3);
-  --bg-active: var(--bg-elev-3);
-  --bg-glass: rgba(255, 255, 255, 0.05);
-  --bg-glass-hover: rgba(255, 255, 255, 0.07);
-
-  /* ── Text aliases ────────────────────────────────────────────── */
-  --text-muted: var(--text-tertiary);
-  --text-disabled: #48484d;
-
-  /* ── Border aliases ──────────────────────────────────────────── */
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-default: var(--border);
-  --border-hover: var(--border-strong);
-  --border-focus: var(--accent);
-  --border-active: rgba(74, 127, 255, 0.45);
-  --border-accent: rgba(74, 127, 255, 0.25);
-
-  /* Radius extras (legacy) */
-  --radius-xs: 4px;
-  --radius-xl: 16px;
-  --radius-2xl: 24px;
-  --radius-3xl: 20px;
-  --radius-full: 9999px;
-  --radius-pill: 9999px;
-
-  /* ── Glass system (legacy literal) ───────────────────────────── */
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-bg-strong: rgba(20, 25, 38, 0.75);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-border-hover: rgba(255, 255, 255, 0.16);
-  --glass-blur: 12px;
-  --glass-blur-hero: 16px;
-  --glass-saturate: 180%;
-
-  /* ── Shadows (legacy literal) ────────────────────────────────── */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
-  --shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.5);
-  --shadow-card: var(--shadow-md);
-  --shadow-elevated: var(--shadow-lg);
-  --shadow-hero: var(--shadow-xl);
-  --shadow-modal: var(--shadow-xl);
-  --shadow-glow-accent: 0 0 32px var(--accent-glow);
-  --shadow-glow-profit: 0 0 24px var(--profit-glow);
-  --shadow-glow-loss: 0 0 24px var(--loss-glow);
-
-  /* ── Typography legacy (fs-*, fw-*, lh-*, ls-*, font-ui, etc.) ─ */
-  --font-ui: var(--font-sans);
-
-  --fs-xs: 11px;
-  --fs-sm: 12px;
-  --fs-base: 13px;
-  --fs-md: 14px;
-  --fs-lg: 16px;
-  --fs-xl: 20px;
-  --fs-2xl: 24px;
-  --fs-3xl: 32px;
-  --fs-4xl: 40px;
-  --fs-5xl: 48px;
-
+  /* --- Typo legacy (weights / leading / tracking) --- */
   --fw-regular: 400;
   --fw-medium: 500;
   --fw-semibold: 600;
   --fw-bold: 700;
-  --weight-normal: 400;
-  --weight-bold: 700;
-
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
   --lh-tight: 1.2;
   --lh-normal: 1.5;
-  --lh-loose: 1.75;
-  --leading-tight: 1.2;
-  --leading-normal: 1.4;
-  --leading-relaxed: 1.6;
-
   --ls-tight: -0.02em;
-  --ls-tighter: -0.03em;
+  --ls-tighter: -0.04em;
   --ls-normal: 0;
   --ls-wide: 0.02em;
-  --ls-wider: 0.04em;
+  --ls-wider: 0.05em;
   --tracking-tight: -0.02em;
-  --tracking-normal: 0;
-  --tracking-wide: 0.04em;
+  --tracking-wide: 0.05em;
 
-  --text-display: 48px;
-  --font-size-xs: 10px;
-  --font-size-sm: 11px;
-  --font-size-base: 13px;
-  --font-size-lg: 15px;
-  --font-size-xl: 18px;
-  --font-size-2xl: 24px;
-  --font-size-3xl: 32px;
-  --font-size-hero: 48px;
+  /* --- Text on colored backgrounds --- */
+  --text-on-accent: #FFFFFF;
+  --text-on-danger: #FFFFFF;
 
-  /* ── Motion (legacy literal) ─────────────────────────────────── */
-  --duration-fast: 150ms;
-  --duration-base: 250ms;
-  --duration-slow: 400ms;
-  --duration-instant: 100ms;
+  /* --- Motion --- */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
   --duration-normal: 200ms;
-  --duration-slower: 450ms;
-  --ease-out: cubic-bezier(0.61, 1, 0.88, 1);
-  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
-  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --spring-stiffness: 300;
-  --spring-damping: 24;
-  --transition-fast: 120ms ease;
-  --transition-medium: 200ms ease;
-  --transition-slow: 350ms ease;
+  --ease-out: ease-out;
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* ── Z-index ─────────────────────────────────────────────────── */
-  --z-base: 1;
-  --z-elevated: 10;
-  --z-fixed: 30;
-  --z-overlay: 40;
-  --z-popover: 60;
-  --z-dropdown: 100;
-  --z-sticky: 200;
-  --z-modal-backdrop: 900;
-  --z-modal: 1000;
-  --z-toast: 1100;
-  --z-tooltip: 1200;
-
-  /* ── Layout (legacy literal) ─────────────────────────────────── */
-  --sidebar-width: 240px;
-  --sidebar-width-collapsed: 64px;
-  --sidebar-collapsed: 64px;
-  --topbar-height: 92px;
-  --topbar-height-mobile: 56px;
-  --header-height: 92px;
-  --cockpit-height: 44px;
-  --container-max-width: 1920px;
+  /* --- Layout chrome --- */
+  --header-height: 56px;
+  --tickertape: 40px;
   --mobile-bottomnav-height: 64px;
-  --bento-gap: 16px;
-  --bento-gap-dense: 12px;
-  --bento-gap-wide: 20px;
-  --card-padding: 16px;
-  --card-padding-lg: 24px;
-  --table-row-height: 40px;
-  --table-row-dense: 36px;
-  --gauge-size: 68px;
-  --gauge-stroke: 5px;
+  --container-max-width: 100%;
+  --cell-pad-x: 12px;
+  --bento-gap-dense: 8px;
+  --bento-gap-wide: 16px;
+  --hairline: 1px solid var(--qc-border-subtle);
+  --hairline-strong: 1px solid var(--qc-border-default);
+  --shell-cmdbar-h: 56px;
+  --shell-statusbar-h: 32px;
+  --shell-tickertape-h: 40px;
+  --shell-hairline: 1px solid var(--qc-border-subtle);
 
-  /* ── Charts / Heatmap / Greeks / Ambient orbs (legacy literal) ─ */
-  --chart-c1: var(--accent);
-  --chart-c2: var(--profit);
-  --chart-c3: #60a5fa;
-  --chart-c4: #a78bfa;
-  --chart-c5: var(--loss);
-  --chart-tooltip-bg: rgba(20, 25, 38, 0.95);
-  --chart-grid: rgba(255, 255, 255, 0.04);
+  /* --- Sidebar (dead code mais référencé) --- */
+  --sidebar-active-bg: rgba(6, 182, 212, 0.1);
+  --sidebar-active-indicator: var(--qc-accent);
+  --sidebar-collapsed: 56px;
+  --sidebar-hover-bg: var(--qc-bg-elevated);
+  --sidebar-width: 240px;
 
-  --greek-delta: var(--accent);
-  --greek-gamma: #a78bfa;
-  --greek-theta: var(--loss);
-  --greek-vega: #60a5fa;
+  /* --- Spacing hors-grille 4px --- */
+  --space-0-5: 2px;
+  --space-1-5: 6px;
+  --space-7: 28px;
+  --space-9: 36px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
 
-  --orb-violet: rgba(139, 92, 246, 0.06);
-  --orb-cyan: rgba(34, 211, 238, 0.05);
-  --orb-blue: rgba(59, 130, 246, 0.06);
+  /* --- Radius hors-grille --- */
+  --radius-xs: 2px;
+  --radius-xl: 8px;
+  --radius-2xl: 12px;
+  --radius-full: 9999px;
+  --radius-pill: 9999px;
 
-  --hm-pos-0: rgba(22, 199, 132, 0.12);
-  --hm-pos-1: rgba(22, 199, 132, 0.28);
-  --hm-pos-2: rgba(22, 199, 132, 0.48);
-  --hm-pos-3: rgba(22, 199, 132, 0.7);
-  --hm-pos-4: var(--profit);
-  --hm-neg-0: rgba(234, 57, 67, 0.12);
-  --hm-neg-1: rgba(234, 57, 67, 0.28);
-  --hm-neg-2: rgba(234, 57, 67, 0.48);
-  --hm-neg-3: rgba(234, 57, 67, 0.7);
-  --hm-neg-4: var(--loss);
-  --hm-neutral: var(--bg-elev-2);
+  /* --- Rows & tables --- */
+  --row-data: 28px;
+  --row-h-15: 30px;
+  --row-hover: var(--qc-bg-elevated);
+  --table-row-height: 32px;
 
-  /* ── Scrollbar / Modal overlay ───────────────────────────────── */
-  --scrollbar-track: transparent;
-  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
-  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.18);
-  --modal-overlay: rgba(0, 0, 0, 0.78);
-}
+  /* --- Shadows (subtiles, on assume dark mode) --- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.6);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-hero: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 16px 48px rgba(0, 0, 0, 0.7);
+  --shadow-glow-accent: 0 0 16px rgba(6, 182, 212, 0.3);
+  --shadow-glow-loss: 0 0 16px rgba(239, 68, 68, 0.3);
+  --shadow-glow-profit: 0 0 16px rgba(16, 185, 129, 0.3);
 
-/* ═══════════════════════════════════════════════════════════════════
-   SECTION C — DAYLIGHT OVERRIDE
-   Override Midnight palette for the light theme.
-   ═══════════════════════════════════════════════════════════════════ */
-[data-theme="daylight"] {
-  /* Couleurs sémantiques v2 daylight */
-  --profit: #00875a;
-  --profit-bg: rgba(0, 135, 90, 0.08);
-  --loss: #c9252d;
-  --loss-bg: rgba(201, 37, 45, 0.08);
-  --warning: #b36f00;
-  --warning-bg: rgba(179, 111, 0, 0.08);
-  --accent: #1f5ac9;
-  --accent-bg: rgba(31, 90, 201, 0.08);
-  --neutral: #5c6370;
+  /* --- Scrollbar / Modal --- */
+  --scrollbar-track: var(--qc-bg-base);
+  --scrollbar-thumb: var(--qc-border-default);
+  --scrollbar-thumb-hover: var(--qc-border-strong);
+  --modal-overlay: rgba(0, 0, 0, 0.7);
 
-  /* Fonds daylight v2 */
-  --bg-base: #fcfcfd;
-  --bg-elev-1: #f4f5f7;
-  --bg-elev-2: #ecedf0;
-  --bg-elev-3: #e0e2e7;
+  /* --- Toast --- */
+  --toast-bg: var(--qc-bg-elevated);
+  --toast-border: var(--qc-border-default);
+  --toast-icon: var(--qc-accent);
+  --toast-text: var(--qc-text-primary);
+  --toast-offset: 24px;
+  --toast-width: 360px;
 
-  /* Textes daylight (verified WCAG AA — current values preserved, NOT spec) */
-  --text-primary: #1a1d26;
-  --text-secondary: #475569; /* AA 7.9:1 on bg-elev-1 (#f4f5f7) */
-  --text-tertiary: #64748b; /* AA 4.7:1 — pas spec #8B92A5 qui fail */
-  --text-inverse: #fcfcfd;
+  /* --- Empty state / Error boundary --- */
+  --empty-state-icon-color: var(--qc-text-tertiary);
+  --error-boundary-bg: var(--qc-loss-bg);
+  --error-boundary-border: var(--qc-loss);
 
-  /* Borders daylight */
-  --border: rgba(0, 0, 0, 0.08);
-  --border-strong: rgba(0, 0, 0, 0.16);
+  /* --- KPI module tokens --- */
+  --kpi-delta-size: 13px;
+  --kpi-label-size: 11px;
+  --kpi-min-width: 180px;
+  --kpi-number-size: 32px;
+  --kpi-padding: 16px;
+  --kpi-sparkline-h: 40px;
 
-  /* Color variants daylight (rgba recalculated from daylight bases) */
-  --profit-border: rgba(0, 135, 90, 0.3);
-  --profit-glow: rgba(0, 135, 90, 0.15);
-  --profit-text: #059669;
-  --profit-medium: rgba(0, 135, 90, 0.5);
-  --profit-subtle: rgba(0, 135, 90, 0.05);
-  --profit-muted: var(--profit-bg);
+  /* --- Gauge / Ring --- */
+  --gauge-circumference: 283;
+  --gauge-target: 67;
+  --ring-color: var(--qc-accent);
+  --ring-duration: 800ms;
+  --ring-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ring-size: 60px;
+  --ring-stroke: 4px;
+  --ring-track: var(--qc-border-default);
 
-  --loss-border: rgba(201, 37, 45, 0.3);
-  --loss-glow: rgba(201, 37, 45, 0.15);
-  --loss-text: #dc2626;
-  --loss-subtle: rgba(201, 37, 45, 0.05);
-  --loss-muted: var(--loss-bg);
+  /* --- Orbs (AmbientBackground) --- */
+  --orb-1-color: var(--qc-accent);
+  --orb-1-opacity: 0.05;
+  --orb-2-color: var(--qc-profit);
+  --orb-2-opacity: 0.03;
+  --orb-3-color: var(--qc-info);
+  --orb-3-opacity: 0.04;
+  --orb-blue: var(--qc-accent);
+  --orb-violet: #8B5CF6;
 
-  --accent-border: rgba(31, 90, 201, 0.25);
-  --accent-glow: rgba(31, 90, 201, 0.15);
-  --accent-hover: #1d4ed8;
-  --accent-text: #1d4ed8;
-  --accent-subtle: rgba(31, 90, 201, 0.05);
-  --accent-muted: var(--accent-bg);
-  --accent-gradient: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  /* --- Charts / Greeks --- */
+  --chart-tooltip-bg: var(--qc-bg-elevated);
+  --greek-color: var(--qc-text-secondary);
 
-  --warning-border: rgba(179, 111, 0, 0.25);
-  --warning-text: #b45309;
-  --warning-muted: var(--warning-bg);
+  /* --- Z-index --- */
+  --z-dropdown: 100;
+  --z-toast: 200;
+  --z-tooltip: 300;
 
-  /* Color sub-aliases recalculated daylight */
-  --color-profit-subtle: rgba(0, 135, 90, 0.05);
-  --color-profit-glow: rgba(0, 135, 90, 0.15);
-  --color-loss-subtle: rgba(201, 37, 45, 0.05);
-  --color-loss-glow: rgba(201, 37, 45, 0.15);
-  --color-accent-subtle: rgba(31, 90, 201, 0.05);
-  --color-info: #0ea5e9;
-  --color-info-muted: rgba(14, 165, 233, 0.1);
-
-  /* Info family daylight */
-  --info: #0ea5e9;
-  --info-bg: rgba(14, 165, 233, 0.1);
-  --info-border: rgba(14, 165, 233, 0.25);
-  --info-text: #0369a1;
-  --info-muted: var(--info-bg);
-
-  /* Phantom var daylight overrides */
-  --row-hover: rgba(0, 0, 0, 0.04);
-  --border-active: rgba(31, 90, 201, 0.35);
-  --border-accent: rgba(31, 90, 201, 0.25);
-  --border-subtle: rgba(0, 0, 0, 0.06);
-
-  /* Glass daylight */
-  --bg-glass: rgba(255, 255, 255, 0.7);
-  --bg-glass-hover: rgba(255, 255, 255, 0.85);
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-bg-strong: rgba(255, 255, 255, 0.85);
-  --glass-border: rgba(15, 23, 42, 0.08);
-  --glass-border-hover: rgba(15, 23, 42, 0.16);
-  --glass-blur: 14px;
-  --glass-saturate: 150%;
-
-  /* Shadows daylight (drop shadows replace dark glows) */
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12);
-  --shadow-xl: 0 24px 64px rgba(15, 23, 42, 0.15);
-
-  /* Heatmap daylight (lighter tones) */
-  --hm-pos-0: rgba(0, 135, 90, 0.08);
-  --hm-pos-1: rgba(0, 135, 90, 0.22);
-  --hm-pos-2: rgba(0, 135, 90, 0.42);
-  --hm-pos-3: rgba(0, 135, 90, 0.65);
-  --hm-pos-4: var(--profit);
-  --hm-neg-0: rgba(201, 37, 45, 0.08);
-  --hm-neg-1: rgba(201, 37, 45, 0.22);
-  --hm-neg-2: rgba(201, 37, 45, 0.42);
-  --hm-neg-3: rgba(201, 37, 45, 0.65);
-  --hm-neg-4: var(--loss);
-  --hm-neutral: var(--bg-elev-2);
-
-  /* Scrollbar / chart / modal overlay daylight */
-  --scrollbar-track: transparent;
-  --scrollbar-thumb: rgba(15, 23, 42, 0.12);
-  --scrollbar-thumb-hover: rgba(15, 23, 42, 0.22);
-  --chart-tooltip-bg: rgba(15, 23, 42, 0.95);
-  --chart-grid: rgba(15, 23, 42, 0.05);
-  --modal-overlay: rgba(15, 23, 42, 0.4);
-
-  /* Ambient orbs daylight (parity with midnight per Aura v5) */
-  --orb-violet: rgba(139, 92, 246, 0.06);
-  --orb-cyan: rgba(34, 211, 238, 0.05);
-  --orb-blue: rgba(59, 130, 246, 0.06);
-
-  /* Disabled text daylight (≥3:1 on bg-elev-1 #f4f5f7, slate-400) */
-  --text-disabled: #94a3b8;
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   SECTION D — COLORBLIND OVERRIDE
-   Opt-in via [data-colorblind='true']. Profit/loss → blue/orange.
-   ═══════════════════════════════════════════════════════════════════ */
-[data-colorblind="true"] {
-  --profit: var(--profit-alt);
-  --profit-bg: rgba(59, 130, 246, 0.08);
-  --profit-border: rgba(59, 130, 246, 0.25);
-  --profit-glow: rgba(59, 130, 246, 0.18);
-  --profit-text: var(--profit-alt);
-  --loss: var(--loss-alt);
-  --loss-bg: rgba(249, 115, 22, 0.08);
-  --loss-border: rgba(249, 115, 22, 0.25);
-  --loss-glow: rgba(249, 115, 22, 0.18);
-  --loss-text: var(--loss-alt);
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   SECTION E — REDUCED MOTION OVERRIDE
-   Respect OS user preference. Collapse durations to near-zero.
-   ═══════════════════════════════════════════════════════════════════ */
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --duration-fast: 0ms;
-    --duration-base: 0ms;
-    --duration-slow: 0ms;
-    --duration-instant: 0ms;
-    --duration-normal: 0ms;
-    --duration-slower: 0ms;
-  }
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
+  /* --- Divers --- */
+  --bar-width: 4px;
+  --neutral-bg: var(--qc-bg-elevated);
 }

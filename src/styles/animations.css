@@ -71,7 +71,7 @@
 /* ── P&L Flash (value change feedback) ── */
 @keyframes flash-green {
   0% {
-    background: var(--profit-muted);
+    background: var(--qc-profit-bg);
   }
   100% {
     background: transparent;
@@ -79,7 +79,7 @@
 }
 @keyframes flash-red {
   0% {
-    background: var(--loss-muted);
+    background: var(--qc-loss-bg);
   }
   100% {
     background: transparent;
@@ -99,12 +99,12 @@
     background: var(--loss-dim);
   }
   50% {
-    background: var(--loss-muted);
+    background: var(--qc-loss-bg);
   }
 }
 .kill-switch-active {
   animation: kill-switch 1.5s ease-in-out infinite;
-  border-color: var(--loss) !important;
+  border-color: var(--qc-loss) !important;
 }
 
 /* ── Skeleton Shimmer ── */
@@ -120,7 +120,7 @@
   background: linear-gradient(90deg, var(--surface-1) 25%, var(--surface-2) 50%, var(--surface-1) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
-  border-radius: var(--radius-md);
+  border-radius: var(--qc-radius-md);
 }
 
 /* ── Subtle Accent Glow ── */
@@ -130,7 +130,7 @@
     box-shadow: 0 0 20px var(--accent-dim);
   }
   50% {
-    box-shadow: 0 0 35px var(--accent-muted);
+    box-shadow: 0 0 35px var(--qc-info-bg);
   }
 }
 .glow-accent {
@@ -141,7 +141,7 @@
 @keyframes glow-pulse {
   0%,
   100% {
-    box-shadow: 0 0 8px var(--profit-muted);
+    box-shadow: 0 0 8px var(--qc-profit-bg);
   }
   50% {
     box-shadow: 0 0 20px var(--profit-medium);
@@ -361,10 +361,10 @@
 @keyframes ring-pulse {
   0%,
   100% {
-    filter: drop-shadow(0 0 3px var(--ring-color, var(--accent)));
+    filter: drop-shadow(0 0 3px var(--ring-color, var(--qc-accent)));
   }
   50% {
-    filter: drop-shadow(0 0 8px var(--ring-color, var(--accent)));
+    filter: drop-shadow(0 0 8px var(--ring-color, var(--qc-accent)));
   }
 }
 

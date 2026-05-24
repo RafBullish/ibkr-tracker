@@ -11,7 +11,7 @@
    Le pattern « hairline gap » (1 px gap + bg border-strong) est
    abandonné Phase C.1 au profit d'un gap 8 px + radius 4 px par
    module. Chaque module porte sa propre border-radius via .module
-   ci-dessous (refactor section .module : border 1 var(--border)).
+   ci-dessous (refactor section .module : border 1 var(--qc-border-subtle)).
 
    Areas (cf. brief Phase C complet — Phase C.1 livre Rows 1/2/3/6
    en modules réels + Rows 4/5 en placeholders) :
@@ -47,7 +47,7 @@
   max-width: none; /* override legacy dashboard.css:128 (1920px) */
   margin: 0;       /* override legacy dashboard.css:129 (auto) */
   background: transparent;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
 }
 
 /* Heights par grid-area — Phase C.2.6 : row 1 à 520 px (4K scale,
@@ -110,7 +110,7 @@
   display: flex;
   flex-direction: column;
   background: var(--bg-elev-1);
-  border: 1px solid var(--border);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 4px;
   overflow: hidden;
   min-width: 0;
@@ -131,17 +131,17 @@
 }
 
 .module-placeholder__label {
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 11px;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .module-placeholder__sub {
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.04em;
   opacity: 0.7;
 }
@@ -153,30 +153,30 @@
   height: 32px;
   padding: 0 12px;
   background: var(--bg-elev-1);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--qc-border-subtle);
   flex-shrink: 0;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   white-space: nowrap;
   overflow: hidden;
 }
 
 .module-header__code {
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   flex-shrink: 0;
 }
 
 .module-header__sep {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 .module-header__label {
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   text-overflow: ellipsis;
   overflow: hidden;
 }
@@ -191,9 +191,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   user-select: none;
@@ -213,8 +213,8 @@
 .module-header__title {
   flex: 1;
   font-weight: 600;
-  color: var(--text-primary);
-  font-family: var(--font-mono);
+  color: var(--qc-text-primary);
+  font-family: var(--qc-font-mono);
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -237,14 +237,14 @@
   justify-content: center;
   height: 18px;
   padding: 0 6px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 9px;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   background: transparent;
-  border: 1px solid var(--border);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 0;
   cursor: pointer;
   transition:
@@ -254,19 +254,19 @@
 }
 
 .tf-pill:hover {
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   background: var(--row-hover);
 }
 
 .tf-pill:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1px solid var(--qc-accent);
   outline-offset: 1px;
 }
 
 .tf-pill[data-active] {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   background: var(--row-hover);
-  border-color: var(--accent);
+  border-color: var(--qc-accent);
   font-weight: 600;
 }
 
@@ -298,7 +298,7 @@
 .master-chart__bottom {
   flex: 3 1 0;
   min-height: 0;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--qc-border-subtle);
 }
 
 .master-chart__empty {
@@ -306,11 +306,11 @@
   align-items: center;
   justify-content: center;
   flex: 1;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   text-align: center;
   padding: 0 24px;
 }
@@ -318,24 +318,24 @@
 /* Custom tooltip — boîte hairline, monospace tabular-nums */
 .master-chart__tooltip {
   background: var(--bg-elev-2);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--qc-border-strong);
   padding: 6px 8px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
   line-height: 1.4;
   font-variant-numeric: tabular-nums slashed-zero;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   min-width: 140px;
   border-radius: 0;
 }
 
 .master-chart__tooltip-date {
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   margin-bottom: 4px;
   letter-spacing: 0.04em;
   font-size: 10px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--qc-border-subtle);
   padding-bottom: 3px;
 }
 
@@ -347,23 +347,23 @@
 }
 
 .master-chart__tooltip-row > span:first-child {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   font-size: 9px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .master-chart__tooltip-val {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   font-weight: 500;
 }
 
 .master-chart__tooltip-val.is-profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 
 .master-chart__tooltip-val.is-loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -375,18 +375,18 @@
 
 .trading-chart {
   background: var(--bg-elev-1);
-  border: 1px solid var(--border);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 4px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   /* Phase C.1.8 polish — hover border subtle (cohérence KPI cards). */
   transition: border-color 120ms ease-out;
 }
 
 .trading-chart:hover {
-  border-color: var(--border-strong);
+  border-color: var(--qc-border-strong);
 }
 
 .trading-chart__header {
@@ -395,8 +395,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: color-mix(in srgb, var(--bg-base) 50%, transparent);
-  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--qc-bg-base) 50%, transparent);
+  border-bottom: 1px solid var(--qc-border-subtle);
   flex-shrink: 0;
   gap: 12px;
 }
@@ -410,7 +410,7 @@
 
 .trading-chart__title {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   font-weight: 500;
@@ -419,7 +419,7 @@
 
 .trading-chart__sub {
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.06em;
   white-space: nowrap;
   overflow: hidden;
@@ -430,7 +430,7 @@
   display: inline-flex;
   align-items: stretch;
   gap: 1px;
-  background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 3%, transparent);
   padding: 2px;
   border-radius: 3px;
   flex-shrink: 0;
@@ -438,9 +438,9 @@
 
 .trading-chart__range-btn {
   padding: 3px 8px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   background: transparent;
   border: none;
   border-radius: 2px;
@@ -453,24 +453,24 @@
 }
 
 .trading-chart__range-btn:hover {
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 .trading-chart__range-btn:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1px solid var(--qc-accent);
   outline-offset: -1px;
 }
 
 .trading-chart__range-btn[data-active] {
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--qc-accent);
+  background: color-mix(in srgb, var(--qc-accent) 12%, transparent);
   font-weight: 500;
 }
 
 .trading-chart__subheader {
   padding: 10px 14px;
-  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
-  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--qc-text-primary) 1.5%, transparent);
+  border-bottom: 1px solid var(--qc-border-subtle);
   display: flex;
   align-items: stretch;
   gap: 14px;
@@ -492,7 +492,7 @@
 
 .trading-chart__kpi-label {
   font-size: 11px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 500;
@@ -502,7 +502,7 @@
 .trading-chart__kpi-value {
   /* Phase C.2.6 — bumpé 18→22 pour 4K (matche KPI Cards typo). */
   font-size: 22px;
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   font-weight: 500;
   line-height: 1;
   font-variant-numeric: tabular-nums slashed-zero;
@@ -515,18 +515,18 @@
 }
 
 .trading-chart__kpi-value--profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 .trading-chart__kpi-value--loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 .trading-chart__kpi-value--mute {
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 .trading-chart__kpi-divider {
   width: 1px;
-  background: var(--border);
+  background: var(--qc-border-subtle);
   margin: 4px 0;
   flex-shrink: 0;
 }
@@ -546,8 +546,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   padding: 10px 14px;
-  border-top: 1px solid var(--border);
-  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  border-top: 1px solid var(--qc-border-subtle);
+  background: color-mix(in srgb, var(--qc-text-primary) 1.5%, transparent);
   flex-shrink: 0;
   gap: 0;
 }
@@ -557,7 +557,7 @@
   flex-direction: column;
   gap: 3px;
   padding: 0 10px;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid var(--qc-border-subtle);
   min-width: 0;
 }
 
@@ -571,7 +571,7 @@
 
 .trading-chart__footer-label {
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 500;
@@ -581,7 +581,7 @@
 .trading-chart__footer-value {
   /* Phase C.2.6 — bumpé 14→15 pour 4K. */
   font-size: 15px;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   font-weight: 500;
   font-variant-numeric: tabular-nums slashed-zero;
   white-space: nowrap;
@@ -590,13 +590,13 @@
 }
 
 .trading-chart__footer-value--profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 .trading-chart__footer-value--loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 .trading-chart__footer-value--mute {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 .trading-chart__tooltip {
@@ -607,17 +607,17 @@
   word-break: break-word;
   white-space: normal;
   background: var(--bg-elev-2);
-  border: 1px solid var(--border);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 3px;
   padding: 6px 10px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 11px;
-  color: var(--text-secondary);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--bg-base) 70%, transparent);
+  color: var(--qc-text-secondary);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--qc-bg-base) 70%, transparent);
 }
 
 .trading-chart__tooltip-date {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   font-weight: 500;
   margin-bottom: 4px;
   font-size: 11px;
@@ -632,21 +632,21 @@
 }
 
 .trading-chart__tooltip-row > span:first-child {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-size: 10px;
 }
 
 .trading-chart__tooltip-val {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
 }
 
 .trading-chart__tooltip-val.is-profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 .trading-chart__tooltip-val.is-loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 
 .trading-chart__empty {
@@ -654,7 +654,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   font-size: 12px;
   letter-spacing: 0.04em;
 }
@@ -706,8 +706,8 @@
 }
 
 .trading-chart__ath-badge {
-  background: color-mix(in srgb, var(--profit) 12%, transparent);
-  color: var(--profit);
+  background: color-mix(in srgb, var(--qc-profit) 12%, transparent);
+  color: var(--qc-profit);
 }
 
 /* ─── Phase C.1.8 — Animation fade-in mount des modules Row 1 ── */
@@ -739,12 +739,12 @@
 
 /* Module header hint (right-aligned mute label, e.g. 'YTD') */
 .module-header__hint {
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   flex-shrink: 0;
 }
 
@@ -759,9 +759,9 @@
   /* Phase C.2.6 : aligned with row 1 à 520 px (4K scale, était 480). */
   height: 520px;
   background: var(--bg-elev-1);
-  border: 1px solid var(--border);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 4px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 14px;
   line-height: 1.5;
   display: flex;
@@ -772,10 +772,10 @@
 .risk-matrix__header {
   display: flex;
   align-items: stretch;
-  background: color-mix(in srgb, var(--bg-base) 60%, transparent);
+  background: color-mix(in srgb, var(--qc-bg-base) 60%, transparent);
   height: 38px;
   flex-shrink: 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--qc-border-subtle);
 }
 
 .risk-matrix__action {
@@ -783,32 +783,32 @@
   display: flex;
   align-items: center;
   background: transparent;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.06em;
   border: none;
-  border-right: 1px solid var(--border);
-  font-family: var(--font-mono);
+  border-right: 1px solid var(--qc-border-subtle);
+  font-family: var(--qc-font-mono);
   cursor: pointer;
   transition: color 120ms ease-out;
 }
 
 .risk-matrix__action--active {
-  background: color-mix(in srgb, var(--accent) 6%, transparent);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--qc-accent) 6%, transparent);
+  color: var(--qc-accent);
 }
 
 .risk-matrix__action:hover {
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 .risk-matrix__action--active:hover {
-  color: var(--accent);
+  color: var(--qc-accent);
 }
 
 .risk-matrix__action:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1px solid var(--qc-accent);
   outline-offset: -2px;
 }
 
@@ -818,7 +818,7 @@
   align-items: center;
   justify-content: flex-end;
   padding: 0 22px;
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   font-size: 15px;
   font-weight: 500;
   letter-spacing: 0.14em;
@@ -827,9 +827,9 @@
 
 .risk-matrix__subheader {
   padding: 10px 20px;
-  background: color-mix(in srgb, var(--text-primary) 2%, transparent);
-  border-bottom: 1px solid var(--border);
-  color: var(--text-tertiary);
+  background: color-mix(in srgb, var(--qc-text-primary) 2%, transparent);
+  border-bottom: 1px solid var(--qc-border-subtle);
+  color: var(--qc-text-tertiary);
   font-size: 13px;
   display: flex;
   justify-content: space-between;
@@ -840,12 +840,12 @@
 }
 
 .risk-matrix__ctx-val {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   font-weight: 500;
 }
 
 .risk-matrix__dot {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   margin: 0 6px;
 }
 
@@ -862,7 +862,7 @@
 }
 
 .risk-matrix__ctx-trades {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 /* Phase C.1.6 — badges TIER + EDGE agrandis pour 4K. */
@@ -888,8 +888,8 @@
 }
 
 .risk-matrix__edge-badge[data-tone="profit"] {
-  background: color-mix(in srgb, var(--profit) 8%, transparent);
-  color: var(--profit);
+  background: color-mix(in srgb, var(--qc-profit) 8%, transparent);
+  color: var(--qc-profit);
 }
 
 .risk-matrix__edge-badge[data-tone="amber"] {
@@ -898,8 +898,8 @@
 }
 
 .risk-matrix__edge-badge[data-tone="loss"] {
-  background: color-mix(in srgb, var(--loss) 8%, transparent);
-  color: var(--loss);
+  background: color-mix(in srgb, var(--qc-loss) 8%, transparent);
+  color: var(--qc-loss);
 }
 
 .risk-matrix__edge-dot {
@@ -925,7 +925,7 @@
 
 .risk-matrix__col--left,
 .risk-matrix__col--mid {
-  border-right: 1px solid var(--border);
+  border-right: 1px solid var(--qc-border-subtle);
 }
 
 .risk-matrix__section-head {
@@ -944,33 +944,33 @@
   font-size: 10px;
   font-weight: 400;
   letter-spacing: 0.06em;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   text-transform: none;
 }
 
 .risk-matrix__section-head--accent {
-  background: color-mix(in srgb, var(--accent) 4%, transparent);
-  color: var(--accent);
-  border-bottom: 1px solid color-mix(in srgb, var(--accent) 12%, transparent);
+  background: color-mix(in srgb, var(--qc-accent) 4%, transparent);
+  color: var(--qc-accent);
+  border-bottom: 1px solid color-mix(in srgb, var(--qc-accent) 12%, transparent);
 }
 
 .risk-matrix__section-head--loss {
-  background: color-mix(in srgb, var(--loss) 4%, transparent);
-  color: var(--loss);
-  border-bottom: 1px solid color-mix(in srgb, var(--loss) 12%, transparent);
+  background: color-mix(in srgb, var(--qc-loss) 4%, transparent);
+  color: var(--qc-loss);
+  border-bottom: 1px solid color-mix(in srgb, var(--qc-loss) 12%, transparent);
 }
 
 .risk-matrix__section-head--pushdown {
   margin-top: auto;
-  border-top: 1px solid color-mix(in srgb, var(--accent) 12%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--qc-accent) 12%, transparent);
 }
 
 .risk-matrix__row {
   display: grid;
   padding: 6px 18px;
   font-size: 14px;
-  color: var(--text-secondary);
-  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 4%, transparent);
+  color: var(--qc-text-secondary);
+  border-bottom: 1px solid color-mix(in srgb, var(--qc-text-primary) 4%, transparent);
   font-variant-numeric: tabular-nums slashed-zero;
   align-items: center;
   gap: 6px;
@@ -991,26 +991,26 @@
 
 .risk-matrix__row--th {
   padding: 6px 18px;
-  background: color-mix(in srgb, var(--text-primary) 2%, transparent);
-  color: var(--text-tertiary);
+  background: color-mix(in srgb, var(--qc-text-primary) 2%, transparent);
+  color: var(--qc-text-tertiary);
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--qc-border-subtle);
 }
 
 .risk-matrix__row--alert-loss {
-  background: color-mix(in srgb, var(--loss) 4%, transparent);
+  background: color-mix(in srgb, var(--qc-loss) 4%, transparent);
 }
 
 /* Phase C.1.8 — hover row subtle (n'affecte pas les th rows). */
 .risk-matrix__row:not(.risk-matrix__row--th):hover {
-  background: color-mix(in srgb, var(--text-primary) 2.5%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 2.5%, transparent);
   transition: background 120ms ease;
 }
 
 .risk-matrix__row--alert-loss:hover {
-  background: color-mix(in srgb, var(--loss) 6%, transparent);
+  background: color-mix(in srgb, var(--qc-loss) 6%, transparent);
 }
 
 .risk-matrix__cell--right {
@@ -1018,27 +1018,27 @@
 }
 
 .risk-matrix__cell--value {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   font-weight: 500;
 }
 .risk-matrix__cell--mute {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 .risk-matrix__cell--profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 .risk-matrix__cell--loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 .risk-matrix__cell--amber {
   color: var(--accent-amber);
 }
 .risk-matrix__cell--profit-bold {
-  color: var(--profit);
+  color: var(--qc-profit);
   font-weight: 500;
 }
 .risk-matrix__cell--loss-bold {
-  color: var(--loss);
+  color: var(--qc-loss);
   font-weight: 500;
 }
 
@@ -1056,7 +1056,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   font-size: 10px;
   letter-spacing: 0.04em;
 }
@@ -1068,22 +1068,22 @@
 }
 
 .risk-matrix__histogram-bar--loss {
-  background: var(--loss);
+  background: var(--qc-loss);
   opacity: 0.85;
 }
 .risk-matrix__histogram-bar--loss-strong {
-  background: var(--loss);
+  background: var(--qc-loss);
   opacity: 1;
 }
 .risk-matrix__histogram-bar--zero {
-  background: var(--text-tertiary);
+  background: var(--qc-text-tertiary);
 }
 .risk-matrix__histogram-bar--profit {
-  background: var(--profit);
+  background: var(--qc-profit);
   opacity: 0.85;
 }
 .risk-matrix__histogram-bar--profit-strong {
-  background: var(--profit);
+  background: var(--qc-profit);
   opacity: 1;
 }
 
@@ -1092,7 +1092,7 @@
   justify-content: space-between;
   padding: 0 12px 6px;
   font-size: 9px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.04em;
   flex-shrink: 0;
 }
@@ -1101,7 +1101,7 @@
 
 .risk-matrix__gauge {
   height: 6px;
-  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 5%, transparent);
   border-radius: 1px;
   overflow: visible;
   position: relative;
@@ -1115,10 +1115,10 @@
 }
 
 .risk-matrix__gauge-fill[data-tone="profit"] {
-  background: var(--profit);
+  background: var(--qc-profit);
 }
 .risk-matrix__gauge-fill[data-tone="loss"] {
-  background: var(--loss);
+  background: var(--qc-loss);
 }
 .risk-matrix__gauge-fill[data-tone="amber"] {
   background: var(--accent-amber);
@@ -1129,7 +1129,7 @@
   top: -2.5px;
   width: 1.5px;
   height: 11px;
-  background: color-mix(in srgb, var(--accent) 50%, transparent);
+  background: color-mix(in srgb, var(--qc-accent) 50%, transparent);
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -1138,8 +1138,8 @@
 
 .risk-matrix__subzone {
   padding: 10px 18px;
-  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 4%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 1.5%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--qc-text-primary) 4%, transparent);
   flex-shrink: 0;
 }
 
@@ -1157,10 +1157,10 @@
   justify-content: space-between;
   align-items: center;
   font-size: 11px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.08em;
   margin-bottom: 7px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   text-transform: uppercase;
 }
 
@@ -1173,20 +1173,20 @@
 }
 
 .risk-matrix__dd-spark--empty {
-  background: color-mix(in srgb, var(--text-primary) 2%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 2%, transparent);
 }
 
 .risk-matrix__dd-spark-line {
-  stroke: var(--loss);
+  stroke: var(--qc-loss);
 }
 
 .risk-matrix__dd-spark-area {
-  fill: var(--loss);
+  fill: var(--qc-loss);
   fill-opacity: 0.4;
 }
 
 .risk-matrix__dd-spark-ref {
-  stroke: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  stroke: color-mix(in srgb, var(--qc-text-primary) 5%, transparent);
   fill: none;
 }
 
@@ -1207,26 +1207,26 @@
 }
 
 .risk-matrix__streak-bar--win {
-  background: var(--profit);
+  background: var(--qc-profit);
 }
 .risk-matrix__streak-bar--loss {
-  background: var(--loss);
+  background: var(--qc-loss);
 }
 .risk-matrix__streak-bar--even {
-  background: var(--text-tertiary);
+  background: var(--qc-text-tertiary);
 }
 
 .risk-matrix__streak-bar--active-win {
-  background: var(--profit);
-  border: 1px solid var(--profit);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--profit) 40%, transparent);
+  background: var(--qc-profit);
+  border: 1px solid var(--qc-profit);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--qc-profit) 40%, transparent);
   opacity: 0.95;
 }
 
 .risk-matrix__streak-bar--active-loss {
-  background: var(--loss);
-  border: 1px solid var(--loss);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--loss) 40%, transparent);
+  background: var(--qc-loss);
+  border: 1px solid var(--qc-loss);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--qc-loss) 40%, transparent);
   opacity: 0.95;
 }
 
@@ -1236,7 +1236,7 @@
   align-items: center;
   justify-content: center;
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.04em;
 }
 
@@ -1247,9 +1247,9 @@
   align-items: center;
   gap: 16px;
   padding: 12px 18px;
-  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
-  border-top: 1px solid color-mix(in srgb, var(--text-primary) 6%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 4%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 1.5%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--qc-text-primary) 6%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--qc-text-primary) 4%, transparent);
   flex-shrink: 0;
 }
 
@@ -1260,23 +1260,23 @@
 }
 
 .risk-matrix__winrate-donut-bg {
-  stroke: color-mix(in srgb, var(--loss) 22%, transparent);
+  stroke: color-mix(in srgb, var(--qc-loss) 22%, transparent);
 }
 
 .risk-matrix__winrate-donut-fg {
-  stroke: var(--profit);
+  stroke: var(--qc-profit);
 }
 
 .risk-matrix__winrate-donut-label {
-  fill: var(--text-tertiary);
-  font-family: var(--font-mono);
+  fill: var(--qc-text-tertiary);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
   letter-spacing: 0.1em;
 }
 
 .risk-matrix__winrate-donut-value {
-  fill: var(--text-primary);
-  font-family: var(--font-mono);
+  fill: var(--qc-text-primary);
+  font-family: var(--qc-font-mono);
   font-size: 14px;
   font-weight: 500;
   font-variant-numeric: tabular-nums slashed-zero;
@@ -1287,7 +1287,7 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   min-width: 0;
 }
 
@@ -1299,7 +1299,7 @@
 }
 
 .risk-matrix__winrate-label {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.04em;
 }
 
@@ -1309,29 +1309,29 @@
 
 .risk-matrix__winrate-ratio {
   height: 5px;
-  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 5%, transparent);
   border-radius: 1px;
   display: flex;
   overflow: hidden;
 }
 
 .risk-matrix__winrate-ratio-win {
-  background: var(--profit);
+  background: var(--qc-profit);
 }
 
 .risk-matrix__winrate-ratio-loss {
-  background: var(--loss);
+  background: var(--qc-loss);
 }
 
 .risk-matrix__winrate-pf {
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.04em;
   margin-top: 2px;
 }
 
 .risk-matrix__winrate-pf-val {
-  color: var(--accent);
+  color: var(--qc-accent);
   font-weight: 500;
 }
 
@@ -1339,7 +1339,7 @@
 
 .risk-matrix__monthly-zone {
   padding: 12px 18px;
-  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 1.5%, transparent);
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1363,15 +1363,15 @@
 }
 
 .risk-matrix__monthly-bar--profit {
-  background: var(--profit);
+  background: var(--qc-profit);
 }
 
 .risk-matrix__monthly-bar--loss {
-  background: var(--loss);
+  background: var(--qc-loss);
 }
 
 .risk-matrix__monthly-bar--neutral {
-  background: var(--text-tertiary);
+  background: var(--qc-text-tertiary);
   opacity: 0.55;
 }
 
@@ -1381,8 +1381,8 @@
   padding-top: 5px;
   gap: 5px;
   font-size: 11px;
-  color: var(--text-tertiary);
-  font-family: var(--font-mono);
+  color: var(--qc-text-tertiary);
+  font-family: var(--qc-font-mono);
   letter-spacing: 0.04em;
 }
 
@@ -1394,21 +1394,21 @@
 /* Sub-zone tone helpers (réutilisés par les Δ inline et les
    header info à droite des subzones). */
 .risk-matrix__cell--neutral {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
 }
 .risk-matrix__cell--accent {
-  color: var(--accent);
+  color: var(--qc-accent);
 }
 
 .risk-matrix__footer {
   height: 28px;
-  background: color-mix(in srgb, var(--bg-base) 60%, transparent);
-  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--qc-bg-base) 60%, transparent);
+  border-top: 1px solid var(--qc-border-subtle);
   padding: 0 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   font-size: 12px;
   flex-shrink: 0;
   letter-spacing: 0.04em;
@@ -1421,12 +1421,12 @@
 }
 
 .risk-matrix__footer-cmd-label {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.08em;
 }
 
 .risk-matrix__footer-cmd {
-  color: var(--accent);
+  color: var(--qc-accent);
   letter-spacing: 0.1em;
   font-weight: 500;
 }
@@ -1445,9 +1445,9 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1px;
-  background: var(--border);
+  background: var(--qc-border-subtle);
   height: 109px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--qc-border-subtle);
   flex-shrink: 0;
 }
 
@@ -1458,7 +1458,7 @@
   gap: 3px;
   padding: 0 8px;
   background: var(--bg-elev-1);
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   min-width: 0;
 }
 
@@ -1467,7 +1467,7 @@
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   white-space: nowrap;
 }
 
@@ -1479,18 +1479,18 @@
 }
 
 .greeks-agg__kpi-value--profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 .greeks-agg__kpi-value--loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 .greeks-agg__kpi-value--mute {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
 }
 
 .greeks-agg__kpi-sub {
   font-size: 9px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.02em;
   white-space: nowrap;
   overflow: hidden;
@@ -1506,7 +1506,7 @@
 .greeks-agg__table {
   width: 100%;
   border-collapse: collapse;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
   font-variant-numeric: tabular-nums slashed-zero;
 }
@@ -1524,8 +1524,8 @@
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
-  border-bottom: 1px solid var(--border);
+  color: var(--qc-text-tertiary);
+  border-bottom: 1px solid var(--qc-border-subtle);
   background: var(--bg-elev-1);
   text-align: right;
   white-space: nowrap;
@@ -1538,7 +1538,7 @@
 
 .greeks-agg__table tbody tr {
   height: var(--row-h-15);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--qc-border-subtle);
   transition: background 80ms ease-out;
 }
 
@@ -1554,12 +1554,12 @@
   padding: 0 6px;
   text-align: right;
   white-space: nowrap;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 .greeks-agg__table tbody td.greeks-agg__ticker {
   text-align: left;
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   font-weight: 600;
 }
 
@@ -1576,35 +1576,35 @@
   font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  border: 1px solid var(--border);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 0;
 }
 
 .greeks-agg__type-pill--CALL {
-  color: var(--profit);
-  border-color: color-mix(in srgb, var(--profit) 30%, transparent);
-  background: color-mix(in srgb, var(--profit) 6%, transparent);
+  color: var(--qc-profit);
+  border-color: color-mix(in srgb, var(--qc-profit) 30%, transparent);
+  background: color-mix(in srgb, var(--qc-profit) 6%, transparent);
 }
 
 .greeks-agg__type-pill--PUT {
-  color: var(--loss);
-  border-color: color-mix(in srgb, var(--loss) 30%, transparent);
-  background: color-mix(in srgb, var(--loss) 6%, transparent);
+  color: var(--qc-loss);
+  border-color: color-mix(in srgb, var(--qc-loss) 30%, transparent);
+  background: color-mix(in srgb, var(--qc-loss) 6%, transparent);
 }
 
 .greeks-agg__type-pill--STK {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 /* Tones cellules (Δ Γ Θ ν) */
 .greeks-agg__cell--profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 .greeks-agg__cell--loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 .greeks-agg__cell--mute {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 .greeks-agg__empty {
@@ -1613,10 +1613,10 @@
   justify-content: center;
   height: 100%;
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -1641,9 +1641,9 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -1654,7 +1654,7 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 13px;
   font-variant-numeric: tabular-nums slashed-zero;
 }
@@ -1676,9 +1676,9 @@
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   background: var(--bg-elev-1);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--qc-border-subtle);
   white-space: nowrap;
   vertical-align: middle;
 }
@@ -1690,7 +1690,7 @@
      hauteur des rows TradeHistory (td height: 32px). Le 4 px diff
      créait un dilatement vertical visible vs trade-history. */
   height: 32px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--qc-border-subtle);
   cursor: pointer;
   transition: background 80ms ease-out;
 }
@@ -1701,14 +1701,14 @@
 
 .live-pos__row:hover {
   /* Phase C.2.9 — bumpé pour visibilité 4K (cohérence TradeHistory). */
-  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 5%, transparent);
 }
 
 .live-pos__td,
 .live-pos__table tbody td {
   padding: 0 10px;
   white-space: nowrap;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   vertical-align: middle;
 }
 
@@ -1733,39 +1733,39 @@
    TradeHistory). 3% opacity. */
 .live-pos__table thead th + th,
 .live-pos__table tbody td + td {
-  border-left: 1px solid color-mix(in srgb, var(--text-primary) 3%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--qc-text-primary) 3%, transparent);
 }
 
 /* Divider visible avant Unreal $ (sépare cols neutres / cols P&L). */
 .live-pos__th--divider,
 .live-pos__td--divider {
-  border-left: 1px solid color-mix(in srgb, var(--text-primary) 9%, transparent) !important;
+  border-left: 1px solid color-mix(in srgb, var(--qc-text-primary) 9%, transparent) !important;
 }
 
 .live-pos__ticker {
-  color: var(--text-primary) !important;
+  color: var(--qc-text-primary) !important;
   font-weight: 600;
 }
 
 .live-pos__sub {
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   margin-left: 1px;
   letter-spacing: 0.02em;
 }
 
 .live-pos__mute {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 .live-pos__cell--profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 .live-pos__cell--loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 .live-pos__cell--mute {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 /* ─── Type pill (CALL/PUT/STK) ──────────────────────────────── */
@@ -1777,24 +1777,24 @@
   font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  border: 1px solid var(--border);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 0;
 }
 
 .live-pos__type-pill--CALL {
-  color: var(--profit);
-  border-color: color-mix(in srgb, var(--profit) 30%, transparent);
-  background: color-mix(in srgb, var(--profit) 6%, transparent);
+  color: var(--qc-profit);
+  border-color: color-mix(in srgb, var(--qc-profit) 30%, transparent);
+  background: color-mix(in srgb, var(--qc-profit) 6%, transparent);
 }
 
 .live-pos__type-pill--PUT {
-  color: var(--loss);
-  border-color: color-mix(in srgb, var(--loss) 30%, transparent);
-  background: color-mix(in srgb, var(--loss) 6%, transparent);
+  color: var(--qc-loss);
+  border-color: color-mix(in srgb, var(--qc-loss) 30%, transparent);
+  background: color-mix(in srgb, var(--qc-loss) 6%, transparent);
 }
 
 .live-pos__type-pill--STK {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 /* ─── IVR cell : number + microbar ──────────────────────────── */
@@ -1806,7 +1806,7 @@
 }
 
 .live-pos__ivr-num {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   font-size: 10px;
   min-width: 16px;
   text-align: right;
@@ -1817,7 +1817,7 @@
   display: inline-block;
   width: 30px;
   height: 4px;
-  background: var(--border);
+  background: var(--qc-border-subtle);
 }
 
 .live-pos__ivr-fill {
@@ -1828,13 +1828,13 @@
 }
 
 .live-pos__ivr-fill--profit {
-  background: var(--profit);
+  background: var(--qc-profit);
 }
 .live-pos__ivr-fill--loss {
-  background: var(--loss);
+  background: var(--qc-loss);
 }
 .live-pos__ivr-fill--mute {
-  background: var(--text-tertiary);
+  background: var(--qc-text-tertiary);
 }
 
 /* ─── Edge / Gate / Alert pills ────────────────────────────── */
@@ -1846,9 +1846,9 @@
   font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: var(--text-primary);
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
-  border: 1px solid var(--border-strong);
+  color: var(--qc-text-primary);
+  background: color-mix(in srgb, var(--qc-accent) 8%, transparent);
+  border: 1px solid var(--qc-border-strong);
   border-radius: 0;
 }
 
@@ -1861,9 +1861,9 @@
   font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: var(--warning);
-  border: 1px solid color-mix(in srgb, var(--warning) 30%, transparent);
-  background: color-mix(in srgb, var(--warning) 6%, transparent);
+  color: var(--qc-warning);
+  border: 1px solid color-mix(in srgb, var(--qc-warning) 30%, transparent);
+  background: color-mix(in srgb, var(--qc-warning) 6%, transparent);
   border-radius: 0;
 }
 
@@ -1874,14 +1874,14 @@
   background: color-mix(in srgb, var(--accent-amber, #ffa028) 6%, transparent);
 }
 .live-pos__gate-pill--imminent {
-  color: var(--warning);
-  border-color: color-mix(in srgb, var(--warning) 35%, transparent);
-  background: color-mix(in srgb, var(--warning) 8%, transparent);
+  color: var(--qc-warning);
+  border-color: color-mix(in srgb, var(--qc-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--qc-warning) 8%, transparent);
 }
 .live-pos__gate-pill--armed {
-  color: var(--loss);
-  border-color: color-mix(in srgb, var(--loss) 35%, transparent);
-  background: color-mix(in srgb, var(--loss) 8%, transparent);
+  color: var(--qc-loss);
+  border-color: color-mix(in srgb, var(--qc-loss) 35%, transparent);
+  background: color-mix(in srgb, var(--qc-loss) 8%, transparent);
   animation: gate-armed-pulse 2s ease-in-out infinite;
 }
 .live-pos__gate-pill-sub {
@@ -1916,7 +1916,7 @@
   font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   background: color-mix(in srgb, var(--accent-amber, #ffa028) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent-amber, #ffa028) 30%, transparent);
   border-radius: 0;
@@ -1930,20 +1930,20 @@
   font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  border: 1px solid var(--border);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 0;
 }
 
 .live-pos__alert-pill--warn {
-  color: var(--warning);
-  border-color: color-mix(in srgb, var(--warning) 30%, transparent);
-  background: color-mix(in srgb, var(--warning) 6%, transparent);
+  color: var(--qc-warning);
+  border-color: color-mix(in srgb, var(--qc-warning) 30%, transparent);
+  background: color-mix(in srgb, var(--qc-warning) 6%, transparent);
 }
 
 .live-pos__alert-pill--info {
-  color: var(--info);
-  border-color: color-mix(in srgb, var(--info) 30%, transparent);
-  background: color-mix(in srgb, var(--info) 6%, transparent);
+  color: var(--qc-info);
+  border-color: color-mix(in srgb, var(--qc-info) 30%, transparent);
+  background: color-mix(in srgb, var(--qc-info) 6%, transparent);
 }
 
 /* ─── Sparkline 60×14 inline ────────────────────────────────── */
@@ -1953,19 +1953,19 @@
 }
 
 .position-sparkline__line--profit {
-  stroke: var(--profit);
+  stroke: var(--qc-profit);
 }
 
 .position-sparkline__line--loss {
-  stroke: var(--loss);
+  stroke: var(--qc-loss);
 }
 
 .position-sparkline__line--mute {
-  stroke: var(--text-tertiary);
+  stroke: var(--qc-text-tertiary);
 }
 
 .position-sparkline__empty {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   font-size: 10px;
 }
 
@@ -1994,9 +1994,9 @@
   justify-content: center;
   height: 100%;
   padding: 0 16px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.06em;
   text-align: center;
 }
@@ -2005,10 +2005,10 @@
   height: 16px;
   padding: 0 6px;
   background: transparent;
-  color: var(--text-tertiary);
-  border: 1px solid var(--border);
+  color: var(--qc-text-tertiary);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 0;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 9px;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -2020,8 +2020,8 @@
 }
 
 .watchlist__add-btn:hover {
-  color: var(--text-primary);
-  border-color: var(--border-strong);
+  color: var(--qc-text-primary);
+  border-color: var(--qc-border-strong);
 }
 
 .watchlist__table,
@@ -2029,7 +2029,7 @@
 .iv-movers__table {
   width: 100%;
   border-collapse: collapse;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
   font-variant-numeric: tabular-nums slashed-zero;
 }
@@ -2051,9 +2051,9 @@
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   background: var(--bg-elev-1);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--qc-border-subtle);
   text-align: right;
   white-space: nowrap;
 }
@@ -2070,7 +2070,7 @@
 .earnings-cal__row,
 .iv-movers__row {
   height: var(--row-h-15);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--qc-border-subtle);
   cursor: pointer;
   transition: background 80ms;
 }
@@ -2093,7 +2093,7 @@
   padding: 0 6px;
   text-align: right;
   white-space: nowrap;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 .watchlist__table tbody td:first-child,
@@ -2107,17 +2107,17 @@
 .watchlist__ticker,
 .earnings-cal__ticker,
 .iv-movers__ticker {
-  color: var(--text-primary) !important;
+  color: var(--qc-text-primary) !important;
   font-weight: 600;
 }
 
 /* ─── Earnings : highlight ticker possédé ─────────────────────── */
 .earnings-cal__row--owned {
-  background: color-mix(in srgb, var(--warning) 8%, transparent);
+  background: color-mix(in srgb, var(--qc-warning) 8%, transparent);
 }
 
 .earnings-cal__row--owned:hover {
-  background: color-mix(in srgb, var(--warning) 14%, transparent);
+  background: color-mix(in srgb, var(--qc-warning) 14%, transparent);
 }
 
 .earnings-cal__owned-dot {
@@ -2125,7 +2125,7 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--warning);
+  background: var(--qc-warning);
   margin-left: 4px;
   vertical-align: middle;
 }
@@ -2138,8 +2138,8 @@
   font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
+  color: var(--qc-text-secondary);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 0;
 }
 
@@ -2162,8 +2162,8 @@
   flex-direction: column;
   justify-content: space-between;
   padding: 4px 6px;
-  border: 1px solid var(--border);
-  font-family: var(--font-mono);
+  border: 1px solid var(--qc-border-subtle);
+  font-family: var(--qc-font-mono);
   cursor: default;
   min-height: 0;
 }
@@ -2172,7 +2172,7 @@
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   text-transform: uppercase;
 }
 
@@ -2184,14 +2184,14 @@
 
 .heat-cell__pct--profit,
 .heat-cell__pct--profit-strong {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 .heat-cell__pct--loss,
 .heat-cell__pct--loss-strong {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 .heat-cell__pct--mute {
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -2214,9 +2214,9 @@
   justify-content: center;
   height: 100%;
   padding: 0 16px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.06em;
   text-align: center;
 }
@@ -2224,7 +2224,7 @@
 .market-internals__table {
   width: 100%;
   border-collapse: collapse;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 11px;
   font-variant-numeric: tabular-nums slashed-zero;
 }
@@ -2236,9 +2236,9 @@
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   background: var(--bg-elev-1);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--qc-border-subtle);
   text-align: right;
   white-space: nowrap;
 }
@@ -2249,7 +2249,7 @@
 
 .market-internals__row {
   height: 22px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--qc-border-subtle);
 }
 
 .market-internals__row:last-child {
@@ -2260,7 +2260,7 @@
   padding: 0 8px;
   text-align: right;
   white-space: nowrap;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 .market-internals__label {
@@ -2269,7 +2269,7 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 /* ─── Volatility Skew ───────────────────────────────────────── */
@@ -2284,7 +2284,7 @@
   display: flex;
   gap: 12px;
   padding: 4px 8px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--qc-border-subtle);
   flex-shrink: 0;
 }
 
@@ -2292,12 +2292,12 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 9px;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 .vol-skew__legend-dot {
@@ -2322,10 +2322,10 @@
   height: 16px;
   padding: 0 6px;
   background: transparent;
-  color: var(--text-tertiary);
-  border: 1px solid var(--border);
+  color: var(--qc-text-tertiary);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 0;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 9px;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -2337,20 +2337,20 @@
 }
 
 .alerts-feed__pause-btn:hover {
-  color: var(--text-primary);
-  border-color: var(--border-strong);
+  color: var(--qc-text-primary);
+  border-color: var(--qc-border-strong);
 }
 
 .alerts-feed__pause-btn[aria-pressed="true"] {
-  color: var(--profit);
-  border-color: color-mix(in srgb, var(--profit) 30%, transparent);
+  color: var(--qc-profit);
+  border-color: color-mix(in srgb, var(--qc-profit) 30%, transparent);
 }
 
 .alerts-feed__list {
   list-style: none;
   margin: 0;
   padding: 0;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
   font-variant-numeric: tabular-nums slashed-zero;
 }
@@ -2361,7 +2361,7 @@
   gap: 6px;
   height: var(--row-h-15);
   padding: 0 8px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--qc-border-subtle);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2377,13 +2377,13 @@
 
 .alerts-feed__time {
   font-size: 9px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   flex-shrink: 0;
   letter-spacing: 0.02em;
 }
 
 .alerts-feed__sep {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   flex-shrink: 0;
   font-size: 10px;
 }
@@ -2396,7 +2396,7 @@
   font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  border: 1px solid var(--border);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 0;
   flex-shrink: 0;
   min-width: 42px;
@@ -2404,37 +2404,37 @@
 }
 
 .alerts-feed__level--profit {
-  color: var(--profit);
-  border-color: color-mix(in srgb, var(--profit) 30%, transparent);
-  background: color-mix(in srgb, var(--profit) 6%, transparent);
+  color: var(--qc-profit);
+  border-color: color-mix(in srgb, var(--qc-profit) 30%, transparent);
+  background: color-mix(in srgb, var(--qc-profit) 6%, transparent);
 }
 
 .alerts-feed__level--loss {
-  color: var(--loss);
-  border-color: color-mix(in srgb, var(--loss) 30%, transparent);
-  background: color-mix(in srgb, var(--loss) 6%, transparent);
+  color: var(--qc-loss);
+  border-color: color-mix(in srgb, var(--qc-loss) 30%, transparent);
+  background: color-mix(in srgb, var(--qc-loss) 6%, transparent);
 }
 
 .alerts-feed__level--warn {
-  color: var(--warning);
-  border-color: color-mix(in srgb, var(--warning) 30%, transparent);
-  background: color-mix(in srgb, var(--warning) 6%, transparent);
+  color: var(--qc-warning);
+  border-color: color-mix(in srgb, var(--qc-warning) 30%, transparent);
+  background: color-mix(in srgb, var(--qc-warning) 6%, transparent);
 }
 
 .alerts-feed__level--info {
-  color: var(--info);
-  border-color: color-mix(in srgb, var(--info) 30%, transparent);
-  background: color-mix(in srgb, var(--info) 6%, transparent);
+  color: var(--qc-info);
+  border-color: color-mix(in srgb, var(--qc-info) 30%, transparent);
+  background: color-mix(in srgb, var(--qc-info) 6%, transparent);
 }
 
 .alerts-feed__level--mute {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 .alerts-feed__msg {
   flex: 1;
   min-width: 0;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2483,7 +2483,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   font-size: 11px;
   letter-spacing: 0.04em;
 }
@@ -2491,11 +2491,11 @@
 .sniper-gates__table {
   width: 100%;
   border-collapse: collapse;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   /* Phase C.2.6 — bumpé 10→13 pour 4K. */
   font-size: 13px;
   font-variant-numeric: tabular-nums slashed-zero;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 .sniper-gates__table thead th {
@@ -2508,7 +2508,7 @@
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   text-align: left;
   white-space: nowrap;
   position: sticky;
@@ -2535,7 +2535,7 @@
 }
 
 .sniper-gates__ticker {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   font-weight: 600;
   letter-spacing: 0.02em;
 }
@@ -2551,23 +2551,23 @@
 .sniper-gates__sep {
   width: 1px;
   padding: 0 !important;
-  background: var(--border);
+  background: var(--qc-border-subtle);
 }
 
 .sniper-gates__sub {
   margin-left: 2px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   font-size: 10px;
 }
 
 .sniper-gates__unreal--profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 .sniper-gates__unreal--loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 .sniper-gates__unreal--mute {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 .sniper-gates__armed-chip {
@@ -2578,9 +2578,9 @@
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: var(--loss);
-  border: 1px solid color-mix(in srgb, var(--loss) 35%, transparent);
-  background: color-mix(in srgb, var(--loss) 10%, transparent);
+  color: var(--qc-loss);
+  border: 1px solid color-mix(in srgb, var(--qc-loss) 35%, transparent);
+  background: color-mix(in srgb, var(--qc-loss) 10%, transparent);
   animation: sniper-armed-pulse 2s ease-in-out infinite;
 }
 @keyframes sniper-armed-pulse {
@@ -2612,7 +2612,7 @@
   gap: 4px;
   width: 100%;
   height: 14px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 8px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2622,13 +2622,13 @@
   flex-shrink: 0;
   width: 32px;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 .gate-bar__track {
   flex: 1;
   height: 4px;
-  background: var(--border);
+  background: var(--qc-border-subtle);
   border-radius: 0;
   overflow: hidden;
   position: relative;
@@ -2650,10 +2650,10 @@
   background: var(--accent-amber, #ffa028);
 }
 .gate-bar--imminent .gate-bar__fill {
-  background: var(--warning);
+  background: var(--qc-warning);
 }
 .gate-bar--armed .gate-bar__fill {
-  background: var(--loss);
+  background: var(--qc-loss);
   animation: gate-bar-armed-pulse 2s ease-in-out infinite;
 }
 @keyframes gate-bar-armed-pulse {
@@ -2673,14 +2673,14 @@
 
 /* Pending = data not wired yet — render a dotted track, no fill */
 .gate-bar--pending .gate-bar__name {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   opacity: 0.55;
 }
 .gate-bar--pending .gate-bar__track {
   background: repeating-linear-gradient(
     90deg,
-    var(--text-tertiary) 0,
-    var(--text-tertiary) 2px,
+    var(--qc-text-tertiary) 0,
+    var(--qc-text-tertiary) 2px,
     transparent 2px,
     transparent 4px
   );
@@ -2700,14 +2700,14 @@
   align-items: center;
   height: 11px;
   padding: 0 6px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   background: transparent;
-  border: 1px dashed var(--border-strong);
+  border: 1px dashed var(--qc-border-strong);
   border-radius: 0;
   cursor: pointer;
   transition: all 100ms ease-out;
@@ -2720,7 +2720,7 @@
 }
 
 .live-pos__tag-btn:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1px solid var(--qc-accent);
   outline-offset: 1px;
 }
 
@@ -2738,7 +2738,7 @@
 
 .live-pos__edge-pill--clickable:focus-visible,
 .live-pos__ctier-pill--clickable:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1px solid var(--qc-accent);
   outline-offset: 1px;
 }
 
@@ -2750,25 +2750,25 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
 }
 
 .sniper-meta-editor__hint {
   font-size: 11px;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   letter-spacing: 0.02em;
   padding-bottom: 10px;
   border-bottom: var(--hairline);
 }
 
 .sniper-meta-editor__pnl--profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 .sniper-meta-editor__pnl--loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 .sniper-meta-editor__pnl--mute {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 .sniper-meta-editor__field {
@@ -2782,25 +2782,25 @@
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 .sniper-meta-editor__input {
   width: 100%;
   height: 28px;
   padding: 0 8px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 12px;
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   background: var(--bg-elev-2);
-  border: 1px solid var(--border);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 0;
   transition: border-color 80ms ease-out;
 }
 
 .sniper-meta-editor__input:focus-visible {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--qc-accent);
 }
 
 .sniper-meta-editor__input--num {
@@ -2809,17 +2809,17 @@
 
 .sniper-meta-editor__hint-sub {
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.02em;
-  font-family: var(--font-sans);
+  font-family: var(--qc-font-sans);
 }
 
 .sniper-meta-editor__error {
   padding: 6px 8px;
   font-size: 11px;
-  color: var(--loss);
-  background: color-mix(in srgb, var(--loss) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--loss) 30%, transparent);
+  color: var(--qc-loss);
+  background: color-mix(in srgb, var(--qc-loss) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--qc-loss) 30%, transparent);
   border-radius: 0;
 }
 
@@ -2834,7 +2834,7 @@
 .sniper-meta-editor__btn {
   height: 28px;
   padding: 0 14px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.06em;
@@ -2845,18 +2845,18 @@
 }
 
 .sniper-meta-editor__btn--ghost {
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   background: transparent;
-  border: 1px solid var(--border);
+  border: 1px solid var(--qc-border-subtle);
 }
 
 .sniper-meta-editor__btn--ghost:hover {
-  color: var(--text-primary);
-  border-color: var(--border-strong);
+  color: var(--qc-text-primary);
+  border-color: var(--qc-border-strong);
 }
 
 .sniper-meta-editor__btn--primary {
-  color: var(--bg-base);
+  color: var(--qc-bg-base);
   background: var(--accent-amber, #ffa028);
   border: 1px solid var(--accent-amber, #ffa028);
 }
@@ -2866,7 +2866,7 @@
 }
 
 .sniper-meta-editor__btn:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1px solid var(--qc-accent);
   outline-offset: 1px;
 }
 
@@ -2897,7 +2897,7 @@
   /* Phase C.1.6 : explicite pour éviter toute contrainte parent. */
   max-width: none;
   margin: 0;
-  background: var(--border-strong);
+  background: var(--qc-border-strong);
   gap: 1px;
 }
 
@@ -2906,15 +2906,43 @@
   min-height: 0;
 }
 
+/* B2 refonte : flex column de 2 rangées (hero + secondary).
+   La règle grid 7-cols originale est remplacée — les responsive media
+   queries plus bas qui ciblent .dash-kpi-cards grid-template-columns
+   deviennent no-op (le selector matche mais grid-template-columns sur
+   un flex container est ignoré). Le stack vertical mobile fonctionne
+   donc tel quel sans modif. */
 .dash-kpi-cards {
-  display: grid;
-  grid-template-columns: 1.85fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  /* Phase C.1.6 : padding latéral 4 px pour aligner avec .dash-grid. */
   padding: 14px 4px;
-  background: var(--bg-base);
+  background: var(--qc-bg-base);
   flex-shrink: 0;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
+}
+
+.dash-kpi-cards__row {
+  display: grid;
+  gap: 8px;
+}
+
+/* Rangée HERO : NLV + Day P&L, largeurs égales, hauteur 300 px. */
+.dash-kpi-cards__row--hero {
+  grid-template-columns: 1fr 1fr;
+}
+
+.dash-kpi-cards__row--hero .dash-kpi-card {
+  height: 300px;
+}
+
+/* Rangée SECONDARY : 5 cards égales, hauteur 190 px (vs 240 px legacy). */
+.dash-kpi-cards__row--secondary {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.dash-kpi-cards__row--secondary .dash-kpi-card {
+  height: 190px;
 }
 
 .dash-kpi-card {
@@ -2924,7 +2952,7 @@
   height: 240px;
   padding: 16px 16px;
   background: var(--bg-elev-1);
-  border: 1px solid var(--border);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 4px;
   min-width: 0;
   position: relative;
@@ -2934,12 +2962,12 @@
 }
 
 .dash-kpi-card:hover {
-  border-color: var(--border-strong);
+  border-color: var(--qc-border-strong);
 }
 
 .dash-kpi-card--hero {
   padding: 16px 20px;
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--qc-accent);
 }
 
 /* ── Zone 1 : top (label + indicator droite) ──────────────────── */
@@ -2964,7 +2992,7 @@
   font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2973,14 +3001,14 @@
 /* Hint "neutral" (sans Pill component) — version pillée subtile pour
    matcher visuellement les pills colorées en top-right. */
 .dash-kpi-card__hint {
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   white-space: nowrap;
   flex-shrink: 0;
-  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 4%, transparent);
   padding: 3px 7px;
   border-radius: 2px;
 }
@@ -2997,12 +3025,12 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--profit);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--profit) 18%, transparent);
+  background: var(--qc-profit);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--qc-profit) 18%, transparent);
 }
 
 .dash-kpi-card__live-text {
-  color: var(--profit);
+  color: var(--qc-profit);
   font-weight: 600;
   font-size: 9px;
   letter-spacing: 0.12em;
@@ -3017,7 +3045,7 @@
   gap: 5px;
   padding: 3px 8px;
   border-radius: 2px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.06em;
@@ -3033,11 +3061,11 @@
 }
 
 .dash-kpi-card__pill--hero.dash-kpi-card__pill--profit {
-  background: color-mix(in srgb, var(--profit) 12%, transparent);
+  background: color-mix(in srgb, var(--qc-profit) 12%, transparent);
 }
 
 .dash-kpi-card__pill--hero.dash-kpi-card__pill--loss {
-  background: color-mix(in srgb, var(--loss) 12%, transparent);
+  background: color-mix(in srgb, var(--qc-loss) 12%, transparent);
 }
 
 .dash-kpi-card__pill--hero .dash-kpi-card__pill-sub {
@@ -3046,24 +3074,24 @@
 }
 
 .dash-kpi-card__pill--profit {
-  background: color-mix(in srgb, var(--profit) 10%, transparent);
-  color: var(--profit);
+  background: color-mix(in srgb, var(--qc-profit) 10%, transparent);
+  color: var(--qc-profit);
 }
 .dash-kpi-card__pill--loss {
-  background: color-mix(in srgb, var(--loss) 10%, transparent);
-  color: var(--loss);
+  background: color-mix(in srgb, var(--qc-loss) 10%, transparent);
+  color: var(--qc-loss);
 }
 .dash-kpi-card__pill--amber {
   background: color-mix(in srgb, var(--accent-amber) 10%, transparent);
   color: var(--accent-amber);
 }
 .dash-kpi-card__pill--accent {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--qc-accent) 10%, transparent);
+  color: var(--qc-accent);
 }
 .dash-kpi-card__pill--mute {
-  background: color-mix(in srgb, var(--text-tertiary) 10%, transparent);
-  color: var(--text-tertiary);
+  background: color-mix(in srgb, var(--qc-text-tertiary) 10%, transparent);
+  color: var(--qc-text-tertiary);
 }
 
 .dash-kpi-card__pill-sub {
@@ -3076,8 +3104,8 @@
 .dash-kpi-card__range {
   display: inline-flex;
   align-items: stretch;
-  background: color-mix(in srgb, var(--text-primary) 3%, transparent);
-  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--qc-text-primary) 3%, transparent);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 3px;
   overflow: hidden;
   flex-shrink: 0;
@@ -3086,11 +3114,11 @@
 }
 
 .dash-kpi-card__range-btn {
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.06em;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   background: transparent;
   border: none;
   padding: 3px 8px;
@@ -3103,17 +3131,17 @@
 }
 
 .dash-kpi-card__range-btn:hover {
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 .dash-kpi-card__range-btn:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1px solid var(--qc-accent);
   outline-offset: -1px;
 }
 
 .dash-kpi-card__range-btn.is-active {
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--qc-accent);
+  background: color-mix(in srgb, var(--qc-accent) 12%, transparent);
   font-weight: 500;
 }
 
@@ -3126,13 +3154,13 @@
 }
 
 .dash-kpi-card__value {
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 30px;
   font-weight: 500;
   font-variant-numeric: tabular-nums slashed-zero;
   line-height: 1;
   letter-spacing: -0.01em;
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3144,9 +3172,9 @@
 }
 
 .dash-kpi-card__chf {
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   margin-top: 7px;
   font-variant-numeric: tabular-nums slashed-zero;
   letter-spacing: 0.02em;
@@ -3163,23 +3191,23 @@
 /* Tones — la couleur du value + chf suit le data-tone du card */
 .dash-kpi-card[data-tone="profit"] .dash-kpi-card__value,
 .dash-kpi-card[data-tone="profit"] .dash-kpi-card__chf {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 .dash-kpi-card[data-tone="loss"] .dash-kpi-card__value,
 .dash-kpi-card[data-tone="loss"] .dash-kpi-card__chf {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 .dash-kpi-card[data-tone="neutral"] .dash-kpi-card__value,
 .dash-kpi-card[data-tone="mute"] .dash-kpi-card__value,
 .dash-kpi-card[data-tone="accent"] .dash-kpi-card__value,
 .dash-kpi-card[data-tone="amber"] .dash-kpi-card__value {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
 }
 .dash-kpi-card[data-tone="neutral"] .dash-kpi-card__chf,
 .dash-kpi-card[data-tone="mute"] .dash-kpi-card__chf,
 .dash-kpi-card[data-tone="accent"] .dash-kpi-card__chf,
 .dash-kpi-card[data-tone="amber"] .dash-kpi-card__chf {
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 /* ── Zone 3 : visual (sparkline | bar | donut) ───────────────── */
@@ -3205,10 +3233,10 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
   letter-spacing: 0.04em;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 .dash-kpi-card__bar-pct {
@@ -3216,21 +3244,21 @@
 }
 
 .dash-kpi-card__bar-pct--accent {
-  color: var(--accent);
+  color: var(--qc-accent);
 }
 .dash-kpi-card__bar-pct--amber {
   color: var(--accent-amber);
 }
 
 .dash-kpi-card__bar-denom {
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .dash-kpi-card__bar {
   height: 8px;
-  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 5%, transparent);
   border-radius: 2px;
   overflow: visible;
   position: relative;
@@ -3244,7 +3272,7 @@
 }
 
 .dash-kpi-card__bar-fill--accent {
-  background: var(--accent);
+  background: var(--qc-accent);
 }
 
 .dash-kpi-card__bar-fill--amber {
@@ -3257,17 +3285,17 @@
 .dash-kpi-card__bar-rest {
   flex: 1;
   height: 100%;
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  background: color-mix(in srgb, var(--qc-accent) 18%, transparent);
 }
 
 /* Marker vertical à un pct précis (ex : plafond Sniper 70 % NLV).
-   Phase B.4 : 14 px de haut (était 10), background solide var(--loss). */
+   Phase B.4 : 14 px de haut (était 10), background solide var(--qc-loss). */
 .dash-kpi-card__bar-marker {
   position: absolute;
   top: -3px;
   width: 1.5px;
   height: 14px;
-  background: var(--loss);
+  background: var(--qc-loss);
   pointer-events: none;
   transform: translateX(-50%);
 }
@@ -3276,10 +3304,10 @@
 .dash-kpi-card__bar-cap-label {
   position: absolute;
   top: -15px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 8px;
   letter-spacing: 0.06em;
-  color: var(--loss);
+  color: var(--qc-loss);
   font-weight: 500;
   transform: translateX(-50%);
   pointer-events: none;
@@ -3303,8 +3331,8 @@
   display: grid;
   gap: 0;
   padding-top: 12px;
-  border-top: 1px solid color-mix(in srgb, var(--text-primary) 7%, transparent);
-  font-family: var(--font-mono);
+  border-top: 1px solid color-mix(in srgb, var(--qc-text-primary) 7%, transparent);
+  font-family: var(--qc-font-mono);
 }
 
 .dash-kpi-card__footer--2 {
@@ -3329,7 +3357,7 @@
 .dash-kpi-card__footer--2 .dash-kpi-card__cell:nth-child(1),
 .dash-kpi-card__footer--3 .dash-kpi-card__cell:not(:last-child),
 .dash-kpi-card__footer--4 .dash-kpi-card__cell:not(:last-child) {
-  border-right: 1px solid color-mix(in srgb, var(--text-primary) 6%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--qc-text-primary) 6%, transparent);
   padding-right: 8px;
 }
 
@@ -3340,10 +3368,10 @@
 }
 
 .dash-kpi-card__cell-label {
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
   font-weight: 500;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -3352,10 +3380,10 @@
 }
 
 .dash-kpi-card__cell-value {
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   font-variant-numeric: tabular-nums slashed-zero;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -3364,22 +3392,22 @@
 }
 
 .dash-kpi-card__cell-value--profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 .dash-kpi-card__cell-value--loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 .dash-kpi-card__cell-value--accent {
-  color: var(--accent);
+  color: var(--qc-accent);
 }
 .dash-kpi-card__cell-value--amber {
   color: var(--accent-amber);
 }
 .dash-kpi-card__cell-value--mute {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 .dash-kpi-card__cell-value--neutral {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
 }
 
 /* ── Hero card mid-zone : value/CHF/delta à gauche, spark à droite */
@@ -3433,10 +3461,10 @@
 }
 
 .dash-kpi-card__wr-value {
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 30px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   line-height: 1;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums slashed-zero;
@@ -3444,7 +3472,7 @@
 
 .dash-kpi-card__wr-sub {
   margin-top: 9px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 12px;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums slashed-zero;
@@ -3453,15 +3481,15 @@
 }
 
 .dash-kpi-card__wr-w {
-  color: var(--profit);
+  color: var(--qc-profit);
   font-weight: 500;
 }
 .dash-kpi-card__wr-l {
-  color: var(--loss);
+  color: var(--qc-loss);
   font-weight: 500;
 }
 .dash-kpi-card__wr-sep {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   margin: 0 5px;
 }
 
@@ -3475,23 +3503,23 @@
 /* ── Donut SVG primitive (Phase B.4 : 74×74, r=28, stroke 7) ──── */
 
 .dash-kpi-donut__bg {
-  stroke: color-mix(in srgb, var(--loss) 22%, transparent);
+  stroke: color-mix(in srgb, var(--qc-loss) 22%, transparent);
 }
 
 .dash-kpi-donut__fg {
-  stroke: var(--profit);
+  stroke: var(--qc-profit);
 }
 
 .dash-kpi-donut__label {
-  fill: var(--text-secondary);
-  font-family: var(--font-mono);
+  fill: var(--qc-text-secondary);
+  font-family: var(--qc-font-mono);
   font-size: 9px;
   letter-spacing: 0.1em;
 }
 
 .dash-kpi-donut__value {
-  fill: var(--accent);
-  font-family: var(--font-mono);
+  fill: var(--qc-accent);
+  font-family: var(--qc-font-mono);
   font-size: 14px;
   font-weight: 500;
   font-variant-numeric: tabular-nums slashed-zero;
@@ -3506,34 +3534,34 @@
 }
 
 .spark-profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 .spark-loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 .spark-accent {
-  color: var(--accent);
+  color: var(--qc-accent);
 }
 .spark-amber {
   color: var(--accent-amber);
 }
 .spark-neutral {
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 .sparkline--flat {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 /* Phase B.3 — gridlines + zero line en couleur neutre (pas
    tributaires de currentColor pour éviter de re-teinter avec la
    couleur sémantique du sparkline). */
 .sparkline-grid {
-  stroke: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  stroke: color-mix(in srgb, var(--qc-text-primary) 4%, transparent);
   fill: none;
 }
 
 .sparkline-zero {
-  stroke: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  stroke: color-mix(in srgb, var(--qc-text-primary) 5%, transparent);
   fill: none;
 }
 
@@ -3554,11 +3582,11 @@
 .sparkline-wrap__axis {
   position: absolute;
   right: 4px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 9px;
   font-weight: 500;
   font-variant-numeric: tabular-nums slashed-zero;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   background: var(--bg-elev-1);
   padding: 1px 4px;
   border-radius: 2px;
@@ -3600,21 +3628,21 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 10px;
-  background: color-mix(in srgb, var(--text-primary) 2.5%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 2.5%, transparent);
   border-radius: 3px;
-  border-left: 2px solid var(--text-tertiary);
+  border-left: 2px solid var(--qc-text-tertiary);
 }
 
 .dash-kpi-card__info-block--loss {
-  border-left-color: color-mix(in srgb, var(--loss) 50%, transparent);
+  border-left-color: color-mix(in srgb, var(--qc-loss) 50%, transparent);
 }
 
 .dash-kpi-card__info-block--accent {
-  border-left-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  border-left-color: color-mix(in srgb, var(--qc-accent) 50%, transparent);
 }
 
 .dash-kpi-card__info-block--profit {
-  border-left-color: color-mix(in srgb, var(--profit) 50%, transparent);
+  border-left-color: color-mix(in srgb, var(--qc-profit) 50%, transparent);
 }
 
 .dash-kpi-card__info-block--amber {
@@ -3622,21 +3650,21 @@
 }
 
 .dash-kpi-card__info-block--mute {
-  border-left-color: var(--text-tertiary);
+  border-left-color: var(--qc-text-tertiary);
   opacity: 0.7;
 }
 
 .dash-kpi-card__info-label {
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 10px;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   flex: 1;
 }
 
 .dash-kpi-card__info-value {
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -3645,15 +3673,15 @@
 }
 
 .dash-kpi-card__info-value--loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 
 .dash-kpi-card__info-value--accent {
-  color: var(--accent);
+  color: var(--qc-accent);
 }
 
 .dash-kpi-card__info-value--profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 
 .dash-kpi-card__info-value--amber {
@@ -3662,7 +3690,7 @@
 }
 
 .dash-kpi-card__info-value--mute {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 /* Tier-block dans Exposure : padding plus serré pour tenir
@@ -3685,9 +3713,9 @@
   position: absolute;
   top: 2px;
   right: 2px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 9px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   background: color-mix(in srgb, var(--bg-elev-1) 85%, transparent);
   padding: 1px 5px;
   border-radius: 2px;
@@ -3784,7 +3812,7 @@
 }
 
 .module:hover > .module-header .module-header__title {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -3800,15 +3828,15 @@
 
 .live-pos__subheader {
   padding: 10px 14px;
-  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
-  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--qc-text-primary) 1.5%, transparent);
+  border-bottom: 1px solid var(--qc-border-subtle);
   display: flex;
   align-items: center;
   /* Phase C.2.10-V3.1 : gap 16→18 pour matcher .trade-history__subheader. */
   gap: 18px;
   flex-shrink: 0;
   font-size: 13px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.04em;
 }
 
@@ -3822,26 +3850,26 @@
    est monospace), donc la prop devenait redondante + créait un
    décalage visuel non désiré vs trade-history. */
 .live-pos__ctx-val {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   font-weight: 500;
 }
 
 /* Phase C.2.10-V3 — modifiers tone pour ctx-val (profit/loss/mute),
    miroir de .trade-history__ctx-val--*. */
 .live-pos__ctx-val--profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 
 .live-pos__ctx-val--loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 
 .live-pos__ctx-val--mute {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 .live-pos__dot {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   opacity: 0.5;
 }
 
@@ -3861,15 +3889,15 @@
 }
 
 .live-pos__ctx-badge--accent {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--qc-accent) 8%, transparent);
+  color: var(--qc-accent);
 }
 
 .live-pos__spark-placeholder {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 .live-pos__spark-svg {
@@ -3963,7 +3991,7 @@
 .live-pos {
   display: flex;
   flex-direction: column;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
 }
 
 /* Thead sticky blur — miroir de .trade-history__table thead.
@@ -3972,10 +4000,10 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  background: color-mix(in srgb, var(--bg-base) 80%, transparent);
+  background: color-mix(in srgb, var(--qc-bg-base) 80%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 1px 0 0 var(--border);
+  box-shadow: 0 1px 0 0 var(--qc-border-subtle);
 }
 
 /* Th paddings + height — surcharge la règle ligne 1663. */
@@ -3983,11 +4011,11 @@
   padding: 10px 14px;
   height: 36px;
   font-size: 11px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 500;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--qc-border-subtle);
   white-space: nowrap;
   vertical-align: middle;
   background: transparent;
@@ -3997,13 +4025,13 @@
    .live-pos__row ligne 1677 garde height 36px ; on ajoute le hover
    bg renforcé pour matcher TradeHistory. */
 .live-pos__table tbody tr {
-  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 4%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--qc-text-primary) 4%, transparent);
   transition: background 120ms ease;
   cursor: pointer;
 }
 
 .live-pos__table tbody tr:hover {
-  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 5%, transparent);
 }
 
 /* Td paddings + font + line-height — surcharge la règle ligne 1696
@@ -4013,7 +4041,7 @@
    dépendait du tr (line 1683) et faisait 36 vs 32 trade-history. */
 .live-pos__table tbody td {
   padding: 6px 14px;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   white-space: nowrap;
   vertical-align: middle;
   font-size: 14px;
@@ -4026,7 +4054,7 @@
    l'ensemble du bloc. */
 .live-pos__table thead th + th,
 .live-pos__table tbody td + td {
-  border-left: 1px solid color-mix(in srgb, var(--text-primary) 3%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--qc-text-primary) 3%, transparent);
 }
 
 /* ─── Footer agrégé 6 cells (miroir .trade-history__footer) ──── */
@@ -4036,8 +4064,8 @@
   grid-template-columns: repeat(6, 1fr);
   padding: 10px 14px;
   height: 56px;
-  border-top: 1px solid var(--border);
-  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  border-top: 1px solid var(--qc-border-subtle);
+  background: color-mix(in srgb, var(--qc-text-primary) 1.5%, transparent);
   flex-shrink: 0;
   align-items: center;
   gap: 0;
@@ -4049,7 +4077,7 @@
   /* Phase C.2.10-V3.1 : gap 2→3 pour matcher .trade-history__footer-cell. */
   gap: 3px;
   padding: 0 14px;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid var(--qc-border-subtle);
   justify-content: center;
 }
 
@@ -4064,7 +4092,7 @@
 
 .live-pos__footer-label {
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 500;
@@ -4075,20 +4103,20 @@
    .live-pos__ctx-val : font-mono hérité couvre le besoin. */
 .live-pos__footer-value {
   font-size: 15px;
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   font-weight: 500;
 }
 
 .live-pos__footer-value--profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 
 .live-pos__footer-value--loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 
 .live-pos__footer-value--mute {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -4110,7 +4138,7 @@
   padding: 8px 20px;
   text-align: center;
   height: 100%;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
 }
 
 .module-empty__title {
@@ -4118,14 +4146,14 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 .module-empty__sub {
   /* Phase C.2.8 — opacity 0.7 pour discrétion. */
   font-size: 10px;
   letter-spacing: 0.02em;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   max-width: 320px;
   line-height: 1.45;
   opacity: 0.7;
@@ -4159,12 +4187,12 @@
 .trade-history {
   height: 480px;
   background: var(--bg-elev-1);
-  border: 1px solid var(--border);
+  border: 1px solid var(--qc-border-subtle);
   border-radius: 4px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
 }
 
 /* Phase C.2.6.7 polish — gap visuel discret entre la zone active
@@ -4182,8 +4210,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: color-mix(in srgb, var(--bg-base) 50%, transparent);
-  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--qc-bg-base) 50%, transparent);
+  border-bottom: 1px solid var(--qc-border-subtle);
   flex-shrink: 0;
 }
 
@@ -4195,7 +4223,7 @@
 
 .trade-history__title {
   font-size: 15px;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   font-weight: 500;
@@ -4203,23 +4231,23 @@
 
 .trade-history__sub {
   font-size: 12px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.06em;
 }
 
 .trade-history__range-selector {
   display: flex;
   gap: 1px;
-  background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 3%, transparent);
   padding: 2px;
   border-radius: 3px;
 }
 
 .trade-history__range-selector button {
   padding: 5px 11px;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   font-size: 12px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   background: transparent;
   border: none;
   border-radius: 2px;
@@ -4230,17 +4258,17 @@
 }
 
 .trade-history__range-selector button:hover {
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
 }
 
 /* Phase C.2.8 — hover state explicite (only on inactive buttons). */
 .trade-history__range-selector button:hover:not([data-active]) {
-  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 4%, transparent);
 }
 
 .trade-history__range-selector button[data-active] {
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--qc-accent);
+  background: color-mix(in srgb, var(--qc-accent) 12%, transparent);
   font-weight: 500;
 }
 
@@ -4249,14 +4277,14 @@
 .trade-history__subheader {
   /* Phase C.2.8 — padding 18→14 aligné avec table tbody td padding. */
   padding: 10px 14px;
-  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
-  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--qc-text-primary) 1.5%, transparent);
+  border-bottom: 1px solid var(--qc-border-subtle);
   display: flex;
   align-items: center;
   gap: 18px;
   flex-shrink: 0;
   font-size: 13px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.04em;
 }
 
@@ -4265,24 +4293,24 @@
 }
 
 .trade-history__ctx-val {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   font-weight: 500;
 }
 
 .trade-history__ctx-val--profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 
 .trade-history__ctx-val--loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 
 .trade-history__ctx-val--mute {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 .trade-history__dot {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   opacity: 0.5;
 }
 
@@ -4302,13 +4330,13 @@
 /* Phase C.2.6.7 — 2 badges séparés Wins/Losses pour clarté
    (remplace l'ancien badge unique "EDGE+ XW · YL"). */
 .trade-history__ctx-badge--wins {
-  background: color-mix(in srgb, var(--profit) 8%, transparent);
-  color: var(--profit);
+  background: color-mix(in srgb, var(--qc-profit) 8%, transparent);
+  color: var(--qc-profit);
 }
 
 .trade-history__ctx-badge--losses {
-  background: color-mix(in srgb, var(--loss) 8%, transparent);
-  color: var(--loss);
+  background: color-mix(in srgb, var(--qc-loss) 8%, transparent);
+  color: var(--qc-loss);
 }
 
 /* ─── Body + table ───────────────────────────────────────────── */
@@ -4328,12 +4356,12 @@
 }
 
 .trade-history__body::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 8%, transparent);
   border-radius: 3px;
 }
 
 .trade-history__body::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--text-primary) 14%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 14%, transparent);
 }
 
 .trade-history__table {
@@ -4368,10 +4396,10 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  background: color-mix(in srgb, var(--bg-base) 80%, transparent);
+  background: color-mix(in srgb, var(--qc-bg-base) 80%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 1px 0 0 var(--border);
+  box-shadow: 0 1px 0 0 var(--qc-border-subtle);
 }
 
 /* Phase C.2.8 — base th/td : padding + vertical-align + heights
@@ -4381,11 +4409,11 @@
 .trade-history__th {
   padding: 10px 14px;
   font-size: 11px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 500;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--qc-border-subtle);
   white-space: nowrap;
   vertical-align: middle;
   height: 36px;
@@ -4415,7 +4443,7 @@
    guider l'œil sur 4K. 3% opacity = juste visible, pas distrayant. */
 .trade-history__table thead th + th,
 .trade-history__table tbody td + td {
-  border-left: 1px solid color-mix(in srgb, var(--text-primary) 3%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--qc-text-primary) 3%, transparent);
 }
 
 /* Divider visible avant P&L Net + avant Sniper (sépare zones
@@ -4424,7 +4452,7 @@
    plus forte sans avoir à doubler les sélecteurs. */
 .trade-history__th--divider,
 .trade-history__td--divider {
-  border-left: 1px solid color-mix(in srgb, var(--text-primary) 9%, transparent) !important;
+  border-left: 1px solid color-mix(in srgb, var(--qc-text-primary) 9%, transparent) !important;
 }
 
 /* Phase C.2.8 — padding-right supplémentaire sur la dernière col
@@ -4435,7 +4463,7 @@
 }
 
 .trade-history__table tbody tr {
-  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 4%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--qc-text-primary) 4%, transparent);
   border-left: 3px solid transparent;
   cursor: pointer;
   transition:
@@ -4445,53 +4473,53 @@
 
 .trade-history__table tbody tr:hover {
   /* Phase C.2.8 — bumpé 3→5 pour visibilité sur 4K. */
-  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 5%, transparent);
 }
 
 .trade-history__tr--profit {
-  border-left-color: color-mix(in srgb, var(--profit) 55%, transparent);
+  border-left-color: color-mix(in srgb, var(--qc-profit) 55%, transparent);
 }
 
 .trade-history__tr--loss {
-  border-left-color: color-mix(in srgb, var(--loss) 55%, transparent);
+  border-left-color: color-mix(in srgb, var(--qc-loss) 55%, transparent);
 }
 
 /* Phase C.2.5 — top 3 gains / pertes : background subtle constant
    + hover renforcé. Pulse one-shot au mount via animation. */
 .trade-history__table tbody tr[data-top-gain] {
-  background: color-mix(in srgb, var(--profit) 3%, transparent);
+  background: color-mix(in srgb, var(--qc-profit) 3%, transparent);
   animation: trade-history-top-gain-pulse 1200ms ease-out 1;
 }
 
 .trade-history__table tbody tr[data-top-loss] {
-  background: color-mix(in srgb, var(--loss) 3%, transparent);
+  background: color-mix(in srgb, var(--qc-loss) 3%, transparent);
   animation: trade-history-top-loss-pulse 1200ms ease-out 1;
 }
 
 .trade-history__table tbody tr[data-top-gain]:hover {
   /* Phase C.2.8 — bumpé 7→10. */
-  background: color-mix(in srgb, var(--profit) 10%, transparent);
+  background: color-mix(in srgb, var(--qc-profit) 10%, transparent);
 }
 
 .trade-history__table tbody tr[data-top-loss]:hover {
-  background: color-mix(in srgb, var(--loss) 10%, transparent);
+  background: color-mix(in srgb, var(--qc-loss) 10%, transparent);
 }
 
 @keyframes trade-history-top-gain-pulse {
   0% {
-    background: color-mix(in srgb, var(--profit) 10%, transparent);
+    background: color-mix(in srgb, var(--qc-profit) 10%, transparent);
   }
   100% {
-    background: color-mix(in srgb, var(--profit) 3%, transparent);
+    background: color-mix(in srgb, var(--qc-profit) 3%, transparent);
   }
 }
 
 @keyframes trade-history-top-loss-pulse {
   0% {
-    background: color-mix(in srgb, var(--loss) 10%, transparent);
+    background: color-mix(in srgb, var(--qc-loss) 10%, transparent);
   }
   100% {
-    background: color-mix(in srgb, var(--loss) 3%, transparent);
+    background: color-mix(in srgb, var(--qc-loss) 3%, transparent);
   }
 }
 
@@ -4508,7 +4536,7 @@
      uniformes. text-align via __td--left/--center/--right (chaque
      td en porte un). Line-height explicite pour densité. */
   padding: 6px 14px;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   white-space: nowrap;
   line-height: 1.3;
   vertical-align: middle;
@@ -4519,21 +4547,21 @@
    source-unique combinant th--right + td--right.) */
 
 .trade-history__td--mute {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 .trade-history__td--profit {
-  color: var(--profit);
+  color: var(--qc-profit);
   font-weight: 500;
 }
 
 .trade-history__td--loss {
-  color: var(--loss);
+  color: var(--qc-loss);
   font-weight: 500;
 }
 
 .trade-history__td--ticker {
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   font-weight: 500;
   letter-spacing: 0.04em;
 }
@@ -4546,7 +4574,7 @@
   font-size: 12px;
   letter-spacing: 0.1em;
   font-weight: 600;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
 }
 
 /* Phase C.2.6.2 / C.2.7.3 / C.2.8.7 — col Sniper placeholder pill
@@ -4554,7 +4582,7 @@
    ici en attendant la dérivation Phase C.3+. Pill arrondie amber +
    dot pulsant pour signaler "data live waiting" sémantique. */
 .trade-history__td--sniper {
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
 }
 
 .trade-history__sniper-placeholder {
@@ -4568,7 +4596,7 @@
   color: var(--accent-amber);
   font-size: 11px;
   letter-spacing: 0.08em;
-  font-family: var(--font-mono);
+  font-family: var(--qc-font-mono);
   text-transform: lowercase;
 }
 
@@ -4603,18 +4631,18 @@
    LivePositions (trades vivants = données qui bougent réellement). */
 
 .trade-history__badge--call {
-  background: color-mix(in srgb, var(--profit) 10%, transparent);
-  color: var(--profit);
+  background: color-mix(in srgb, var(--qc-profit) 10%, transparent);
+  color: var(--qc-profit);
 }
 
 .trade-history__badge--put {
-  background: color-mix(in srgb, var(--loss) 10%, transparent);
-  color: var(--loss);
+  background: color-mix(in srgb, var(--qc-loss) 10%, transparent);
+  color: var(--qc-loss);
 }
 
 .trade-history__badge--stock {
-  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
-  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--qc-text-primary) 6%, transparent);
+  color: var(--qc-text-secondary);
 }
 
 /* ─── Empty state ────────────────────────────────────────────── */
@@ -4630,14 +4658,14 @@
 
 .trade-history__empty-label {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--qc-text-secondary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .trade-history__empty-sub {
   font-size: 11px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }
 
 /* ─── Footer agrégé (6 cells — Phase C.2.5, 4K scale C.2.6, padding
@@ -4649,8 +4677,8 @@
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   padding: 10px 14px;
-  border-top: 1px solid var(--border);
-  background: color-mix(in srgb, var(--text-primary) 1.5%, transparent);
+  border-top: 1px solid var(--qc-border-subtle);
+  background: color-mix(in srgb, var(--qc-text-primary) 1.5%, transparent);
   flex-shrink: 0;
   height: 56px;
   gap: 0;
@@ -4662,7 +4690,7 @@
   flex-direction: column;
   gap: 3px;
   padding: 0 14px;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid var(--qc-border-subtle);
   justify-content: center;
 }
 
@@ -4677,7 +4705,7 @@
 
 .trade-history__footer-label {
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 500;
@@ -4685,18 +4713,18 @@
 
 .trade-history__footer-value {
   font-size: 15px;
-  color: var(--text-primary);
+  color: var(--qc-text-primary);
   font-weight: 500;
 }
 
 .trade-history__footer-value--profit {
-  color: var(--profit);
+  color: var(--qc-profit);
 }
 
 .trade-history__footer-value--loss {
-  color: var(--loss);
+  color: var(--qc-loss);
 }
 
 .trade-history__footer-value--mute {
-  color: var(--text-tertiary);
+  color: var(--qc-text-tertiary);
 }

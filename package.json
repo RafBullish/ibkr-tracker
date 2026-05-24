@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource-variable/geist-mono": "^5.2.8",
     "@fontsource/inter-tight": "^5.2.7",
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@number-flow/react": "^0.6.0",
