@@ -321,9 +321,13 @@ function todayPnlUsd(dailyPnL) {
 // ─── Card shells ────────────────────────────────────────────────
 
 function KpiCardHero({
+  label = 'NLV · NET LIQUIDITY VALUE',
+  liveBadge = 'LIVE',
   range,
   setRange,
+  topRight,
   value,
+  valueTone = 'accent',
   chfLine,
   deltaUsd,
   deltaPct,
@@ -331,17 +335,20 @@ function KpiCardHero({
   footerCells,
 }) {
   const deltaTone = toneSign(deltaUsd);
+  const showRange = range != null && typeof setRange === 'function';
   return (
-    <section className="dash-kpi-card dash-kpi-card--hero" data-tone="accent">
+    <section className="dash-kpi-card dash-kpi-card--hero" data-tone={valueTone}>
       <div className="dash-kpi-card__top">
         <span className="dash-kpi-card__top-left">
-          <span className="dash-kpi-card__label">NLV · NET LIQUIDITY VALUE</span>
-          <span className="dash-kpi-card__live">
-            <span className="dash-kpi-card__live-dot" aria-hidden="true" />
-            <span className="dash-kpi-card__live-text">LIVE</span>
-          </span>
+          <span className="dash-kpi-card__label">{label}</span>
+          {liveBadge ? (
+            <span className="dash-kpi-card__live">
+              <span className="dash-kpi-card__live-dot" aria-hidden="true" />
+              <span className="dash-kpi-card__live-text">{liveBadge}</span>
+            </span>
+          ) : null}
         </span>
-        <RangeSelector value={range} onChange={setRange} />
+        {topRight ?? (showRange ? <RangeSelector value={range} onChange={setRange} /> : null)}
       </div>
       <div className="dash-kpi-card__hero-mid">
         <div className="dash-kpi-card__hero-text">
@@ -560,6 +567,28 @@ export default function DashboardKPICards() {
     return r + u;
   }, [realizedUsd, unrealUsd]);
 
+  // ─── Week / YTD aggregations (B2 hero Day P&L footer) ──────
+  const weekPnlUsd = useMemo(() => {
+    if (!dailyPnL || dailyPnL.length === 0) return null;
+    const now = new Date();
+    const day = now.getDay(); // 0 = dimanche, 1 = lundi
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((day + 6) % 7));
+    monday.setHours(0, 0, 0, 0);
+    const mondayISO = monday.toISOString().slice(0, 10);
+    return dailyPnL
+      .filter((d) => d.date >= mondayISO)
+      .reduce((sum, d) => sum + d.dailyPnl, 0);
+  }, [dailyPnL]);
+
+  const ytdPnlUsd = useMemo(() => {
+    if (!dailyPnL || dailyPnL.length === 0) return null;
+    const yearStart = `${new Date().getFullYear()}-01-01`;
+    return dailyPnL
+      .filter((d) => d.date >= yearStart)
+      .reduce((sum, d) => sum + d.dailyPnl, 0);
+  }, [dailyPnL]);
+
   // ─── Day P&L + flat-market detection ───────────────────────
   const dayPnl = todayPnlUsd(dailyPnL);
   const dayTone = toneSign(dayPnl);
@@ -607,334 +636,355 @@ export default function DashboardKPICards() {
 
   return (
     <div className="dash-kpi-cards">
-      {/* 1. HERO NLV */}
-      <KpiCardHero
-        range={range}
-        setRange={setRange}
-        value={fmtUsdCompact(nlvUsd)}
-        chfLine={nlvChfLine}
-        deltaUsd={rangeDeltaUsd}
-        deltaPct={rangeDeltaPct}
-        spark={
-          <Sparkline
-            data={nlvSeries}
-            color={toneSign(rangeDeltaUsd) === 'loss' ? 'loss' : 'profit'}
-            height={100}
-            area
-            dot
-            strokeWidth={2}
-            dotRadius={4}
-            dotHaloRadius={8}
-            gradientOpacity={0.4}
-            gridlines={3}
-            axisLabels
-            formatLabel={fmtAxisUsd}
-          />
-        }
-        footerCells={[
-          {
-            label: `HIGH ${range}`,
-            value: rangeHigh != null ? fmtUsdCompact(rangeHigh) : '——',
-            tone: 'mute',
-          },
-          {
-            label: `LOW ${range}`,
-            value: rangeLow != null ? fmtUsdCompact(rangeLow) : '——',
-            tone: 'mute',
-          },
-          {
-            label: 'PEAK',
-            value: peakAllTime != null ? fmtUsdCompact(peakAllTime) : '——',
-            tone: peakAllTime != null && peakAllTime >= 0 ? 'profit' : 'mute',
-            title: 'Plus haut gain cumulé jamais atteint (max all-time de la courbe equity)',
-          },
-          {
-            label: 'ALL-TIME',
-            value: Number.isFinite(allTimePnlUsd) ? fmtUsdSigned(allTimePnlUsd) : '——',
-            tone: toneSign(allTimePnlUsd),
-            title: 'P&L total = realized + unrealized',
-          },
-        ]}
-      />
+      <div className="dash-kpi-cards__row dash-kpi-cards__row--hero">
+        {/* HERO 1. NLV */}
+        <KpiCardHero
+          range={range}
+          setRange={setRange}
+          value={fmtUsdCompact(nlvUsd)}
+          valueTone="accent"
+          chfLine={nlvChfLine}
+          deltaUsd={rangeDeltaUsd}
+          deltaPct={rangeDeltaPct}
+          spark={
+            <Sparkline
+              data={nlvSeries}
+              color={toneSign(rangeDeltaUsd) === 'loss' ? 'loss' : 'profit'}
+              height={100}
+              area
+              dot
+              strokeWidth={2}
+              dotRadius={4}
+              dotHaloRadius={8}
+              gradientOpacity={0.4}
+              gridlines={3}
+              axisLabels
+              formatLabel={fmtAxisUsd}
+            />
+          }
+          footerCells={[
+            {
+              label: `HIGH ${range}`,
+              value: rangeHigh != null ? fmtUsdCompact(rangeHigh) : '——',
+              tone: 'mute',
+            },
+            {
+              label: `LOW ${range}`,
+              value: rangeLow != null ? fmtUsdCompact(rangeLow) : '——',
+              tone: 'mute',
+            },
+            {
+              label: 'PEAK',
+              value: peakAllTime != null ? fmtUsdCompact(peakAllTime) : '——',
+              tone: peakAllTime != null && peakAllTime >= 0 ? 'profit' : 'mute',
+              title: 'Plus haut gain cumulé jamais atteint (max all-time de la courbe equity)',
+            },
+            {
+              label: 'ALL-TIME',
+              value: Number.isFinite(allTimePnlUsd) ? fmtUsdSigned(allTimePnlUsd) : '——',
+              tone: toneSign(allTimePnlUsd),
+              title: 'P&L total = realized + unrealized',
+            },
+          ]}
+        />
 
-      {/* 2. AVAIL CAPITAL */}
-      <KpiCard
-        label="AVAIL. CAPITAL"
-        topRight={<Pill tone="accent">DEPLOYABLE</Pill>}
-        value={fmtUsdCompact(availableUsd)}
-        valueTone="neutral"
-        chfLine={availChfLine}
-        visual={
-          <div className="dash-kpi-card__avail-block">
-            {/* Mini-sparkline trend 30 j (subtil, accent) */}
-            <div className="dash-kpi-card__avail-spark">
+        {/* HERO 2. DAY P&L (B2 — promu de secondary à hero, footer 4 cells WEEK/MTD/YTD/ALL-TIME) */}
+        <KpiCardHero
+          label="DAY P&L"
+          liveBadge={null}
+          topRight={<Pill tone="mute">INTRADAY</Pill>}
+          value={fmtUsdSigned(dayPnl)}
+          valueTone={dayTone}
+          chfLine={dayChfLine}
+          spark={
+            showDayInfoBlocks ? (
+              <div className="dash-kpi-card__info-stack">
+                <InfoBlock
+                  tone={marketSession.isOpen ? 'profit' : 'loss'}
+                  label="MARKET"
+                  value={marketSession.isOpen ? 'OPEN · NY' : 'CLOSED · NY'}
+                  valueTone={marketSession.isOpen ? 'profit' : 'loss'}
+                />
+                <InfoBlock
+                  tone="accent"
+                  label="NEXT OPEN"
+                  value={
+                    marketSession.isOpen
+                      ? 'NOW'
+                      : `${marketSession.hoursUntilOpen}h ${marketSession.minutesUntilOpen}m`
+                  }
+                  valueTone="accent"
+                />
+              </div>
+            ) : (
               <Sparkline
-                data={availCapSeries}
-                color="accent"
-                height={28}
+                data={dayPnlSeries}
+                color={dayTone === 'mute' ? 'neutral' : dayTone}
+                height={100}
                 area
                 dot
-                strokeOpacity={0.65}
-                gradientOpacity={0.28}
+                strokeWidth={2}
+                dotRadius={4}
+                dotHaloRadius={8}
+                gradientOpacity={0.4}
+                gridlines={3}
+                zeroLine
               />
+            )
+          }
+          footerCells={[
+            {
+              label: 'WEEK',
+              value: Number.isFinite(weekPnlUsd) ? fmtUsdSigned(weekPnlUsd) : '—',
+              tone: toneSign(weekPnlUsd),
+              title: 'P&L cumulé depuis lundi 00h (UTC)',
+            },
+            {
+              label: 'MTD',
+              value: Number.isFinite(monthlyPnlUsd) ? fmtUsdSigned(monthlyPnlUsd) : '—',
+              tone: toneSign(monthlyPnlUsd),
+            },
+            {
+              label: 'YTD',
+              value: Number.isFinite(ytdPnlUsd) ? fmtUsdSigned(ytdPnlUsd) : '—',
+              tone: toneSign(ytdPnlUsd),
+              title: 'P&L cumulé depuis le 1er janvier de l’année en cours',
+            },
+            {
+              label: 'ALL-TIME',
+              value: Number.isFinite(allTimePnlUsd) ? fmtUsdSigned(allTimePnlUsd) : '—',
+              tone: toneSign(allTimePnlUsd),
+              title: 'P&L total = realized + unrealized',
+            },
+          ]}
+        />
+      </div>
+
+      <div className="dash-kpi-cards__row dash-kpi-cards__row--secondary">
+        {/* SECONDARY 1. AVAIL CAPITAL */}
+        <KpiCard
+          label="AVAIL. CAPITAL"
+          topRight={<Pill tone="accent">DEPLOYABLE</Pill>}
+          value={fmtUsdCompact(availableUsd)}
+          valueTone="neutral"
+          chfLine={availChfLine}
+          visual={
+            <div className="dash-kpi-card__avail-block">
+              {/* Mini-sparkline trend 30 j (subtil, accent) */}
+              <div className="dash-kpi-card__avail-spark">
+                <Sparkline
+                  data={availCapSeries}
+                  color="accent"
+                  height={28}
+                  area
+                  dot
+                  strokeOpacity={0.65}
+                  gradientOpacity={0.28}
+                />
+              </div>
+              <div className="dash-kpi-card__bar-row">
+                <span className="dash-kpi-card__bar-pct dash-kpi-card__bar-pct--accent">
+                  {availPctNlv != null ? `${availPctNlv.toFixed(1)}%` : '——'}
+                </span>
+                <span className="dash-kpi-card__bar-denom">
+                  {Number.isFinite(nlvUsd) ? `/ ${fmtUsdCompact(nlvUsd)}` : ''}
+                </span>
+              </div>
+              <FillBar pct={availPctNlv} color="accent" restColor />
             </div>
-            <div className="dash-kpi-card__bar-row">
-              <span className="dash-kpi-card__bar-pct dash-kpi-card__bar-pct--accent">
-                {availPctNlv != null ? `${availPctNlv.toFixed(1)}%` : '——'}
-              </span>
-              <span className="dash-kpi-card__bar-denom">
-                {Number.isFinite(nlvUsd) ? `/ ${fmtUsdCompact(nlvUsd)}` : ''}
-              </span>
-            </div>
-            <FillBar pct={availPctNlv} color="accent" restColor />
-          </div>
-        }
-        footerCells={[
-          {
-            label: 'TIED UP',
-            value: tiedUpUsd != null ? fmtUsdCompact(tiedUpUsd) : '——',
-          },
-          {
-            label: 'CASH FLR',
-            value: `${SNIPER_DEFAULTS.cashFloorPct}%`,
-            tone: 'amber',
-            title: 'Plancher de cash du tier Sniper actif (valeur statique — TODO Phase C)',
-          },
-        ]}
-      />
+          }
+          footerCells={[
+            {
+              label: 'TIED UP',
+              value: tiedUpUsd != null ? fmtUsdCompact(tiedUpUsd) : '——',
+            },
+            {
+              label: 'CASH FLR',
+              value: `${SNIPER_DEFAULTS.cashFloorPct}%`,
+              tone: 'amber',
+              title: 'Plancher de cash du tier Sniper actif (valeur statique — TODO Phase C)',
+            },
+          ]}
+        />
 
-      {/* 3. UNREALIZED */}
-      <KpiCard
-        label="UNREALIZED"
-        topRight={
-          positionsCount > 0 && unrealStats.pct != null ? (
-            <Pill tone={unrealTone === 'mute' ? 'mute' : unrealTone}>
-              {fmtPctSigned(unrealStats.pct, 1)}
-            </Pill>
-          ) : null
-        }
-        value={fmtUsdSigned(unrealUsd)}
-        valueTone={unrealTone}
-        chfLine={unrealChfLine}
-        visual={
-          <div className="dash-kpi-card__spark-wrap">
-            <Sparkline
-              data={unrealizedSeries}
-              color={unrealTone === 'mute' ? 'neutral' : unrealTone}
-              height={50}
-              area
-              dot
-              strokeWidth={2}
-              dotRadius={3}
-              dotHaloRadius={6}
-              gridlines={3}
-            />
-            <span className="dash-kpi-card__spark-overlay">14 J</span>
-          </div>
-        }
-        footerCells={[
-          {
-            label: 'BEST',
-            value:
-              unrealStats.best && unrealStats.best.pnl > 0
-                ? `${unrealStats.best.ticker} ${fmtUsdSigned(unrealStats.best.pnl)}`
-                : '—',
-            tone: unrealStats.best && unrealStats.best.pnl > 0 ? 'profit' : 'mute',
-          },
-          {
-            label: 'WORST',
-            value:
-              unrealStats.worst && unrealStats.worst.pnl < 0
-                ? `${unrealStats.worst.ticker} ${fmtUsdSigned(unrealStats.worst.pnl)}`
-                : '—',
-            tone: unrealStats.worst && unrealStats.worst.pnl < 0 ? 'loss' : 'mute',
-          },
-        ]}
-      />
-
-      {/* 4. REALIZED */}
-      <KpiCard
-        label="REALIZED"
-        topRight={
-          realizedPct != null ? (
-            <Pill tone={realTone === 'mute' ? 'mute' : realTone}>
-              {fmtPctSigned(realizedPct, 1)}
-            </Pill>
-          ) : null
-        }
-        value={fmtUsdSigned(realizedUsd)}
-        valueTone={realTone}
-        chfLine={realizedChfLine}
-        visual={
-          <div className="dash-kpi-card__spark-wrap">
-            <Sparkline
-              data={realizedAllTimeSeries}
-              color={realTone === 'loss' ? 'loss' : 'profit'}
-              height={50}
-              area
-              dot
-              strokeWidth={2}
-              dotRadius={3}
-              dotHaloRadius={6}
-              gridlines={3}
-            />
-            <span className="dash-kpi-card__spark-overlay">{tradeCount} TR</span>
-          </div>
-        }
-        footerCells={[
-          {
-            label: 'BEST',
-            value:
-              closedExtremes.best && Number.isFinite(closedExtremes.best.pnl)
-                ? fmtUsdSigned(closedExtremes.best.pnl)
-                : '—',
-            tone:
-              closedExtremes.best && closedExtremes.best.pnl > 0 ? 'profit' : 'mute',
-          },
-          {
-            label: 'EXPCT',
-            value:
-              tradeCount > 0 && Number.isFinite(expectancy) ? fmtUsdSigned(expectancy) : '—',
-            tone: 'neutral',
-            title: 'Expectancy par trade (winRate × avgWin − lossRate × avgLoss)',
-          },
-        ]}
-      />
-
-      {/* 5. DAY P&L */}
-      <KpiCard
-        label="DAY P&L"
-        topRight={<Pill tone="mute">INTRADAY</Pill>}
-        value={fmtUsdSigned(dayPnl)}
-        valueTone={dayTone}
-        chfLine={dayChfLine}
-        visual={
-          showDayInfoBlocks ? (
-            <div className="dash-kpi-card__info-stack">
-              <InfoBlock
-                tone={marketSession.isOpen ? 'profit' : 'loss'}
-                label="MARKET"
-                value={marketSession.isOpen ? 'OPEN · NY' : 'CLOSED · NY'}
-                valueTone={marketSession.isOpen ? 'profit' : 'loss'}
+        {/* SECONDARY 2. UNREALIZED */}
+        <KpiCard
+          label="UNREALIZED"
+          topRight={
+            positionsCount > 0 && unrealStats.pct != null ? (
+              <Pill tone={unrealTone === 'mute' ? 'mute' : unrealTone}>
+                {fmtPctSigned(unrealStats.pct, 1)}
+              </Pill>
+            ) : null
+          }
+          value={fmtUsdSigned(unrealUsd)}
+          valueTone={unrealTone}
+          chfLine={unrealChfLine}
+          visual={
+            <div className="dash-kpi-card__spark-wrap">
+              <Sparkline
+                data={unrealizedSeries}
+                color={unrealTone === 'mute' ? 'neutral' : unrealTone}
+                height={50}
+                area
+                dot
+                strokeWidth={2}
+                dotRadius={3}
+                dotHaloRadius={6}
+                gridlines={3}
               />
-              <InfoBlock
-                tone="accent"
-                label="NEXT OPEN"
-                value={
-                  marketSession.isOpen
-                    ? 'NOW'
-                    : `${marketSession.hoursUntilOpen}h ${marketSession.minutesUntilOpen}m`
-                }
-                valueTone="accent"
-              />
+              <span className="dash-kpi-card__spark-overlay">14 J</span>
             </div>
-          ) : (
-            <Sparkline
-              data={dayPnlSeries}
-              color={dayTone === 'mute' ? 'neutral' : dayTone}
-              height={50}
-              area
-              dot
-              strokeWidth={2}
-              dotRadius={3}
-              dotHaloRadius={6}
-              zeroLine
-            />
-          )
-        }
-        footerCells={[
-          {
-            label: 'MTD',
-            value: Number.isFinite(monthlyPnlUsd) ? fmtUsdSigned(monthlyPnlUsd) : '—',
-            tone: toneSign(monthlyPnlUsd),
-          },
-          {
-            label: 'TODAY',
-            value: dayPnl === 0 ? 'FLAT' : fmtUsdSigned(dayPnl),
-            tone: dayPnl === 0 ? 'mute' : dayTone,
-          },
-        ]}
-      />
+          }
+          footerCells={[
+            {
+              label: 'BEST',
+              value:
+                unrealStats.best && unrealStats.best.pnl > 0
+                  ? `${unrealStats.best.ticker} ${fmtUsdSigned(unrealStats.best.pnl)}`
+                  : '—',
+              tone: unrealStats.best && unrealStats.best.pnl > 0 ? 'profit' : 'mute',
+            },
+            {
+              label: 'WORST',
+              value:
+                unrealStats.worst && unrealStats.worst.pnl < 0
+                  ? `${unrealStats.worst.ticker} ${fmtUsdSigned(unrealStats.worst.pnl)}`
+                  : '—',
+              tone: unrealStats.worst && unrealStats.worst.pnl < 0 ? 'loss' : 'mute',
+            },
+          ]}
+        />
 
-      {/* 6. EXPOSURE */}
-      <KpiCard
-        label="EXPOSURE"
-        topRight={<Pill tone="amber">NOTIONAL</Pill>}
-        value={fmtUsdCompact(exposureUsd)}
-        valueTone="neutral"
-        chfLine={exposureChfLine}
-        visual={
-          <div className="dash-kpi-card__expo-block">
-            <div className="dash-kpi-card__bar-row">
-              <span className="dash-kpi-card__bar-pct dash-kpi-card__bar-pct--amber">
-                {expoPctNlv != null ? `${expoPctNlv.toFixed(1)}% NLV` : '—— NLV'}
-              </span>
-              <span className="dash-kpi-card__bar-denom">
-                MAX {SNIPER_DEFAULTS.notionalMaxPct}%
-              </span>
-            </div>
-            <FillBarWithMarker
-              pct={expoPctNlv}
-              color="amber"
-              markerPct={SNIPER_DEFAULTS.notionalMaxPct}
-            />
-            <div className="dash-kpi-card__info-slot dash-kpi-card__info-slot--tight">
-              <InfoBlock
-                tone="amber"
-                label="TIER ACTIF"
-                value={SNIPER_DEFAULTS.tierLabel}
-                valueTone="amber"
+        {/* SECONDARY 3. REALIZED */}
+        <KpiCard
+          label="REALIZED"
+          topRight={
+            realizedPct != null ? (
+              <Pill tone={realTone === 'mute' ? 'mute' : realTone}>
+                {fmtPctSigned(realizedPct, 1)}
+              </Pill>
+            ) : null
+          }
+          value={fmtUsdSigned(realizedUsd)}
+          valueTone={realTone}
+          chfLine={realizedChfLine}
+          visual={
+            <div className="dash-kpi-card__spark-wrap">
+              <Sparkline
+                data={realizedAllTimeSeries}
+                color={realTone === 'loss' ? 'loss' : 'profit'}
+                height={50}
+                area
+                dot
+                strokeWidth={2}
+                dotRadius={3}
+                dotHaloRadius={6}
+                gridlines={3}
               />
+              <span className="dash-kpi-card__spark-overlay">{tradeCount} TR</span>
             </div>
-          </div>
-        }
-        footerCells={[
-          {
-            label: 'RISK $',
-            value: Number.isFinite(riskUsd) ? fmtUsdSigned(riskUsd) : '—',
-            tone: toneSign(riskUsd),
-            title:
-              'Proxy via unrealizedPnl de la 1re position (TODO Phase C : pos.slDollar quand exposé)',
-          },
-          {
-            label: 'DELTA',
-            value:
-              Number.isFinite(sumDelta) && sumDelta !== 0
-                ? sumDelta.toFixed(2)
-                : positionsCount === 0
-                  ? '—'
-                  : greeks?.loading
-                    ? '…'
-                    : '—',
-            tone: 'neutral',
-            title: 'Delta agrégé du portefeuille via useGreeksAggregate',
-          },
-        ]}
-      />
+          }
+          footerCells={[
+            {
+              label: 'BEST',
+              value:
+                closedExtremes.best && Number.isFinite(closedExtremes.best.pnl)
+                  ? fmtUsdSigned(closedExtremes.best.pnl)
+                  : '—',
+              tone:
+                closedExtremes.best && closedExtremes.best.pnl > 0 ? 'profit' : 'mute',
+            },
+            {
+              label: 'EXPCT',
+              value:
+                tradeCount > 0 && Number.isFinite(expectancy) ? fmtUsdSigned(expectancy) : '—',
+              tone: 'neutral',
+              title: 'Expectancy par trade (winRate × avgWin − lossRate × avgLoss)',
+            },
+          ]}
+        />
 
-      {/* 7. WIN RATE */}
-      <KpiCardWinRate
-        winRate={winRate}
-        profitFactor={profitFactor}
-        winCount={winCount}
-        lossCount={lossCount}
-        tradeCount={tradeCount}
-        currentStreak={currentStreak}
-        footerCells={[
-          {
-            label: 'AVG W',
-            // Signed format avec "+$X" (brief B.4 explicite)
-            value: winCount > 0 && Number.isFinite(averageWin) ? fmtUsdSigned(averageWin) : '—',
-            tone: winCount > 0 ? 'profit' : 'mute',
-          },
-          {
-            label: 'AVG L',
-            value:
-              lossCount > 0 && Number.isFinite(averageLoss) ? fmtUsdSigned(-averageLoss) : '—',
-            tone: lossCount > 0 ? 'loss' : 'mute',
-          },
-        ]}
-      />
+        {/* SECONDARY 4. EXPOSURE */}
+        <KpiCard
+          label="EXPOSURE"
+          topRight={<Pill tone="amber">NOTIONAL</Pill>}
+          value={fmtUsdCompact(exposureUsd)}
+          valueTone="neutral"
+          chfLine={exposureChfLine}
+          visual={
+            <div className="dash-kpi-card__expo-block">
+              <div className="dash-kpi-card__bar-row">
+                <span className="dash-kpi-card__bar-pct dash-kpi-card__bar-pct--amber">
+                  {expoPctNlv != null ? `${expoPctNlv.toFixed(1)}% NLV` : '—— NLV'}
+                </span>
+                <span className="dash-kpi-card__bar-denom">
+                  MAX {SNIPER_DEFAULTS.notionalMaxPct}%
+                </span>
+              </div>
+              <FillBarWithMarker
+                pct={expoPctNlv}
+                color="amber"
+                markerPct={SNIPER_DEFAULTS.notionalMaxPct}
+              />
+              <div className="dash-kpi-card__info-slot dash-kpi-card__info-slot--tight">
+                <InfoBlock
+                  tone="amber"
+                  label="TIER ACTIF"
+                  value={SNIPER_DEFAULTS.tierLabel}
+                  valueTone="amber"
+                />
+              </div>
+            </div>
+          }
+          footerCells={[
+            {
+              label: 'RISK $',
+              value: Number.isFinite(riskUsd) ? fmtUsdSigned(riskUsd) : '—',
+              tone: toneSign(riskUsd),
+              title:
+                'Proxy via unrealizedPnl de la 1re position (TODO Phase C : pos.slDollar quand exposé)',
+            },
+            {
+              label: 'DELTA',
+              value:
+                Number.isFinite(sumDelta) && sumDelta !== 0
+                  ? sumDelta.toFixed(2)
+                  : positionsCount === 0
+                    ? '—'
+                    : greeks?.loading
+                      ? '…'
+                      : '—',
+              tone: 'neutral',
+              title: 'Delta agrégé du portefeuille via useGreeksAggregate',
+            },
+          ]}
+        />
+
+        {/* SECONDARY 5. WIN RATE */}
+        <KpiCardWinRate
+          winRate={winRate}
+          profitFactor={profitFactor}
+          winCount={winCount}
+          lossCount={lossCount}
+          tradeCount={tradeCount}
+          currentStreak={currentStreak}
+          footerCells={[
+            {
+              label: 'AVG W',
+              // Signed format avec "+$X" (brief B.4 explicite)
+              value: winCount > 0 && Number.isFinite(averageWin) ? fmtUsdSigned(averageWin) : '—',
+              tone: winCount > 0 ? 'profit' : 'mute',
+            },
+            {
+              label: 'AVG L',
+              value:
+                lossCount > 0 && Number.isFinite(averageLoss) ? fmtUsdSigned(-averageLoss) : '—',
+              tone: lossCount > 0 ? 'loss' : 'mute',
+            },
+          ]}
+        />
+      </div>
     </div>
   );
 }
