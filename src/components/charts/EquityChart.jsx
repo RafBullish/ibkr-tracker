@@ -77,8 +77,17 @@ function ChartFallback({ message }) {
   return <div className="trading-chart__empty">{message}</div>;
 }
 
-export default function EquityChart({ data, area = 'equity' }) {
-  const [range, setRange] = useState('ALL');
+export default function EquityChart({
+  data,
+  range: controlledRange,
+  onRangeChange,
+  area = 'equity',
+}) {
+  // B3 — pattern hybride : range/onRangeChange en props = controlled,
+  // sinon useState local = uncontrolled (back-compat).
+  const [localRange, setLocalRange] = useState('ALL');
+  const range = controlledRange !== undefined ? controlledRange : localRange;
+  const setRange = onRangeChange || setLocalRange;
   const T = useLiveTheme();
 
   const safeData = Array.isArray(data) ? data : [];

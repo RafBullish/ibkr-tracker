@@ -97,9 +97,15 @@ export default function DailyPnLChart({
   dailyPnL,
   closedTrades: closedTradesProp,
   liveRate: liveRateProp,
+  range: controlledRange,
+  onRangeChange,
   area = 'dailypnl',
 }) {
-  const [range, setRange] = useState('ALL');
+  // B3 — pattern hybride : range/onRangeChange en props = controlled,
+  // sinon useState local = uncontrolled (back-compat).
+  const [localRange, setLocalRange] = useState('ALL');
+  const range = controlledRange !== undefined ? controlledRange : localRange;
+  const setRange = onRangeChange || setLocalRange;
   const T = useLiveTheme();
 
   const storeClosedTrades = useClosedTrades();

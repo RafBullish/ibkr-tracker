@@ -1,45 +1,61 @@
 :root {
   /* ===== BACKGROUNDS ===== */
-  --qc-bg-base: #0A0A0A;
-  --qc-bg-surface: #111111;
-  --qc-bg-elevated: #161616;
+  --qc-bg-void: #070708;
+  --qc-bg-base: #0A0A0B;
+  --qc-bg-surface: #0F0F11;
+  --qc-bg-elevated: #16161A;
+  --qc-bg-overlay: #1C1C21;
+  --qc-bg-input: #121215;
 
   /* ===== BORDERS ===== */
-  --qc-border-subtle: #1A1A1A;
-  --qc-border-default: #262626;
-  --qc-border-strong: #404040;
+  --qc-border-subtle: #1C1C20;
+  --qc-border-default: #28282E;
+  --qc-border-strong: #38383F;
+  --qc-border-light: rgba(255, 255, 255, 0.06);
 
   /* ===== TEXT ===== */
-  --qc-text-primary: #FFFFFF;
-  --qc-text-secondary: #A1A1AA;
-  --qc-text-tertiary: #52525B;
-  --qc-text-disabled: #3F3F46;
+  --qc-text-primary: #FAFAFA;
+  --qc-text-secondary: #9A9AA2;
+  --qc-text-tertiary: #7E7E86;
+  --qc-text-disabled: #3A3A40;
 
   /* ===== SEMANTIC ===== */
   --qc-profit: #10B981;
-  --qc-profit-bg: rgba(16, 185, 129, 0.10);
+  --qc-profit-bright: #34D399;
+  --qc-profit-bg: color-mix(in srgb, var(--qc-profit) 15%, transparent);
   --qc-loss: #EF4444;
-  --qc-loss-bg: rgba(239, 68, 68, 0.10);
+  --qc-loss-bright: #F87171;
+  --qc-loss-bg: color-mix(in srgb, var(--qc-loss) 15%, transparent);
   --qc-warning: #F59E0B;
-  --qc-warning-bg: rgba(245, 158, 11, 0.10);
+  --qc-warning-bg: color-mix(in srgb, var(--qc-warning) 15%, transparent);
   --qc-info: #06B6D4;
   --qc-info-bg: rgba(6, 182, 212, 0.10);
   --qc-accent: #06B6D4;
+  --qc-accent-hover: #22D3EE;
+  --qc-accent-dim: rgba(6, 182, 212, 0.12);
+  --qc-accent-glow: rgba(6, 182, 212, 0.28);
+  --qc-accent-line: rgba(6, 182, 212, 0.35);
+  --qc-neutral: #71717A;
 
   /* ===== TYPOGRAPHY ===== */
-  --qc-font-sans: 'Inter', system-ui, sans-serif;
-  --qc-font-mono: 'Geist Mono', 'JetBrains Mono', ui-monospace, monospace;
+  --qc-font-sans: 'Geist Variable', 'Inter', system-ui, sans-serif;
+  --qc-font-mono: 'Geist Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
 
   --qc-fs-caption: 11px;
-  --qc-fs-label: 12px;
-  --qc-fs-body: 14px;
+  --qc-fs-label: 11px;
+  --qc-fs-body: 13px;
+  --qc-fs-lg: 15px;
+  --qc-fs-xl: 20px;
   --qc-fs-kpi-sec: 24px;
+  --qc-fs-display: 28px;
+  --qc-fs-hero: 40px;
   --qc-fs-kpi-hero: 48px;
-  --qc-fs-display: 64px;
+  --qc-fs-micro: 10px;
 
   --qc-fw-regular: 400;
   --qc-fw-medium: 500;
-  --qc-fw-bold: 600;
+  --qc-fw-semibold: 600;
+  --qc-fw-bold: 700;
 
   /* ===== SPACING (4px grid) ===== */
   --qc-space-1: 4px;
@@ -52,6 +68,7 @@
 
   /* ===== RADIUS ===== */
   --qc-radius-sm: 2px;
+  --qc-radius: 4px;
   --qc-radius-md: 4px;
   --qc-radius-lg: 6px;
 
@@ -94,15 +111,15 @@
   --bg-elev-2: var(--qc-bg-elevated);
   --bg-glass: var(--qc-bg-surface);
   --bg-glass-hover: var(--qc-bg-elevated);
-  --bg-input: var(--qc-bg-surface);
+  --bg-input: var(--qc-bg-input);
   --bg-surface-elevated: var(--qc-bg-elevated);
   --bg-surface-overlay: var(--qc-bg-elevated);
   --bg-surface-raised: var(--qc-bg-elevated);
   --surface-0: var(--qc-bg-base);
   --surface-1: var(--qc-bg-surface);
   --surface-2: var(--qc-bg-elevated);
-  --surface-3: #1A1A1A;
-  --surface-4: #1F1F1F;
+  --surface-3: var(--qc-border-subtle);
+  --surface-4: var(--qc-bg-overlay);
   --surface-elevated: var(--qc-bg-elevated);
   --glass-bg: var(--qc-bg-surface);
   --glass-bg-strong: var(--qc-bg-elevated);
@@ -115,28 +132,28 @@
   /* --- Accent variantes --- */
   --accent-amber: var(--qc-warning);
   --accent-border: var(--qc-accent);
-  --accent-dim: rgba(6, 182, 212, 0.6);
-  --accent-gradient: linear-gradient(135deg, var(--qc-accent), #0891B2);
-  --accent-hover: #0891B2;
-  --accent-light: rgba(6, 182, 212, 0.15);
-  --accent-subtle: rgba(6, 182, 212, 0.08);
+  --accent-dim: color-mix(in srgb, var(--qc-accent) 60%, transparent);
+  --accent-gradient: linear-gradient(135deg, var(--qc-accent), color-mix(in srgb, var(--qc-accent) 80%, #000));
+  --accent-hover: var(--qc-accent-hover);
+  --accent-light: color-mix(in srgb, var(--qc-accent) 15%, transparent);
+  --accent-subtle: color-mix(in srgb, var(--qc-accent) 8%, transparent);
   --accent-text: var(--qc-accent);
   --aura-gradient: linear-gradient(135deg, var(--qc-accent), var(--qc-profit));
 
   /* --- Profit/Loss/Warning variantes --- */
   --profit-border: var(--qc-profit);
-  --profit-dim: rgba(16, 185, 129, 0.6);
-  --profit-medium: rgba(16, 185, 129, 0.4);
+  --profit-dim: color-mix(in srgb, var(--qc-profit) 60%, transparent);
+  --profit-medium: color-mix(in srgb, var(--qc-profit) 40%, transparent);
   --profit-text: var(--qc-profit);
   --loss-border: var(--qc-loss);
-  --loss-dim: rgba(239, 68, 68, 0.6);
-  --loss-glow: rgba(239, 68, 68, 0.3);
+  --loss-dim: color-mix(in srgb, var(--qc-loss) 60%, transparent);
+  --loss-glow: color-mix(in srgb, var(--qc-loss) 30%, transparent);
   --loss-text: var(--qc-loss);
   --warning-border: var(--qc-warning);
   --warning-text: var(--qc-warning);
-  --color-loss-subtle: rgba(239, 68, 68, 0.08);
-  --color-profit-subtle: rgba(16, 185, 129, 0.08);
-  --color-accent-subtle: rgba(6, 182, 212, 0.08);
+  --color-loss-subtle: color-mix(in srgb, var(--qc-loss) 8%, transparent);
+  --color-profit-subtle: color-mix(in srgb, var(--qc-profit) 8%, transparent);
+  --color-accent-subtle: color-mix(in srgb, var(--qc-accent) 8%, transparent);
 
   /* --- Border accent/focus --- */
   --border-accent: var(--qc-accent);
@@ -145,7 +162,7 @@
   /* --- Cards system --- */
   --card-bg: var(--qc-bg-surface);
   --card-bg-hero: var(--qc-bg-elevated);
-  --card-bg-hero-hover: #1A1A1A;
+  --card-bg-hero-hover: var(--qc-bg-overlay);
   --card-bg-hover: var(--qc-bg-elevated);
   --card-border: var(--qc-border-subtle);
   --card-border-hero: var(--qc-border-default);
@@ -156,8 +173,8 @@
 
   /* --- Chips system --- */
   --chip-bg: var(--qc-bg-elevated);
-  --chip-bg-active: rgba(6, 182, 212, 0.15);
-  --chip-bg-hover: #1A1A1A;
+  --chip-bg-active: color-mix(in srgb, var(--qc-accent) 15%, transparent);
+  --chip-bg-hover: var(--qc-bg-overlay);
   --chip-border: var(--qc-border-subtle);
   --chip-border-active: var(--qc-accent);
   --chip-color: var(--qc-text-secondary);
@@ -236,7 +253,7 @@
   --shell-hairline: 1px solid var(--qc-border-subtle);
 
   /* --- Sidebar (dead code mais référencé) --- */
-  --sidebar-active-bg: rgba(6, 182, 212, 0.1);
+  --sidebar-active-bg: color-mix(in srgb, var(--qc-accent) 10%, transparent);
   --sidebar-active-indicator: var(--qc-accent);
   --sidebar-collapsed: 56px;
   --sidebar-hover-bg: var(--qc-bg-elevated);
@@ -273,9 +290,9 @@
   --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.5);
   --shadow-hero: 0 8px 24px rgba(0, 0, 0, 0.6);
   --shadow-modal: 0 16px 48px rgba(0, 0, 0, 0.7);
-  --shadow-glow-accent: 0 0 16px rgba(6, 182, 212, 0.3);
-  --shadow-glow-loss: 0 0 16px rgba(239, 68, 68, 0.3);
-  --shadow-glow-profit: 0 0 16px rgba(16, 185, 129, 0.3);
+  --shadow-glow-accent: 0 0 16px var(--qc-accent-glow);
+  --shadow-glow-loss: 0 0 16px color-mix(in srgb, var(--qc-loss) 30%, transparent);
+  --shadow-glow-profit: 0 0 16px color-mix(in srgb, var(--qc-profit) 30%, transparent);
 
   /* --- Scrollbar / Modal --- */
   --scrollbar-track: var(--qc-bg-base);
@@ -336,4 +353,30 @@
   /* --- Divers --- */
   --bar-width: 4px;
   --neutral-bg: var(--qc-bg-elevated);
+}
+
+/* ===== NEW DESIGN SYSTEM COMPONENTS ===== */
+.qc-card {
+  background: linear-gradient(180deg,
+    var(--qc-bg-elevated) 0%,
+    color-mix(in srgb, var(--qc-bg-elevated) 92%, #000) 100%);
+  border: 1px solid var(--qc-border-default);
+  border-radius: var(--qc-radius);
+  box-shadow:
+    inset 0 1px 0 var(--qc-border-light),
+    0 1px 3px rgba(0,0,0,0.4),
+    0 4px 16px rgba(0,0,0,0.2);
+  padding: var(--qc-space-3);
+}
+
+.qc-card:hover {
+  border-color: var(--qc-border-strong);
+}
+
+.qc-card--active {
+  border-color: var(--qc-accent);
+  box-shadow:
+    inset 0 1px 0 var(--qc-border-light),
+    0 0 0 1px var(--qc-accent-glow),
+    0 4px 16px rgba(0,0,0,0.2);
 }

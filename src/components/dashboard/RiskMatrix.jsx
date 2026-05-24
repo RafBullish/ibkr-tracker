@@ -426,6 +426,124 @@ function Row3({ label, value, valueTone, sub, subTone, alert }) {
   );
 }
 
+// ─── Greeks strip (B4) — Σ Δ/Γ/Θ/ν permanent sous le subheader ──
+//
+// Lit le hook useGreeksAggregate hissé au Dashboard. Aucun calcul
+// ici, juste affichage. Sémantique de tone copiée sur GreeksAggregate
+// (ref) : Δ profit/loss/mute, Γ toujours mute, Θ et ν profit si >0.
+// Pour Sniper OTM short-call : Θ vert (encaisse), ν rouge (short vol).
+
+const fmtUsdSigned2 = (v) => {
+  if (v == null || !Number.isFinite(v)) return '—';
+  if (v === 0) return '$0.00';
+  const sign = v > 0 ? '+' : '−';
+  return `${sign}$${Math.abs(v).toFixed(2)}`;
+};
+
+const fmtNumSigned = (v, decimals = 0) => {
+  if (v == null || !Number.isFinite(v)) return '—';
+  const sign = v > 0 ? '+' : v < 0 ? '−' : '';
+  return `${sign}${Math.abs(v).toFixed(decimals)}`;
+};
+
+const fmtUsdCompact = (v) => {
+  if (v == null || !Number.isFinite(v)) return '—';
+  const sign = v > 0 ? '+' : v < 0 ? '−' : '';
+  return `${sign}$${Math.abs(Math.round(v)).toLocaleString('en-US')}`;
+};
+
+const toneFromSign = (v) => {
+  if (v == null || !Number.isFinite(v) || v === 0) return 'mute';
+  return v > 0 ? 'profit' : 'loss';
+};
+
+const GREEKS_LABELS = ['Σ DELTA', 'Σ GAMMA', 'Σ THETA', 'Σ VEGA', 'OPTIONS'];
+
+function GreeksStripCell({ label, value, sub, tone }) {
+  return (
+    <div className="risk-matrix__greek-cell">
+      <span className="risk-matrix__greek-label">{label}</span>
+      <span
+        className={`risk-matrix__greek-value risk-matrix__greek-value--${tone || 'mute'}`}
+      >
+        {value}
+      </span>
+      <span className="risk-matrix__greek-sub">{sub}</span>
+    </div>
+  );
+}
+
+function GreeksStrip({ greeks }) {
+  const g = greeks || {};
+  const loading = g.loading === true;
+  const hasError = g.error != null;
+  const noOptions = !loading && (g.optionsCount === 0 || hasError);
+
+  if (loading) {
+    return (
+      <div className="risk-matrix__greeks-strip" aria-label="Greeks loading">
+        {GREEKS_LABELS.map((lbl) => (
+          <GreeksStripCell key={lbl} label={lbl} value="…" sub="fetching" tone="mute" />
+        ))}
+      </div>
+    );
+  }
+
+  if (noOptions) {
+    return (
+      <div
+        className="risk-matrix__greeks-strip"
+        aria-label={hasError ? 'Greeks unavailable' : 'No options'}
+      >
+        {GREEKS_LABELS.map((lbl) => (
+          <GreeksStripCell
+            key={lbl}
+            label={lbl}
+            value="—"
+            sub={hasError ? 'unavailable' : 'no options'}
+            tone="mute"
+          />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="risk-matrix__greeks-strip" aria-label="Options greeks aggregated">
+      <GreeksStripCell
+        label="Σ DELTA"
+        value={fmtNumSigned(g.sumDelta, 0)}
+        sub={`exp ${fmtUsdCompact(g.notionalDelta)}`}
+        tone={toneFromSign(g.sumDelta)}
+      />
+      <GreeksStripCell
+        label="Σ GAMMA"
+        value={fmtNum(g.sumGamma, 2)}
+        sub="per $1↑"
+        tone="mute"
+      />
+      <GreeksStripCell
+        label="Σ THETA"
+        value={fmtUsdSigned2(g.thetaDaily)}
+        sub="/jour"
+        tone={toneFromSign(g.thetaDaily)}
+      />
+      <GreeksStripCell
+        label="Σ VEGA"
+        value={fmtUsdSigned2(g.vegaPer1Pct)}
+        sub="per 1%IV"
+        tone={toneFromSign(g.vegaPer1Pct)}
+      />
+      <GreeksStripCell
+        label="OPTIONS"
+        value={String(g.optionsCount ?? 0)}
+        sub="ouvertes"
+        tone="neutral"
+      />
+    </div>
+  );
+}
+
 // ─── Main component ─────────────────────────────────────────────
 
 export default function RiskMatrix({ metrics, area = 'risk' }) {
@@ -775,6 +893,8 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
           </span>
         </div>
       </div>
+
+      <GreeksStrip greeks={m.greeks} />
 
       <div className="risk-matrix__body">
         {/* ─────────────── COL 1 : Performance + R-Distribution ─────────── */}

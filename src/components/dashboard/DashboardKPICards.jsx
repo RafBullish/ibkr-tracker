@@ -331,6 +331,7 @@ function KpiCardHero({
   chfLine,
   deltaUsd,
   deltaPct,
+  microStats,
   spark,
   footerCells,
 }) {
@@ -364,6 +365,21 @@ function KpiCardHero({
                 <span className="dash-kpi-card__pill-sub">{fmtPctSigned(deltaPct, 1)}</span>
               ) : null}
             </span>
+          ) : null}
+          {Array.isArray(microStats) && microStats.length > 0 ? (
+            <div className="dash-kpi-card__micro-stats">
+              {microStats.map((s, i) => (
+                <span key={s.label || i} className="dash-kpi-card__micro-stat">
+                  <span className="dash-kpi-card__micro-stat-label">{s.label}</span>
+                  <span
+                    className={`dash-kpi-card__micro-stat-value dash-kpi-card__micro-stat-value--${s.tone || 'neutral'}`}
+                    title={s.title || undefined}
+                  >
+                    {s.value}
+                  </span>
+                </span>
+              ))}
+            </div>
           ) : null}
         </div>
         <div className="dash-kpi-card__hero-spark">{spark}</div>
@@ -624,6 +640,14 @@ export default function DashboardKPICards() {
     return null;
   }, [realizedUsd, metrics, fxOk, liveRate, nlvUsd]);
 
+  // B2 aberration shield : si |pct| > 999% (petit capital initial), on masque
+  // la pill — le ratio devient absurde, seul le $ absolu informe.
+  const realizedPctDisplay = useMemo(() => {
+    if (!Number.isFinite(realizedPct)) return null;
+    if (Math.abs(realizedPct) > 999) return null;
+    return realizedPct;
+  }, [realizedPct]);
+
   // ─── Card 6 Risk $ : proxy via unrealizedPnl 1re position ───
   const riskUsd = useMemo(() => {
     if (!openPositions || openPositions.length === 0) return null;
@@ -646,11 +670,30 @@ export default function DashboardKPICards() {
           chfLine={nlvChfLine}
           deltaUsd={rangeDeltaUsd}
           deltaPct={rangeDeltaPct}
+          microStats={[
+            {
+              label: 'JOUR',
+              value: dayPnl != null ? fmtUsdSigned(dayPnl) : '—',
+              tone: toneSign(dayPnl),
+            },
+            {
+              label: 'SEMAINE',
+              value: Number.isFinite(weekPnlUsd) ? fmtUsdSigned(weekPnlUsd) : '—',
+              tone: toneSign(weekPnlUsd),
+              title: 'P&L cumulé depuis lundi 00h',
+            },
+            {
+              label: 'MOIS',
+              value: Number.isFinite(monthlyPnlUsd) ? fmtUsdSigned(monthlyPnlUsd) : '—',
+              tone: toneSign(monthlyPnlUsd),
+              title: 'P&L cumulé du mois en cours',
+            },
+          ]}
           spark={
             <Sparkline
               data={nlvSeries}
               color={toneSign(rangeDeltaUsd) === 'loss' ? 'loss' : 'profit'}
-              height={100}
+              height={130}
               area
               dot
               strokeWidth={2}
@@ -688,73 +731,104 @@ export default function DashboardKPICards() {
           ]}
         />
 
-        {/* HERO 2. DAY P&L (B2 — promu de secondary à hero, footer 4 cells WEEK/MTD/YTD/ALL-TIME) */}
+        {/* HERO 2. REALIZED (B2 — promu de secondary à hero) */}
         <KpiCardHero
-          label="DAY P&L"
+          label="REALIZED · P&L CUMULÉ"
           liveBadge={null}
-          topRight={<Pill tone="mute">INTRADAY</Pill>}
-          value={fmtUsdSigned(dayPnl)}
-          valueTone={dayTone}
-          chfLine={dayChfLine}
-          spark={
-            showDayInfoBlocks ? (
-              <div className="dash-kpi-card__info-stack">
-                <InfoBlock
-                  tone={marketSession.isOpen ? 'profit' : 'loss'}
-                  label="MARKET"
-                  value={marketSession.isOpen ? 'OPEN · NY' : 'CLOSED · NY'}
-                  valueTone={marketSession.isOpen ? 'profit' : 'loss'}
-                />
-                <InfoBlock
-                  tone="accent"
-                  label="NEXT OPEN"
-                  value={
-                    marketSession.isOpen
-                      ? 'NOW'
-                      : `${marketSession.hoursUntilOpen}h ${marketSession.minutesUntilOpen}m`
-                  }
-                  valueTone="accent"
-                />
-              </div>
+          topRight={
+            realizedPctDisplay != null ? (
+              <Pill tone={realTone === 'mute' ? 'mute' : realTone}>
+                {fmtPctSigned(realizedPctDisplay, 1)}
+              </Pill>
             ) : (
-              <Sparkline
-                data={dayPnlSeries}
-                color={dayTone === 'mute' ? 'neutral' : dayTone}
-                height={100}
-                area
-                dot
-                strokeWidth={2}
-                dotRadius={4}
-                dotHaloRadius={8}
-                gradientOpacity={0.4}
-                gridlines={3}
-                zeroLine
-              />
+              <Pill tone="mute">ALL-TIME</Pill>
             )
+          }
+          value={fmtUsdSigned(realizedUsd)}
+          valueTone={realTone}
+          chfLine={realizedChfLine}
+          microStats={[
+            {
+              label: 'WIN RATE',
+              value: Number.isFinite(winRate) ? fmtPctPlain(winRate, 1) : '—',
+              tone: 'accent',
+            },
+            {
+              label: 'PF',
+              value:
+                profitFactor === Infinity
+                  ? '∞'
+                  : Number.isFinite(profitFactor)
+                    ? profitFactor.toFixed(2)
+                    : '—',
+              tone:
+                profitFactor === Infinity || (Number.isFinite(profitFactor) && profitFactor > 1)
+                  ? 'profit'
+                  : Number.isFinite(profitFactor) && profitFactor < 1
+                    ? 'loss'
+                    : 'mute',
+              title: 'Profit Factor = gains bruts / pertes brutes',
+            },
+            {
+              label: 'STREAK',
+              value:
+                Number.isFinite(currentStreak) && currentStreak !== 0
+                  ? currentStreak > 0
+                    ? `▲${currentStreak}W`
+                    : `▼${Math.abs(currentStreak)}L`
+                  : '—',
+              tone:
+                Number.isFinite(currentStreak) && currentStreak > 0
+                  ? 'profit'
+                  : Number.isFinite(currentStreak) && currentStreak < 0
+                    ? 'loss'
+                    : 'mute',
+            },
+          ]}
+          spark={
+            <Sparkline
+              data={realizedAllTimeSeries}
+              color={realTone === 'loss' ? 'loss' : 'profit'}
+              height={130}
+              area
+              dot
+              strokeWidth={2}
+              dotRadius={4}
+              dotHaloRadius={8}
+              gradientOpacity={0.4}
+              gridlines={3}
+              axisLabels
+              formatLabel={fmtAxisUsd}
+            />
           }
           footerCells={[
             {
-              label: 'WEEK',
-              value: Number.isFinite(weekPnlUsd) ? fmtUsdSigned(weekPnlUsd) : '—',
-              tone: toneSign(weekPnlUsd),
-              title: 'P&L cumulé depuis lundi 00h (UTC)',
+              label: 'BEST',
+              value:
+                closedExtremes.best && Number.isFinite(closedExtremes.best.pnl)
+                  ? fmtUsdSigned(closedExtremes.best.pnl)
+                  : '—',
+              tone: closedExtremes.best && closedExtremes.best.pnl > 0 ? 'profit' : 'mute',
             },
             {
-              label: 'MTD',
-              value: Number.isFinite(monthlyPnlUsd) ? fmtUsdSigned(monthlyPnlUsd) : '—',
-              tone: toneSign(monthlyPnlUsd),
+              label: 'WORST',
+              value:
+                closedExtremes.worst && Number.isFinite(closedExtremes.worst.pnl)
+                  ? fmtUsdSigned(closedExtremes.worst.pnl)
+                  : '—',
+              tone: closedExtremes.worst && closedExtremes.worst.pnl < 0 ? 'loss' : 'mute',
             },
             {
-              label: 'YTD',
-              value: Number.isFinite(ytdPnlUsd) ? fmtUsdSigned(ytdPnlUsd) : '—',
-              tone: toneSign(ytdPnlUsd),
-              title: 'P&L cumulé depuis le 1er janvier de l’année en cours',
+              label: 'EXPECT',
+              value:
+                tradeCount > 0 && Number.isFinite(expectancy) ? fmtUsdSigned(expectancy) : '—',
+              tone: toneSign(expectancy),
+              title: 'Expectancy par trade (winRate × avgWin − lossRate × avgLoss)',
             },
             {
-              label: 'ALL-TIME',
-              value: Number.isFinite(allTimePnlUsd) ? fmtUsdSigned(allTimePnlUsd) : '—',
-              tone: toneSign(allTimePnlUsd),
-              title: 'P&L total = realized + unrealized',
+              label: 'TRADES',
+              value: tradeCount,
+              tone: 'neutral',
             },
           ]}
         />
@@ -856,51 +930,61 @@ export default function DashboardKPICards() {
           ]}
         />
 
-        {/* SECONDARY 3. REALIZED */}
+        {/* SECONDARY 3. DAY P&L */}
         <KpiCard
-          label="REALIZED"
-          topRight={
-            realizedPct != null ? (
-              <Pill tone={realTone === 'mute' ? 'mute' : realTone}>
-                {fmtPctSigned(realizedPct, 1)}
-              </Pill>
-            ) : null
-          }
-          value={fmtUsdSigned(realizedUsd)}
-          valueTone={realTone}
-          chfLine={realizedChfLine}
+          label="DAY P&L"
+          topRight={<Pill tone="mute">INTRADAY</Pill>}
+          value={fmtUsdSigned(dayPnl)}
+          valueTone={dayTone}
+          chfLine={dayChfLine}
           visual={
-            <div className="dash-kpi-card__spark-wrap">
-              <Sparkline
-                data={realizedAllTimeSeries}
-                color={realTone === 'loss' ? 'loss' : 'profit'}
-                height={50}
-                area
-                dot
-                strokeWidth={2}
-                dotRadius={3}
-                dotHaloRadius={6}
-                gridlines={3}
-              />
-              <span className="dash-kpi-card__spark-overlay">{tradeCount} TR</span>
-            </div>
+            showDayInfoBlocks ? (
+              <div className="dash-kpi-card__info-stack">
+                <InfoBlock
+                  tone={marketSession.isOpen ? 'profit' : 'loss'}
+                  label="MARKET"
+                  value={marketSession.isOpen ? 'OPEN · NY' : 'CLOSED · NY'}
+                  valueTone={marketSession.isOpen ? 'profit' : 'loss'}
+                />
+                <InfoBlock
+                  tone="accent"
+                  label="NEXT OPEN"
+                  value={
+                    marketSession.isOpen
+                      ? 'NOW'
+                      : `${marketSession.hoursUntilOpen}h ${marketSession.minutesUntilOpen}m`
+                  }
+                  valueTone="accent"
+                />
+              </div>
+            ) : (
+              <div className="dash-kpi-card__spark-wrap">
+                <Sparkline
+                  data={dayPnlSeries}
+                  color={dayTone === 'mute' ? 'neutral' : dayTone}
+                  height={50}
+                  area
+                  dot
+                  strokeWidth={2}
+                  dotRadius={3}
+                  dotHaloRadius={6}
+                  gridlines={3}
+                  zeroLine
+                />
+              </div>
+            )
           }
           footerCells={[
             {
-              label: 'BEST',
-              value:
-                closedExtremes.best && Number.isFinite(closedExtremes.best.pnl)
-                  ? fmtUsdSigned(closedExtremes.best.pnl)
-                  : '—',
-              tone:
-                closedExtremes.best && closedExtremes.best.pnl > 0 ? 'profit' : 'mute',
+              label: 'WEEK',
+              value: Number.isFinite(weekPnlUsd) ? fmtUsdSigned(weekPnlUsd) : '—',
+              tone: toneSign(weekPnlUsd),
+              title: 'P&L cumulé depuis lundi 00h (UTC)',
             },
             {
-              label: 'EXPCT',
-              value:
-                tradeCount > 0 && Number.isFinite(expectancy) ? fmtUsdSigned(expectancy) : '—',
-              tone: 'neutral',
-              title: 'Expectancy par trade (winRate × avgWin − lossRate × avgLoss)',
+              label: 'MTD',
+              value: Number.isFinite(monthlyPnlUsd) ? fmtUsdSigned(monthlyPnlUsd) : '—',
+              tone: toneSign(monthlyPnlUsd),
             },
           ]}
         />

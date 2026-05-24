@@ -66,21 +66,18 @@
 .dash-grid > [style*="grid-area: master"] {
   height: 520px;
 }
-/* Phase C.2.5 / C.2.6 — positions auto-height : se compacte
-   automatiquement quand 1 seul trade actif (économie d'espace
-   visuel), scrolle dans la limite max quand plein.
-   Phase C.2.10-V3 : sub-header (~40 px) + footer (56 px) ajoutés
-   → bump min-height 130→240, max-height 320→420 pour accommoder
-   header 40 + sub 40 + thead 36 + ≥1 row + footer 56 = ~210 mini.
-   Phase C.2.10-V3.3 ROLLBACK : height:auto a fait disparaître le module.
-   Phase C.2.10-V3.4 : min-height ajusté 240→204 pour matcher exactement
-   la hauteur du module avec 1 row (header 40 + sub 40 + thead 36 +
-   row 32 + footer 56). Plus de vide visible entre la dernière row et
-   le footer. Max-height 420 garde le scroll interne quand 5+ positions. */
+/* B5.7 — hauteur fixe 420px, pattern miroir TradeHistory (480 px).
+   Cause du fix : l'ancien setup `height: auto + min: 204 + max: 420`
+   couplé à `.live-pos__body { min-height: 0 }` faisait que le calcul
+   de l'auto-height de la cellule voyait le body comme intrinsic 0 →
+   cellule restait à min-height (204) → body écrasé à 62 px →
+   5/6 lignes invisibles. Hauteur fixe = pas de calcul auto, body
+   remplit son flex:1 (~278 px), 6 lignes (228 px) tiennent + petit
+   buffer pour 2 positions de plus avant scroll interne.
+   Trade-off : ~50 px d'espace vide entre dernière row et footer quand
+   peu de positions (acceptable, même pattern que TH avec 1-3 trades). */
 .dash-grid > [style*="grid-area: positions"] {
-  height: auto;
-  min-height: 204px;
-  max-height: 420px;
+  height: 420px;
 }
 .dash-grid > [style*="grid-area: history"] {
   height: 480px;
@@ -373,16 +370,26 @@
    footer 3 cells.
    ════════════════════════════════════════════════════════════════ */
 
+/* B3 — Profondeur héros DA : gradient overlay→surface, arête lumineuse,
+   inset highlight 8%, double drop-shadow. Cohérent avec les KPI héros. */
 .trading-chart {
-  background: var(--bg-elev-1);
-  border: 1px solid var(--qc-border-subtle);
-  border-radius: 4px;
+  background: linear-gradient(180deg,
+    var(--qc-bg-overlay) 0%,
+    var(--qc-bg-surface) 100%);
+  border: 1px solid var(--qc-border-default);
+  border-top-color: var(--qc-border-strong);
+  border-radius: var(--qc-radius);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent),
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    0 2px 6px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   font-family: var(--qc-font-mono);
-  /* Phase C.1.8 polish — hover border subtle (cohérence KPI cards). */
-  transition: border-color 120ms ease-out;
+  transition:
+    border-color 120ms ease-out,
+    box-shadow 120ms ease-out;
 }
 
 .trading-chart:hover {
@@ -390,7 +397,8 @@
 }
 
 .trading-chart__header {
-  height: 36px;
+  /* B3 — densification : 36→32 px pour gagner 4 px de canvas Recharts. */
+  height: 32px;
   padding: 0 14px;
   display: flex;
   align-items: center;
@@ -468,7 +476,8 @@
 }
 
 .trading-chart__subheader {
-  padding: 10px 14px;
+  /* B3 — densification : padding vertical 10→8 px (gain 4+4 = 8 px canvas). */
+  padding: 8px 14px;
   background: color-mix(in srgb, var(--qc-text-primary) 1.5%, transparent);
   border-bottom: 1px solid var(--qc-border-subtle);
   display: flex;
@@ -755,25 +764,41 @@
    Hauteur 520 px, fonts agrandis pour lisibilité 4K.
    ════════════════════════════════════════════════════════════════ */
 
+/* B4 — Profondeur héros DA cohérente avec .trading-chart (rangée 1
+   = 3 héros OLED côte-à-côte : Equity + Cumul + Cockpit). */
 .risk-matrix {
-  /* Phase C.2.6 : aligned with row 1 à 520 px (4K scale, était 480). */
   height: 520px;
-  background: var(--bg-elev-1);
-  border: 1px solid var(--qc-border-subtle);
-  border-radius: 4px;
+  background: linear-gradient(180deg,
+    var(--qc-bg-overlay) 0%,
+    var(--qc-bg-surface) 100%);
+  border: 1px solid var(--qc-border-default);
+  border-top-color: var(--qc-border-strong);
+  border-radius: var(--qc-radius);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent),
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    0 2px 6px rgba(0, 0, 0, 0.4);
   font-family: var(--qc-font-mono);
   font-size: 14px;
   line-height: 1.5;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition:
+    border-color 120ms ease-out,
+    box-shadow 120ms ease-out;
+}
+
+.risk-matrix:hover {
+  border-color: var(--qc-border-strong);
 }
 
 .risk-matrix__header {
   display: flex;
   align-items: stretch;
   background: color-mix(in srgb, var(--qc-bg-base) 60%, transparent);
-  height: 38px;
+  /* B4 — densification : 38→34 px pour faire de la place au strip Greeks. */
+  height: 34px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--qc-border-subtle);
 }
@@ -826,7 +851,8 @@
 }
 
 .risk-matrix__subheader {
-  padding: 10px 20px;
+  /* B4 — densification : padding vertical 10→8 px. */
+  padding: 8px 20px;
   background: color-mix(in srgb, var(--qc-text-primary) 2%, transparent);
   border-bottom: 1px solid var(--qc-border-subtle);
   color: var(--qc-text-tertiary);
@@ -967,7 +993,9 @@
 
 .risk-matrix__row {
   display: grid;
-  padding: 6px 18px;
+  /* B4.1 — padding vertical 6→4 px : récupère ~40 px sur 10 rows perf,
+     compense la perte de body causée par le strip Greeks B4. */
+  padding: 4px 18px;
   font-size: 14px;
   color: var(--qc-text-secondary);
   border-bottom: 1px solid color-mix(in srgb, var(--qc-text-primary) 4%, transparent);
@@ -990,7 +1018,8 @@
 }
 
 .risk-matrix__row--th {
-  padding: 6px 18px;
+  /* B4.1 — aligné avec .risk-matrix__row (6→4 px). */
+  padding: 4px 18px;
   background: color-mix(in srgb, var(--qc-text-primary) 2%, transparent);
   color: var(--qc-text-tertiary);
   font-size: 11px;
@@ -1401,7 +1430,8 @@
 }
 
 .risk-matrix__footer {
-  height: 28px;
+  /* B4 — densification : 28→24 px. */
+  height: 24px;
   background: color-mix(in srgb, var(--qc-bg-base) 60%, transparent);
   border-top: 1px solid var(--qc-border-subtle);
   padding: 0 18px;
@@ -1412,6 +1442,70 @@
   font-size: 12px;
   flex-shrink: 0;
   letter-spacing: 0.04em;
+}
+
+/* B4 — Strip Options Greeks permanent entre subheader et body.
+   5 cellules Σ Δ/Γ/Θ/ν + N options, séparées par border-right subtle.
+   Lit useGreeksAggregate via metrics.greeks (hissé au Dashboard). */
+.risk-matrix__greeks-strip {
+  display: flex;
+  align-items: stretch;
+  height: 50px;
+  background: color-mix(in srgb, var(--qc-accent) 4%, transparent);
+  border-bottom: 1px solid var(--qc-border-subtle);
+  flex-shrink: 0;
+}
+
+.risk-matrix__greek-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 14px;
+  border-right: 1px solid var(--qc-border-subtle);
+  min-width: 0;
+  gap: 2px;
+}
+
+.risk-matrix__greek-cell:last-child {
+  border-right: none;
+}
+
+.risk-matrix__greek-label {
+  font-family: var(--qc-font-sans);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--qc-text-tertiary);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.risk-matrix__greek-value {
+  font-family: var(--qc-font-mono);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums slashed-zero;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.risk-matrix__greek-value--profit { color: var(--qc-profit); }
+.risk-matrix__greek-value--loss { color: var(--qc-loss); }
+.risk-matrix__greek-value--mute { color: var(--qc-text-tertiary); }
+.risk-matrix__greek-value--neutral { color: var(--qc-text-primary); }
+
+.risk-matrix__greek-sub {
+  font-family: var(--qc-font-mono);
+  font-size: 10px;
+  color: var(--qc-text-tertiary);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .risk-matrix__footer-cmd-wrap {
@@ -1659,6 +1753,31 @@
   font-variant-numeric: tabular-nums slashed-zero;
 }
 
+/* B5.5 — widths colgroup 19 cols (somme = 100%). Pattern miroir
+   TradeHistory : sans ces widths explicites, table-layout: fixed
+   tombait sur l'auto-calc via thead, ce qui combiné au border-left
+   3px des tbody trs (rail tone B5) cassait le rendu et masquait
+   5/6 lignes. */
+.live-pos__col-ticker { width: 6%; }
+.live-pos__col-type { width: 5%; }
+.live-pos__col-str { width: 5%; }
+.live-pos__col-exp { width: 6%; }
+.live-pos__col-dte { width: 4%; }
+.live-pos__col-qty { width: 4%; }
+.live-pos__col-entry { width: 6%; }
+.live-pos__col-mark { width: 6%; }
+.live-pos__col-unrealdol { width: 6%; }
+.live-pos__col-unrealpct { width: 6%; }
+.live-pos__col-delta { width: 4%; }
+.live-pos__col-theta { width: 4%; }
+.live-pos__col-ivr { width: 7%; }
+.live-pos__col-edge { width: 4%; }
+.live-pos__col-ctier { width: 5%; }
+.live-pos__col-gate { width: 8%; }
+.live-pos__col-daysin { width: 4%; }
+.live-pos__col-spark { width: 6%; }
+.live-pos__col-alert { width: 4%; }
+
 .live-pos__table thead {
   position: sticky;
   top: 0;
@@ -1688,15 +1807,27 @@
      pour matcher la densité TradeHistory et donner plus d'air.
      Phase C.2.10-V3.2 : remplacé 36→32 pour matcher exactement la
      hauteur des rows TradeHistory (td height: 32px). Le 4 px diff
-     créait un dilatement vertical visible vs trade-history. */
+     créait un dilatement vertical visible vs trade-history.
+     B5 fix 3 : rail tone-coloré gauche (cohérence avec TH __tr--profit/loss). */
   height: 32px;
   border-bottom: 1px solid var(--qc-border-subtle);
+  border-left: 3px solid transparent;
   cursor: pointer;
-  transition: background 80ms ease-out;
+  transition:
+    background 80ms ease-out,
+    border-left-color 120ms ease;
 }
 
 .live-pos__row:last-child {
   border-bottom: none;
+}
+
+.live-pos__row--profit {
+  border-left-color: color-mix(in srgb, var(--qc-profit) 55%, transparent);
+}
+
+.live-pos__row--loss {
+  border-left-color: color-mix(in srgb, var(--qc-loss) 55%, transparent);
 }
 
 .live-pos__row:hover {
@@ -2945,29 +3076,59 @@
   height: 190px;
 }
 
+/* B2.1 — base : layout only, l'apparence est définie par les sélecteurs row-scoped. */
 .dash-kpi-card {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   height: 240px;
   padding: 16px 16px;
-  background: var(--bg-elev-1);
-  border: 1px solid var(--qc-border-subtle);
-  border-radius: 4px;
+  border-radius: var(--qc-radius);
   min-width: 0;
   position: relative;
   transition:
     border-color 120ms ease-out,
-    background-color 120ms ease-out;
+    background-color 120ms ease-out,
+    box-shadow 120ms ease-out;
 }
 
-.dash-kpi-card:hover {
+/* Cards SECONDAIRES — creusées (extrusion inversée) : fond void plus sombre que
+   le wrapper, ombre interne HAUT + reflet bas intérieur, ZÉRO drop-shadow externe. */
+.dash-kpi-cards__row--secondary .dash-kpi-card {
+  background: var(--qc-bg-void);
+  border: 1px solid var(--qc-border-subtle);
+  border-radius: var(--qc-radius);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.5),
+    inset 0 -1px 0 color-mix(in srgb, #fff 3%, transparent);
+}
+
+.dash-kpi-cards__row--secondary .dash-kpi-card:hover {
+  background: color-mix(in srgb, var(--qc-bg-void) 92%, #fff);
+  border-color: var(--qc-border-default);
+}
+
+/* Cards HÉROS — flottantes, captent la lumière par l'arête supérieure (OLED). */
+.dash-kpi-cards__row--hero .dash-kpi-card {
+  background: linear-gradient(180deg,
+    var(--qc-bg-overlay) 0%,
+    var(--qc-bg-surface) 100%);
+  border: 1px solid var(--qc-border-default);
+  border-top-color: var(--qc-border-strong);
+  border-left: 3px solid var(--qc-accent);
+  border-radius: var(--qc-radius);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent),
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.dash-kpi-cards__row--hero .dash-kpi-card:hover {
   border-color: var(--qc-border-strong);
 }
 
 .dash-kpi-card--hero {
   padding: 16px 20px;
-  border-left: 3px solid var(--qc-accent);
 }
 
 /* ── Zone 1 : top (label + indicator droite) ──────────────────── */
@@ -2988,9 +3149,10 @@
 }
 
 .dash-kpi-card__label {
-  font-size: 11px;
+  font-family: var(--qc-font-sans);
+  font-size: var(--qc-fs-label, 11px);
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--qc-text-secondary);
   white-space: nowrap;
@@ -3155,7 +3317,7 @@
 
 .dash-kpi-card__value {
   font-family: var(--qc-font-mono);
-  font-size: 30px;
+  font-size: var(--qc-fs-xl, 20px);
   font-weight: 500;
   font-variant-numeric: tabular-nums slashed-zero;
   line-height: 1;
@@ -3167,7 +3329,7 @@
 }
 
 .dash-kpi-card--hero .dash-kpi-card__value {
-  font-size: 44px;
+  font-size: var(--qc-fs-hero, 40px);
   letter-spacing: -0.01em;
 }
 
@@ -3368,8 +3530,8 @@
 }
 
 .dash-kpi-card__cell-label {
-  font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-family: var(--qc-font-sans);
+  font-size: var(--qc-fs-micro, 10px);
   font-weight: 500;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.1em;
@@ -3414,7 +3576,7 @@
 
 .dash-kpi-card--hero .dash-kpi-card__hero-mid {
   display: grid;
-  grid-template-columns: 0.95fr 1.3fr;
+  grid-template-columns: 0.8fr 1.5fr;
   gap: 16px;
   align-items: center;
   flex: 1;
@@ -3433,7 +3595,7 @@
 }
 
 .dash-kpi-card__hero-spark {
-  height: 100px;
+  height: 130px;
   width: 100%;
   min-width: 0;
   position: relative;
@@ -3441,7 +3603,52 @@
 
 .dash-kpi-card__hero-spark .sparkline,
 .dash-kpi-card__hero-spark .sparkline-wrap {
-  height: 100px;
+  height: 130px;
+}
+
+/* B2.3 — Mini-stats inline sous le pavé value/CHF/delta des héros.
+   3 stats max (label haut, valeur en dessous), Geist Mono, tabular-nums. */
+.dash-kpi-card__micro-stats {
+  display: flex;
+  gap: 14px;
+  margin-top: 12px;
+  font-family: var(--qc-font-mono);
+}
+
+.dash-kpi-card__micro-stat {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dash-kpi-card__micro-stat-label {
+  font-family: var(--qc-font-sans);
+  font-size: var(--qc-fs-micro, 10px);
+  font-weight: 500;
+  color: var(--qc-text-tertiary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.dash-kpi-card__micro-stat-value {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums slashed-zero;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.dash-kpi-card__micro-stat-value--profit { color: var(--qc-profit); }
+.dash-kpi-card__micro-stat-value--loss { color: var(--qc-loss); }
+.dash-kpi-card__micro-stat-value--accent { color: var(--qc-accent); }
+.dash-kpi-card__micro-stat-value--neutral { color: var(--qc-text-primary); }
+.dash-kpi-card__micro-stat-value--mute { color: var(--qc-text-tertiary); }
+
+/* Footer héros : valeurs un peu plus grandes pour densifier visuellement. */
+.dash-kpi-card--hero .dash-kpi-card__cell-value {
+  font-size: 15px;
 }
 
 /* ── Win Rate card mid-zone : value+W·L à gauche, donut à droite */
@@ -3893,6 +4100,17 @@
   color: var(--qc-accent);
 }
 
+/* B5 fix 4 — badges IN PROFIT / IN LOSS (miroir TH WINS/LOSSES). */
+.live-pos__ctx-badge--wins {
+  background: color-mix(in srgb, var(--qc-profit) 8%, transparent);
+  color: var(--qc-profit);
+}
+
+.live-pos__ctx-badge--losses {
+  background: color-mix(in srgb, var(--qc-loss) 8%, transparent);
+  color: var(--qc-loss);
+}
+
 .live-pos__spark-placeholder {
   display: inline-flex;
   align-items: center;
@@ -3957,10 +4175,17 @@
   padding: 0 14px;
 }
 
+/* B5 fix 2 — header LP voilé (cohérence visuelle avec TH).
+   Scopé sur .live-pos uniquement, ne touche pas .module global. */
+.live-pos > .module-header {
+  background: color-mix(in srgb, var(--qc-bg-base) 50%, transparent);
+}
+
+/* B5 fix 1 — titre LP au même niveau que TH (15 px / 0.16em). */
 .live-pos > .module-header .module-header__title,
 .sniper-gates > .module-header .module-header__title {
-  font-size: 13px;
-  letter-spacing: 0.14em;
+  font-size: 15px;
+  letter-spacing: 0.16em;
 }
 
 .live-pos > .module-header .module-header__hint,
@@ -3988,10 +4213,31 @@
    le sub-header/footer héritent d'Inter Tight UI du body, qui
    rend les valeurs visuellement plus larges et fait overflow
    les 56 px du footer (line-box plus haute en UI vs mono). */
+/* B5 — profondeur DA (ombre atténuée 0 6px 24px car 2 tables + 5 surfaces
+   au-dessus = saturation potentielle des ombres dans le wrapper).
+   Surcharge .module (line 109) qui donne bg/border/radius plats à LP par
+   défaut. NE PAS toucher .module (partagé par Watchlist/Calendar/IVR/Heat/Alert). */
 .live-pos {
   display: flex;
   flex-direction: column;
   font-family: var(--qc-font-mono);
+  background: linear-gradient(180deg,
+    var(--qc-bg-overlay) 0%,
+    var(--qc-bg-surface) 100%);
+  border: 1px solid var(--qc-border-default);
+  border-top-color: var(--qc-border-strong);
+  border-radius: var(--qc-radius);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent),
+    0 6px 24px rgba(0, 0, 0, 0.6),
+    0 2px 6px rgba(0, 0, 0, 0.4);
+  transition:
+    border-color 120ms ease-out,
+    box-shadow 120ms ease-out;
+}
+
+.live-pos:hover {
+  border-color: var(--qc-border-strong);
 }
 
 /* Thead sticky blur — miroir de .trade-history__table thead.
@@ -4184,15 +4430,30 @@
        de Row 4 (historique)
    ════════════════════════════════════════════════════════════════ */
 
+/* B5 — profondeur DA cohérente avec .live-pos (ombre atténuée 0 6px 24px). */
 .trade-history {
   height: 480px;
-  background: var(--bg-elev-1);
-  border: 1px solid var(--qc-border-subtle);
-  border-radius: 4px;
+  background: linear-gradient(180deg,
+    var(--qc-bg-overlay) 0%,
+    var(--qc-bg-surface) 100%);
+  border: 1px solid var(--qc-border-default);
+  border-top-color: var(--qc-border-strong);
+  border-radius: var(--qc-radius);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent),
+    0 6px 24px rgba(0, 0, 0, 0.6),
+    0 2px 6px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   font-family: var(--qc-font-mono);
+  transition:
+    border-color 120ms ease-out,
+    box-shadow 120ms ease-out;
+}
+
+.trade-history:hover {
+  border-color: var(--qc-border-strong);
 }
 
 /* Phase C.2.6.7 polish — gap visuel discret entre la zone active

@@ -85,7 +85,12 @@ function buildRow(pos, context) {
   });
 
   return {
-    id: pos.id,
+    // B5.3 — id défensif : si pos.id manque (positions importées hors
+    // migration v3→v4), génère un id déterministe basé sur les champs
+    // identifiants. Empêche les clés React dupliquées dans LivePositions.
+    id:
+      pos.id ||
+      `${pos.tk || 'unknown'}-${pos.ex || ''}-${pos.st || ''}-${pos.di || ''}-${pos.ty || ''}`,
     ticker: pos.tk,
     type: isStock ? 'STK' : pos.ty,
     dir: pos.dir,
