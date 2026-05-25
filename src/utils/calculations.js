@@ -323,26 +323,41 @@ export function calculatePortfolioMetrics(state) {
     .sort((a, b) => (a.do || '').localeCompare(b.do || ''));
   const pnls = sortedTrades.map((t) => tradePnlUsd(t, liveRate));
 
-  // ── A2.2 — initialCapital resolution (nullable, FOUR sources) ──
+  // ── B4 / A2.2 — initialCapital resolution (nullable, FIVE sources) ──
   // Priority order :
-  //   (1) settings.cashReport — IBKR Flex Query "Cash Report" section.
+  //   (1) settings.initialCapitalChf — manuel saisi par l'utilisateur en
+  //       CHF (sa devise). Converti en USD au taux courant. PRIME sur
+  //       l'auto-dérivation : décision actée — Rafael dépose 1500 CHF/mois,
+  //       un capital auto-dérivé gonflerait avec les apports et empêcherait
+  //       de distinguer l'edge de trading de l'effort d'épargne. Le TWR
+  //       (timeline+computeTWR) reste indépendant : ce manuel n'altère que
+  //       le numérateur/dénominateur des % de return et le gate de
+  //       significativité, jamais la chaîne TWR (cf. B4-AUDIT).
+  //   (2) settings.cashReport — IBKR Flex Query "Cash Report" section.
   //       Authoritative because it includes withdrawals netted out from
   //       deposits (the -200 in Tracker_TEST-2.csv that the per-transaction
   //       Cash Transactions list misses if the export omits it). Per-currency
   //       startingCash + deposits + withdrawals when available, else fall
   //       back to the BaseCurrency aggregate using `cashReport.baseCurrency`.
-  //   (2) cashFlows — sum of per-transaction funding entries (dep_chf,
+  //   (3) cashFlows — sum of per-transaction funding entries (dep_chf,
   //       wit_chf, dep_usd, wit_usd, plus legacy adj_usd / fee_usd).
-  //   (3) settings.initialCapitalUsd — manual user-supplied override (no UI
-  //       yet, set via localStorage until A3 surfaces a Settings page).
-  //   (4) null — "capital unknown" state. CAGR / Sharpe / Sortino / Vol
+  //   (4) settings.initialCapitalUsd — legacy USD-direct manual override
+  //       (pre-B4 scaffolding ; kept for back-compat with any value set via
+  //       localStorage avant que la saisie CHF arrive).
+  //   (5) null — "capital unknown" state. CAGR / Sharpe / Sortino / Vol
   //       all collapse to "—" honestly.
+  const manualInitialChf = toFloat(state.settings?.initialCapitalChf);
+  const manualInitialUsd =
+    manualInitialChf > 0 && liveRate > 0 ? manualInitialChf / liveRate : null;
   const cashReportInitialUsd = deriveInitialFromCashReport(state.settings?.cashReport, liveRate);
   const depositedUsdEq = totalFundedUsd + (liveRate > 0 ? totalDepositedChf / liveRate : 0);
   const settingsInitialUsd = toFloat(state.settings?.initialCapitalUsd);
   let initialCapital;
   let initialCapitalSource;
-  if (cashReportInitialUsd != null && cashReportInitialUsd > 0) {
+  if (manualInitialUsd != null && manualInitialUsd > 0) {
+    initialCapital = manualInitialUsd;
+    initialCapitalSource = 'manual';
+  } else if (cashReportInitialUsd != null && cashReportInitialUsd > 0) {
     initialCapital = cashReportInitialUsd;
     initialCapitalSource = 'cashReport';
   } else if (depositedUsdEq > 0) {

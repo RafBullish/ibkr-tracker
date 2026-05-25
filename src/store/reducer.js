@@ -22,6 +22,17 @@ export function applyAction(state, action) {
     case 'SET_FX_SOURCE':
       return { ...state, settings: { ...state.settings, fxSource: action.payload } };
 
+    case 'SET_INITIAL_CAPITAL': {
+      // B4 — capital de référence manuel en CHF. Payload null/0/NaN
+      // efface la saisie (retour au fallback auto). Stocké brut, la
+      // conversion CHF→USD se fait dans calculatePortfolioMetrics avec
+      // le liveRate courant.
+      const raw = action.payload;
+      const value =
+        typeof raw === 'number' && Number.isFinite(raw) && raw > 0 ? raw : null;
+      return { ...state, settings: { ...state.settings, initialCapitalChf: value } };
+    }
+
     case 'SET_FX_STATE': {
       // Atomic post-fetch update — rate + timestamp + source in one dispatch
       // so consumers don't see an intermediate state with stale fields.
