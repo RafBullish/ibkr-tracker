@@ -140,26 +140,37 @@ export default function Greeks() {
     [openPositions, greeksMap]
   );
 
+  // B2-PATCH — unit alignment with aggregateGreeks (cockpit) :
+  //   - theta = thetaBSM (per-share, per-YEAR) × qty × mul / 365   → USD/day
+  //   - vega  = vegaBSM  (per-share, per-1.00σ)  × qty × mul / 100 → USD per 1 %-IV
+  //   - delta / gamma are per-share already and scale naturally × qty × mul
+  // Sign-aware via dir (Short positions flip θ and ν signs — mirrors the
+  // canonical aggregateGreeks convention). PREVIOUSLY this table showed
+  // theta in per-YEAR units (~-7993 instead of -22), inconsistent with the
+  // cockpit Σ Theta which is in per-DAY units.
   const perPositionRows = useMemo(() => {
     return optionPositions.map((p) => {
       const g = greeksMap?.get(p.id) || p.greeks || {};
       const qty = toFloat(p.ct);
       const mul = ensurePositive(p.mu);
+      const dirSign = p.dir === 'Short' ? -1 : 1;
       const delta = g.d ?? g.delta ?? 0;
       const gamma = g.g ?? g.gamma ?? 0;
       const theta = g.t ?? g.theta ?? 0;
       const vega = g.v ?? g.vega ?? 0;
       const iv = g.iv ?? p.iv ?? null;
       const ivRank = p.ivRank ?? null;
-      const exposure = toFloat(p.pc) * qty * mul * (p.dir === 'Short' ? -1 : 1);
+      const exposure = toFloat(p.pc) * qty * mul * dirSign;
+      // Stocks (no g, no iv) keep null fields per existing UI convention.
+      const isAvailable = g && (g.delta != null || g.theta != null);
       return {
         id: p.id,
         ticker: p.tk,
         type: p.ty || 'OPT',
-        delta: delta * qty * mul,
-        gamma: gamma * qty * mul,
-        theta: theta * qty * mul,
-        vega: vega * qty * mul,
+        delta: isAvailable ? delta * qty * mul * dirSign : null,
+        gamma: isAvailable ? gamma * qty * mul * dirSign : null,
+        theta: isAvailable ? (theta / 365) * qty * mul * dirSign : null,
+        vega: isAvailable ? (vega / 100) * qty * mul * dirSign : null,
         iv,
         ivRank,
         exposure,
