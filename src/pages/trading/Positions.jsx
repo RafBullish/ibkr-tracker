@@ -485,17 +485,15 @@ export default function Positions() {
   // The legacy summing here was simultaneously sign-agnostic AND in
   // per-year units (Theta) while the tooltip claimed "quotidienne".
   // Both bugs fixed at the consumer site.
+  // Passe finale — `uPnlUsd` retiré du retour (calculé jamais lu).
   const summary = useMemo(() => {
-    let uPnlUsd = 0;
     let totalCost = 0;
     let totalMaxLoss = 0;
-    positions.forEach(({ r, costBasis, maxLoss }) => {
-      uPnlUsd += r.unrealizedPnlUsd;
+    positions.forEach(({ costBasis, maxLoss }) => {
       totalCost += costBasis;
       totalMaxLoss += maxLoss;
     });
     return {
-      uPnlUsd,
       count: positions.length,
       totalMaxLoss,
       totalCost,

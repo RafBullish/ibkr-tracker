@@ -753,18 +753,28 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
   // (D) TIER badge — reste hardcodé "TIER A · E0×C1" (TODO Phase C.3
   // quand `settings.activeSniperTier` sera exposé par le store).
 
-  // DD curve 60j (underwater %).
+  // ── Passe finale — underwater % sur realEquity ────────────────
+  // 7e (et dernière) implémentation drawdown migrée vers la base
+  // realEquity (init + cumPnL), cohérente avec A3b. Source de vérité :
+  // m.realEquityPoints (de A3b equityTimeline). Math équivalent au
+  // calcul précédent quand `initialCapital` est connu, mais signature
+  // simplifiée (peak ET denom = realEquity_peak, plus de mélange
+  // cumPnL/init+peak). Fallback sur equityHistory cumPnL si A2.1 init
+  // unknown — dégradé honnête, pas de NaN.
   const ddCurve60 = useMemo(() => {
-    if (equityHistory.length === 0) return [];
-    const slice = equityHistory.slice(-60);
+    const source =
+      Array.isArray(m.realEquityPoints) && m.realEquityPoints.length > 0
+        ? m.realEquityPoints
+        : equityHistory;
+    if (!source || source.length === 0) return [];
+    const slice = source.slice(-60);
     let peak = -Infinity;
     return slice.map((p) => {
       if (p.equity > peak) peak = p.equity;
-      const base = initialCapital + peak;
-      const underwater = base > 0 ? ((p.equity - peak) / base) * 100 : 0;
+      const underwater = peak > 0 ? ((p.equity - peak) / peak) * 100 : 0;
       return { date: p.date, value: underwater };
     });
-  }, [equityHistory, initialCapital]);
+  }, [m.realEquityPoints, equityHistory]);
 
   const ddCurvePeakPct = useMemo(() => {
     if (ddCurve60.length === 0) return null;

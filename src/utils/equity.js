@@ -12,6 +12,12 @@
 //  peut servir d'entrée à une autre. Aucune mutation, aucune
 //  dépendance React/store. Testées en isolation.
 //
+//  PASSE FINALE — le champ `.equity` est attendu en base REALEQUITY
+//  (initialCapital + cumPnL, A3b convention), cohérent avec toutes les
+//  implémentations drawdown (Current / YTD / All-Time / underwater).
+//  Cas A2.1 init unknown → fallback cumPnL pur côté caller, le helper
+//  reste agnostique à la base passée.
+//
 //  Shape canonique du point : { date: 'YYYY-MM-DD', equity: number,
 //                               ...annotations ajoutées par les utils }.
 // ═══════════════════════════════════════════════════════════════
