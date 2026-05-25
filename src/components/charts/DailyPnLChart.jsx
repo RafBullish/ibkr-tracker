@@ -25,7 +25,12 @@
 
 import { Suspense, lazy, useMemo, useState } from 'react';
 import useLiveTheme from '../../hooks/useLiveTheme';
-import { TIMEFRAMES, computeDailyPnl, filterByTimeframe } from '../../utils/equity';
+import {
+  TIMEFRAMES,
+  computeDailyPnl,
+  filterByTimeframe,
+  aggregateDailyPnlByDate,
+} from '../../utils/equity';
 import { tradePnlUsd } from '../../utils/calculations';
 import { useClosedTrades, useSettings } from '../../store/useStore';
 
@@ -113,15 +118,22 @@ export default function DailyPnLChart({
   const closedTrades = closedTradesProp ?? storeClosedTrades;
   const liveRate = liveRateProp ?? storeSettings?.liveRate ?? 1;
 
-  // Pipeline merge + filter
+  // B5-1 — agréger par DATE (1 point par jour) AVANT de cumuler.
+  // Bug pré-B5 : `data` (=equityHistory) contient UN POINT PAR TRADE ;
+  // si N trades clôturent le même jour, `dpMap.get(p.date)` collait le
+  // dailyPnl agrégé du jour à chacun des N points → cumul gonflé d'un
+  // facteur N (mesuré : ratio 2.029 sur fixture 100 trades / ~2 par jour).
+  //
+  // Source canonique = `dailyPnL` (useDailyPnL.js — déjà agrégé par date).
+  // Le fallback équityHistory passe par aggregateDailyPnlByDate pour
+  // sommer les delta intra-jour et rester correct quand `dailyPnL` absent.
   const mergedData = useMemo(() => {
+    if (Array.isArray(dailyPnL) && dailyPnL.length) {
+      return dailyPnL.map((d) => ({ date: d.date, dailyPnl: d.dailyPnl }));
+    }
     const base = Array.isArray(data) ? data : [];
     if (base.length === 0) return [];
-    if (Array.isArray(dailyPnL) && dailyPnL.length) {
-      const dpMap = new Map(dailyPnL.map((d) => [d.date, d.dailyPnl]));
-      return base.map((p) => ({ ...p, dailyPnl: dpMap.get(p.date) ?? 0 }));
-    }
-    return computeDailyPnl(base);
+    return aggregateDailyPnlByDate(computeDailyPnl(base));
   }, [data, dailyPnL]);
 
   const filtered = useMemo(() => filterByTimeframe(mergedData, range), [mergedData, range]);

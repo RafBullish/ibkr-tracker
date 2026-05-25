@@ -63,6 +63,37 @@ export function computeDailyPnl(points) {
 }
 
 /**
+ * B5-1 — agrège une série [{date, dailyPnl}, ...] en SOMMANT les
+ * entrées qui partagent la même date. Indispensable quand la source
+ * est une equityCurve point-par-trade (plusieurs entries pour les
+ * jours avec N trades) : sans cette dé-duplication, un cumul running
+ * direct compte N×dailyPnl pour ces jours et gonfle le total d'un
+ * facteur ≈ trades-par-jour-moyen.
+ *
+ * Entrée tolérante : ignore les points sans `date`, traite `dailyPnl`
+ * absent comme 0. Sortie triée ASC par date, dailyPnl arrondi à .01
+ * pour éviter les drifts d'accumulation flottante.
+ *
+ * @param {Array<{date: string, dailyPnl?: number}>} series
+ * @returns {Array<{date: string, dailyPnl: number}>}
+ */
+export function aggregateDailyPnlByDate(series) {
+  if (!Array.isArray(series) || series.length === 0) return [];
+  const byDate = new Map();
+  for (const p of series) {
+    if (!p || !p.date) continue;
+    const v = Number.isFinite(p.dailyPnl) ? p.dailyPnl : 0;
+    const existing = byDate.get(p.date);
+    if (existing) existing.dailyPnl += v;
+    else byDate.set(p.date, { date: p.date, dailyPnl: v });
+  }
+  for (const entry of byDate.values()) {
+    entry.dailyPnl = Number(entry.dailyPnl.toFixed(2));
+  }
+  return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/**
  * Coupe la série au timeframe demandé. Les points sont supposés
  * triés ASC par date.
  *
