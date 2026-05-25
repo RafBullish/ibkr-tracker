@@ -119,7 +119,7 @@ export default function Dashboard() {
 
   // Merge portfolioMetrics (sharpe/sortino/sqn/cagr/recovery/rMultiples/
   // streaks/breakEven/fees/fxImpact/monthly) + riskMatrixData
-  // (currentDDPct/maxDDYtdPct/recoveryPctValue/vol30dPct) + equityHistory
+  // (currentDDPct/maxDDYtdPct/recoveryPctValue/volAnnPct) + equityHistory
   // + greeks (Σ Δ/Γ/Θ/ν pour le strip Options Greeks B4)
   // pour que RiskMatrix puisse tout dériver via un seul objet `metrics`.
   const riskMetrics = useMemo(

@@ -274,18 +274,24 @@ function WinRateGauge({
 }) {
   const r = 27;
   const C = 2 * Math.PI * r;
-  const wrFraction =
-    winRate != null && Number.isFinite(winRate) ? Math.max(0, Math.min(100, winRate)) / 100 : 0;
+  // A2b — donut painted only when winRate has passed the decisive ≥ 10
+  // gate (winRate is null otherwise). Under the gate the centre shows
+  // the raw fraction "x/y" with a "N faible" hint, never a green-toned %.
+  const isGated = winRate == null || !Number.isFinite(winRate);
+  const wrFraction = !isGated ? Math.max(0, Math.min(100, winRate)) / 100 : 0;
   const winPortion = C * wrFraction;
   const total = (winCount || 0) + (lossCount || 0);
   const winRatio = total > 0 ? (winCount / total) * 100 : 0;
   const lossRatio = total > 0 ? (lossCount / total) * 100 : 0;
+  const donutLabel = !isGated
+    ? `${winRate.toFixed(1)}%`
+    : total > 0
+      ? `${winCount}/${total}`
+      : '—';
   const pfLabel =
-    profitFactor === Infinity
-      ? '∞'
-      : Number.isFinite(profitFactor)
-        ? profitFactor.toFixed(2)
-        : '—';
+    profitFactor != null && Number.isFinite(profitFactor)
+      ? profitFactor.toFixed(2)
+      : '—';
   return (
     <div className="risk-matrix__winrate-zone">
       <svg
@@ -294,7 +300,13 @@ function WinRateGauge({
         height="72"
         viewBox="0 0 72 72"
         role="img"
-        aria-label={`Win rate ${Number.isFinite(winRate) ? `${winRate.toFixed(1)} pourcent` : 'inconnu'}`}
+        aria-label={
+          !isGated
+            ? `Win rate ${winRate.toFixed(1)} pourcent`
+            : total > 0
+              ? `Win rate ${winCount} sur ${total}, échantillon faible`
+              : 'Win rate inconnu'
+        }
       >
         <circle className="risk-matrix__winrate-donut-bg" cx="36" cy="36" r={r} fill="none" strokeWidth="8" />
         <circle
@@ -312,7 +324,7 @@ function WinRateGauge({
           WIN
         </text>
         <text className="risk-matrix__winrate-donut-value" x="36" y="48" textAnchor="middle">
-          {Number.isFinite(winRate) ? `${winRate.toFixed(1)}%` : '—'}
+          {donutLabel}
         </text>
       </svg>
       <div className="risk-matrix__winrate-stats">
@@ -549,16 +561,18 @@ function GreeksStrip({ greeks }) {
 export default function RiskMatrix({ metrics, area = 'risk' }) {
   const m = metrics || {};
   const equityHistory = Array.isArray(m.equityHistory) ? m.equityHistory : [];
-  const liveRate = m.liveRate || 1;
+  // A3a — `m.liveRate` is null when fxValid is false (FX guard).
+  // tradePnlUsd is USD-pure (respects stored t.pnl first), so propagating
+  // null downstream is safe — USD calculations are FX-independent.
+  const liveRate = m.liveRate;
   const closedTrades = useClosedTrades();
   const tradeCount = m.tradeCount ?? 0;
 
-  // Initial Capital (USD-équivalent), formule identique à calculations.js:318.
-  const initialCapital = useMemo(() => {
-    const fundedUsd = m.totalFundedUsd ?? 0;
-    const depositedChf = m.totalDepositedChf ?? 0;
-    return fundedUsd + (liveRate > 0 ? depositedChf / liveRate : 0);
-  }, [m.totalFundedUsd, m.totalDepositedChf, liveRate]);
+  // A2.1 — read the canonical resolution from calculatePortfolioMetrics
+  // instead of re-deriving from totalFundedUsd + totalDepositedChf
+  // (which collapses to 0 when the Flex CSV omits Cash Transactions).
+  // `m.initialCapital` is nullable : null = "capital unknown" state.
+  const initialCapital = m.initialCapital ?? null;
 
   // YTD Active : jours depuis le premier trade YTD.
   const ytdDaysActive = useMemo(() => {
@@ -612,19 +626,15 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
     return { ddUsd, daysSincePeak, peakDate, recoveryPct, peakVal };
   }, [equityHistory, initialCapital]);
 
-  // CAGR dérivé inline.
-  const cagr = useMemo(() => {
-    if (equityHistory.length === 0 || initialCapital <= 0) return null;
-    const first = equityHistory[0].date;
-    const last = equityHistory[equityHistory.length - 1].date;
-    if (!first || !last) return null;
-    const ms = new Date(last).getTime() - new Date(first).getTime();
-    const years = ms / (86_400_000 * 365.25);
-    if (years <= 0) return null;
-    const finalEquity = initialCapital + (m.realizedPnlUsd ?? 0);
-    if (finalEquity <= 0) return null;
-    return (Math.pow(finalEquity / initialCapital, 1 / years) - 1) * 100;
-  }, [equityHistory, initialCapital, m.realizedPnlUsd]);
+  // A1 refactor : CAGR is read from the canonical single-source value
+  // emitted by `calculatePortfolioMetrics` (m.cagr) instead of being
+  // recomputed inline. Same formula, same inputs (closedTrades-based
+  // date range + USD-equivalent initialCapital + realizedPnlUsd), so
+  // the value is identical to the previous inline derivation modulo
+  // the equityHistory-vs-sortedTrades date source — both arrays derive
+  // from the same closedTrades via `computeEquityCurve`, so the first
+  // and last dates match.
+  const cagr = m.cagr ?? null;
 
   // Streak Current P&L sum.
   const streakPnlSum = useMemo(() => {
@@ -802,11 +812,13 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
     return { tone: 'loss', label: 'EDGE− ALERTE' };
   }, [m.profitFactor, m.winRate]);
 
-  // Vol 30D tone (lower-is-better).
-  const vol30Tone = useMemo(() => {
-    if (m.vol30dPct == null || !Number.isFinite(m.vol30dPct)) return 'mute';
-    return m.vol30dPct > 20 ? 'amber' : 'profit';
-  }, [m.vol30dPct]);
+  // Vol (ann.) tone (lower-is-better). A2a — field renamed from
+  // `vol30dPct` to `volAnnPct` (the 30-day window approach is retired;
+  // the canonical primitive uses all-history returns + obs/years gate).
+  const volTone = useMemo(() => {
+    if (m.volAnnPct == null || !Number.isFinite(m.volAnnPct)) return 'mute';
+    return m.volAnnPct > 20 ? 'amber' : 'profit';
+  }, [m.volAnnPct]);
 
   // Updated timestamp.
   const updatedStr = new Date().toLocaleString('fr-CH', {
@@ -823,7 +835,8 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
   const calmarDelta = deltaVsBench(m.calmarRatio, 3.0, true);
   const sqnDelta = deltaVsBench(m.sqn, 1.6, true);
   const cagrDelta = deltaVsBench(cagr, 15, true);
-  const vol30Delta = deltaVsBench(m.vol30dPct, 20, false);
+  const twrDelta = deltaVsBench(m.twr, 15, true);
+  const volDelta = deltaVsBench(m.volAnnPct, 20, false);
   const recoveryDelta = deltaVsBench(m.recoveryFactor, 3.0, true);
 
   const pfEdge =
@@ -945,8 +958,26 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             deltaTone={sqnDelta.tone}
             gauge={<MetricGauge value={m.sqn} bench={1.6} mode="higher-is-better" />}
           />
+          {/* A3b — TWR (time-weighted return) — neutralises the timing
+              of deposits, the canonical "trading performance" KPI.
+              Label switches "TWR (ann.)" / "TWR Cumulé" by m.twrMode.
+              Bench 15 % aligns with the CAGR target — same scale. */}
           <RowPerf
-            label="CAGR"
+            label={m.twrMode === 'cumulative' ? 'TWR Cumulé' : 'TWR (ann.)'}
+            value={fmtPct(m.twr)}
+            valueTone="value"
+            bench="15.0%"
+            delta={twrDelta.text}
+            deltaTone={twrDelta.tone}
+            gauge={<MetricGauge value={m.twr} bench={15} mode="higher-is-better" />}
+          />
+          {/* A2.2 — label switches to "Cumulé" when years < 1 (no
+              annualisation applied). Bench stays at 15 % to give a
+              comparable reference target in both modes. CAGR is the
+              SIMPLE return on initial capital (mechanically rewards
+              big later deposits) — TWR is the timing-neutral truth. */}
+          <RowPerf
+            label={m.cagrMode === 'cumulative' ? 'Cumulé' : 'CAGR'}
             value={fmtPct(cagr)}
             valueTone="value"
             bench="15.0%"
@@ -955,13 +986,13 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             gauge={<MetricGauge value={cagr} bench={15} mode="higher-is-better" />}
           />
           <RowPerf
-            label="Vol 30D ann."
-            value={fmtPct(m.vol30dPct)}
-            valueTone={vol30Tone}
+            label="Vol (ann.)"
+            value={fmtPct(m.volAnnPct)}
+            valueTone={volTone}
             bench="20.0%"
-            delta={vol30Delta.text}
-            deltaTone={vol30Delta.tone}
-            gauge={<MetricGauge value={m.vol30dPct} bench={20} mode="lower-is-better" />}
+            delta={volDelta.text}
+            deltaTone={volDelta.tone}
+            gauge={<MetricGauge value={m.volAnnPct} bench={20} mode="lower-is-better" />}
           />
           <RowPerf
             label="Recovery Factor"

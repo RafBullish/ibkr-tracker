@@ -509,13 +509,19 @@ export default function DashboardKPICards() {
   const unrealStats = useOpenPositionsStats(openPositions, liveRate || 1);
   const closedExtremes = useClosedExtremes(closedTrades, liveRate || 1);
 
-  // Hero NLV série — ALL → toute la série, sinon slice(-days).
+  // ─── A3b — Hero NLV série sourced from realEquity (init + cumPnL) ──
+  // Prior versions sliced `equityHistory` which is cumPnL-only ⇒ the
+  // hero pill % was computed on a denominator that started near zero on
+  // the first trade. The series now reads `metrics.realEquityPoints`
+  // (the A3b canonical timeline) so both the visual line and the % pill
+  // anchor on the REAL portfolio equity, not on the bare cumulative P&L.
   const nlvSeries = useMemo(() => {
-    if (!equityHistory || equityHistory.length === 0) return [];
-    const slice =
-      rangeConf.days == null ? equityHistory : equityHistory.slice(-rangeConf.days);
+    const real = metrics?.realEquityPoints;
+    const base = Array.isArray(real) && real.length > 0 ? real : equityHistory;
+    if (!base || base.length === 0) return [];
+    const slice = rangeConf.days == null ? base : base.slice(-rangeConf.days);
     return slice.map((p) => ({ date: p.date, value: p.equity }));
-  }, [equityHistory, rangeConf.days]);
+  }, [metrics, equityHistory, rangeConf.days]);
 
   const dayPnlSeries = useMemo(() => {
     if (!dailyPnL || dailyPnL.length === 0) return [];
@@ -551,7 +557,15 @@ export default function DashboardKPICards() {
   const exposureChfLine =
     fxOk && exposureUsd != null ? fmtChfLine(exposureUsd * liveRate) : null;
 
-  // ─── NLV range delta + HIGH / LOW / PEAK / ALL-TIME ─────────
+  // ─── A3b — NLV range delta (REAL equity growth, gated denominator) ──
+  // Three distinct % badges across the app now have CLEAR semantics :
+  //   - this pill (NLV hero) : growth of REAL equity (init + cumPnL)
+  //     across the selected window. Guarded by MIN_CAPITAL_REF_USD (500)
+  //     on the denominator to refuse the "tiny start ⇒ huge %" trap.
+  //   - REALIZED hero pill   : realised P&L ÷ initialCapital (cumulative
+  //     return on capital, A2b). Not annualised.
+  //   - TWR row (RiskMatrix) : time-weighted return, neutralises the
+  //     timing of deposits. Pure trading performance.
   const rangeDeltaUsd = useMemo(() => {
     if (nlvSeries.length < 2) return null;
     return nlvSeries[nlvSeries.length - 1].value - nlvSeries[0].value;
@@ -559,7 +573,12 @@ export default function DashboardKPICards() {
   const rangeDeltaPct = useMemo(() => {
     if (nlvSeries.length < 2) return null;
     const start = nlvSeries[0].value;
-    if (!start) return null;
+    // Guard against a denominator below MIN_CAPITAL_REF_USD (500) — the
+    // very first trade often happens before significant capital was
+    // deployed and the % would balloon otherwise. Honest "—" instead.
+    if (typeof start !== 'number' || !Number.isFinite(start) || start < 500) {
+      return null;
+    }
     return (rangeDeltaUsd / start) * 100;
   }, [nlvSeries, rangeDeltaUsd]);
 
@@ -628,25 +647,23 @@ export default function DashboardKPICards() {
   const tiedUpUsd =
     Number.isFinite(nlvUsd) && Number.isFinite(availableUsd) ? nlvUsd - availableUsd : null;
 
-  // ─── Realized % all-time ────────────────────────────────────
+  // ─── A2b — Realized % all-time ──────────────────────────────
+  // Single denominator : `m.initialCapital` from the canonical
+  // resolution hierarchy (cashReport > cashFlows > settings > null).
+  // No more NLV fallback (that conflated growth-of-equity with
+  // realised-return-on-capital — the user saw +54.3 % on a 100-trade
+  // book whose REAL relative gain on initial capital was +118 %).
+  // Below MIN_CAPITAL_REF_USD or when init is unknown : null → display $ only.
+  // The "B2 |pct|>999 shield" is retired : with a proper init denominator
+  // there is no aberration to mask. Tone follows the $ sign of realised
+  // P&L, not the % (so null pct still gets a green / red tone on the card).
   const realizedPct = useMemo(() => {
     if (!Number.isFinite(realizedUsd)) return null;
-    const totalFundedUsd = metrics?.totalFundedUsd ?? 0;
-    const totalDepositedChf = metrics?.totalDepositedChf ?? 0;
-    const initialCapital =
-      totalFundedUsd + (fxOk && liveRate > 0 ? totalDepositedChf / liveRate : 0);
-    if (initialCapital > 0) return (realizedUsd / initialCapital) * 100;
-    if (Number.isFinite(nlvUsd) && nlvUsd > 0) return (realizedUsd / nlvUsd) * 100;
-    return null;
-  }, [realizedUsd, metrics, fxOk, liveRate, nlvUsd]);
-
-  // B2 aberration shield : si |pct| > 999% (petit capital initial), on masque
-  // la pill — le ratio devient absurde, seul le $ absolu informe.
-  const realizedPctDisplay = useMemo(() => {
-    if (!Number.isFinite(realizedPct)) return null;
-    if (Math.abs(realizedPct) > 999) return null;
-    return realizedPct;
-  }, [realizedPct]);
+    const init = metrics?.initialCapital;
+    if (typeof init !== 'number' || !Number.isFinite(init) || init < 500) return null;
+    return (realizedUsd / init) * 100;
+  }, [realizedUsd, metrics]);
+  const realizedPctDisplay = realizedPct;
 
   // ─── Card 6 Risk $ : proxy via unrealizedPnl 1re position ───
   const riskUsd = useMemo(() => {

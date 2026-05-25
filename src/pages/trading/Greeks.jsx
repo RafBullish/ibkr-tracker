@@ -18,7 +18,14 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RTooltip, Legend } from 'recharts';
 import { ChevronDown, Sigma } from 'lucide-react';
 import { useOpenPositions } from '../../store/useStore';
-import { computePortfolioGreeks, computeSecondOrderGreeks } from '../../utils/calculations';
+// A1 — migrated from legacy computePortfolioGreeks (sign-agnostic,
+// theta/year, vega/1.00-sigma) to aggregateGreeks (sign-aware via pos.dir,
+// theta/day, vega/1%-IV). For Sniper-OTM short premium portfolios this
+// means Theta is now positive (decay encaissé) and Vega negative (short
+// vol). The displayed magnitudes also drop because Theta is divided by
+// 365 and Vega by 100 vs the legacy raw BSM units.
+import { computeSecondOrderGreeks } from '../../utils/calculations';
+import { aggregateGreeks } from '../../utils/greeks';
 import { toFloat, ensurePositive } from '../../utils/math';
 import { getGreeksForAllPositions } from '../../utils/greeksApi';
 
@@ -118,13 +125,13 @@ export default function Greeks() {
   }, [optionPositions]);
 
   const netGreeks = useMemo(() => {
-    const agg = computePortfolioGreeks(openPositions || [], greeksMap);
+    const agg = aggregateGreeks(openPositions || [], greeksMap);
     return {
-      delta: agg.totalDelta,
-      gamma: agg.totalGamma,
-      theta: agg.totalTheta,
-      vega: agg.totalVega,
-      count: agg.positionCount,
+      delta: agg.sumDelta,
+      gamma: agg.sumGamma,
+      theta: agg.thetaDaily, // USD per day, sign-aware (was: per year, sign-agnostic)
+      vega: agg.vegaPer1Pct, // USD per 1% IV change, sign-aware (was: per 1.00 sigma)
+      count: agg.optionsCount,
     };
   }, [openPositions, greeksMap]);
 

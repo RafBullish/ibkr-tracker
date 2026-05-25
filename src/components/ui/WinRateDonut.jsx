@@ -1,17 +1,28 @@
 // ═══════════════════════════════════════════════════════════════
 //  WIN RATE DONUT v3.0 — Premium SVG with glow & animated arc
+//  A2b — accepts null / non-finite `winRate` (gated upstream by
+//  decisive >= 10). Under the gate the donut paints in a muted
+//  state and the centre label shows "—" instead of "0%".
 // ═══════════════════════════════════════════════════════════════
 
 import { useId } from 'react';
 import T from '../../theme/tokens';
 
-export default function WinRateDonut({ winRate = 0, size = 56, strokeWidth = 5 }) {
+export default function WinRateDonut({ winRate = null, size = 56, strokeWidth = 5 }) {
   const id = useId();
   const r = (size - strokeWidth) / 2;
   const circ = 2 * Math.PI * r;
-  const winArc = (winRate / 100) * circ;
+  const isGated = typeof winRate !== 'number' || !Number.isFinite(winRate);
+  const wr = isGated ? 0 : winRate;
+  const winArc = (wr / 100) * circ;
   const cx = size / 2;
-  const isGood = winRate >= 50;
+  const isGood = !isGated && wr >= 50;
+  const muteColor = T.surface?.elevated || '#27272a';
+  const accentColor = isGated
+    ? muteColor
+    : isGood
+      ? T.profit || '#0ecb81'
+      : T.loss || '#f6465d';
 
   return (
     <div style={{ position: 'relative', width: size, height: size }}>
@@ -20,13 +31,13 @@ export default function WinRateDonut({ winRate = 0, size = 56, strokeWidth = 5 }
         height={size}
         style={{
           transform: 'rotate(-90deg)',
-          filter: `drop-shadow(0 0 4px ${isGood ? T.profit || '#0ecb81' : T.loss || '#f6465d'}40)`,
+          filter: isGated ? 'none' : `drop-shadow(0 0 4px ${accentColor}40)`,
         }}
       >
         <defs>
           <linearGradient id={`wr-win-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={T.profit || '#0ecb81'} />
-            <stop offset="100%" stopColor={T.profit || '#0ecb81'} stopOpacity="0.65" />
+            <stop offset="0%" stopColor={accentColor} />
+            <stop offset="100%" stopColor={accentColor} stopOpacity="0.65" />
           </linearGradient>
           <linearGradient id={`wr-loss-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor={T.loss || '#f6465d'} stopOpacity="0.25" />
@@ -39,25 +50,27 @@ export default function WinRateDonut({ winRate = 0, size = 56, strokeWidth = 5 }
           cy={cx}
           r={r}
           fill="none"
-          stroke={T.surface?.elevated || '#27272a'}
+          stroke={muteColor}
           strokeWidth={strokeWidth}
         />
-        {/* Win arc — gradient */}
-        <circle
-          cx={cx}
-          cy={cx}
-          r={r}
-          fill="none"
-          stroke={`url(#wr-win-${id})`}
-          strokeWidth={strokeWidth}
-          strokeDasharray={`${winArc} ${circ}`}
-          strokeLinecap="round"
-          style={{
-            transition: 'stroke-dasharray 0.8s cubic-bezier(0.16,1,0.3,1)',
-          }}
-        />
+        {/* Win arc — gradient (only when not gated). */}
+        {!isGated && (
+          <circle
+            cx={cx}
+            cy={cx}
+            r={r}
+            fill="none"
+            stroke={`url(#wr-win-${id})`}
+            strokeWidth={strokeWidth}
+            strokeDasharray={`${winArc} ${circ}`}
+            strokeLinecap="round"
+            style={{
+              transition: 'stroke-dasharray 0.8s cubic-bezier(0.16,1,0.3,1)',
+            }}
+          />
+        )}
         {/* Loss arc */}
-        {winRate < 100 && (
+        {!isGated && wr < 100 && (
           <circle
             cx={cx}
             cy={cx}
@@ -82,11 +95,11 @@ export default function WinRateDonut({ winRate = 0, size = 56, strokeWidth = 5 }
           fontSize: Math.round(size * 0.24),
           fontWeight: 700,
           fontVariantNumeric: 'tabular-nums',
-          color: isGood ? T.profit || '#0ecb81' : T.loss || '#f6465d',
-          textShadow: `0 0 8px ${isGood ? T.profit || '#0ecb81' : T.loss || '#f6465d'}30`,
+          color: isGated ? T.text?.muted || '#71717a' : accentColor,
+          textShadow: isGated ? 'none' : `0 0 8px ${accentColor}30`,
         }}
       >
-        {Math.round(winRate)}%
+        {isGated ? '—' : `${Math.round(wr)}%`}
       </div>
     </div>
   );

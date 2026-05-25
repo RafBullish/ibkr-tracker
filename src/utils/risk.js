@@ -8,9 +8,10 @@
 //
 //  Réutilise délibérément ce qui existe dans utils/calculations.js
 //  et utils/equity.js pour éviter la duplication. N'ajoute QUE les
-//  primitives manquantes (currentDrawdown, recovery, vol30d, max
-//  concurrent) puis compose le tout dans computeRiskMatrix() qui
-//  produit l'objet 14-clés consommé par le composant.
+//  primitives manquantes (currentDrawdown, recovery, max concurrent)
+//  puis compose le tout dans computeRiskMatrix() qui produit l'objet
+//  14-clés consommé par le composant. A2a — vol primitive moved to
+//  src/utils/metrics/computeVolatility.js (read here via m.volAnnPct).
 //
 //  Toutes acceptent des inputs vides sans throw — retournent 0 ou
 //  null selon la sémantique de la métrique. Documentés en JSDoc.
@@ -120,31 +121,12 @@ export function recoveryPct(points) {
   return Number(Math.min(100, Math.max(0, (recovered / drop) * 100)).toFixed(2));
 }
 
-/**
- * Volatilité annualisée des 30 dernières daily returns. Returns en
- * point-percent du capital base (initial deposited capital ou
- * proxy passé en arg). sqrt(252) annualisation standard.
- *
- * @param {Array<{equity}>} points
- * @param {number} capitalBase  USD reference for normalising returns
- * @returns {number}  ann. volatility in % (≥ 0). Null si insuffisant.
- */
-export function vol30dAnnualized(points, capitalBase) {
-  if (!points || points.length < 5 || !capitalBase || capitalBase <= 0) return null;
-  // On utilise les 30 derniers transitions (donc 31 points min).
-  const tail = points.slice(-31);
-  if (tail.length < 2) return null;
-  const dailyReturns = [];
-  for (let i = 1; i < tail.length; i++) {
-    const d = (tail[i].equity - tail[i - 1].equity) / capitalBase;
-    dailyReturns.push(d);
-  }
-  if (!dailyReturns.length) return 0;
-  const mean = dailyReturns.reduce((s, v) => s + v, 0) / dailyReturns.length;
-  const variance = dailyReturns.reduce((s, v) => s + (v - mean) ** 2, 0) / dailyReturns.length;
-  const stddev = Math.sqrt(variance);
-  return Number((stddev * Math.sqrt(252) * 100).toFixed(2));
-}
+// A2a — vol30dAnnualized() retired. The 30-trade window was statistically
+// empty at ~75 trades/year and the per-trade equity step / capitalBase
+// approach inflated the value (cf. Vol 419 % observed in production). The
+// canonical annualised volatility now lives in
+// src/utils/metrics/computeVolatility.js (returns-based, gated, single
+// source) and is exposed via calculatePortfolioMetrics().volAnnPct.
 
 /**
  * Max nombre de positions ouvertes simultanément sur l'historique.
@@ -300,7 +282,18 @@ export function computeRiskMatrix(state, equityPoints) {
     settings: state?.settings || { liveRate: 1 },
   };
   const m = calculatePortfolioMetrics(safe);
-  const points = equityPoints || computeEquityCurve(safe.closedTrades, m.liveRate);
+  // A3b — prefer the real-equity timeline (init + cumPnL per close-date)
+  // exposed by calculatePortfolioMetrics. All three drawdown windows
+  // (Current, YTD, All-Time) now share THIS base, ending the "YTD vs
+  // All-Time" magnitude divergence the user observed. Legacy
+  // `computeEquityCurve` (cumPnL-only) is the fallback for empty cases.
+  const realPoints = Array.isArray(m.realEquityPoints) ? m.realEquityPoints : [];
+  const points =
+    equityPoints && equityPoints.length > 0
+      ? equityPoints
+      : realPoints.length > 0
+        ? realPoints
+        : computeEquityCurve(safe.closedTrades, m.liveRate);
   const initialCapital = m.totalFundedUsd + (m.liveRate > 0 ? m.totalDepositedChf / m.liveRate : 0);
   const ddYtd = maxDrawdownYTDFromEquity(points);
   const decisive = m.winCount + m.lossCount;
@@ -317,7 +310,9 @@ export function computeRiskMatrix(state, equityPoints) {
     maxDDYtdPct: ddYtd.pct,
     maxDDYtdDate: ddYtd.date,
     recoveryPctValue: recoveryPct(points),
-    vol30dPct: vol30dAnnualized(points, initialCapital),
+    // A2a — annualised volatility now sourced from calculatePortfolioMetrics
+    // (single canonical pipeline). Was `vol30dPct: vol30dAnnualized(...)`.
+    volAnnPct: m.volAnnPct ?? null,
     winRatePct: m.winRate,
     winRateCount: decisive,
     profitFactorValue: m.profitFactor,

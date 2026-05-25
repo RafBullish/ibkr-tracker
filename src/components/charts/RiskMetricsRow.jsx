@@ -138,17 +138,17 @@ const RiskMetricsRow = forwardRef(function RiskMetricsRow({ metrics = {}, classN
         icon={TrendingUp}
         tooltip={TOOLTIPS.sharpe}
       />
+      {/* A2b — `profitFactor` is now null at storage when grossLoss=0 or
+          lossCount<3. The legacy 999.99 cast is retired. displayValue
+          handles null → "—". */}
       <MetricCard
         label="Profit Factor"
-        value={profitFactor === Infinity ? 999.99 : displayValue('profitFactor', profitFactor)}
+        value={displayValue('profitFactor', profitFactor)}
         format="number"
         size="compact"
         semantic={toneFor('profitFactor', profitFactor)}
         icon={Target}
         tooltip={TOOLTIPS.profitFactor}
-        badge={
-          profitFactor === Infinity ? <span className="risk-metrics__infinity">∞</span> : undefined
-        }
       />
       <MetricCard
         label="Win Rate"

@@ -33,11 +33,12 @@ import {
 } from 'lucide-react';
 import { useOpenPositions, useSettings, useClosedTrades, useDispatch } from '../../store/useStore';
 import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
-import {
-  calculateOpenPositionPnl,
-  computePortfolioGreeks,
-  tradePnlUsd,
-} from '../../utils/calculations';
+import { calculateOpenPositionPnl, tradePnlUsd } from '../../utils/calculations';
+// A1 — migrated from legacy computePortfolioGreeks (sign-agnostic) to
+// aggregateGreeks (sign-aware via pos.dir + correct units : theta/day,
+// vega/1%-IV). For Sniper-OTM short premium portfolios this means
+// Theta is now positive (decay encaissé) and Vega negative (short vol).
+import { aggregateGreeks } from '../../utils/greeks';
 import { formatUsd, formatPnlUsd } from '../../utils/format';
 import { daysToExpiration, holdingDays } from '../../utils/dates';
 import { toFloat, ensurePositive } from '../../utils/math';
@@ -478,42 +479,31 @@ export default function Positions() {
     [openPositions, lr, nlvUsd]
   );
 
+  // A3c — Greek aggregation removed from this block. The KPI cards
+  // (Delta Net, Theta Total) now read the sign-aware values exposed
+  // by `aggregateGreeks` below (greeks.sumDelta, greeks.thetaDaily).
+  // The legacy summing here was simultaneously sign-agnostic AND in
+  // per-year units (Theta) while the tooltip claimed "quotidienne".
+  // Both bugs fixed at the consumer site.
   const summary = useMemo(() => {
-    let uPnlUsd = 0,
-      totalCost = 0,
-      totalTheta = 0,
-      totalMaxLoss = 0,
-      totalDelta = 0,
-      totalVega = 0;
-    positions.forEach(({ pos, r, costBasis, isOpt, maxLoss }) => {
+    let uPnlUsd = 0;
+    let totalCost = 0;
+    let totalMaxLoss = 0;
+    positions.forEach(({ r, costBasis, maxLoss }) => {
       uPnlUsd += r.unrealizedPnlUsd;
       totalCost += costBasis;
       totalMaxLoss += maxLoss;
-      if (isOpt) {
-        const g = greeksMap.get(pos.id);
-        const qty = toFloat(pos.ct);
-        const mul = ensurePositive(pos.mu);
-        // Skip rather than aggregate zeros when a greek is unavailable —
-        // matches the behavior of computePortfolioGreeks below and keeps
-        // "absent" semantically distinct from "exactly zero".
-        if (g?.theta != null) totalTheta += g.theta * qty * mul;
-        if (g?.delta != null) totalDelta += g.delta * qty * mul;
-        if (g?.vega != null) totalVega += g.vega * qty * mul;
-      }
     });
     return {
       uPnlUsd,
       count: positions.length,
-      totalTheta,
       totalMaxLoss,
-      totalDelta,
-      totalVega,
       totalCost,
     };
-  }, [positions, greeksMap]);
+  }, [positions]);
 
   const greeks = useMemo(
-    () => computePortfolioGreeks(openPositions, greeksMap),
+    () => aggregateGreeks(openPositions, greeksMap),
     [openPositions, greeksMap]
   );
   const alerts = useMemo(
@@ -797,27 +787,31 @@ export default function Positions() {
         />
         <MetricCard
           label="Delta Net"
-          value={greeks.totalDelta}
+          value={greeks.sumDelta}
           format="number"
           size="compact"
           icon={Sigma}
-          semantic={greeks.totalDelta > 0 ? 'profit' : greeks.totalDelta < 0 ? 'loss' : 'neutral'}
+          semantic={greeks.sumDelta > 0 ? 'profit' : greeks.sumDelta < 0 ? 'loss' : 'neutral'}
           tooltip={{
             title: 'Delta net',
-            body: 'Exposition directionnelle agrégée des options. +1 = $1 de P&L pour +$1 du sous-jacent.',
+            body: 'Exposition directionnelle agrégée (options + actions, sign-aware par dir). +1 = $1 de P&L pour +$1 du sous-jacent.',
           }}
         />
+        {/* A3c — reads greeks.thetaDaily (sign-aware via aggregateGreeks,
+            BSM-theta / 365 → per-day units). Matches the "quotidienne"
+            tooltip and inverts sign for Short premium positions (Sniper
+            OTM short call → θ > 0 = decay encaissé). */}
         <MetricCard
           label="Theta Total"
-          value={summary.totalTheta}
+          value={greeks.thetaDaily}
           format="currency"
           currency="USD"
           size="compact"
           icon={Clock}
-          semantic={summary.totalTheta < 0 ? 'loss' : 'profit'}
+          semantic={greeks.thetaDaily < 0 ? 'loss' : 'profit'}
           tooltip={{
             title: 'Theta agrégé',
-            body: "Erosion temporelle quotidienne cumulée sur le portefeuille d'options.",
+            body: "Erosion temporelle quotidienne cumulée sur le portefeuille d'options (sign-aware par dir : positif = decay encaissé pour les short premium).",
           }}
         />
         <MetricCard

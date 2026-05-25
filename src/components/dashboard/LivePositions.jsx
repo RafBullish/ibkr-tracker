@@ -311,17 +311,24 @@ export default function LivePositions({ data, area = 'positions' }) {
       const mark = Number.isFinite(p.mark) ? p.mark : 0;
       const isOption = p.type === 'CALL' || p.type === 'PUT';
       const mu = isOption ? 100 : 1;
+      // A3c — sign-aware aggregation. `p.delta` / `p.theta` are stored as
+      // per-share BSM values (positive for calls held long). A short
+      // call inverts the exposure : dir='Short' ⇒ Δ negative, Θ positive.
+      // Previously this block summed sign-agnostically, so a mixed book
+      // (long + short) would have produced wrong signs on the subheader
+      // and footer pills. Long-only books are unaffected (sign=+1).
+      const dirSign = p.dir === 'Short' ? -1 : 1;
 
       if (Number.isFinite(p.delta)) {
-        totalDelta += p.delta * qty;
+        totalDelta += dirSign * p.delta * qty;
         // delta dollar = delta × qty × mu × prix sous-jacent. Sans
         // spot price API on approxime via mark — ordre de grandeur
         // correct pour exposition directionnelle agrégée.
-        deltaDollar += p.delta * qty * mu * mark;
+        deltaDollar += dirSign * p.delta * qty * mu * mark;
       }
       if (Number.isFinite(p.theta)) {
-        totalTheta += p.theta * qty;
-        thetaDollar += p.theta * qty * mu;
+        totalTheta += dirSign * p.theta * qty;
+        thetaDollar += dirSign * p.theta * qty * mu;
       }
 
       if (Number.isFinite(p.unrealDollar)) {

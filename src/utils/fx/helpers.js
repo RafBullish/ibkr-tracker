@@ -20,29 +20,61 @@ const USD_FMT = new Intl.NumberFormat('en-US', {
 });
 
 /**
+ * A3a — Central FX rate validity gate.
+ *
+ * Returns true iff `rate` is a finite number within sane USD/CHF bounds.
+ * Bounds picked so that the gate catches the canonical failure modes
+ * (rate=undefined, rate=0, rate=NaN, rate=Infinity, exotic rate=0.0001)
+ * but never rejects a plausible market rate. Historical USD/CHF has
+ * traded in [0.7, 1.4]; we accept (0.01, 100) for safety.
+ *
+ * Any consumer that derives a CHF figure from a USD value MUST gate on
+ * this helper. The A0 / A2.1 audits flagged `liveRate || 1` fallbacks
+ * as the primary source of silent "1 USD = 1 CHF" bugs.
+ *
+ * @param {*} rate
+ * @returns {boolean}
+ */
+export function isValidFxRate(rate) {
+  return (
+    typeof rate === 'number' &&
+    Number.isFinite(rate) &&
+    rate > 0.01 &&
+    rate < 100
+  );
+}
+
+/**
  * Convert a USD amount to CHF using the project's rate convention
  * (rate = CHF per USD).
  *
+ * A3a — returns `null` when the rate fails {@link isValidFxRate} or when
+ * the amount is non-finite. The previous "silent NaN propagation"
+ * behaviour was a silent corruption vector for downstream display logic
+ * that did `.toFixed()` on the result.
+ *
  * @param {number} amountUsd
  * @param {number} rate — CHF per USD
- * @returns {number} amountUsd * rate (NaN propagated; no validation)
+ * @returns {number|null}
  */
 export function usdToChf(amountUsd, rate) {
+  if (typeof amountUsd !== 'number' || !Number.isFinite(amountUsd)) return null;
+  if (!isValidFxRate(rate)) return null;
   return amountUsd * rate;
 }
 
 /**
  * Convert a CHF amount to USD using the project's rate convention.
- * Throws on rate <= 0 (or NaN) — those are nonsensical inputs that
- * would otherwise produce Infinity/NaN silently.
+ * Throws on rate that fails {@link isValidFxRate} — those are nonsensical
+ * inputs that would otherwise produce Infinity / NaN silently.
  *
  * @param {number} amountChf
- * @param {number} rate — CHF per USD, must be > 0
+ * @param {number} rate — CHF per USD, must pass isValidFxRate
  * @returns {number} amountChf / rate
  */
 export function chfToUsd(amountChf, rate) {
-  if (!(rate > 0)) {
-    throw new Error(`chfToUsd: rate must be > 0, got ${rate}`);
+  if (!isValidFxRate(rate)) {
+    throw new Error(`chfToUsd: rate must be a valid FX rate, got ${rate}`);
   }
   return amountChf / rate;
 }

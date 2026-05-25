@@ -8,9 +8,10 @@
 //
 //  Mode "unavailable" — lorsque Yahoo manque (réseau, contrat absent,
 //  IV nulle, expiry passée), la position est marquée
-//  `source: 'unavailable'` avec tous les Greeks à null. Le consumer
-//  (computePortfolioGreeks, table Δ/Θ) skip les positions non-disponibles
-//  plutôt que d'agréger des zéros — les valeurs ne sont JAMAIS inventées.
+//  `source: 'unavailable'` avec tous les Greeks à null. Le canonical
+//  consumer `aggregateGreeks` (src/utils/greeks.js) skip les positions
+//  non-disponibles plutôt que d'agréger des zéros — les valeurs ne
+//  sont JAMAIS inventées.
 // ═══════════════════════════════════════════════════════════════
 
 import { bsGreeks, RISK_FREE_RATE } from './options/blackScholes';
