@@ -227,4 +227,40 @@ describe('getGreeksForAllPositions — B2 local BSM', () => {
     expect((await getGreeksForAllPositions(null)).size).toBe(0);
     expect((await getGreeksForAllPositions(undefined)).size).toBe(0);
   });
+
+  it('B2C — 0 open option positions → empty Map AND zero network calls', async () => {
+    // Le compte fraichement importé du user U23437309 a 15 closed trades
+    // mais 0 open position. Le pipeline doit produire une Map vide sans
+    // crasher ET sans déclencher de fetch /api/quote inutile.
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    fetchSpy.mockClear();
+    const map = await getGreeksForAllPositions([]);
+    expect(map.size).toBe(0);
+    // Zero spot fetch (no underlyings to resolve).
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('B2C — only stock positions (no options) → empty Map, no spot fetch', async () => {
+    // Stocks sont filtrés en amont (filter p.as === 'Option'). Pas de
+    // calcul Greeks à faire, donc pas de spot à récupérer.
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    fetchSpy.mockClear();
+    const positions = [
+      {
+        id: 'stk1',
+        as: 'Action',
+        dir: 'Long',
+        tk: 'CVX',
+        ty: '',
+        st: '',
+        ex: '',
+        ct: '100',
+        mu: '1',
+        pc: '160',
+      },
+    ];
+    const map = await getGreeksForAllPositions(positions);
+    expect(map.size).toBe(0);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
 });

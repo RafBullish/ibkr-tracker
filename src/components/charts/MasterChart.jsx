@@ -128,7 +128,7 @@ export default function MasterChart({ data, dailyPnL, mode = 'real', area = 'mas
                 <>
                   {/* TOP — equity line (pure, sans peak ni underwater) */}
                   <div className="master-chart__top">
-                    <R.ResponsiveContainer width="100%" height="100%">
+                    <R.ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                       <R.ComposedChart
                         syncId="master"
                         data={filtered}
@@ -171,7 +171,7 @@ export default function MasterChart({ data, dailyPnL, mode = 'real', area = 'mas
 
                   {/* BOTTOM — daily P&L bars */}
                   <div className="master-chart__bottom">
-                    <R.ResponsiveContainer width="100%" height="100%">
+                    <R.ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                       <R.ComposedChart
                         syncId="master"
                         data={filtered}

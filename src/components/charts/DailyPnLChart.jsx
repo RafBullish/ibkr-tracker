@@ -298,7 +298,10 @@ export default function DailyPnLChart({
           <Suspense fallback={<ChartFallback message="Chargement…" />}>
             <LazyRecharts>
               {(R) => (
-                <R.ResponsiveContainer width="100%" height="100%">
+                // B3-PATCH — minWidth/minHeight évitent le warning recharts
+                // "width(-1)" pendant la transition Suspense (LazyRecharts)
+                // → parent grid pas encore dimensionné au premier paint.
+                <R.ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                   <R.ComposedChart
                     data={cumulSeries}
                     margin={{ top: 8, right: 12, bottom: 8, left: 12 }}

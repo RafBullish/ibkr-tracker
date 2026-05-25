@@ -335,7 +335,11 @@ export default function Greeks() {
               <EmptyState size="compact" title="Pas de vega à afficher" />
             ) : (
               <div style={{ height: 260 }}>
-                <ResponsiveContainer width="100%" height="100%">
+                {/* B3 — minWidth/minHeight évitent le warning recharts
+                    "width(-1) and height(-1) of chart should be greater
+                    than 0" au premier rendu, avant que le grid
+                    `greeks-page__dual-row` ait propagé sa largeur. */}
+                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                   <PieChart>
                     <Pie
                       data={vegaPieData}

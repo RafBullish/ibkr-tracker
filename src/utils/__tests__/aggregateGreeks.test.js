@@ -152,6 +152,47 @@ describe('aggregateGreeks — A3c runtime regression guards', () => {
   });
 });
 
+describe('aggregateGreeks — B2C 0-position book', () => {
+  it('empty openPositions + empty greeksMap → zeros, optionsCount=0, no NaN', () => {
+    // Cas runtime confirmé sur le compte U23437309 (15 closed trades,
+    // 0 open position). Le cockpit doit afficher "no options" propre,
+    // pas un faux 0 tonifié ni un NaN.
+    const r = aggregateGreeks([], new Map());
+    expect(r.sumDelta).toBe(0);
+    expect(r.sumGamma).toBe(0);
+    expect(r.thetaDaily).toBe(0);
+    expect(r.vegaPer1Pct).toBe(0);
+    expect(r.optionsCount).toBe(0);
+    expect(r.positions).toEqual([]);
+    expect(Number.isNaN(r.sumDelta)).toBe(false);
+    expect(Number.isNaN(r.thetaDaily)).toBe(false);
+  });
+
+  it('only stock positions → stockDelta only, optionsCount=0', () => {
+    // Le RiskMatrix GreeksStrip check `optionsCount === 0` pour render
+    // "no options" — vérifier que ce signal reste accurate quand on a
+    // QUE des stocks (qui ne contribuent qu'à sumDelta, pas aux options).
+    const r = aggregateGreeks(
+      [
+        {
+          id: 'stk1',
+          as: 'Action',
+          dir: 'Long',
+          ct: '50',
+          mu: '1',
+          pc: '160',
+          tk: 'CVX',
+        },
+      ],
+      new Map()
+    );
+    expect(r.sumDelta).toBe(50);
+    expect(r.optionsCount).toBe(0); // ← GreeksStrip render path
+    expect(r.thetaDaily).toBe(0);
+    expect(r.vegaPer1Pct).toBe(0);
+  });
+});
+
 describe('aggregateGreeks — composite books', () => {
   it('Long call + Short call (same greeks) → cancels out', () => {
     const map = new Map([

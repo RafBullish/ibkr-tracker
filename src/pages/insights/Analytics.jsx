@@ -96,7 +96,7 @@ function HourChart({ data }) {
       <LazyRecharts>
         {(mod) => (
           <div style={{ height: 240 }}>
-            <mod.ResponsiveContainer width="100%" height="100%">
+            <mod.ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <mod.BarChart data={data} margin={{ top: 10, right: 16, left: 4, bottom: 4 }}>
                 <mod.CartesianGrid
                   vertical={false}
@@ -158,7 +158,7 @@ function DayChart({ data }) {
       <LazyRecharts>
         {(mod) => (
           <div style={{ height: 240 }}>
-            <mod.ResponsiveContainer width="100%" height="100%">
+            <mod.ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <mod.BarChart data={data} margin={{ top: 10, right: 16, left: 4, bottom: 4 }}>
                 <mod.CartesianGrid
                   vertical={false}

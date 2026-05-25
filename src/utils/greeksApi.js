@@ -118,29 +118,14 @@ async function rawFetchSpot(ticker) {
     await new Promise((r) => setTimeout(r, delayMs));
     res = await fetch(url);
   }
-  if (!res.ok) {
-    // TEMP B2-PATCH — log the upstream cascade failure so the user can
-    // see WHY a particular ticker's spot didn't resolve. Remove together
-    // with the snapshot table below.
-    console.warn(
-      `[B2-PATCH] /api/quote/${ticker} → HTTP ${res.status} (Finnhub→Yahoo→CBOE cascade exhausted)`
-    );
-    return null;
-  }
+  if (!res.ok) return null;
   let data;
   try {
     data = await res.json();
   } catch {
-    console.warn(`[B2-PATCH] /api/quote/${ticker} → invalid JSON body`);
     return null;
   }
-  if (!Number.isFinite(data?.price) || !(data.price > 0)) {
-    console.warn(
-      `[B2-PATCH] /api/quote/${ticker} → 200 OK but price missing/invalid (data: ${JSON.stringify(data)?.slice(0, 200)})`
-    );
-    return null;
-  }
-  return data.price;
+  return Number.isFinite(data?.price) && data.price > 0 ? data.price : null;
 }
 
 async function fetchSpot(ticker) {
@@ -267,49 +252,6 @@ export async function getGreeksForAllPositions(positions) {
   for (const pos of options) {
     const greeks = computeGreeksForPosition(pos, spotByTicker[pos.tk]);
     result.set(pos.id, greeks);
-  }
-
-  // ── TEMP B2-PATCH instrumentation — REMOVE after CVX/AVGO/XOM ────
-  // unavailable cause confirmed. Logs one snapshot per session so the
-  // Network tab + console together explain why some positions land in
-  // 'unavailable'. Idempotent via __b2pLogged flag.
-  if (typeof window !== 'undefined' && !window.__b2pLogged) {
-    window.__b2pLogged = true;
-    const rows = options.map((p) => {
-      const g = result.get(p.id) || {};
-      const spot = spotByTicker[p.tk];
-      const mark = parseFloat(p.pc);
-      const K = parseFloat(p.st);
-      const expiryMs = Date.parse((p.ex || '') + 'T12:00:00');
-      const T = Number.isFinite(expiryMs)
-        ? (expiryMs - Date.now()) / (365 * 86_400_000)
-        : null;
-      return {
-        id: p.id,
-        ticker: p.tk,
-        type: p.ty,
-        strike: K,
-        mark,
-        expiry: p.ex,
-        T_years: T == null ? null : Number(T.toFixed(4)),
-        spot,
-        spot_status:
-          spot == null
-            ? 'NULL (quote fetch failed)'
-            : !(spot > 0)
-              ? 'NOT_POSITIVE'
-              : 'OK',
-        sigma: g.iv,
-        sigma_status:
-          g.iv == null
-            ? 'NULL (bsImpliedVol failed)'
-            : 'OK',
-        source: g.source,
-      };
-    });
-    console.group('[B2-PATCH] Greeks compute snapshot');
-    console.table(rows);
-    console.groupEnd();
   }
 
   return result;
