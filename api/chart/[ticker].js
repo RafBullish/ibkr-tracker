@@ -16,8 +16,12 @@
 //  window ne change intra-day qu'au close, donc 5 min CDN cache est
 //  généreux et safe.
 //
-//  Rate limit : bucket 'chart', max 30/min — séparé du bucket 'quote'
-//  pour ne pas grever le budget des fetches market-quote courants.
+//  Rate limit : bucket 'chart', max 90/min — séparé du bucket 'quote'
+//  (les deux buckets sont DISJOINTS dans _rateLimit.js, clé
+//  `bucket::ip` distincte — augmenter chart n'affecte PAS le budget
+//  de quote). 90/min couvre ~15 tickers × 2 instances StrictMode dev +
+//  marge pour visibility refetch et remounts. B1 audit (2026-05) a
+//  identifié 30 comme la cause principale du 429 chronique.
 // ═══════════════════════════════════════════════════════════════
 
 import { applyCors } from '../_cors.js';
@@ -30,7 +34,7 @@ const isProd = process.env.NODE_ENV === 'production';
 export default async function handler(req, res) {
   if (!applyCors(req, res)) return;
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (!enforceRateLimit(req, res, { max: 30, windowMs: 60_000, bucket: 'chart' })) return;
+  if (!enforceRateLimit(req, res, { max: 90, windowMs: 60_000, bucket: 'chart' })) return;
 
   const { ticker } = req.query;
   if (!ticker) return res.status(400).json({ error: 'Ticker requis' });
