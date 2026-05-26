@@ -1,0 +1,33 @@
+/* QuantumCall — Palette canonique (source unique de vérité, DA Brutalisme Financier) */
+:root {
+  /* — Plans de profondeur (étagés, hiérarchisés) — */
+  --depth-void:        #070708;  /* le vide, fond ultime */
+  --depth-base:        #0A0A0B;  /* fond de travail standard */
+  --depth-raised:      #0F0F11;  /* panneaux (référence) */
+  --depth-focus:       #1D1D23;  /* zones élues, affirmé */
+  --depth-focus-line:  rgba(255, 160, 40, 0.50);  /* filet amber des zones focus */
+
+  /* — Séparateurs 1px (présents mais murmurés) — */
+  --line-hairline:     rgba(255, 255, 255, 0.06);
+  --line-emphasis:     rgba(255, 255, 255, 0.12);
+
+  /* — Encre (texte) — */
+  --ink-pure:          #FAFAFA;  /* données pures */
+  --ink-soft:          #9A9AA2;  /* labels secondaires */
+  --ink-mute:          #74747C;  /* captions / tertiaire */
+
+  /* — P&L sémantique (mat) — */
+  --pnl-up:            #10B981;
+  --pnl-down:          #EF4444;
+
+  /* — Accent décisionnel (Bloomberg amber) — */
+  --accent:            #FFA028;
+  --accent-soft:       color-mix(in srgb, #FFA028 18%, transparent);
+
+  /* — Typographie — */
+  --type-mono:         var(--qc-font-mono);
+  --type-caption:      11px;
+  --type-body:         13px;
+  --type-display:      24px;
+  --type-hero:         44px;
+}

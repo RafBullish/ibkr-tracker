@@ -18,6 +18,10 @@ import './styles/v4-shell.css';
 import './styles/v4-dashboard.css';
 // v5-chain.css : Sprint 3 institutional refonte of /trading/chain.
 import './styles/v5-chain.css';
+// canonical.css — palette canonique (DA Brutalisme Financier). Chargé en dernier
+// pour faire autorité quand les pages migreront. Étape additive : aucune page
+// ne le consomme encore, aucun changement visuel attendu.
+import './styles/canonical.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
