@@ -250,8 +250,14 @@ hr {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   AMBIENT BACKGROUND — Fixed orbs with subtle float
+   AMBIENT BACKGROUND — Plain surface backdrop
    Rendered by <AmbientBackground /> mounted once in AppShell.
+
+   GLOW-KILL : les deux orbes décoratifs (.app-ambient-bg::before
+   violet haut-gauche + ::after blue bas-droite) ont été retirés
+   pour passer au Brutalisme Financier — fond noir étagé pur,
+   zéro ambiance colorée. Le wrapper .app-ambient-bg subsiste
+   pour fournir le fond uniforme var(--surface-0).
    ═══════════════════════════════════════════════════════════════ */
 .app-ambient-bg {
   position: fixed;
@@ -261,50 +267,6 @@ hr {
   pointer-events: none;
   background: var(--surface-0);
   transition: background-color 300ms var(--ease-out);
-}
-
-.app-ambient-bg::before,
-.app-ambient-bg::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  animation: orb-float 30s ease-in-out infinite;
-  will-change: transform;
-}
-
-.app-ambient-bg::before {
-  width: 600px;
-  height: 600px;
-  top: -200px;
-  left: -100px;
-  background: radial-gradient(circle, var(--orb-violet) 0%, transparent 70%);
-}
-
-.app-ambient-bg::after {
-  width: 500px;
-  height: 500px;
-  bottom: -150px;
-  right: -100px;
-  background: radial-gradient(circle, var(--orb-blue) 0%, transparent 70%);
-  animation-delay: -10s;
-}
-
-@keyframes orb-float {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  50% {
-    transform: translate(40px, -30px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .app-ambient-bg::before,
-  .app-ambient-bg::after {
-    animation: none;
-  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
