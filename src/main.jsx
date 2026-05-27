@@ -48,6 +48,11 @@ import './styles/pages-settings.css';
 // .dashboard-v3__panel-head (toujours consommé par Analytics + Journal).
 // .history-v3__delete-btn reste partagé dans v3-components.css.
 import './styles/pages-history.css';
+// pages-premarket.css — page-vitrine /premarket, sixième consommatrice de la
+// palette canonique. Les 61 règles .premarket-* extraites de v5-chain.css
+// (qui ne contient désormais plus que les règles .chain-v5__*, à migrer plus
+// tard) et rebaptisées .premarket-page__* avec tokens canoniques.
+import './styles/pages-premarket.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

@@ -202,35 +202,35 @@ export default function PreMarketBriefing() {
   const readyAt = checks?._readyAt;
 
   return (
-    <div className="premarket">
+    <div className="premarket-page">
       {/* 1. Header — clocks + phase + countdown */}
-      <div className="premarket__header">
-        <div className="premarket__clock-cell">
-          <span className="premarket__clock-label">CET · Genève</span>
-          <span className="premarket__clock-value">{fmtClock(now, 'Europe/Zurich')}</span>
+      <div className="premarket-page__header">
+        <div className="premarket-page__clock-cell">
+          <span className="premarket-page__clock-label">CET · Genève</span>
+          <span className="premarket-page__clock-value">{fmtClock(now, 'Europe/Zurich')}</span>
         </div>
-        <div className="premarket__clock-cell">
-          <span className="premarket__clock-label">NY</span>
-          <span className="premarket__clock-value">{fmtClock(now, 'America/New_York')}</span>
+        <div className="premarket-page__clock-cell">
+          <span className="premarket-page__clock-label">NY</span>
+          <span className="premarket-page__clock-value">{fmtClock(now, 'America/New_York')}</span>
         </div>
         <div
-          className="premarket__clock-cell premarket__clock-cell--phase"
+          className="premarket-page__clock-cell premarket-page__clock-cell--phase"
           data-phase={phaseInfo.phase}
         >
-          <span className="premarket__clock-label">Phase US</span>
-          <span className="premarket__clock-value premarket__clock-value--phase">
+          <span className="premarket-page__clock-label">Phase US</span>
+          <span className="premarket-page__clock-value premarket-page__clock-value--phase">
             {phaseInfo.label}
           </span>
         </div>
-        <div className="premarket__clock-cell">
-          <span className="premarket__clock-label">Prochaine bascule</span>
-          <span className="premarket__clock-value">{phaseInfo.countdownLabel}</span>
+        <div className="premarket-page__clock-cell">
+          <span className="premarket-page__clock-label">Prochaine bascule</span>
+          <span className="premarket-page__clock-value">{phaseInfo.countdownLabel}</span>
         </div>
-        <div className="premarket__clock-cell premarket__clock-cell--ready">
+        <div className="premarket-page__clock-cell premarket-page__clock-cell--ready">
           {readyAt ? (
             <>
-              <span className="premarket__clock-label">Routine confirmée</span>
-              <span className="premarket__clock-value premarket__clock-value--ok">
+              <span className="premarket-page__clock-label">Routine confirmée</span>
+              <span className="premarket-page__clock-value premarket-page__clock-value--ok">
                 {new Date(readyAt).toLocaleTimeString('fr-CH', {
                   hour: '2-digit',
                   minute: '2-digit',
@@ -239,8 +239,8 @@ export default function PreMarketBriefing() {
             </>
           ) : (
             <>
-              <span className="premarket__clock-label">Routine</span>
-              <span className="premarket__clock-value">
+              <span className="premarket-page__clock-label">Routine</span>
+              <span className="premarket-page__clock-value">
                 {checkedCount} / {ROUTINE_ITEMS.length}
               </span>
             </>
@@ -249,53 +249,53 @@ export default function PreMarketBriefing() {
       </div>
 
       {/* 2. Market regime row */}
-      <div className="premarket__regime">
-        <div className="premarket__regime-cell" data-tone={vixInfo.tone}>
-          <span className="premarket__regime-label">VIX</span>
-          <span className="premarket__regime-value">{fmtIndex(quotes?.VIX)}</span>
-          <span className="premarket__regime-sub">{vixInfo.label}</span>
+      <div className="premarket-page__regime">
+        <div className="premarket-page__regime-cell" data-tone={vixInfo.tone}>
+          <span className="premarket-page__regime-label">VIX</span>
+          <span className="premarket-page__regime-value">{fmtIndex(quotes?.VIX)}</span>
+          <span className="premarket-page__regime-sub">{vixInfo.label}</span>
         </div>
-        <div className="premarket__regime-cell">
-          <span className="premarket__regime-label">SPX</span>
-          <span className="premarket__regime-value">{fmtIndex(quotes?.SPX)}</span>
-          <span className="premarket__regime-sub">{fmtIndexChg(quotes?.SPX) || '——'}</span>
+        <div className="premarket-page__regime-cell">
+          <span className="premarket-page__regime-label">SPX</span>
+          <span className="premarket-page__regime-value">{fmtIndex(quotes?.SPX)}</span>
+          <span className="premarket-page__regime-sub">{fmtIndexChg(quotes?.SPX) || '——'}</span>
         </div>
-        <div className="premarket__regime-cell">
-          <span className="premarket__regime-label">QQQ</span>
-          <span className="premarket__regime-value">{fmtIndex(quotes?.QQQ)}</span>
-          <span className="premarket__regime-sub">{fmtIndexChg(quotes?.QQQ) || '——'}</span>
+        <div className="premarket-page__regime-cell">
+          <span className="premarket-page__regime-label">QQQ</span>
+          <span className="premarket-page__regime-value">{fmtIndex(quotes?.QQQ)}</span>
+          <span className="premarket-page__regime-sub">{fmtIndexChg(quotes?.QQQ) || '——'}</span>
         </div>
         <div
-          className="premarket__regime-cell"
+          className="premarket-page__regime-cell"
           data-tone={armedPositions.length > 0 ? 'loss' : 'profit'}
         >
-          <span className="premarket__regime-label">Gates armés</span>
-          <span className="premarket__regime-value">{armedPositions.length}</span>
-          <span className="premarket__regime-sub">/ {allOpenOptions.length} positions</span>
+          <span className="premarket-page__regime-label">Gates armés</span>
+          <span className="premarket-page__regime-value">{armedPositions.length}</span>
+          <span className="premarket-page__regime-sub">/ {allOpenOptions.length} positions</span>
         </div>
-        <div className="premarket__regime-cell">
-          <span className="premarket__regime-label">USD/CHF</span>
-          <span className="premarket__regime-value">——</span>
-          <span className="premarket__regime-sub">via FX hook</span>
+        <div className="premarket-page__regime-cell">
+          <span className="premarket-page__regime-label">USD/CHF</span>
+          <span className="premarket-page__regime-value">——</span>
+          <span className="premarket-page__regime-sub">via FX hook</span>
         </div>
-        <div className="premarket__regime-cell">
-          <span className="premarket__regime-label">DXY</span>
-          <span className="premarket__regime-value">——</span>
-          <span className="premarket__regime-sub">overnight feed</span>
+        <div className="premarket-page__regime-cell">
+          <span className="premarket-page__regime-label">DXY</span>
+          <span className="premarket-page__regime-value">——</span>
+          <span className="premarket-page__regime-sub">overnight feed</span>
         </div>
       </div>
 
       {/* 3. Positions review — gates table */}
-      <section className="premarket__section">
-        <header className="premarket__section-head">
-          <span className="premarket__section-title">Positions Review · Gates</span>
-          <span className="premarket__section-hint">
+      <section className="premarket-page__section">
+        <header className="premarket-page__section-head">
+          <span className="premarket-page__section-title">Positions Review · Gates</span>
+          <span className="premarket-page__section-hint">
             {armedPositions.length > 0
               ? `${armedPositions.length} attention requise · ${allOpenOptions.length} options ouvertes`
               : `${allOpenOptions.length} options ouvertes · aucune gate critique`}
           </span>
         </header>
-        <div className="premarket__section-body">
+        <div className="premarket-page__section-body">
           {allOpenOptions.length === 0 ? (
             <div className="module-empty">
               <span className="module-empty__title">Aucune option ouverte</span>
@@ -305,7 +305,7 @@ export default function PreMarketBriefing() {
               </span>
             </div>
           ) : (
-            <table className="premarket__table" aria-label="Positions Review">
+            <table className="premarket-page__table" aria-label="Positions Review">
               <thead>
                 <tr>
                   <th>Ticker</th>
@@ -326,7 +326,7 @@ export default function PreMarketBriefing() {
                   return (
                     <tr
                       key={row.id}
-                      className="premarket__row"
+                      className="premarket-page__row"
                       data-status={
                         status === 'ARMED'
                           ? 'armed'
@@ -339,7 +339,7 @@ export default function PreMarketBriefing() {
                       }
                     >
                       <td>{row.ticker}</td>
-                      <td className="premarket__strat">
+                      <td className="premarket-page__strat">
                         {row.dir === 'Short' ? 'S' : 'L'}
                         {row.type === 'PUT' ? 'P' : row.type === 'CALL' ? 'C' : '—'}
                       </td>
@@ -348,9 +348,9 @@ export default function PreMarketBriefing() {
                       <td
                         className={
                           row.unrealPct > 0
-                            ? 'premarket__cell--profit'
+                            ? 'premarket-page__cell--profit'
                             : row.unrealPct < 0
-                              ? 'premarket__cell--loss'
+                              ? 'premarket-page__cell--loss'
                               : ''
                         }
                       >
@@ -358,12 +358,12 @@ export default function PreMarketBriefing() {
                           ? '——'
                           : `${row.unrealPct > 0 ? '+' : ''}${row.unrealPct.toFixed(1)}%`}
                       </td>
-                      <td className="premarket__gate-cell">
+                      <td className="premarket-page__gate-cell">
                         {flag ? `${flag.gate} · ${flag.label}` : '—'}
                       </td>
                       <td>
                         <span
-                          className="premarket__status-pill"
+                          className="premarket-page__status-pill"
                           data-status={
                             status === 'ARMED'
                               ? 'armed'
@@ -385,39 +385,39 @@ export default function PreMarketBriefing() {
       </section>
 
       {/* 4. Routine checklist */}
-      <section className="premarket__section">
-        <header className="premarket__section-head">
-          <span className="premarket__section-title">Routine pré-marché · {dateKey}</span>
-          <span className="premarket__section-hint">
+      <section className="premarket-page__section">
+        <header className="premarket-page__section-head">
+          <span className="premarket-page__section-title">Routine pré-marché · {dateKey}</span>
+          <span className="premarket-page__section-hint">
             {readyAt
               ? `Confirmée à ${new Date(readyAt).toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' })}`
               : `${checkedCount} / ${ROUTINE_ITEMS.length} étapes cochées`}
           </span>
         </header>
-        <div className="premarket__checklist">
+        <div className="premarket-page__checklist">
           {ROUTINE_ITEMS.map((item) => (
             <label
               key={item.id}
-              className="premarket__check-row"
+              className="premarket-page__check-row"
               data-checked={!!checks[item.id] || undefined}
             >
               <input
                 type="checkbox"
-                className="premarket__check-input"
+                className="premarket-page__check-input"
                 checked={!!checks[item.id]}
                 onChange={() => toggleCheck(item.id)}
               />
-              <span className="premarket__check-box" aria-hidden="true">
+              <span className="premarket-page__check-box" aria-hidden="true">
                 {checks[item.id] ? '✓' : ''}
               </span>
-              <span className="premarket__check-label">{item.label}</span>
+              <span className="premarket-page__check-label">{item.label}</span>
             </label>
           ))}
         </div>
-        <div className="premarket__actions">
+        <div className="premarket-page__actions">
           <button
             type="button"
-            className="premarket__btn premarket__btn--ghost"
+            className="premarket-page__btn premarket-page__btn--ghost"
             onClick={resetChecks}
             disabled={checkedCount === 0 && !readyAt}
           >
@@ -425,7 +425,7 @@ export default function PreMarketBriefing() {
           </button>
           <button
             type="button"
-            className="premarket__btn premarket__btn--primary"
+            className="premarket-page__btn premarket-page__btn--primary"
             onClick={confirmReady}
             disabled={!allReady || !!readyAt}
           >

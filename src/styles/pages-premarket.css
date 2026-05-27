@@ -1,0 +1,487 @@
+/* ════════════════════════════════════════════════════════════════
+   PAGES-PREMARKET.CSS — page-vitrine /premarket (6ème consommation
+   des tokens canoniques).
+
+   Toutes les règles sont SCOPÉES à .premarket-page pour ne contaminer
+   aucune autre page. Chargée APRÈS pages-history.css dans main.jsx.
+
+   ORIGINE : les 61 sélecteurs .premarket-* ont été extraits de
+   src/styles/v5-chain.css (l.1078-1505) — fichier qui contenait deux
+   univers mélangés (.chain-v5__* + .premarket__*). Les règles .chain-*
+   restent dans v5-chain.css en attendant leur propre sprint de
+   migration. Le fichier v5-chain.css n'a PAS été renommé : c'est un
+   chantier ultérieur.
+
+   MAPPING TOKENS LEGACY → CANONIQUES appliqué systématiquement :
+     --qc-bg-base                    → --depth-void (wrapper)
+     --bg-elev-1 (= --qc-bg-surface) → --depth-raised
+     --bg-elev-2 (= --qc-bg-elevated)→ --depth-focus
+     --row-hover (= --qc-bg-elevated)→ --depth-focus
+     --qc-text-primary               → --ink-pure
+     --qc-text-secondary             → --ink-soft
+     --qc-text-tertiary              → --ink-mute
+     --qc-border-subtle              → --line-hairline
+     --qc-border-strong              → --line-emphasis
+     --hairline (1px subtle)         → 1px solid var(--line-hairline)
+     --hairline-strong (1px default) → 1px solid var(--line-emphasis)
+     --qc-profit                     → --pnl-up
+     --qc-loss                       → --pnl-down
+     --qc-warning                    → --accent (amber attention)
+     --accent-amber (= --qc-warning) → --accent
+     #ffa028 hardcoded               → --accent
+
+   NON TOUCHÉS (résiduels cyan/blue, vague séparée) : --qc-accent
+   (utilisé sur focus-visible) reste pour compat — sera revu dans le
+   sprint cyan-kill global.
+
+   API data-tone PRÉSERVÉE telle quelle (data-tone="profit|loss|warn"
+   sur les regime-cells, data-status="armed|imminent|safe" sur les
+   status-pills, data-phase="open|closed" sur les clock-cells).
+   ════════════════════════════════════════════════════════════════ */
+
+/* Wrapper top-level — pose la page sur le fond le plus profond,
+   cohérent avec les 5 pages déjà migrées. */
+.premarket-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  font-family: var(--qc-font-mono);
+  background: var(--depth-void);
+  overflow-y: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   HEADER — 4 clock cells + ready cell (64px high strip)
+   ════════════════════════════════════════════════════════════════ */
+.premarket-page__header {
+  display: flex;
+  align-items: stretch;
+  height: 64px;
+  flex-shrink: 0;
+  background: var(--depth-raised);
+  border-bottom: 1px solid var(--line-emphasis);
+}
+
+.premarket-page__clock-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 14px;
+  border-right: 1px solid var(--line-hairline);
+  position: relative;
+  min-width: 0;
+}
+
+.premarket-page__clock-cell:last-child {
+  border-right: none;
+}
+
+.premarket-page__clock-label {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+.premarket-page__clock-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink-pure);
+  font-feature-settings:
+    "tnum" 1,
+    "zero" 1;
+  font-variant-numeric: tabular-nums slashed-zero;
+  letter-spacing: -0.005em;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.premarket-page__clock-value--phase {
+  color: var(--accent);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.premarket-page__clock-value--ok {
+  color: var(--pnl-up);
+}
+
+.premarket-page__clock-cell--phase[data-phase="open"] .premarket-page__clock-value--phase {
+  color: var(--pnl-up);
+}
+
+.premarket-page__clock-cell--phase[data-phase="closed"] .premarket-page__clock-value--phase {
+  color: var(--ink-mute);
+}
+
+.premarket-page__clock-cell--ready::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  background: var(--accent);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   REGIME STRIP — VIX/SPX/QQQ/Gates armés/USD-CHF/DXY (56px high)
+   ════════════════════════════════════════════════════════════════ */
+.premarket-page__regime {
+  display: flex;
+  align-items: stretch;
+  height: 56px;
+  flex-shrink: 0;
+  background: var(--depth-raised);
+  border-bottom: 1px solid var(--line-emphasis);
+}
+
+.premarket-page__regime-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 12px;
+  border-right: 1px solid var(--line-hairline);
+  position: relative;
+}
+
+.premarket-page__regime-cell:last-child {
+  border-right: none;
+}
+
+.premarket-page__regime-label {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-bottom: 2px;
+}
+
+.premarket-page__regime-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink-pure);
+  font-feature-settings:
+    "tnum" 1,
+    "zero" 1;
+  font-variant-numeric: tabular-nums slashed-zero;
+  line-height: 1.1;
+}
+
+.premarket-page__regime-sub {
+  font-size: 9px;
+  color: var(--ink-mute);
+  margin-top: 2px;
+  font-feature-settings:
+    "tnum" 1,
+    "zero" 1;
+  letter-spacing: 0.04em;
+}
+
+.premarket-page__regime-cell[data-tone="profit"] .premarket-page__regime-value {
+  color: var(--pnl-up);
+}
+.premarket-page__regime-cell[data-tone="profit"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--pnl-up);
+}
+.premarket-page__regime-cell[data-tone="loss"] .premarket-page__regime-value {
+  color: var(--pnl-down);
+}
+.premarket-page__regime-cell[data-tone="loss"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--pnl-down);
+}
+.premarket-page__regime-cell[data-tone="warn"] .premarket-page__regime-value {
+  color: var(--accent);
+}
+.premarket-page__regime-cell[data-tone="warn"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--accent);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SECTION — positions review + routine checklist (panel container)
+   ════════════════════════════════════════════════════════════════ */
+.premarket-page__section {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--line-emphasis);
+  background: var(--depth-raised);
+}
+
+.premarket-page__section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line-hairline);
+  background: var(--depth-raised);
+}
+
+.premarket-page__section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-pure);
+}
+
+.premarket-page__section-hint {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--ink-mute);
+}
+
+.premarket-page__section-body {
+  padding: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   POSITIONS REVIEW TABLE
+   ════════════════════════════════════════════════════════════════ */
+.premarket-page__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--qc-font-mono);
+  font-size: 11px;
+  font-feature-settings:
+    "tnum" 1,
+    "zero" 1;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.premarket-page__table thead th {
+  height: 24px;
+  padding: 0 12px;
+  background: var(--depth-focus);
+  border-bottom: 1px solid var(--line-hairline);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  text-align: left;
+}
+
+.premarket-page__row {
+  height: var(--row-data, 26px);
+  cursor: pointer;
+  transition: background-color 80ms ease-out;
+}
+
+.premarket-page__row td {
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line-hairline);
+  color: var(--ink-soft);
+}
+
+.premarket-page__row:hover {
+  background: var(--depth-focus);
+}
+
+.premarket-page__row[data-status="armed"] {
+  background: color-mix(in srgb, var(--pnl-down) 6%, transparent);
+}
+
+.premarket-page__row[data-status="armed"]:hover {
+  background: color-mix(in srgb, var(--pnl-down) 12%, transparent);
+}
+
+.premarket-page__row[data-status="imminent"] {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.premarket-page__strat {
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.premarket-page__cell--profit {
+  color: var(--pnl-up);
+}
+.premarket-page__cell--loss {
+  color: var(--pnl-down);
+}
+
+.premarket-page__gate-cell {
+  font-size: 10px;
+  color: var(--ink-mute);
+  letter-spacing: 0.02em;
+}
+
+.premarket-page__status-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 14px;
+  padding: 0 6px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  color: var(--ink-soft);
+}
+
+.premarket-page__status-pill[data-status="armed"] {
+  color: var(--pnl-down);
+  border-color: color-mix(in srgb, var(--pnl-down) 35%, transparent);
+  background: color-mix(in srgb, var(--pnl-down) 10%, transparent);
+}
+
+.premarket-page__status-pill[data-status="imminent"] {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.premarket-page__status-pill[data-status="safe"] {
+  color: var(--pnl-up);
+  border-color: color-mix(in srgb, var(--pnl-up) 35%, transparent);
+  background: color-mix(in srgb, var(--pnl-up) 10%, transparent);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ROUTINE CHECKLIST
+   ════════════════════════════════════════════════════════════════ */
+.premarket-page__checklist {
+  display: flex;
+  flex-direction: column;
+}
+
+.premarket-page__check-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line-hairline);
+  cursor: pointer;
+  transition: background-color 80ms ease-out;
+}
+
+.premarket-page__check-row:hover {
+  background: var(--depth-focus);
+}
+
+.premarket-page__check-row[data-checked] {
+  background: color-mix(in srgb, var(--pnl-up) 6%, transparent);
+}
+
+.premarket-page__check-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.premarket-page__check-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--line-emphasis);
+  background: var(--depth-focus);
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--pnl-up);
+  flex-shrink: 0;
+  transition: all 80ms ease-out;
+}
+
+.premarket-page__check-row[data-checked] .premarket-page__check-box {
+  background: color-mix(in srgb, var(--pnl-up) 20%, transparent);
+  border-color: var(--pnl-up);
+}
+
+.premarket-page__check-label {
+  font-size: 12px;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+
+.premarket-page__check-row[data-checked] .premarket-page__check-label {
+  color: var(--ink-pure);
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-mute);
+  text-decoration-thickness: 1px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ACTIONS — boutons Reset + Confirm Ready
+   ════════════════════════════════════════════════════════════════ */
+.premarket-page__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line-emphasis);
+}
+
+.premarket-page__btn {
+  height: 28px;
+  padding: 0 14px;
+  font-family: var(--qc-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 100ms ease-out;
+}
+
+.premarket-page__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.premarket-page__btn--ghost {
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line-hairline);
+}
+
+.premarket-page__btn--ghost:hover:not(:disabled) {
+  color: var(--ink-pure);
+  border-color: var(--line-emphasis);
+}
+
+.premarket-page__btn--primary {
+  color: var(--depth-void);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.premarket-page__btn--primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.premarket-page__btn:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
