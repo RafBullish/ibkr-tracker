@@ -1,30 +1,37 @@
 // ═══════════════════════════════════════════════════════════════
-//  HISTORY v3.0 « Midnight Terminal »
+//  HISTORY — page-vitrine canonique (CANONICAL-6)
 //  /trading/history
 //
-//  KPI strip (6 MetricCards), toolbar (Add trade + tabs), DataTable
-//  v3 virtualized, and a distribution panel (P&L histogram +
-//  WinRate donut) at the bottom.
+//  Cinquième consommatrice de la palette canonique (après Positions,
+//  Greeks, Import, Settings General).
+//
+//  Patterns combinés :
+//   - KPI strip (6 tuiles) : pattern Greeks — markup local plat, label
+//     uppercase ink-soft, value tabular-nums + tonalité sémantique
+//     --up/--down/--neutral. Plus de <MetricCard>.
+//   - Panneaux (Win rate, Distribution P&L, empty branch) : pattern
+//     Positions — surface plate sur var(--depth-raised) via
+//     .history-page__panel. Plus de <GlassCard>.
+//
+//  POINT CRITIQUE : .history-page__panel-head est une COPIE LOCALE
+//  indépendante de .dashboard-v3__panel-head (toujours consommé par
+//  Analytics + Journal). History ne dépend plus du CSS de Dashboard.
+//
+//  Sémantique des tuiles KPI (rappel des règles métier appliquées) :
+//   - Total   : neutral (compteur, pas de l'argent)
+//   - Net P&L : up si > 0 / down si < 0 / neutral si 0 (P&L money légitime)
+//   - Win Rate: up si >= 50% / down si < 40% / neutral entre (seuils domain)
+//   - Avg R   : up si >= 1.5 / down si < 1 / neutral entre (seuils domain)
+//   - Best    : up (par définition)
+//   - Worst   : down (par définition)
 //
 //  Known limitation B-01: IBKR Flex exposes only IBCommission as
-//  a single fees field. The "Fees" column shows the aggregate and
-//  carries an InfoTooltip explaining the upstream limitation.
+//  a single fees field. The "Fees" column shows the aggregate.
 // ═══════════════════════════════════════════════════════════════
 
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import {
-  Download,
-  Plus,
-  History as HistoryIcon,
-  Target,
-  DollarSign,
-  Trophy,
-  TrendingDown,
-  Zap,
-  Crosshair,
-  Trash2,
-} from 'lucide-react';
+import { Plus, History as HistoryIcon, Crosshair, Trash2 } from 'lucide-react';
 import { useClosedTrades, useSettings, useDispatch } from '../../store/useStore';
 import { tradePnlUsd } from '../../utils/calculations';
 import { calculateTradingMetrics } from '../../hooks/useTradingMetrics';
@@ -32,8 +39,6 @@ import { formatUsd } from '../../utils/format';
 import { toFloat, ensurePositive } from '../../utils/math';
 import { holdingDays } from '../../utils/dates';
 
-import GlassCard from '../../components/ui/GlassCard';
-import MetricCard from '../../components/ui/MetricCard';
 import StatusBadge from '../../components/ui/StatusBadge';
 import InfoTooltip from '../../components/ui/InfoTooltip';
 import EmptyState from '../../components/ui/EmptyState';
@@ -114,6 +119,73 @@ function loadViewMode() {
   } catch {
     return 'standard';
   }
+}
+
+// ── Local KPI tile (pattern Greeks) ──────────────────────────
+function KpiTile({ label, tooltip, value, tone = 'neutral' }) {
+  const valueCls = `history-page__kpi-tile-value history-page__kpi-tile-value--${tone}`;
+  return (
+    <div className="history-page__kpi-tile">
+      <span className="history-page__kpi-tile-label">
+        {label}
+        {tooltip && <InfoTooltip content={tooltip} size={12} />}
+      </span>
+      <span className={valueCls}>{value}</span>
+    </div>
+  );
+}
+
+// ── Local formatters (Intl) — équivalent fonctionnel de MetricCard ──
+function fmtCount(v) {
+  if (v == null || Number.isNaN(v)) return '—';
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(v);
+}
+function fmtNumber(v) {
+  if (v == null || Number.isNaN(v)) return '—';
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(v);
+}
+function fmtCurrency(v) {
+  if (v == null || Number.isNaN(v)) return '—';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    currencyDisplay: 'narrowSymbol',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(v);
+}
+function fmtPercent(v) {
+  if (v == null || Number.isNaN(v)) return '—';
+  return (
+    new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(v) + '%'
+  );
+}
+
+// ── Tonalités sémantiques (règles métier) ──
+function toneForNetPnl(v) {
+  if (v == null || v === 0) return 'neutral';
+  return v > 0 ? 'up' : 'down';
+}
+function toneForWinRate(v) {
+  if (v == null) return 'neutral';
+  if (v >= 50) return 'up';
+  if (v < 40) return 'down';
+  return 'neutral';
+}
+function toneForAvgR(v) {
+  if (v == null || Number.isNaN(v)) return 'neutral';
+  if (v >= 1.5) return 'up';
+  if (v < 1) return 'down';
+  return 'neutral';
 }
 
 function ExitReasonEditor({ trade, onConfirm, onOverride, onClose }) {
@@ -224,7 +296,7 @@ export default function History() {
   const stats = useMemo(() => {
     const m = calculateTradingMetrics(filtered, lr);
     // A2b — winRate is nullable upstream when decisive<10. Preserve null
-    // here so MetricCard / WinRateDonut render "—" instead of "0 %".
+    // here so KpiTile / WinRateDonut render "—" instead of "0 %".
     if (!m) return { total: 0, net: 0, winRate: null, avgR: 0, best: 0, worst: 0 };
     return {
       total: m.totalPnlCount,
@@ -389,7 +461,7 @@ export default function History() {
             ? 'Backfill tenté mais spot du sous-jacent indisponible pour ce trade historique — sera enrichi rétroactivement quand une source de spot historique sera branchée.'
             : 'Donnée non disponible (spot du sous-jacent requis, pas fourni par IBKR Flex).';
           return (
-            <span style={{ color: 'var(--text-tertiary)' }} title={tip}>
+            <span className="history-page__cell-empty" title={tip}>
               —
             </span>
           );
@@ -399,7 +471,7 @@ export default function History() {
             {v.toFixed(2)}
             {row._deltaApproximated && (
               <span
-                style={{ color: 'var(--text-tertiary)', marginLeft: 2 }}
+                className="history-page__cell-asterisk"
                 title="Delta approximé (IV forfaitaire 30%)"
               >
                 *
@@ -416,7 +488,7 @@ export default function History() {
       sort: true,
       mono: true,
       render: (v) =>
-        typeof v === 'number' ? `${v}j` : <span style={{ color: 'var(--text-tertiary)' }}>—</span>,
+        typeof v === 'number' ? `${v}j` : <span className="history-page__cell-empty">—</span>,
     },
     {
       key: 'ivRankAtEntry',
@@ -426,10 +498,7 @@ export default function History() {
       mono: true,
       render: (v) =>
         v == null ? (
-          <span
-            style={{ color: 'var(--text-tertiary)' }}
-            title="Donnée non disponible pour ce trade"
-          >
+          <span className="history-page__cell-empty" title="Donnée non disponible pour ce trade">
             —
           </span>
         ) : (
@@ -443,28 +512,22 @@ export default function History() {
       sort: true,
       render: (v, row) => {
         const label = v && EXIT_REASON_LABELS[v] ? EXIT_REASON_LABELS[v] : '—';
-        const tone = !v ? { color: 'var(--text-tertiary)' } : undefined;
+        const cls = !v
+          ? 'history-page__exit-cell history-page__cell-empty'
+          : 'history-page__exit-cell';
         return (
           <button
             type="button"
-            className="history-v3__exit-cell"
+            className={cls}
             onClick={(e) => {
               e.stopPropagation();
               setEditingExit(row);
             }}
-            style={tone}
             title="Cliquer pour confirmer ou corriger"
           >
             <span>{label}</span>
             {row._exitReasonAutoDetected && (
-              <span
-                style={{
-                  color: 'var(--text-tertiary)',
-                  fontSize: 10,
-                  fontStyle: 'italic',
-                  marginLeft: 4,
-                }}
-              >
+              <span className="history-page__cell-meta" style={{ marginLeft: 4 }}>
                 auto
               </span>
             )}
@@ -491,9 +554,7 @@ export default function History() {
             <span className="mono positions-card__ticker">{row.tk}</span>
             <TypeBadge as={row.as} ty={row.ty} />
           </div>
-          <span className="mono" style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>
-            {row.do}
-          </span>
+          <span className="mono history-page__cell-mobile-date">{row.do}</span>
         </div>
         <div className="positions-card__body">
           <div className="positions-card__pnl">
@@ -530,8 +591,8 @@ export default function History() {
 
   if (closedTrades.length === 0) {
     return (
-      <div className="page-container">
-        <GlassCard variant="subtle" style={{ maxWidth: 640, margin: '60px auto' }}>
+      <div className="page-container history-page">
+        <aside className="history-page__panel history-page__panel--subtle">
           <EmptyState
             icon={HistoryIcon}
             title="Aucun trade clôturé"
@@ -547,7 +608,7 @@ export default function History() {
               </button>
             }
           />
-        </GlassCard>
+        </aside>
         <AddTradeModal
           open={addOpen}
           onClose={() => setAddOpen(false)}
@@ -559,7 +620,7 @@ export default function History() {
 
   return (
     <motion.div
-      className="page-container history-v3"
+      className="page-container history-page"
       variants={reducedMotion ? undefined : CONTAINER_VARIANTS}
       initial={reducedMotion ? undefined : 'hidden'}
       animate={reducedMotion ? undefined : 'visible'}
@@ -575,11 +636,11 @@ export default function History() {
             P&L réalisé cumulé · filtres gagnants/perdants · export CSV.
           </p>
         </div>
-        <div className="history-v3__header-actions">
-          <div className="history-v3__view-toggle" role="group" aria-label="Mode d'affichage">
+        <div className="history-page__header-actions">
+          <div className="history-page__view-toggle" role="group" aria-label="Mode d'affichage">
             <button
               type="button"
-              className="history-v3__view-btn"
+              className="history-page__view-btn"
               data-active={viewMode === 'standard' || undefined}
               onClick={() => setViewMode('standard')}
               aria-pressed={viewMode === 'standard'}
@@ -588,7 +649,7 @@ export default function History() {
             </button>
             <button
               type="button"
-              className="history-v3__view-btn"
+              className="history-page__view-btn"
               data-active={viewMode === 'sniper' || undefined}
               data-sniper-active={viewMode === 'sniper' || undefined}
               onClick={() => setViewMode('sniper')}
@@ -604,75 +665,43 @@ export default function History() {
         </div>
       </motion.div>
 
-      {/* KPI strip — 6 MetricCards */}
-      <motion.div variants={TILE_VARIANTS} className="history-v3__kpi-strip">
-        <MetricCard
-          label="Total"
-          value={stats.total}
-          format="number"
-          size="compact"
-          icon={HistoryIcon}
-        />
-        <MetricCard
+      {/* KPI strip — 6 tuiles canoniques, règles métier appliquées */}
+      <motion.div variants={TILE_VARIANTS} className="history-page__kpi-strip">
+        <KpiTile label="Total" value={fmtCount(stats.total)} tone="neutral" />
+        <KpiTile
           label="Net P&L"
-          value={stats.net}
-          format="currency"
-          currency="USD"
-          size="compact"
-          icon={DollarSign}
-          semantic={stats.net > 0 ? 'profit' : stats.net < 0 ? 'loss' : 'neutral'}
           tooltip={{
             title: 'Net P&L',
             body: 'Somme des P&L réalisés sur la plage filtrée, nets des frais IBKR.',
           }}
+          value={fmtCurrency(stats.net)}
+          tone={toneForNetPnl(stats.net)}
         />
-        <MetricCard
+        <KpiTile
           label="Win Rate"
-          value={stats.winRate}
-          format="percent"
-          size="compact"
-          icon={Target}
-          semantic={stats.winRate >= 50 ? 'profit' : stats.winRate < 40 ? 'loss' : 'neutral'}
           tooltip={{
             title: 'Win Rate',
             body: "% de trades gagnants. Utile à lire en combinaison avec l'Avg R.",
           }}
+          value={fmtPercent(stats.winRate)}
+          tone={toneForWinRate(stats.winRate)}
         />
-        <MetricCard
+        <KpiTile
           label="Avg R"
-          value={stats.avgR}
-          format="number"
-          size="compact"
-          icon={Zap}
-          semantic={stats.avgR >= 1.5 ? 'profit' : stats.avgR < 1 ? 'loss' : 'neutral'}
           tooltip={{
             title: 'Avg R',
             body: 'Gain moyen rapporté à la perte moyenne. > 1.5 = bon risque/récompense.',
           }}
+          value={fmtNumber(stats.avgR)}
+          tone={toneForAvgR(stats.avgR)}
         />
-        <MetricCard
-          label="Best"
-          value={stats.best}
-          format="currency"
-          currency="USD"
-          size="compact"
-          icon={Trophy}
-          semantic="profit"
-        />
-        <MetricCard
-          label="Worst"
-          value={stats.worst}
-          format="currency"
-          currency="USD"
-          size="compact"
-          icon={TrendingDown}
-          semantic="loss"
-        />
+        <KpiTile label="Best" value={fmtCurrency(stats.best)} tone="up" />
+        <KpiTile label="Worst" value={fmtCurrency(stats.worst)} tone="down" />
       </motion.div>
 
       {/* Tabs filtres */}
-      <motion.div variants={TILE_VARIANTS} className="history-v3__tabs">
-        <div className="history-v3__tab-group" role="tablist" aria-label="Filtre résultat">
+      <motion.div variants={TILE_VARIANTS} className="history-page__tabs">
+        <div className="history-page__tab-group" role="tablist" aria-label="Filtre résultat">
           {[
             { key: 'all', label: 'Tous' },
             { key: 'win', label: 'Gagnants' },
@@ -681,7 +710,7 @@ export default function History() {
             <button
               key={t.key}
               type="button"
-              className="history-v3__tab"
+              className="history-page__tab"
               data-active={resultTab === t.key || undefined}
               onClick={() => setResultTab(t.key)}
               aria-pressed={resultTab === t.key}
@@ -690,7 +719,7 @@ export default function History() {
             </button>
           ))}
         </div>
-        <div className="history-v3__tab-group" role="tablist" aria-label="Filtre actif">
+        <div className="history-page__tab-group" role="tablist" aria-label="Filtre actif">
           {[
             { key: 'all', label: 'Tous' },
             { key: 'options', label: 'Options' },
@@ -699,7 +728,7 @@ export default function History() {
             <button
               key={t.key}
               type="button"
-              className="history-v3__tab"
+              className="history-page__tab"
               data-active={typeTab === t.key || undefined}
               onClick={() => setTypeTab(t.key)}
               aria-pressed={typeTab === t.key}
@@ -725,21 +754,21 @@ export default function History() {
         />
       </motion.div>
 
-      {/* Distribution row */}
+      {/* Distribution row — Win rate + Distribution P&L */}
       {stats.total > 2 && (
-        <motion.div variants={TILE_VARIANTS} className="history-v3__dist-row">
-          <GlassCard hover={false} style={{ padding: 'var(--space-5)' }}>
-            <div className="dashboard-v3__panel-head">
+        <motion.div variants={TILE_VARIANTS} className="history-page__dist-row">
+          <section className="history-page__panel">
+            <header className="history-page__panel-head">
               <span className="uppercase-label">Win rate</span>
               <InfoTooltip
                 content={{ title: 'Win Rate', body: '% trades gagnants sur le filtre actif.' }}
                 size={12}
               />
-            </div>
+            </header>
             <WinRateDonut winRate={stats.winRate} />
-          </GlassCard>
-          <GlassCard hover={false} style={{ padding: 'var(--space-5)' }}>
-            <div className="dashboard-v3__panel-head">
+          </section>
+          <section className="history-page__panel">
+            <header className="history-page__panel-head">
               <span className="uppercase-label">Distribution P&L</span>
               <InfoTooltip
                 content={{
@@ -748,11 +777,11 @@ export default function History() {
                 }}
                 size={12}
               />
-            </div>
+            </header>
             <Suspense fallback={<div style={{ height: 200 }} />}>
               <LazyDistribution trades={filtered} />
             </Suspense>
-          </GlassCard>
+          </section>
         </motion.div>
       )}
 

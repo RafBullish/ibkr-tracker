@@ -3123,70 +3123,15 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   HISTORY v3
+   HISTORY — règles exclusives à History.jsx déménagées vers
+   src/styles/pages-history.css (rename .history-v3__* →
+   .history-page__*) lors de la migration CANONICAL-6.
+
+   SEULES restent ici les règles .history-v3__delete-btn (+ hover +
+   focus-visible) parce qu'elles sont PARTAGÉES avec Positions, Journal
+   et Settings General. Elles partiront en même temps que la migration
+   de Journal/Positions vers leurs propres delete-btn canoniques.
    ═══════════════════════════════════════════════════════════════ */
-.history-v3__header-actions {
-  display: flex;
-  gap: var(--qc-space-2);
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.history-v3__view-toggle {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  background: var(--surface-2);
-  border: 1px solid var(--qc-border-subtle);
-  border-radius: var(--qc-radius-md);
-}
-
-.history-v3__view-btn {
-  padding: 6px 12px;
-  background: transparent;
-  border: none;
-  color: var(--qc-text-secondary);
-  font-family: var(--qc-font-sans);
-  font-size: 11px;
-  font-weight: var(--fw-medium);
-  border-radius: var(--qc-radius-sm);
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
-  display: inline-flex;
-  align-items: center;
-}
-.history-v3__view-btn:hover {
-  color: var(--qc-text-primary);
-  background: var(--surface-3);
-}
-.history-v3__view-btn[data-active] {
-  background: var(--qc-info-bg);
-  color: var(--accent-text);
-  font-weight: var(--fw-semibold);
-}
-.history-v3__view-btn[data-sniper-active] {
-  box-shadow: 0 0 0 1px var(--qc-accent) inset;
-}
-
-.history-v3__exit-cell {
-  background: transparent;
-  border: none;
-  padding: 2px 6px;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-  border-radius: var(--radius-xs);
-  text-align: left;
-  display: inline-flex;
-  align-items: center;
-}
-.history-v3__exit-cell:hover {
-  background: var(--surface-3);
-}
-.history-v3__exit-cell:focus-visible {
-  outline: 2px solid var(--qc-accent);
-  outline-offset: 1px;
-}
 
 .history-v3__delete-btn,
 .journal-v3__entry-delete {
@@ -3251,73 +3196,9 @@
   flex-wrap: wrap;
 }
 
-.history-v3__kpi-strip {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: var(--qc-space-3);
-}
-
-@media (max-width: 1200px) {
-  .history-v3__kpi-strip {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-@media (max-width: 600px) {
-  .history-v3__kpi-strip {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.history-v3__tabs {
-  display: flex;
-  gap: var(--qc-space-4);
-  flex-wrap: wrap;
-}
-
-.history-v3__tab-group {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  background: var(--surface-2);
-  border: 1px solid var(--qc-border-subtle);
-  border-radius: var(--radius-full);
-}
-
-.history-v3__tab {
-  padding: 6px 14px;
-  background: transparent;
-  border: none;
-  color: var(--qc-text-secondary);
-  font-family: var(--qc-font-sans);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-medium);
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
-}
-
-.history-v3__tab:hover {
-  color: var(--qc-text-primary);
-  background: var(--surface-3);
-}
-
-.history-v3__tab[data-active] {
-  background: var(--qc-info-bg);
-  color: var(--accent-text);
-  font-weight: var(--fw-semibold);
-}
-
-.history-v3__dist-row {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: var(--qc-space-4);
-}
-
-@media (max-width: 900px) {
-  .history-v3__dist-row {
-    grid-template-columns: 1fr;
-  }
-}
+/* .history-v3__kpi-strip / .history-v3__tabs / .history-v3__tab-group /
+   .history-v3__tab / .history-v3__dist-row : déménagées dans
+   pages-history.css (CANONICAL-6, voir commentaire-stèle plus haut). */
 
 /* ═══════════════════════════════════════════════════════════════
    MODAL v3.1 (Radix Dialog) — P6-19

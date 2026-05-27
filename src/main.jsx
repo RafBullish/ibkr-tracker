@@ -42,6 +42,12 @@ import './styles/pages-import.css';
 // /__api-* ont été retirées de v3-components.css (zéro doublon) ;
 // .settings-v3__input reste temporairement parce qu'Import.jsx la consomme.
 import './styles/pages-settings.css';
+// pages-history.css — page-vitrine /trading/history, cinquième consommatrice
+// de la palette canonique. KPI strip pattern Greeks + panels pattern Positions
+// + COPIE LOCALE .history-page__panel-head qui rend History indépendante de
+// .dashboard-v3__panel-head (toujours consommé par Analytics + Journal).
+// .history-v3__delete-btn reste partagé dans v3-components.css.
+import './styles/pages-history.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

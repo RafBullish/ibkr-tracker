@@ -1,0 +1,317 @@
+/* ════════════════════════════════════════════════════════════════
+   PAGES-HISTORY.CSS — page-vitrine /trading/history (5ème consommation
+   des tokens canoniques).
+
+   Toutes les règles sont SCOPÉES à .history-page pour ne contaminer
+   aucune autre page. Chargée APRÈS pages-settings.css dans main.jsx.
+
+   POINT CRITIQUE : .history-page__panel-head est une COPIE LOCALE
+   indépendante de .dashboard-v3__panel-head (toujours consommé par
+   Analytics + Journal). History ne dépend plus du CSS de Dashboard —
+   quand Dashboard migrera, History ne cassera pas par effet domino.
+
+   La classe .history-v3__delete-btn reste dans v3-components.css car
+   PARTAGÉE avec Positions, Journal et Settings General.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Surface de page : fond le plus profond, opaque. */
+.history-page {
+  background: var(--depth-void);
+  position: relative;
+  z-index: 1;
+}
+
+.history-page .page-title {
+  color: var(--ink-pure);
+}
+.history-page .page-title svg {
+  color: var(--accent);
+  opacity: 1;
+}
+.history-page .page-subtitle {
+  color: var(--ink-soft);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   HEADER ACTIONS — view-toggle (Standard / Sniper) + Ajouter
+   ════════════════════════════════════════════════════════════════ */
+.history-page__header-actions {
+  display: flex;
+  gap: var(--qc-space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.history-page__view-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+}
+
+.history-page__view-btn {
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  color: var(--ink-soft);
+  font-family: var(--qc-font-sans);
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.history-page__view-btn:hover {
+  color: var(--ink-pure);
+  background: var(--depth-focus);
+}
+
+.history-page__view-btn[data-active] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: var(--fw-semibold);
+}
+
+.history-page__view-btn[data-sniper-active] {
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   KPI STRIP — 6 tuiles (Total / Net P&L / Win Rate / Avg R / Best /
+   Worst). Pattern Greeks : tuiles plates, label uppercase ink-soft,
+   value tabular-nums ink-pure (override sémantique --up/--down/--neutral).
+   ════════════════════════════════════════════════════════════════ */
+.history-page__kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--qc-space-3);
+}
+
+@media (max-width: 1200px) {
+  .history-page__kpi-strip {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .history-page__kpi-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.history-page__kpi-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--qc-space-1);
+  padding: var(--qc-space-3) var(--qc-space-4);
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  min-width: 0;
+}
+
+.history-page__kpi-tile-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-soft);
+  font-family: var(--type-mono);
+  font-size: var(--type-caption);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-page__kpi-tile-value {
+  color: var(--ink-pure);
+  font-family: var(--type-mono);
+  font-size: var(--type-display);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums slashed-zero;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-page__kpi-tile-value--up {
+  color: var(--pnl-up);
+}
+.history-page__kpi-tile-value--down {
+  color: var(--pnl-down);
+}
+.history-page__kpi-tile-value--neutral {
+  color: var(--ink-pure);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TABS — filtre résultat (Tous/Gagnants/Perdants) + actif
+   (Tous/Options/Actions)
+   ════════════════════════════════════════════════════════════════ */
+.history-page__tabs {
+  display: flex;
+  gap: var(--qc-space-4);
+  flex-wrap: wrap;
+}
+
+.history-page__tab-group {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+}
+
+.history-page__tab {
+  padding: 6px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  color: var(--ink-soft);
+  font-family: var(--qc-font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.history-page__tab:hover {
+  color: var(--ink-pure);
+  background: var(--depth-focus);
+}
+
+.history-page__tab[data-active] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: var(--fw-semibold);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   PANEL — wrapper local plat (remplace <GlassCard>)
+   ════════════════════════════════════════════════════════════════ */
+.history-page__panel {
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  padding: var(--qc-space-5);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Variante empty branch : surface plus discrète (depth-base). */
+.history-page__panel--subtle {
+  background: var(--depth-base);
+  padding: var(--qc-space-6);
+  max-width: 640px;
+  margin: 60px auto;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   PANEL HEAD — COPIE LOCALE INDÉPENDANTE de .dashboard-v3__panel-head.
+   History ne dépend plus du CSS de Dashboard. Quand Dashboard migrera,
+   History n'en sera pas affectée.
+   ════════════════════════════════════════════════════════════════ */
+.history-page__panel-head {
+  display: flex;
+  align-items: center;
+  gap: var(--qc-space-2);
+  margin-bottom: var(--qc-space-3);
+  padding-bottom: var(--qc-space-3);
+  border-bottom: 1px solid var(--line-hairline);
+}
+
+.history-page__panel-head .uppercase-label {
+  color: var(--ink-soft);
+}
+
+.history-page__panel-title {
+  color: var(--ink-pure);
+  font-family: var(--qc-font-sans);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight);
+}
+
+.history-page__panel-subtitle {
+  color: var(--ink-soft);
+  font-family: var(--qc-font-sans);
+  font-size: var(--type-caption);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DISTRIBUTION ROW — Win rate (1/3) + Distribution P&L (2/3)
+   ════════════════════════════════════════════════════════════════ */
+.history-page__dist-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--qc-space-4);
+}
+
+@media (max-width: 900px) {
+  .history-page__dist-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CELLULES DataTable — placeholder data manquante + meta inline
+   (remplace les 7 inline var(--text-tertiary) du fichier source).
+   ════════════════════════════════════════════════════════════════ */
+.history-page__cell-empty {
+  color: var(--ink-mute);
+}
+
+.history-page__cell-meta {
+  color: var(--ink-mute);
+  font-size: 10px;
+  font-style: italic;
+}
+
+.history-page__cell-asterisk {
+  color: var(--ink-mute);
+  margin-left: 2px;
+}
+
+.history-page__cell-mobile-date {
+  color: var(--ink-mute);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   EXIT REASON CELL — bouton de cell Sniper view (motif sortie)
+   ════════════════════════════════════════════════════════════════ */
+.history-page__exit-cell {
+  background: transparent;
+  border: none;
+  padding: 2px 6px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.history-page__exit-cell:hover {
+  background: var(--depth-focus);
+}
+
+.history-page__exit-cell:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
