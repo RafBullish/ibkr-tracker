@@ -21,11 +21,18 @@ import { fr } from 'date-fns/locale/fr';
 import EmptyState from '../ui/EmptyState';
 import { Activity } from 'lucide-react';
 
+// CANONICAL-3 — palette CATÉGORIELLE (pas sémantique). Les 4 lignes
+// doivent rester distinguables sur un graphe multi-séries, on aligne
+// donc sur les tokens canoniques :
+//   Delta → accent (le plus regardé pour Sniper)
+//   Gamma → ink-mute (discret, sert rarement)
+//   Theta → pnl-down (cohérent avec Theta-négatif = coût récurrent)
+//   Vega  → ink-soft (lisible mais secondaire)
 const SERIES = [
   { key: 'delta', label: 'Δ Delta', color: 'var(--accent)' },
-  { key: 'gamma', label: 'Γ Gamma', color: '#A78BFA' },
-  { key: 'theta', label: 'Θ Theta', color: 'var(--loss)' },
-  { key: 'vega', label: 'ν Vega', color: '#60A5FA' },
+  { key: 'gamma', label: 'Γ Gamma', color: 'var(--ink-mute)' },
+  { key: 'theta', label: 'Θ Theta', color: 'var(--pnl-down)' },
+  { key: 'vega', label: 'ν Vega', color: 'var(--ink-soft)' },
 ];
 
 function CustomTooltip({ active, payload, label }) {

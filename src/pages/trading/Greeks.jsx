@@ -1,15 +1,20 @@
 // ═══════════════════════════════════════════════════════════════
-//  GREEKS CENTER v3.0 — Options Command Center (brief §12.4)
+//  GREEKS CENTER — page-vitrine canonique (CANONICAL-3)
 //
 //  Dedicated route: /trading/greeks
-//  Brand-new page (no legacy predecessor). Bento layout composing
-//  the v3 primitives created in Phase 2-3.
+//  Second consumer of the palette canonique (after /trading/positions).
+//
+//  Sémantique appliquée sur les Greeks AGRÉGÉS :
+//    Δ  → ink-pure TOUJOURS (exposition directionnelle, pas $)
+//    Γ  → ink-pure TOUJOURS (dérivée seconde, sans dim. monétaire)
+//    Θ  → pnl-down SI NÉGATIF (coût récurrent réel en $/j), ink-pure sinon
+//    ν  → ink-pure TOUJOURS (sensibilité IV, pas $)
 //
 //  Rows:
-//   1. Net Greeks Hero Cards (Δ, Γ, Θ, ν)
-//   2. Greek Evolution Chart (2/3) + Theta Decay Projection (1/3)
+//   1. Net Greeks Hero (4 local KPI tiles)
+//   2. Greek Evolution (2/3) + Theta Decay Projection (1/3)
 //   3. Per-Position Greeks Table (full width)
-//   4. Vega Exposure Pie (1/2) + IV Rank Histogram (1/2)
+//   4. Vega Exposure Donut (1/2, palette CATÉGORIELLE) + IV Rank (1/2)
 //   5. Second-Order Greeks panel (collapsed by default)
 // ═══════════════════════════════════════════════════════════════
 
@@ -29,8 +34,6 @@ import { aggregateGreeks } from '../../utils/greeks';
 import { toFloat, ensurePositive } from '../../utils/math';
 import { getGreeksForAllPositions } from '../../utils/greeksApi';
 
-import GlassCard from '../../components/ui/GlassCard';
-import MetricCard from '../../components/ui/MetricCard';
 import StatusBadge from '../../components/ui/StatusBadge';
 import InfoTooltip from '../../components/ui/InfoTooltip';
 import EmptyState from '../../components/ui/EmptyState';
@@ -63,6 +66,15 @@ const GREEK_TOOLTIPS = {
   },
 };
 
+// Palette catégorielle neutre pour le donut Vega (slices = parts d'expo,
+// pas du P&L — d'où l'absence de pnl-up/pnl-down). var(--accent) est
+// réservé au slice « décisionnel » (le plus exposé en valeur absolue).
+const PIE_NEUTRAL_TONES = ['var(--ink-pure)', 'var(--ink-soft)', 'var(--ink-mute)'];
+function pieFill(rank) {
+  if (rank === 0) return 'var(--accent)';
+  return PIE_NEUTRAL_TONES[(rank - 1) % PIE_NEUTRAL_TONES.length];
+}
+
 // Build a mock evolution series from current Greeks (no historical storage yet)
 function buildMockEvolution(currentGreeks, days = 30) {
   if (!currentGreeks) return [];
@@ -90,6 +102,50 @@ function buildMockEvolution(currentGreeks, days = 30) {
     };
   }
   return series;
+}
+
+// ── Local formatters — copies the Intl conventions from the legacy
+// MetricCard so the canonical strip displays identically without the
+// glass/blur chrome. ─────────────────────────────────────────────
+function fmtNumber(v) {
+  if (v == null || Number.isNaN(v)) return '—';
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(v);
+}
+function fmtCurrency(v, currency = 'USD') {
+  if (v == null || Number.isNaN(v)) return '—';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    currencyDisplay: 'narrowSymbol',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(v);
+}
+
+// Local KPI tile — markup plat, à plat sur var(--depth-raised). Tone
+// est strictement 'pure' ou 'loss' : la règle CANONICAL-3 interdit
+// 'profit' (vert) sur les Greeks agrégés.
+function KpiTile({ label, tooltip, value, tone = 'pure', compact = false }) {
+  const cls = [
+    'greeks-v3__kpi',
+    compact && 'greeks-v3__kpi--compact',
+  ].filter(Boolean).join(' ');
+  const valueCls = [
+    'greeks-v3__kpi-value',
+    tone === 'loss' && 'is-loss',
+  ].filter(Boolean).join(' ');
+  return (
+    <div className={cls}>
+      <span className="greeks-v3__kpi-label">
+        {label}
+        {tooltip && <InfoTooltip content={tooltip} size={12} />}
+      </span>
+      <span className={valueCls}>{value}</span>
+    </div>
+  );
 }
 
 export default function Greeks() {
@@ -178,10 +234,14 @@ export default function Greeks() {
     });
   }, [optionPositions, greeksMap]);
 
+  // Donut data : trié par exposition |vega| décroissante. Le 1er slice
+  // (le plus exposé = « décisionnel ») reçoit var(--accent), les autres
+  // cyclent sur les nuances d'ink.
   const vegaPieData = useMemo(() => {
     return perPositionRows
       .filter((r) => Math.abs(r.vega) > 0.01)
-      .map((r) => ({ name: r.ticker, value: Math.abs(r.vega), original: r.vega }));
+      .map((r) => ({ name: r.ticker, value: Math.abs(r.vega), original: r.vega }))
+      .sort((a, b) => b.value - a.value);
   }, [perPositionRows]);
 
   const ivRankRows = useMemo(() => {
@@ -192,17 +252,20 @@ export default function Greeks() {
 
   const evolutionSeries = useMemo(() => buildMockEvolution(netGreeks, 30), [netGreeks]);
 
+  // Tones pour les 4 KPI agrégés — règle CANONICAL-3 §ÉTAPE 2.
+  const thetaTone = netGreeks.theta < 0 ? 'loss' : 'pure';
+
   // Empty state — no options at all
   if (optionPositions.length === 0) {
     return (
-      <div className="page-container">
-        <GlassCard variant="subtle" style={{ maxWidth: 640, margin: '60px auto' }}>
+      <div className="page-container greeks-empty">
+        <div className="greeks-empty__panel">
           <EmptyState
             icon={Sigma}
             title="Aucune position optionnelle"
             description="Le Greeks Center s'allume dès qu'une option est en portefeuille. Tes positions actions restent suivies sur le Dashboard."
           />
-        </GlassCard>
+        </div>
       </div>
     );
   }
@@ -230,48 +293,38 @@ export default function Greeks() {
         </div>
       </motion.div>
 
-      {/* ── Row 1 : Net Greeks Hero Cards ── */}
+      {/* ── Row 1 : Net Greeks — 4 KPI tiles, règle sémantique stricte ── */}
       <div className="greeks-page__hero-row">
         <motion.div variants={TILE_VARIANTS}>
-          <MetricCard
+          <KpiTile
             label="Δ Delta"
-            value={netGreeks.delta}
-            format="number"
-            size="standard"
-            semantic={netGreeks.delta > 0 ? 'profit' : netGreeks.delta < 0 ? 'loss' : 'neutral'}
             tooltip={GREEK_TOOLTIPS.delta}
+            value={fmtNumber(netGreeks.delta)}
+            tone="pure"
           />
         </motion.div>
         <motion.div variants={TILE_VARIANTS}>
-          <MetricCard
+          <KpiTile
             label="Γ Gamma"
-            value={netGreeks.gamma}
-            format="number"
-            size="standard"
-            semantic="neutral"
             tooltip={GREEK_TOOLTIPS.gamma}
+            value={fmtNumber(netGreeks.gamma)}
+            tone="pure"
           />
         </motion.div>
         <motion.div variants={TILE_VARIANTS}>
-          <MetricCard
+          <KpiTile
             label="Θ Theta"
-            value={netGreeks.theta}
-            format="currency"
-            currency="USD"
-            size="standard"
-            semantic={netGreeks.theta < 0 ? 'loss' : 'profit'}
             tooltip={GREEK_TOOLTIPS.theta}
+            value={fmtCurrency(netGreeks.theta)}
+            tone={thetaTone}
           />
         </motion.div>
         <motion.div variants={TILE_VARIANTS}>
-          <MetricCard
+          <KpiTile
             label="ν Vega"
-            value={netGreeks.vega}
-            format="currency"
-            currency="USD"
-            size="standard"
-            semantic={netGreeks.vega > 0 ? 'profit' : netGreeks.vega < 0 ? 'loss' : 'neutral'}
             tooltip={GREEK_TOOLTIPS.vega}
+            value={fmtCurrency(netGreeks.vega)}
+            tone="pure"
           />
         </motion.div>
       </div>
@@ -279,8 +332,8 @@ export default function Greeks() {
       {/* ── Row 2 : Evolution Chart + Theta Decay Projection ── */}
       <div className="greeks-page__chart-row">
         <motion.div variants={TILE_VARIANTS} className="greeks-page__chart-main">
-          <GlassCard hover={false} style={{ padding: 'var(--space-5)' }}>
-            <div className="dashboard-v3__panel-head">
+          <div className="greeks-v3__panel">
+            <div className="greeks-v3__panel-head">
               <span className="uppercase-label">Évolution 30j</span>
               <InfoTooltip
                 content={{
@@ -291,19 +344,19 @@ export default function Greeks() {
               />
             </div>
             <GreekEvolutionChart data={evolutionSeries} height={300} />
-          </GlassCard>
+          </div>
         </motion.div>
         <motion.div variants={TILE_VARIANTS} className="greeks-page__chart-side">
-          <GlassCard hover={false} style={{ padding: 'var(--space-5)', height: '100%' }}>
+          <div className="greeks-v3__panel" style={{ height: '100%' }}>
             <ThetaDecayProjection dailyTheta={netGreeks.theta} days={30} />
-          </GlassCard>
+          </div>
         </motion.div>
       </div>
 
       {/* ── Row 3 : Per-position Greeks table ── */}
       <motion.div variants={TILE_VARIANTS}>
-        <GlassCard hover={false} style={{ padding: 'var(--space-5)' }}>
-          <div className="dashboard-v3__panel-head">
+        <div className="greeks-v3__panel">
+          <div className="greeks-v3__panel-head">
             <span className="uppercase-label">Greeks par position</span>
             <InfoTooltip
               content={{
@@ -314,14 +367,14 @@ export default function Greeks() {
             />
           </div>
           <PerPositionGreeksTable rows={perPositionRows} />
-        </GlassCard>
+        </div>
       </motion.div>
 
       {/* ── Row 4 : Vega pie + IV Rank ── */}
       <div className="greeks-page__dual-row">
         <motion.div variants={TILE_VARIANTS}>
-          <GlassCard hover={false} style={{ padding: 'var(--space-5)' }}>
-            <div className="dashboard-v3__panel-head">
+          <div className="greeks-v3__panel">
+            <div className="greeks-v3__panel-head">
               <span className="uppercase-label">Exposition Vega</span>
               <InfoTooltip
                 content={{
@@ -350,49 +403,61 @@ export default function Greeks() {
                       innerRadius={55}
                       outerRadius={95}
                       paddingAngle={2}
-                      label={(e) => e.name}
+                      label={false}
                     >
                       {vegaPieData.map((d, i) => (
                         <Cell
-                          key={i}
-                          fill={d.original >= 0 ? 'var(--profit)' : 'var(--loss)'}
-                          stroke="var(--surface-2)"
+                          key={d.name}
+                          fill={pieFill(i)}
+                          stroke="var(--depth-raised)"
                           strokeWidth={2}
                         />
                       ))}
                     </Pie>
                     <RTooltip
-                      contentStyle={{
-                        background: 'var(--chart-tooltip-bg)',
-                        border: '1px solid var(--border-default)',
-                        borderRadius: 'var(--radius-md)',
-                        color: 'var(--text-primary)',
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 12,
+                      cursor={false}
+                      content={({ active, payload }) => {
+                        if (!active || !payload || !payload.length) return null;
+                        const p = payload[0];
+                        const sign = p.payload.original >= 0 ? '+' : '−';
+                        const dotColor = p.payload.fill || 'var(--ink-soft)';
+                        return (
+                          <div className="greeks-v3__pie-tooltip">
+                            <div className="greeks-v3__pie-tooltip-row">
+                              <span
+                                className="greeks-v3__pie-tooltip-dot"
+                                style={{ background: dotColor }}
+                              />
+                              <span className="greeks-v3__pie-tooltip-name">{p.payload.name}</span>
+                              <span>{`${sign}${Math.abs(p.value).toFixed(2)}`}</span>
+                            </div>
+                          </div>
+                        );
                       }}
-                      formatter={(v, name, { payload }) => [
-                        payload.original >= 0 ? `+${v.toFixed(2)}` : `-${v.toFixed(2)}`,
-                        payload.name,
-                      ]}
                     />
-                    <Legend wrapperStyle={{ fontSize: 11, fontFamily: 'var(--font-ui)' }} />
+                    <Legend
+                      wrapperStyle={{ fontSize: 11, fontFamily: 'var(--type-mono)' }}
+                      formatter={(value) => (
+                        <span style={{ color: 'var(--ink-soft)' }}>{value}</span>
+                      )}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             )}
-          </GlassCard>
+          </div>
         </motion.div>
 
         <motion.div variants={TILE_VARIANTS}>
-          <GlassCard hover={false} style={{ padding: 'var(--space-5)' }}>
+          <div className="greeks-v3__panel">
             <IVRankHistogram data={ivRankRows} />
-          </GlassCard>
+          </div>
         </motion.div>
       </div>
 
       {/* ── Row 5 : Second-order Greeks panel (collapsed) ── */}
       <motion.div variants={TILE_VARIANTS}>
-        <GlassCard hover={false} style={{ padding: 'var(--space-5)' }}>
+        <div className="greeks-v3__panel">
           <button
             type="button"
             className="greeks-page__collapse-trigger"
@@ -412,47 +477,46 @@ export default function Greeks() {
 
           {showSecondOrder && (
             <div className="greeks-page__second-order">
-              <MetricCard
+              <KpiTile
                 label="Vanna"
-                value={secondOrder.vanna}
-                format="number"
-                size="compact"
                 tooltip={{
                   title: 'Vanna',
                   body: 'dDelta/dVol — Sensibilité du Delta à la volatilité.',
                 }}
+                value={fmtNumber(secondOrder.vanna)}
+                tone="pure"
+                compact
               />
-              <MetricCard
+              <KpiTile
                 label="Charm"
-                value={secondOrder.charm}
-                format="number"
-                size="compact"
                 tooltip={{ title: 'Charm', body: 'dDelta/dTime — Decay du Delta par jour.' }}
+                value={fmtNumber(secondOrder.charm)}
+                tone="pure"
+                compact
               />
-              <MetricCard
+              <KpiTile
                 label="Vomma"
-                value={secondOrder.vomma}
-                format="number"
-                size="compact"
                 tooltip={{
                   title: 'Vomma',
                   body: 'dVega/dVol — Convexité du Vega par rapport à la volatilité.',
                 }}
+                value={fmtNumber(secondOrder.vomma)}
+                tone="pure"
+                compact
               />
-              <MetricCard
+              <KpiTile
                 label="GEX"
-                value={secondOrder.gex}
-                format="currency"
-                currency="USD"
-                size="compact"
                 tooltip={{
                   title: 'GEX (Gamma Exposure)',
                   body: 'Exposition gamma totale du portefeuille multipliée par le prix spot.',
                 }}
+                value={fmtCurrency(secondOrder.gex)}
+                tone="pure"
+                compact
               />
             </div>
           )}
-        </GlassCard>
+        </div>
       </motion.div>
     </motion.div>
   );

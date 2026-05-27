@@ -26,6 +26,10 @@ import './styles/canonical.css';
 // de la palette canonique. Scopée à .positions-v3 / .positions-flat /
 // .positions-empty — n'affecte aucune autre page.
 import './styles/pages-positions.css';
+// pages-greeks.css — page-vitrine /trading/greeks, deuxième consommatrice de la
+// palette canonique. Scopée à .greeks-page / .greeks-v3__* / .greeks-empty —
+// n'affecte aucune autre page.
+import './styles/pages-greeks.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
