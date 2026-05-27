@@ -31,3 +31,112 @@
   --type-display:      24px;
   --type-hero:         44px;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* === TRANSITION ZONE — alias rétrocompat pour Dashboard (CANONICAL-8)     === */
+/* === À PURGER par CANONICAL-PURGE après migration complète (Calendar +    === */
+/* === audit final). Ne PAS consommer ces alias dans du code NEUF — ils     === */
+/* === existent uniquement pour permettre à Dashboard (et aux 20            === */
+/* === sous-composants /components/dashboard/) d'hériter de la palette      === */
+/* === canonique sans toucher aux ~570 occurrences de tokens legacy.        === */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* ── Fonds legacy → palette canonique ───────────────────────── */
+  --qc-bg-base:        var(--depth-void);     /* wrapper de page */
+  --qc-bg-1:           var(--depth-base);     /* alias générique base */
+  --qc-bg-2:           var(--depth-raised);   /* alias générique raised */
+  --qc-bg-3:           var(--depth-focus);    /* alias générique focus */
+  --qc-bg-surface:     var(--depth-raised);   /* panneaux Dashboard */
+  --qc-bg-elevated:    var(--depth-focus);    /* zones survolées / actives */
+  --qc-bg-overlay:     var(--depth-focus);    /* sur-couche click-deeper */
+  --qc-bg-input:       var(--depth-base);     /* input fields */
+  --qc-bg-void:        var(--depth-void);     /* alias explicite vide */
+
+  /* Cascades automatiques via les bases ci-dessus :
+     --bg-elev-1 → --qc-bg-surface → --depth-raised
+     --bg-elev-2 → --qc-bg-elevated → --depth-focus
+     --bg-surface-overlay/raised → --qc-bg-elevated → --depth-focus
+     --surface-0/1/2/3/4 → --qc-bg-*
+     --row-hover → --qc-bg-elevated → --depth-focus
+     --card-bg → --qc-bg-surface → --depth-raised
+     --glass-bg / --glass-bg-strong → --qc-bg-*
+     --chip-bg/-hover → --qc-bg-* */
+
+  /* ── Textes legacy → palette canonique ──────────────────────── */
+  --qc-text-primary:   var(--ink-pure);
+  --qc-text-secondary: var(--ink-soft);
+  --qc-text-tertiary:  var(--ink-mute);
+  --qc-text-muted:     var(--ink-mute);
+  --text-primary:      var(--ink-pure);
+  --text-secondary:    var(--ink-soft);
+  --text-tertiary:     var(--ink-mute);
+
+  /* Cascades automatiques :
+     --chip-color/-text → --qc-text-secondary → --ink-soft
+     --chip-text-active → --qc-accent → --accent (voir ci-dessous) */
+
+  /* ── Bords legacy → palette canonique ───────────────────────── */
+  --qc-border-subtle:  var(--line-hairline);
+  --qc-border-default: var(--line-emphasis);
+  --qc-border-strong:  var(--line-emphasis);
+
+  /* Cascades automatiques :
+     --hairline (= 1px solid var(--qc-border-subtle)) → 1px solid var(--line-hairline)
+     --hairline-strong (= 1px solid var(--qc-border-default)) → 1px solid var(--line-emphasis)
+     --glass-border / --glass-border-hover → --qc-border-*
+     --card-border / --card-border-hover → --qc-border-*
+     --chip-border / --chip-border-active → --qc-border-* | --qc-accent
+     --border-default / --border-emphasis (consommés ailleurs) cascadent aussi */
+
+  /* ── P&L legacy → palette canonique ─────────────────────────── */
+  --qc-profit:         var(--pnl-up);
+  --qc-loss:           var(--pnl-down);
+  --profit:            var(--pnl-up);
+  --loss:              var(--pnl-down);
+
+  /* Cascades automatiques :
+     --qc-profit-bg / --qc-loss-bg (color-mix 15%) → recalculés sur --pnl-up/--pnl-down
+     --profit-text/-border/-dim/-medium → --qc-profit → --pnl-up
+     --loss-text/-border/-dim/-glow → --qc-loss → --pnl-down
+     --color-profit-subtle / --color-loss-subtle (8% mix) → cascadent
+     --shadow-glow-profit/-loss → cascadent */
+
+  /* ── Accent legacy → amber canonique ────────────────────────── */
+  /* IMPORTANT : --qc-accent est techniquement #06B6D4 cyan dans tokens.css,
+     mais sémantiquement c'est l'accent décisionnel — on l'aligne sur la
+     palette canonique (amber Bloomberg). Cela tue de fait le cyan dans
+     Dashboard via le hook --qc-accent et toutes ses dérivées (border-accent,
+     accent-text, accent-gradient, chip-text-active, etc.). */
+  --qc-accent:         var(--accent);
+  --qc-accent-hover:   var(--accent);
+  --qc-accent-dim:     color-mix(in srgb, var(--accent) 12%, transparent);
+  --qc-accent-glow:    color-mix(in srgb, var(--accent) 28%, transparent);
+  --qc-accent-line:    color-mix(in srgb, var(--accent) 35%, transparent);
+  --qc-warning:        var(--accent);
+  --accent-amber:      var(--accent);
+  --accent-hover:      var(--accent);
+
+  /* Cascades automatiques :
+     --accent-border / --accent-text / --accent-dim / --accent-light / --accent-subtle
+       / --color-accent-subtle / --border-accent / --border-focus
+       / --chip-bg-active / --chip-border-active / --chip-text-active
+       → --qc-accent → --accent (amber)
+     --accent-gradient (linear-gradient des deux nuances de --qc-accent) → reste
+       cohérent (gradient amber→amber-dark)
+     --aura-gradient (--qc-accent → --qc-profit) → amber→pnl-up
+     --warning-border / --warning-text → --qc-warning → --accent */
+
+  /* ── CYAN/BLUE NON ALIASÉS — survivent à la vague cyan-kill séparée ── */
+  /* Les tokens ci-dessous restent à leur valeur d'origine dans tokens.css.
+     On NE LES TOUCHE PAS — ils représentent le signal "info" (cyan)
+     distinct du signal "accent décisionnel" (amber).
+       --qc-info               (= #06B6D4)
+       --qc-info-bg            (rgba cyan)
+       --qc-warning-bg         (rgba amber legacy — non touché car valeur diff)
+       --accent-cyan, --info, --accent-blue (si consommés ailleurs)
+     Les valeurs hardcodées hex #06B6D4, #2962FF, #60A5FA, #ffa028 dans le
+     code source restent en l'état — CANONICAL-PURGE les nettoiera. */
+}
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* === FIN TRANSITION ZONE                                                  === */
+/* ═══════════════════════════════════════════════════════════════════════════ */

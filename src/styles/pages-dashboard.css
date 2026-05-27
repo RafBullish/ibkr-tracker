@@ -1,0 +1,87 @@
+/* ════════════════════════════════════════════════════════════════
+   PAGES-DASHBOARD.CSS — page-vitrine /dashboard (7ème consommation
+   des tokens canoniques).
+
+   STRATÉGIE TRANSITION ZONE : Dashboard est trop dense pour une
+   chirurgie complète (~570 tokens legacy dans 20+ sous-composants).
+   La migration s'effectue par alias dans canonical.css (transition
+   zone) — les sous-composants existants HÉRITENT automatiquement de
+   la palette canonique sans qu'on touche à leurs classes.
+
+   Ce fichier contient :
+   - .dashboard-page : wrapper top-level (parity avec .history-page,
+     .premarket-page, .settings-page, .import-page, .greeks-page,
+     .positions-v3).
+   - .dashboard-page__panel / __panel-head : variantes CANONIQUES NEUVES
+     pour les futures migrations de sous-composants (cibles, pas
+     consommatrices immédiates). Les sous-composants actuels gardent
+     leurs classes .dashboard-v3__*, .dash-*, etc. qui résolvent désormais
+     en tokens canoniques via la transition zone.
+
+   Chargée APRÈS pages-premarket.css dans main.jsx.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Wrapper top-level — pose la page sur le fond le plus profond,
+   cohérent avec les 6 pages déjà migrées. Le sous-arbre actuel hérite
+   automatiquement des couleurs canoniques via les alias de la
+   transition zone (canonical.css). */
+.dashboard-page {
+  background: var(--depth-void);
+  position: relative;
+  z-index: 1;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CIBLES NEUVES — à consommer lors des migrations futures des
+   sous-composants /components/dashboard/. AUCUN code actuel n'utilise
+   ces classes — elles sont en attente.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Panel canonique pour Dashboard. Pattern identique à .history-page__panel
+   et .greeks-v3__panel : surface plate sur var(--depth-raised), bord
+   var(--line-hairline), zéro ombre, border-radius 2px max. */
+.dashboard-page__panel {
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  padding: var(--qc-space-5);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.dashboard-page__panel--subtle {
+  background: var(--depth-base);
+}
+
+/* Copie locale indépendante de .dashboard-v3__panel-head (qui reste
+   consommé par Analytics + Journal). Quand un sous-composant Dashboard
+   sera migré, il consommera cette classe locale plutôt que la classe
+   v3 partagée — geste d'indépendance équivalent à celui appliqué sur
+   History (CANONICAL-6). */
+.dashboard-page__panel-head {
+  display: flex;
+  align-items: center;
+  gap: var(--qc-space-2);
+  margin-bottom: var(--qc-space-3);
+  padding-bottom: var(--qc-space-3);
+  border-bottom: 1px solid var(--line-hairline);
+}
+
+.dashboard-page__panel-head .uppercase-label {
+  color: var(--ink-soft);
+}
+
+.dashboard-page__panel-title {
+  color: var(--ink-pure);
+  font-family: var(--qc-font-sans);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight);
+}
+
+.dashboard-page__panel-subtitle {
+  color: var(--ink-soft);
+  font-family: var(--qc-font-sans);
+  font-size: var(--type-caption);
+}

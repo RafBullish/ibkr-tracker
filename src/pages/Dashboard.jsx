@@ -135,8 +135,9 @@ export default function Dashboard() {
   const [chartRange, setChartRange] = useState('ALL');
 
   return (
-    <div className="dash-shell">
-      <DashboardKPICards />
+    <div className="dashboard-page">
+      <div className="dash-shell">
+        <DashboardKPICards />
       <div className="dash-grid">
         <EquityChart
           data={equityHistory}
@@ -161,6 +162,7 @@ export default function Dashboard() {
         <IVRankMovers data={ivMovers} area="ivr" />
         <SectorHeatmap data={sectors} area="heat" />
         <AlertsFeed data={alerts} area="alert" />
+      </div>
       </div>
     </div>
   );

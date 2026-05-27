@@ -53,6 +53,12 @@ import './styles/pages-history.css';
 // (qui ne contient désormais plus que les règles .chain-v5__*, à migrer plus
 // tard) et rebaptisées .premarket-page__* avec tokens canoniques.
 import './styles/pages-premarket.css';
+// pages-dashboard.css — page-vitrine /dashboard, septième consommation des
+// tokens canoniques via la stratégie TRANSITION ZONE (alias rétrocompat dans
+// canonical.css plutôt que chirurgie sur les 20+ sous-composants). Ce fichier
+// porte uniquement le wrapper .dashboard-page + cibles canoniques neuves
+// (.dashboard-page__panel/__panel-head) pour les futures migrations.
+import './styles/pages-dashboard.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
