@@ -35,6 +35,13 @@ import './styles/pages-greeks.css';
 // aucune autre page. Les anciennes règles .import-v3__* ont été retirées de
 // v3-components.css au même commit (zéro doublon).
 import './styles/pages-import.css';
+// pages-settings.css — page-vitrine /settings/general, quatrième consommatrice
+// de la palette canonique. Fichier PARTAGÉ entre les futures pages settings :
+// General est la 1re, Api.jsx et Journal.jsx s'y brancheront lors de leurs
+// propres sprints de migration. Les règles .settings-v3__section/__row/__toggle
+// /__api-* ont été retirées de v3-components.css (zéro doublon) ;
+// .settings-v3__input reste temporairement parce qu'Import.jsx la consomme.
+import './styles/pages-settings.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

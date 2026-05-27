@@ -1,10 +1,22 @@
 // ═══════════════════════════════════════════════════════════════
-//  SETTINGS · GENERAL v3.0 « Midnight Terminal »
+//  SETTINGS · GENERAL — page-vitrine canonique (CANONICAL-5)
 //  /settings/general
 //
-//  Sections: Profil · Localisation · Apparence · Mode ·
-//  Connexions API (§13.4 fix — same 7-service view as /settings/api)
-//  · Données
+//  Quatrième consommatrice de la palette canonique (après Positions,
+//  Greeks, Import). Page de configuration la plus dense — 9 sections
+//  wrappées via le composant <Section> local qui retourne désormais
+//  un <section className="settings-page__section"> à plat sur
+//  var(--depth-raised) plutôt qu'un <GlassCard>.
+//
+//  Pattern : pages-settings.css est PARTAGÉ entre les pages settings
+//  à mesure qu'elles migrent (General est la 1re, Api/Journal suivront).
+//
+//  Icône des sections : NEUTRE (ink-soft) par défaut, AMBER (accent)
+//  uniquement pour la Zone dangereuse (point d'attention).
+//
+//  Sections: Profil · Localisation · Apparence · Mode trading ·
+//  Gestion du risque · Connexions API · Données · Cash flows ·
+//  Zone dangereuse
 // ═══════════════════════════════════════════════════════════════
 
 import { Fragment, useEffect, useRef, useState } from 'react';
@@ -39,7 +51,6 @@ import useApiStatus, { SERVICE_ORDER } from '../../hooks/useApiStatus';
 import useDailyKillSwitch from '../../hooks/useDailyKillSwitch';
 import { useToast } from '../../components/layout/Toast';
 
-import GlassCard from '../../components/ui/GlassCard';
 import StatusBadge from '../../components/ui/StatusBadge';
 import ThemeSwitcher from '../../components/ui/ThemeSwitcher';
 import ApiServiceCard from '../../components/ui/ApiServiceCard';
@@ -58,6 +69,12 @@ const CASH_FLOW_TYPES = [
 const CASH_FLOW_LABEL = Object.fromEntries(CASH_FLOW_TYPES.map((t) => [t.key, t.label]));
 const CASH_FLOW_SIGN = Object.fromEntries(CASH_FLOW_TYPES.map((t) => [t.key, t.sign]));
 
+function killSwitchToneClass(pnl) {
+  if (pnl > 0) return 'settings-page__kill-switch--up';
+  if (pnl < 0) return 'settings-page__kill-switch--down';
+  return 'settings-page__kill-switch--neutral';
+}
+
 function CashFlowsSection({ cashFlows, onAdd, onDelete }) {
   const [date, setDate] = useState(todayDateString());
   const [type, setType] = useState('dep_chf');
@@ -75,14 +92,12 @@ function CashFlowsSection({ cashFlows, onAdd, onDelete }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-      <div
-        style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', alignItems: 'flex-end' }}
-      >
+      <div className="settings-page__cashflow-form">
         <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span className="uppercase-label">Date</span>
           <input
             type="date"
-            className="settings-v3__input"
+            className="settings-page__input"
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
@@ -90,7 +105,7 @@ function CashFlowsSection({ cashFlows, onAdd, onDelete }) {
         <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span className="uppercase-label">Type</span>
           <select
-            className="settings-v3__input"
+            className="settings-page__input"
             value={type}
             onChange={(e) => setType(e.target.value)}
           >
@@ -107,8 +122,8 @@ function CashFlowsSection({ cashFlows, onAdd, onDelete }) {
             type="number"
             step="0.01"
             min="0"
-            className="settings-v3__input"
-            style={{ width: 120 }}
+            className="settings-page__input"
+            style={{ width: 120, minWidth: 'auto' }}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0.00"
@@ -124,19 +139,11 @@ function CashFlowsSection({ cashFlows, onAdd, onDelete }) {
         </button>
       </div>
       {shown.length === 0 ? (
-        <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--fs-sm)' }}>
+        <span className="settings-page__cashflow-empty">
           Aucun cash flow — les dépôts et retraits s'afficheront ici.
         </span>
       ) : (
-        <div
-          role="table"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '110px 1fr 140px 40px',
-            gap: 'var(--space-2)',
-            fontSize: 'var(--fs-sm)',
-          }}
-        >
+        <div role="table" className="settings-page__cashflow-table">
           <span className="uppercase-label">Date</span>
           <span className="uppercase-label">Type</span>
           <span className="uppercase-label" style={{ textAlign: 'right' }}>
@@ -145,11 +152,9 @@ function CashFlowsSection({ cashFlows, onAdd, onDelete }) {
           <span />
           {shown.map((cf) => (
             <Fragment key={cf.id}>
-              <span className="mono" style={{ color: 'var(--text-secondary)' }}>
-                {cf.da}
-              </span>
+              <span className="mono settings-page__cashflow-date">{cf.da}</span>
               <span>{CASH_FLOW_LABEL[cf.ty] || cf.ty}</span>
-              <span className="mono" style={{ textAlign: 'right' }}>
+              <span className="mono settings-page__cashflow-amount">
                 {CASH_FLOW_SIGN[cf.ty] === '-' ? '−' : CASH_FLOW_SIGN[cf.ty] === '+' ? '+' : '±'}
                 {cf.a1}
               </span>
@@ -174,7 +179,7 @@ function CashFlowsSection({ cashFlows, onAdd, onDelete }) {
         </div>
       )}
       {cashFlows.length > 20 && (
-        <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--fs-xs)' }}>
+        <span className="settings-page__cashflow-more">
           Affichage des 20 plus récents sur {cashFlows.length}.
         </span>
       )}
@@ -182,31 +187,35 @@ function CashFlowsSection({ cashFlows, onAdd, onDelete }) {
   );
 }
 
-function Section({ icon: Icon, title, description, children }) {
+function Section({ icon: Icon, title, description, danger = false, children }) {
+  const cls = [
+    'settings-page__section',
+    danger && 'settings-page__section--danger',
+  ].filter(Boolean).join(' ');
   return (
-    <GlassCard hover={false} className="settings-v3__section">
-      <header className="settings-v3__section-head">
-        <div className="settings-v3__section-icon">
+    <section className={cls}>
+      <header className="settings-page__section-head">
+        <div className="settings-page__section-icon">
           <Icon size={15} aria-hidden="true" />
         </div>
         <div>
-          <h2 className="settings-v3__section-title">{title}</h2>
-          {description && <p className="settings-v3__section-desc">{description}</p>}
+          <h2 className="settings-page__section-title">{title}</h2>
+          {description && <p className="settings-page__section-desc">{description}</p>}
         </div>
       </header>
-      <div className="settings-v3__section-body">{children}</div>
-    </GlassCard>
+      <div className="settings-page__section-body">{children}</div>
+    </section>
   );
 }
 
 function Row({ label, description, children }) {
   return (
-    <div className="settings-v3__row">
-      <div className="settings-v3__row-label">
+    <div className="settings-page__row">
+      <div className="settings-page__row-label">
         <span>{label}</span>
-        {description && <span className="settings-v3__row-desc">{description}</span>}
+        {description && <span className="settings-page__row-desc">{description}</span>}
       </div>
-      <div className="settings-v3__row-control">{children}</div>
+      <div className="settings-page__row-control">{children}</div>
     </div>
   );
 }
@@ -331,7 +340,7 @@ export default function SettingsGeneral() {
 
   return (
     <motion.div
-      className="page-container settings-v3"
+      className="page-container settings-page"
       variants={reducedMotion ? undefined : CONTAINER_VARIANTS}
       initial={reducedMotion ? undefined : 'hidden'}
       animate={reducedMotion ? undefined : 'visible'}
@@ -359,7 +368,7 @@ export default function SettingsGeneral() {
             <input
               type="text"
               aria-label="Nom du profil"
-              className="settings-v3__input"
+              className="settings-page__input"
               defaultValue="Rafael"
               placeholder="Ton nom"
               onBlur={(e) => {
@@ -375,7 +384,7 @@ export default function SettingsGeneral() {
             <input
               type="email"
               aria-label="Adresse email"
-              className="settings-v3__input"
+              className="settings-page__input"
               defaultValue=""
               placeholder="email@example.com"
             />
@@ -394,13 +403,13 @@ export default function SettingsGeneral() {
             <input
               type="text"
               aria-label="Timezone"
-              className="settings-v3__input"
+              className="settings-page__input"
               defaultValue="Europe/Zurich"
               readOnly
             />
           </Row>
           <Row label="Locale UI">
-            <span className="mono" style={{ color: 'var(--text-secondary)' }}>
+            <span className="mono" style={{ color: 'var(--ink-soft)' }}>
               fr-CH (interface) · de-CH (valeurs CHF) · en-US (valeurs USD)
             </span>
           </Row>
@@ -414,7 +423,8 @@ export default function SettingsGeneral() {
                 style={{
                   fontSize: 'var(--fs-lg)',
                   fontWeight: 'var(--fw-bold)',
-                  color: 'var(--text-primary)',
+                  color: 'var(--ink-pure)',
+                  fontVariantNumeric: 'tabular-nums slashed-zero',
                 }}
               >
                 {liveRate.toFixed(4)}
@@ -448,8 +458,8 @@ export default function SettingsGeneral() {
               <input
                 type="number"
                 aria-label="Capital de référence en CHF"
-                className="settings-v3__input"
-                style={{ width: 130, textAlign: 'right' }}
+                className="settings-page__input"
+                style={{ width: 130, minWidth: 'auto', textAlign: 'right' }}
                 value={initialCapitalDraft}
                 min="0"
                 step="100"
@@ -462,14 +472,18 @@ export default function SettingsGeneral() {
               />
               <span
                 className="mono"
-                style={{ color: 'var(--text-tertiary)', fontSize: 'var(--fs-xs)' }}
+                style={{ color: 'var(--ink-mute)', fontSize: 'var(--fs-xs)' }}
               >
                 CHF
               </span>
               {initialCapitalUsdPreview != null && (
                 <span
                   className="mono"
-                  style={{ color: 'var(--text-tertiary)', fontSize: 'var(--fs-xs)' }}
+                  style={{
+                    color: 'var(--ink-mute)',
+                    fontSize: 'var(--fs-xs)',
+                    fontVariantNumeric: 'tabular-nums slashed-zero',
+                  }}
                 >
                   ≈{' '}
                   {new Intl.NumberFormat('en-US', {
@@ -497,7 +511,7 @@ export default function SettingsGeneral() {
           >
             <span
               className="mono"
-              style={{ color: 'var(--text-tertiary)', fontSize: 'var(--fs-xs)' }}
+              style={{ color: 'var(--ink-mute)', fontSize: 'var(--fs-xs)' }}
             >
               Géré par l'OS
             </span>
@@ -508,7 +522,7 @@ export default function SettingsGeneral() {
           >
             <button
               type="button"
-              className="settings-v3__toggle"
+              className="settings-page__toggle"
               data-active={colorblind || undefined}
               onClick={() => {
                 const next = !colorblind;
@@ -524,7 +538,7 @@ export default function SettingsGeneral() {
               aria-pressed={colorblind}
               aria-label="Activer le mode daltonien"
             >
-              <span className="settings-v3__toggle-track" aria-hidden="true" />
+              <span className="settings-page__toggle-track" aria-hidden="true" />
             </button>
           </Row>
         </Section>
@@ -565,8 +579,8 @@ export default function SettingsGeneral() {
               <input
                 type="number"
                 aria-label="Seuil de perte quotidienne en USD"
-                className="settings-v3__input"
-                style={{ width: 110, textAlign: 'right' }}
+                className="settings-page__input"
+                style={{ width: 110, minWidth: 'auto', textAlign: 'right' }}
                 value={maxLossDraft}
                 step="50"
                 max="0"
@@ -578,7 +592,7 @@ export default function SettingsGeneral() {
               />
               <span
                 className="mono"
-                style={{ color: 'var(--text-tertiary)', fontSize: 'var(--fs-xs)' }}
+                style={{ color: 'var(--ink-mute)', fontSize: 'var(--fs-xs)' }}
               >
                 USD
               </span>
@@ -588,10 +602,7 @@ export default function SettingsGeneral() {
             label="P&L réalisé aujourd'hui"
             description="Mis à jour en temps réel depuis les trades clôturés du jour."
           >
-            <span
-              className={`mono text-${killSwitch.dailyPnlUsd > 0 ? 'profit' : killSwitch.dailyPnlUsd < 0 ? 'loss' : 'tertiary'}`}
-              style={{ fontWeight: 'var(--fw-semibold)' }}
-            >
+            <span className={`mono settings-page__kill-switch ${killSwitchToneClass(killSwitch.dailyPnlUsd)}`}>
               {new Intl.NumberFormat('en-US', {
                 style: 'currency',
                 currency: 'USD',
@@ -623,8 +634,8 @@ export default function SettingsGeneral() {
           title="Connexions API"
           description="Même vue que la page API détails — source de vérité unique via useApiStatus."
         >
-          <div className="settings-v3__api-summary">
-            <div className="settings-v3__api-heading">
+          <div className="settings-page__api-summary">
+            <div className="settings-page__api-heading">
               <span className="uppercase-label">{SERVICE_ORDER.length} services</span>
               <StatusBadge variant="live" label={`${activeCount} actifs`} size="xs" />
               {inactiveCount > 0 && (
@@ -632,13 +643,13 @@ export default function SettingsGeneral() {
               )}
               <button
                 type="button"
-                className="settings-v3__view-all"
+                className="settings-page__view-all"
                 onClick={() => navigate('/settings/api')}
               >
                 Voir détails <ChevronRight size={12} aria-hidden="true" />
               </button>
             </div>
-            <div className="settings-v3__api-list">
+            <div className="settings-page__api-list">
               {SERVICE_ORDER.map((key) => (
                 <ApiServiceCard key={key} variant="summary" service={status[key]} />
               ))}
@@ -670,7 +681,13 @@ export default function SettingsGeneral() {
             label="Taille localStorage"
             description="Estimation sommaire des données persistées."
           >
-            <span className="mono" style={{ color: 'var(--text-tertiary)' }}>
+            <span
+              className="mono"
+              style={{
+                color: 'var(--ink-mute)',
+                fontVariantNumeric: 'tabular-nums slashed-zero',
+              }}
+            >
               {(() => {
                 try {
                   let total = 0;
@@ -689,7 +706,11 @@ export default function SettingsGeneral() {
           <Row label="Nombre de trades clôturés" description="Historique cumulé dans le store.">
             <span
               className="mono"
-              style={{ color: 'var(--text-primary)', fontWeight: 'var(--fw-semibold)' }}
+              style={{
+                color: 'var(--ink-pure)',
+                fontWeight: 'var(--fw-semibold)',
+                fontVariantNumeric: 'tabular-nums slashed-zero',
+              }}
             >
               {closedTrades.length}
             </span>
@@ -718,6 +739,7 @@ export default function SettingsGeneral() {
           icon={AlertTriangle}
           title="Zone dangereuse"
           description="Remise à zéro totale du portefeuille local. Action irréversible — fais un export backup avant."
+          danger
         >
           <Row
             label="Effacer toutes les données"
@@ -725,11 +747,7 @@ export default function SettingsGeneral() {
           >
             <button
               type="button"
-              className="pg-mock-btn"
-              style={{
-                color: 'var(--loss-text)',
-                borderColor: 'var(--loss-border, var(--loss-text))',
-              }}
+              className="pg-mock-btn settings-page__btn-destructive"
               onClick={() => {
                 setResetConfirmed(false);
                 setResetOpen(true);
@@ -747,18 +765,9 @@ export default function SettingsGeneral() {
         onClose={() => setResetOpen(false)}
         title="Effacer toutes les données"
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-          <p style={{ margin: 0, color: 'var(--text-primary)', lineHeight: 1.55 }}>
-            Cette action va supprimer définitivement de ce navigateur :
-          </p>
-          <ul
-            style={{
-              margin: 0,
-              paddingLeft: 'var(--space-5)',
-              color: 'var(--text-secondary)',
-              lineHeight: 1.7,
-            }}
-          >
+        <div className="settings-page__modal-body">
+          <p>Cette action va supprimer définitivement de ce navigateur :</p>
+          <ul className="settings-page__danger-list">
             <li>
               <strong className="mono">{closedTrades.length}</strong> trades clôturés
             </li>
@@ -777,45 +786,26 @@ export default function SettingsGeneral() {
               Sniper
             </li>
           </ul>
-          <p
-            style={{
-              margin: 0,
-              color: 'var(--loss-text)',
-              fontSize: 'var(--fs-sm)',
-              fontWeight: 'var(--fw-semibold)',
-            }}
-          >
+          <p className="settings-page__danger-text">
             Irréversible. Aucune copie serveur n'existe — tout vit uniquement dans ton navigateur.
           </p>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-2)',
-              cursor: 'pointer',
-            }}
-          >
+          <label className="settings-page__modal-checkbox">
             <input
               type="checkbox"
               checked={resetConfirmed}
               onChange={(e) => setResetConfirmed(e.target.checked)}
             />
-            <span style={{ color: 'var(--text-primary)' }}>
-              Je comprends que cette action est irréversible
-            </span>
+            <span>Je comprends que cette action est irréversible</span>
           </label>
-          <div style={{ display: 'flex', gap: 'var(--space-2)', justifyContent: 'flex-end' }}>
+          <div className="settings-page__modal-actions">
             <button type="button" className="pg-mock-btn" onClick={() => setResetOpen(false)}>
               Annuler
             </button>
             <button
               type="button"
-              className="pg-mock-btn pg-mock-btn--primary"
-              style={
-                resetConfirmed
-                  ? { background: 'var(--loss-text)', borderColor: 'var(--loss-text)' }
-                  : undefined
-              }
+              className={`pg-mock-btn pg-mock-btn--primary${
+                resetConfirmed ? ' settings-page__btn-destructive--filled' : ''
+              }`}
               disabled={!resetConfirmed}
               onClick={handleResetAll}
             >
@@ -827,20 +817,13 @@ export default function SettingsGeneral() {
 
       {/* ── Info footer ── */}
       <motion.div variants={TILE_VARIANTS}>
-        <GlassCard variant="subtle" hover={false} style={{ padding: 'var(--space-4)' }}>
-          <p
-            style={{
-              color: 'var(--text-tertiary)',
-              margin: 0,
-              fontSize: 'var(--fs-xs)',
-              lineHeight: 1.6,
-            }}
-          >
+        <aside className="settings-page__panel settings-page__panel--subtle">
+          <p className="settings-page__panel-footer-text">
             Toutes les préférences sont stockées en local. Tes clés IBKR Flex, ta configuration et
             tes trades ne quittent jamais ton navigateur — seuls les appels API (quotes, calendar)
             traversent le proxy Vercel.
           </p>
-        </GlassCard>
+        </aside>
       </motion.div>
     </motion.div>
   );

@@ -1,0 +1,414 @@
+/* ════════════════════════════════════════════════════════════════
+   PAGES-SETTINGS.CSS — page-vitrine /settings/* (4ème consommation des
+   tokens canoniques, après Positions, Greeks et Import).
+
+   Fichier PARTAGÉ entre les pages /settings/* à mesure qu'elles
+   migrent. Première consommatrice : /settings/general. Sera réutilisé
+   par /settings/api et /insights/journal lors de leur propre migration.
+
+   Toutes les règles sont SCOPÉES à .settings-page pour ne contaminer
+   aucune autre page. Chargée APRÈS pages-import.css dans main.jsx.
+
+   La classe legacy .settings-v3__input (et ses variantes :focus,
+   [readonly], MQ 600px) reste dans v3-components.css le temps qu'Import
+   migre vers son propre input canonique. Coexistence assumée.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Surface de page : fond le plus profond, opaque (masque le halo
+   indigo/cyan diffusé par body::before depuis aura-boost.css). */
+.settings-page {
+  background: var(--depth-void);
+  position: relative;
+  z-index: 1;
+}
+
+.settings-page .page-title {
+  color: var(--ink-pure);
+}
+.settings-page .page-title svg {
+  color: var(--accent);
+  opacity: 1;
+}
+.settings-page .page-subtitle {
+  color: var(--ink-soft);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SECTION — wrapper local plat (remplace <GlassCard>)
+   ════════════════════════════════════════════════════════════════ */
+.settings-page__section {
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  padding: var(--qc-space-5);
+  /* Annule explicitement toute cascade glass-card / aura-boost. */
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Variante zone dangereuse : bord top en line-emphasis (signale
+   l'attention) et l'icône passe en accent amber dans le head. */
+.settings-page__section--danger {
+  border-top-color: var(--line-emphasis);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SECTION HEAD — icône + titre + description
+   ════════════════════════════════════════════════════════════════ */
+.settings-page__section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--qc-space-3);
+  margin-bottom: var(--qc-space-4);
+  padding-bottom: var(--qc-space-3);
+  border-bottom: 1px solid var(--line-hairline);
+}
+
+/* Icône de section : NEUTRE par défaut (informatif), AMBER seulement
+   pour la zone dangereuse (point d'attention). */
+.settings-page__section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  background: var(--depth-base);
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.settings-page__section--danger .settings-page__section-icon {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.settings-page__section-title {
+  margin: 0;
+  font-family: var(--qc-font-sans);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--ink-pure);
+  letter-spacing: var(--ls-tight);
+}
+
+.settings-page__section-desc {
+  margin: 2px 0 0;
+  color: var(--ink-mute);
+  font-size: var(--fs-xs);
+}
+
+.settings-page__section-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--qc-space-3);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ROW — ligne label + control (flex space-between)
+   ════════════════════════════════════════════════════════════════ */
+.settings-page__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--qc-space-4);
+  padding: var(--qc-space-3) 0;
+  border-bottom: 1px solid var(--line-hairline);
+}
+
+.settings-page__row:last-child {
+  border-bottom: none;
+}
+
+.settings-page__row-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-page__row-label > span:first-child {
+  color: var(--ink-pure);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
+.settings-page__row-desc {
+  color: var(--ink-mute);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+}
+
+.settings-page__row-control {
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   INPUT canonique (nouveau — coexiste avec .settings-v3__input qui
+   reste dans v3-components.css le temps qu'Import migre).
+   ════════════════════════════════════════════════════════════════ */
+.settings-page__input {
+  padding: 8px 12px;
+  background: var(--depth-base);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  color: var(--ink-pure);
+  font-family: var(--qc-font-sans);
+  font-size: var(--fs-sm);
+  min-width: 220px;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
+}
+
+.settings-page__input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--depth-raised);
+}
+
+.settings-page__input[readonly] {
+  background: var(--depth-raised);
+  color: var(--ink-soft);
+}
+
+@media (max-width: 600px) {
+  .settings-page__row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--qc-space-2);
+  }
+  .settings-page__input {
+    min-width: 100%;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TOGGLE — switch colorblind (canonique, à plat, sans glow)
+   ════════════════════════════════════════════════════════════════ */
+.settings-page__toggle {
+  display: inline-flex;
+  width: 42px;
+  height: 24px;
+  padding: 2px;
+  background: var(--depth-base);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.settings-page__toggle-track {
+  display: block;
+  width: 18px;
+  height: 18px;
+  background: var(--ink-mute);
+  border-radius: 2px;
+  transition:
+    transform var(--duration-base) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
+}
+
+.settings-page__toggle[data-active] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.settings-page__toggle[data-active] .settings-page__toggle-track {
+  transform: translateX(18px);
+  background: var(--accent);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   API SUMMARY — bloc Connexions API
+   ════════════════════════════════════════════════════════════════ */
+.settings-page__api-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--qc-space-3);
+}
+
+.settings-page__api-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--qc-space-2);
+  flex-wrap: wrap;
+}
+
+.settings-page__view-all {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  color: var(--ink-soft);
+  font-family: var(--qc-font-sans);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.settings-page__view-all:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.settings-page__api-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--qc-space-2);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   KILL-SWITCH P&L — tonalité sémantique sur la valeur du jour
+   (l.592 dans General.jsx). Remplace l'utility className `text-${...}`
+   par 3 classes canoniques scopées.
+   ════════════════════════════════════════════════════════════════ */
+.settings-page__kill-switch {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-weight: var(--fw-semibold);
+}
+.settings-page__kill-switch--up {
+  color: var(--pnl-up);
+}
+.settings-page__kill-switch--down {
+  color: var(--pnl-down);
+}
+.settings-page__kill-switch--neutral {
+  color: var(--ink-mute);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   PANEL générique (utilisé pour le footer info "Le merge est…").
+   Variante subtle : fond depth-base, padding réduit.
+   ════════════════════════════════════════════════════════════════ */
+.settings-page__panel {
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  padding: var(--qc-space-4);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.settings-page__panel--subtle {
+  background: var(--depth-base);
+}
+.settings-page__panel-footer-text {
+  color: var(--ink-mute);
+  margin: 0;
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BOUTON DESTRUCTEUR — utility "Effacer / Remettre à zéro"
+   ════════════════════════════════════════════════════════════════ */
+.settings-page__btn-destructive {
+  color: var(--pnl-down);
+  border-color: color-mix(in srgb, var(--pnl-down) 30%, transparent);
+}
+
+.settings-page__btn-destructive--filled {
+  background: var(--pnl-down);
+  border-color: var(--pnl-down);
+  color: var(--depth-void);
+}
+.settings-page__btn-destructive--filled:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DANGER ZONE — bloc final spécifique
+   ════════════════════════════════════════════════════════════════ */
+.settings-page__danger-text {
+  color: var(--pnl-down);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  margin: 0;
+}
+
+.settings-page__danger-list {
+  margin: 0;
+  padding-left: var(--space-5);
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CASH FLOWS — table locale (3 colonnes Date / Type / Montant + delete)
+   ════════════════════════════════════════════════════════════════ */
+.settings-page__cashflow-form {
+  display: flex;
+  gap: var(--qc-space-2);
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.settings-page__cashflow-empty {
+  color: var(--ink-mute);
+  font-size: var(--fs-sm);
+}
+
+.settings-page__cashflow-table {
+  display: grid;
+  grid-template-columns: 110px 1fr 140px 40px;
+  gap: var(--qc-space-2);
+  font-size: var(--fs-sm);
+}
+
+.settings-page__cashflow-date {
+  color: var(--ink-soft);
+}
+
+.settings-page__cashflow-amount {
+  text-align: right;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.settings-page__cashflow-more {
+  color: var(--ink-mute);
+  font-size: var(--fs-xs);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MODAL CONTENT — texte canonique pour le modal "Effacer toutes les
+   données". Le composant <Modal> partagé n'est pas touché — seul le
+   contenu interne consomme les classes ci-dessous.
+   ════════════════════════════════════════════════════════════════ */
+.settings-page__modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--qc-space-4);
+}
+.settings-page__modal-body p {
+  margin: 0;
+  color: var(--ink-pure);
+  line-height: 1.55;
+}
+.settings-page__modal-actions {
+  display: flex;
+  gap: var(--qc-space-2);
+  justify-content: flex-end;
+}
+.settings-page__modal-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--qc-space-2);
+  cursor: pointer;
+  color: var(--ink-pure);
+}

@@ -3868,89 +3868,12 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   SETTINGS v3
+   SETTINGS — règles déménagées vers src/styles/pages-settings.css
+   (rename .settings-v3__* → .settings-page__*) lors de la migration
+   CANONICAL-5. Seules .settings-v3__input + ses variantes restent ici
+   parce qu'Import.jsx les consomme encore. Elles partiront avec le
+   prochain sprint qui migrera Import vers son propre input canonique.
    ═══════════════════════════════════════════════════════════════ */
-.settings-v3__section {
-  padding: var(--qc-space-5);
-}
-
-.settings-v3__section-head {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--qc-space-3);
-  margin-bottom: var(--qc-space-4);
-  padding-bottom: var(--qc-space-3);
-  border-bottom: 1px solid var(--qc-border-subtle);
-}
-
-.settings-v3__section-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--qc-radius-md);
-  background: var(--qc-info-bg);
-  color: var(--accent-text);
-  flex-shrink: 0;
-}
-
-.settings-v3__section-title {
-  margin: 0;
-  font-family: var(--qc-font-sans);
-  font-size: var(--fs-md);
-  font-weight: var(--fw-bold);
-  color: var(--qc-text-primary);
-  letter-spacing: var(--ls-tight);
-}
-
-.settings-v3__section-desc {
-  margin: 2px 0 0;
-  color: var(--qc-text-tertiary);
-  font-size: var(--fs-xs);
-}
-
-.settings-v3__section-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--qc-space-3);
-}
-
-.settings-v3__row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--qc-space-4);
-  padding: var(--qc-space-3) 0;
-  border-bottom: 1px solid var(--qc-border-subtle);
-}
-.settings-v3__row:last-child {
-  border-bottom: none;
-}
-
-.settings-v3__row-label {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-}
-
-.settings-v3__row-label > span:first-child {
-  color: var(--qc-text-primary);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-medium);
-}
-
-.settings-v3__row-desc {
-  color: var(--qc-text-tertiary);
-  font-size: var(--fs-xs);
-  line-height: 1.5;
-}
-
-.settings-v3__row-control {
-  flex-shrink: 0;
-}
 
 .settings-v3__input {
   padding: 8px 12px;
@@ -3974,85 +3897,7 @@
   color: var(--qc-text-tertiary);
 }
 
-.settings-v3__toggle {
-  display: inline-flex;
-  width: 42px;
-  height: 24px;
-  padding: 2px;
-  background: var(--surface-3);
-  border: 1px solid var(--qc-border-default);
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
-}
-
-.settings-v3__toggle-track {
-  display: block;
-  width: 18px;
-  height: 18px;
-  background: var(--qc-text-tertiary);
-  border-radius: 50%;
-  transition:
-    transform var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out);
-}
-
-.settings-v3__toggle[data-active] {
-  background: var(--qc-info-bg);
-  border-color: var(--qc-accent);
-}
-
-.settings-v3__toggle[data-active] .settings-v3__toggle-track {
-  transform: translateX(18px);
-  background: var(--qc-accent);
-}
-
-/* Connexions API summary */
-.settings-v3__api-summary {
-  display: flex;
-  flex-direction: column;
-  gap: var(--qc-space-3);
-}
-
-.settings-v3__api-heading {
-  display: flex;
-  align-items: center;
-  gap: var(--qc-space-2);
-  flex-wrap: wrap;
-}
-
-.settings-v3__view-all {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  background: transparent;
-  color: var(--accent-text);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-semibold);
-  border: 1px solid transparent;
-  border-radius: var(--qc-radius-sm);
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
-}
-.settings-v3__view-all:hover {
-  background: var(--qc-info-bg);
-  border-color: var(--accent-border);
-}
-
-.settings-v3__api-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--qc-space-2);
-}
-
 @media (max-width: 600px) {
-  .settings-v3__row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--qc-space-2);
-  }
   .settings-v3__input {
     min-width: 100%;
   }
