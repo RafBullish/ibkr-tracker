@@ -1,6 +1,11 @@
 // ═══════════════════════════════════════════════════════════════
-//  SETTINGS · IMPORT v3.0 « Midnight Terminal »
+//  SETTINGS · IMPORT — page-vitrine canonique (CANONICAL-4)
 //  /settings/import
+//
+//  Troisième consommatrice de la palette canonique (après
+//  /trading/positions et /trading/greeks). Page de configuration
+//  form-only, zéro métrique financière, zéro graphe — utilisée comme
+//  étalon pour le pattern de remplacement <GlassCard> → markup local.
 //
 //  Two flows preserved:
 //    1. IBKR Flex API (primary) — submit query id + token, server
@@ -31,7 +36,6 @@ import { useToast } from '../../components/layout/Toast';
 import { parseIbkrCsv, mergeIbkrData } from '../../utils/ibkrParser';
 import { configureFlex, getFlexConfig, syncFlex } from '../../services/flexApi';
 
-import GlassCard from '../../components/ui/GlassCard';
 import StatusBadge from '../../components/ui/StatusBadge';
 import InfoTooltip from '../../components/ui/InfoTooltip';
 import { CONTAINER_VARIANTS, TILE_VARIANTS } from '../../theme/animationVariants';
@@ -121,13 +125,13 @@ function FlexSection() {
   };
 
   return (
-    <GlassCard hover={false} className="import-v3__card">
-      <header className="import-v3__card-head">
-        <div className="import-v3__card-icon">
+    <section className="import-page__panel">
+      <header className="import-page__panel-head">
+        <div className="import-page__panel-icon">
           <Cloud size={16} aria-hidden="true" />
         </div>
         <div>
-          <h2 className="import-v3__card-title">
+          <h2 className="import-page__panel-title">
             IBKR Flex Query{' '}
             <InfoTooltip
               content={{
@@ -137,14 +141,14 @@ function FlexSection() {
               size={12}
             />
           </h2>
-          <p className="import-v3__card-desc">
+          <p className="import-page__panel-desc">
             Synchronisation automatique recommandée. Token et QueryID stockés en localStorage.
           </p>
         </div>
         {lastSyncLabel && <StatusBadge variant="live" label={`Sync ${lastSyncLabel}`} size="xs" />}
       </header>
 
-      <div className="import-v3__form">
+      <div className="import-page__form">
         <label>
           <span className="uppercase-label">QueryID</span>
           <input
@@ -168,19 +172,19 @@ function FlexSection() {
       </div>
 
       {status && (
-        <div className="import-v3__status" data-tone="info">
+        <div className="import-page__status" data-tone="info">
           <Cloud size={13} aria-hidden="true" />
           <span>{status}</span>
         </div>
       )}
       {error && (
-        <div className="import-v3__status" data-tone="error">
+        <div className="import-page__status" data-tone="error">
           <AlertTriangle size={13} aria-hidden="true" />
           <span>{error}</span>
         </div>
       )}
 
-      <div className="import-v3__actions">
+      <div className="import-page__actions">
         <button
           type="button"
           className="pg-mock-btn pg-mock-btn--primary"
@@ -192,8 +196,7 @@ function FlexSection() {
         {(saved.token || saved.queryId) && (
           <button
             type="button"
-            className="pg-mock-btn"
-            style={{ color: 'var(--loss-text)' }}
+            className="pg-mock-btn import-page__btn-destructive"
             onClick={() => {
               const ok = window.confirm(
                 'Effacer les identifiants Flex ?\n\n' +
@@ -215,7 +218,7 @@ function FlexSection() {
           </button>
         )}
       </div>
-    </GlassCard>
+    </section>
   );
 }
 
@@ -323,21 +326,21 @@ function CsvUploadSection() {
   };
 
   return (
-    <GlassCard hover={false} className="import-v3__card">
-      <header className="import-v3__card-head">
-        <div className="import-v3__card-icon">
+    <section className="import-page__panel">
+      <header className="import-page__panel-head">
+        <div className="import-page__panel-icon">
           <Upload size={16} aria-hidden="true" />
         </div>
         <div>
-          <h2 className="import-v3__card-title">Upload CSV manuel</h2>
-          <p className="import-v3__card-desc">
+          <h2 className="import-page__panel-title">Upload CSV manuel</h2>
+          <p className="import-page__panel-desc">
             Drag &amp; drop un fichier Flex Query CSV ou cliquez pour parcourir.
           </p>
         </div>
       </header>
 
       <div
-        className="import-v3__dropzone"
+        className="import-page__dropzone"
         data-dragging={dragging || undefined}
         data-parsing={parsing || undefined}
         onDragOver={(e) => {
@@ -356,21 +359,21 @@ function CsvUploadSection() {
           onChange={(e) => processFile(e.target.files?.[0])}
         />
         <Upload size={28} aria-hidden="true" />
-        <div className="import-v3__dropzone-title">
+        <div className="import-page__dropzone-title">
           {parsing ? 'Analyse en cours…' : 'Déposez un CSV ici'}
         </div>
-        <div className="import-v3__dropzone-sub">
+        <div className="import-page__dropzone-sub">
           ou cliquez pour parcourir · format Flex Query IBKR (.csv)
         </div>
       </div>
 
       {lastImport && (
-        <div className="import-v3__last" role="status">
-          <CheckCircle2 size={13} aria-hidden="true" style={{ color: 'var(--profit-text)' }} />
+        <div className="import-page__last" role="status">
+          <CheckCircle2 size={13} aria-hidden="true" style={{ color: 'var(--pnl-up)' }} />
           <div>
             <strong className="mono">{lastImport.name}</strong> (
             {(lastImport.size / 1024).toFixed(1)} kB)
-            <div style={{ color: 'var(--text-tertiary)', fontSize: 'var(--fs-xs)' }}>
+            <div className="import-page__last-meta">
               {lastImport.positions} pos · {lastImport.trades} trades · {lastImport.cashFlows}{' '}
               mouvements ajoutés
             </div>
@@ -378,7 +381,7 @@ function CsvUploadSection() {
         </div>
       )}
 
-      <div className="import-v3__actions">
+      <div className="import-page__actions">
         <button type="button" className="pg-mock-btn" onClick={handleExport}>
           <Download size={12} aria-hidden="true" /> Export JSON backup
         </button>
@@ -397,7 +400,7 @@ function CsvUploadSection() {
           <Upload size={12} aria-hidden="true" /> Restaurer un backup JSON
         </button>
       </div>
-    </GlassCard>
+    </section>
   );
 }
 
@@ -406,7 +409,7 @@ export default function SettingsImport() {
 
   return (
     <motion.div
-      className="page-container import-v3"
+      className="page-container import-page"
       variants={reducedMotion ? undefined : CONTAINER_VARIANTS}
       initial={reducedMotion ? undefined : 'hidden'}
       animate={reducedMotion ? undefined : 'visible'}
@@ -432,21 +435,14 @@ export default function SettingsImport() {
       </motion.div>
 
       <motion.div variants={TILE_VARIANTS}>
-        <GlassCard variant="subtle" hover={false} style={{ padding: 'var(--space-4)' }}>
-          <p
-            style={{
-              color: 'var(--text-tertiary)',
-              margin: 0,
-              fontSize: 'var(--fs-xs)',
-              lineHeight: 1.6,
-            }}
-          >
+        <aside className="import-page__panel import-page__panel--subtle">
+          <p className="import-page__panel-footer-text">
             Le merge est <strong>idempotent</strong> : tu peux ré-importer plusieurs fois le même
             fichier sans créer de doublons (déduplication par date × ticker × signature des fees).
             Les trades et positions existants ne sont pas écrasés, seules les nouvelles lignes sont
             ajoutées.
           </p>
-        </GlassCard>
+        </aside>
       </motion.div>
     </motion.div>
   );

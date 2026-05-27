@@ -30,6 +30,11 @@ import './styles/pages-positions.css';
 // palette canonique. Scopée à .greeks-page / .greeks-v3__* / .greeks-empty —
 // n'affecte aucune autre page.
 import './styles/pages-greeks.css';
+// pages-import.css — page-vitrine /settings/import, troisième consommatrice de
+// la palette canonique. Scopée à .import-page / .import-page__* — n'affecte
+// aucune autre page. Les anciennes règles .import-v3__* ont été retirées de
+// v3-components.css au même commit (zéro doublon).
+import './styles/pages-import.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
