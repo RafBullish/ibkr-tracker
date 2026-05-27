@@ -22,6 +22,10 @@ import './styles/v5-chain.css';
 // pour faire autorité quand les pages migreront. Étape additive : aucune page
 // ne le consomme encore, aucun changement visuel attendu.
 import './styles/canonical.css';
+// pages-positions.css — page-vitrine /trading/positions, première consommatrice
+// de la palette canonique. Scopée à .positions-v3 / .positions-flat /
+// .positions-empty — n'affecte aucune autre page.
+import './styles/pages-positions.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
