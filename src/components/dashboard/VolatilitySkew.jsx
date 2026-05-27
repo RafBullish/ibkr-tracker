@@ -97,7 +97,7 @@ export default function VolatilitySkew({ data, area = 'skew' }) {
               <Suspense fallback={<ChartFallback message="Chargement…" />}>
                 <LazyRecharts>
                   {(R) => (
-                    <R.ResponsiveContainer width="100%" height="100%">
+                    <R.ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                       <R.LineChart data={points} margin={{ top: 4, right: 8, bottom: 16, left: 8 }}>
                         <R.CartesianGrid
                           stroke={T.chart.grid}

@@ -3,9 +3,15 @@
 //
 //  A Flex CSV exports each execution separately ("ORDER" level). To
 //  reconstruct what the user sees as a "closed trade" on the tracker,
-//  we pair opens (O) with closes (C) in FIFO order per contract key
-//  and fall back to the close's CostBasis field when no matching open
-//  exists in the same file.
+//  we pair opens (O) with closes (C) in FIFO order per contract key.
+//
+//  A3a — buildClosedTrades now accepts a `historicalOpens` pool : the
+//  open positions persisted from previous imports (currentState
+//  .openPositions). They are normalized and merged into the FIFO bucket
+//  alongside the intra-CSV opens so that a close in the current CSV can
+//  match an open that arrived in a separate import. Before A3a, such
+//  closes silently dropped into the CostBasis fallback (entryDate
+//  reconstructed as close.di — WRONG — and entryFee lost).
 // ═══════════════════════════════════════════════════════════════
 
 import { sf } from './csvReader';
@@ -15,10 +21,46 @@ function contractKey(t) {
   return `${t.tk}|${t.ty}|${t.st}|${t.ex}`;
 }
 
+/**
+ * Convert tracker-shaped open positions (currentState.openPositions) into
+ * the trade-row shape consumed by `matchOpens`. Stocks and options both
+ * use a single-lot synthetic trade with `_remaining = ct`.
+ *
+ * Side effect : the synthetic open carries `_isHistorical = true` so the
+ * downstream consumer can flag it in logs / UI if needed.
+ */
+function normalizeHistoricalOpens(openPositions) {
+  if (!Array.isArray(openPositions)) return [];
+  return openPositions.map((p) => ({
+    tk: p.tk,
+    ty: p.ty,
+    st: p.st,
+    ex: p.ex,
+    di: p.di,
+    pi: p.pi,
+    fi: p.fi,
+    ct: p.ct,
+    mu: p.mu,
+    fxi: p.fxi,
+    _ibkrOpenClose: 'O',
+    _remaining: sf(p.ct),
+    _isHistorical: true,
+  }));
+}
+
 /** Bucket raw trades by contract key, tagged as open or close. */
-function bucketize(trades) {
+function bucketize(trades, historicalOpens = []) {
   const opensByKey = {};
   const closes = [];
+  // Seed the bucket with historical opens first so intra-CSV opens are
+  // appended AFTER them. FIFO order then naturally consumes the oldest
+  // (historical) open before the newer (intra-CSV) one — matches the
+  // tracker's "first in, first out" semantics across imports.
+  for (const o of historicalOpens) {
+    const key = contractKey(o);
+    if (!opensByKey[key]) opensByKey[key] = [];
+    opensByKey[key].push(o);
+  }
   for (const t of trades) {
     const key = contractKey(t);
     let oc = t._ibkrOpenClose;
@@ -69,24 +111,46 @@ function matchOpens(close, opens) {
       matched: true,
     };
   }
-  // Fallback — derive entry price from CostBasis
+  // A3a — Fallback when no open survives in the bucket (neither
+  // intra-CSV nor historical). Reconstruct from CostBasis with explicit
+  // guards : `mu === 0` is anomalous (an option without multiplier) and
+  // previously yielded a silent 0 entryPrice → massively wrong pnl when
+  // _ibkrFifoPnl was also 0. We now log to `_fallbackReason` so the
+  // synthetic closed-trade row carries the explanation downstream.
   const mul = sf(close.mu);
   const costBasis = Math.abs(close._ibkrCostBasis);
+  let entryPrice = 0;
+  let fallbackReason;
+  if (!(closeQty > 0)) {
+    fallbackReason = 'closeQty<=0';
+  } else if (!(mul > 0)) {
+    fallbackReason = 'mu<=0 (anomalous : option without multiplier)';
+  } else {
+    entryPrice = costBasis / (closeQty * mul);
+    fallbackReason = 'no_matching_open';
+  }
   return {
-    entryPrice: closeQty > 0 && mul > 0 ? costBasis / (closeQty * mul) : 0,
+    entryPrice,
     entryFx: sf(close.fxi),
     entryFee: 0,
     entryDate: close.di,
     matched: false,
+    fallbackReason,
   };
 }
 
 /**
  * Build the list of closed trades from the raw ORDER-level trades.
  * Output matches the tracker's closedTrade shape.
+ *
+ * @param {Array} trades — current-CSV trade rows.
+ * @param {Array} [historicalOpens] — opens persisted from previous imports
+ *   (e.g. currentState.openPositions). Optional ; pass [] from contexts
+ *   that don't have access to the current state (back-compat).
  */
-export function buildClosedTrades(trades) {
-  const { opensByKey, closes } = bucketize(trades);
+export function buildClosedTrades(trades, historicalOpens = []) {
+  const normalizedHistorical = normalizeHistoricalOpens(historicalOpens);
+  const { opensByKey, closes } = bucketize(trades, normalizedHistorical);
   const closedTrades = [];
 
   for (const close of closes) {
@@ -133,6 +197,10 @@ export function buildClosedTrades(trades) {
       ivAtEntry: null,
       ivRankAtEntry: null,
       exitReason: null,
+      // A3a — when this row falls back to CostBasis reconstruction, the
+      // reason is preserved so consumers (or future stats) can surface
+      // how many trades are partially reconstructed.
+      _fifoFallbackReason: m.matched ? null : m.fallbackReason || 'no_matching_open',
     });
   }
 

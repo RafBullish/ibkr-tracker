@@ -151,7 +151,7 @@ export default function StatusBar() {
       <div className="statusbar__zone statusbar__zone--left">
         <FeedCell apiStatus={api.flex} label="IBKR" featured />
         <FeedCell apiStatus={api.finnhub} label="FNHB" />
-        <FeedCell apiStatus={api.cboe} label="CBOE" />
+        <FeedCell apiStatus={api.chart} label="CHART" />
         <div className="statusbar__cell statusbar__pos" title="Positions ouvertes">
           <span className="statusbar__label">POS</span>
           <span className="statusbar__value statusbar__value--strong">{positionsCount}</span>

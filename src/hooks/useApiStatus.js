@@ -6,7 +6,9 @@
 //  Covers the seven services the project talks to:
 //    1. flex      — IBKR Flex Query (status derived from localStorage
 //                    creds + settings.lastSync recency)
-//    2. cboe      — CBOE options (live HEAD /api/cboe/SPY probe)
+//    2. chart     — Yahoo Finance chart proxy (live /api/chart/SPY,
+//                    used by hero strip sparklines). REPOINTED from
+//                    the dead CBOE bucket (S3 AccessDenied) in B3.
 //    3. yahoo     — Yahoo Finance options (live HEAD /api/yahoo/SPY)
 //    4. finnhub   — Finnhub earnings/macro (live /api/health/finnhub)
 //    5. fx        — Frankfurter FX USD/CHF (live /api/fx/usdchf)
@@ -41,9 +43,9 @@ const SERVICE_META = {
     label: 'IBKR Flex Query',
     description: "Synchronisation CSV via le Flex Web Service d'IBKR.",
   },
-  cboe: {
-    label: 'CBOE Options',
-    description: "Chaînes d'options différées 15 min (Sniper OTM).",
+  chart: {
+    label: 'Yahoo Charts',
+    description: 'Proxy Yahoo Finance pour les sparklines 7 j (hero strip).',
   },
   yahoo: {
     label: 'Yahoo Finance',
@@ -116,8 +118,11 @@ async function probeFinnhub() {
   }
 }
 
-async function probeCboe() {
-  const r = await probeUrl('/api/cboe/SPY');
+async function probeChart() {
+  // B3 — REPOINTED from /api/cboe/SPY (S3 AccessDenied — bucket mort)
+  // vers /api/chart/SPY (Yahoo Finance proxy, vivant). range/interval
+  // minimaux (1 bougie quotidienne) pour limiter la charge.
+  const r = await probeUrl('/api/chart/SPY?range=1d&interval=1d');
   return { status: r.ok ? 'active' : 'inactive', latency: r.latency, error: r.error };
 }
 
@@ -179,9 +184,9 @@ export default function useApiStatus({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
     aliveRef.current = true;
 
     const run = async () => {
-      const [flex, cboe, yahoo, finnhub, fx, storage] = await Promise.all([
+      const [flex, chart, yahoo, finnhub, fx, storage] = await Promise.all([
         Promise.resolve(probeFlex()),
-        probeCboe(),
+        probeChart(),
         probeYahoo(),
         probeFinnhub(),
         probeFx(),
@@ -191,7 +196,7 @@ export default function useApiStatus({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
       if (!aliveRef.current) return;
 
       const now = new Date().toISOString();
-      const vercelActive = [cboe, yahoo, finnhub, fx].some((r) => r.status === 'active');
+      const vercelActive = [chart, yahoo, finnhub, fx].some((r) => r.status === 'active');
       const vercel = {
         status: vercelActive ? 'active' : 'inactive',
         latency: null,
@@ -201,7 +206,7 @@ export default function useApiStatus({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
       setStatus((prev) => ({
         ...prev,
         flex: { ...prev.flex, ...flex, lastCheck: now },
-        cboe: { ...prev.cboe, ...cboe, lastCheck: now },
+        chart: { ...prev.chart, ...chart, lastCheck: now },
         yahoo: { ...prev.yahoo, ...yahoo, lastCheck: now },
         finnhub: { ...prev.finnhub, ...finnhub, lastCheck: now },
         fx: { ...prev.fx, ...fx, lastCheck: now },
@@ -222,5 +227,5 @@ export default function useApiStatus({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
 }
 
 // ─── Helpers exposed for Settings pages ──────────────────────
-export const SERVICE_ORDER = ['flex', 'cboe', 'yahoo', 'finnhub', 'fx', 'vercel', 'storage'];
+export const SERVICE_ORDER = ['flex', 'chart', 'yahoo', 'finnhub', 'fx', 'vercel', 'storage'];
 export { SERVICE_META };

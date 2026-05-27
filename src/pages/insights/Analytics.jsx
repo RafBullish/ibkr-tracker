@@ -23,6 +23,10 @@ import {
 import { useClosedTrades, useSettings } from '../../store/useStore';
 import { tradePnlUsd } from '../../utils/calculations';
 import { useTradingMetrics } from '../../hooks/useTradingMetrics';
+// A1 — Calmar is no longer emitted by useTradingMetrics (the hook does
+// not receive the initialCapital / yearsActive inputs needed to compute
+// CAGR). Pull it from the canonical single-source pipeline instead.
+import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
 import { holdingDays } from '../../utils/dates';
 import { toFloat } from '../../utils/math';
 
@@ -92,7 +96,7 @@ function HourChart({ data }) {
       <LazyRecharts>
         {(mod) => (
           <div style={{ height: 240 }}>
-            <mod.ResponsiveContainer width="100%" height="100%">
+            <mod.ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <mod.BarChart data={data} margin={{ top: 10, right: 16, left: 4, bottom: 4 }}>
                 <mod.CartesianGrid
                   vertical={false}
@@ -154,7 +158,7 @@ function DayChart({ data }) {
       <LazyRecharts>
         {(mod) => (
           <div style={{ height: 240 }}>
-            <mod.ResponsiveContainer width="100%" height="100%">
+            <mod.ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <mod.BarChart data={data} margin={{ top: 10, right: 16, left: 4, bottom: 4 }}>
                 <mod.CartesianGrid
                   vertical={false}
@@ -220,6 +224,8 @@ export default function Analytics() {
   const closedTrades = useMemo(() => rawClosedTrades || [], [rawClosedTrades]);
 
   const metrics = useTradingMetrics(closedTrades, lr);
+  // A1 — Calmar source : portfolio-level metrics (needs initialCapital).
+  const portfolioMetrics = usePortfolioMetrics();
   const hourData = useMemo(() => aggregateHourOfDay(closedTrades, lr), [closedTrades, lr]);
   const dayData = useMemo(() => aggregateDayOfWeek(closedTrades, lr), [closedTrades, lr]);
   const dayMap = useMemo(() => buildDayPnlMap(closedTrades, lr), [closedTrades, lr]);
@@ -293,9 +299,13 @@ export default function Analytics() {
           <RiskMetricsRow
             metrics={{
               expectancy: metrics ? metrics.expectancy / Math.max(Math.abs(metrics.avgLoss), 1) : 0,
-              sortino: metrics?.sortino ?? null,
-              calmar: metrics?.calmar ?? null,
-              sharpe: metrics?.sharpe ?? null,
+              // A2a — Sharpe / Sortino / Calmar all sourced from the
+              // canonical pipeline (returns-based, gated). useTradingMetrics
+              // doesn't have the capital / years inputs needed to compute
+              // them, so they're null at that layer.
+              sortino: portfolioMetrics?.sortinoRatio ?? null,
+              calmar: portfolioMetrics?.calmarRatio ?? null,
+              sharpe: portfolioMetrics?.sharpeRatio ?? null,
               profitFactor: metrics?.profitFactor ?? 0,
               winRate: metrics?.winRate ?? 0,
             }}
@@ -394,7 +404,7 @@ export default function Analytics() {
             <Percent size={14} aria-hidden="true" style={{ color: 'var(--text-tertiary)' }} />
             <span className="uppercase-label">Répartition gagnants / perdants</span>
           </div>
-          <WinRateDonut winRate={metrics?.winRate ?? 0} />
+          <WinRateDonut winRate={metrics?.winRate ?? null} />
         </GlassCard>
         <GlassCard hover={false} style={{ padding: 'var(--space-5)' }}>
           <div className="dashboard-v3__panel-head">

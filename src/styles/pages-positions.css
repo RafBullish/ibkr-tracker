@@ -1,0 +1,295 @@
+/* ════════════════════════════════════════════════════════════════
+   PAGES-POSITIONS.CSS — page-vitrine de la palette canonique.
+
+   Toutes les règles sont SCOPÉES à .positions-v3 / .positions-flat /
+   .positions-empty pour ne contaminer aucune autre page.
+
+   Chargée APRÈS canonical.css dans main.jsx.
+   Aucune définition de :root ici — uniquement des règles locales.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Surface de page : fond le plus profond, opaque (masque le halo
+   indigo/cyan diffusé par body::before depuis aura-boost.css). ──── */
+.positions-v3,
+.positions-flat,
+.positions-empty {
+  background: var(--depth-void);
+  position: relative;
+  z-index: 1;
+}
+
+/* L'icône lucide du titre passe en amber (signal décisionnel local)
+   et neutralise l'opacité 0.75 héritée de components.css:2018. */
+.positions-v3 .page-title svg,
+.positions-flat .page-title svg {
+  color: var(--accent);
+  opacity: 1;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   KPI STRIP — markup local (5 cartes plates, focus amber sélectif)
+   ════════════════════════════════════════════════════════════════ */
+.positions-v3__kpi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--qc-space-1);
+  padding: var(--qc-space-3) var(--qc-space-4);
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  min-width: 0;
+}
+
+.positions-v3__kpi[data-focus="true"] {
+  background: var(--depth-focus);
+  border-top: 1px solid var(--depth-focus-line);
+}
+
+.positions-v3__kpi-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-family: var(--type-mono);
+  font-size: var(--type-caption);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.positions-v3__kpi-label svg {
+  color: var(--ink-mute);
+  flex-shrink: 0;
+}
+
+.positions-v3__kpi-value {
+  color: var(--ink-pure);
+  font-family: var(--type-mono);
+  font-size: var(--type-display);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums slashed-zero;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.positions-v3__kpi-value.is-loss {
+  color: var(--pnl-down);
+}
+.positions-v3__kpi-value.is-profit {
+  color: var(--pnl-up);
+}
+
+/* Freshness timestamp : passe en ink-mute. */
+.positions-v3__greeks-freshness {
+  color: var(--ink-mute);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DTE BADGE — re-point aux tokens canoniques
+   ════════════════════════════════════════════════════════════════ */
+.positions-v3 .positions-dte,
+.positions-flat .positions-dte {
+  border-radius: 2px;
+}
+.positions-v3 .positions-dte--profit,
+.positions-flat .positions-dte--profit {
+  background: color-mix(in srgb, var(--pnl-up) 14%, transparent);
+  color: var(--pnl-up);
+}
+.positions-v3 .positions-dte--accent,
+.positions-flat .positions-dte--accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.positions-v3 .positions-dte--warning,
+.positions-flat .positions-dte--warning {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.positions-v3 .positions-dte--loss,
+.positions-flat .positions-dte--loss {
+  background: color-mix(in srgb, var(--pnl-down) 14%, transparent);
+  color: var(--pnl-down);
+}
+.positions-v3 .positions-dte--muted,
+.positions-v3 .positions-dte--infinity,
+.positions-flat .positions-dte--muted,
+.positions-flat .positions-dte--infinity {
+  background: transparent;
+  color: var(--ink-mute);
+  border: 1px solid var(--line-hairline);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DATA TABLE — panneau plat, séparateurs murmurés
+   ════════════════════════════════════════════════════════════════ */
+.positions-v3 .v3-table-scroller {
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+}
+.positions-v3 .v3-table__th {
+  background: var(--depth-raised);
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--line-emphasis);
+}
+.positions-v3 .v3-table__td {
+  color: var(--ink-pure);
+}
+.positions-v3 .v3-table__row {
+  border-bottom: 1px solid var(--line-hairline);
+}
+.positions-v3 .v3-table__row:hover {
+  background: var(--depth-focus);
+}
+.positions-v3 .v3-table-toolbar__search {
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  color: var(--ink-soft);
+}
+.positions-v3 .v3-table-toolbar__search:focus-within {
+  border-color: var(--accent);
+  background: var(--depth-focus);
+  color: var(--ink-pure);
+}
+.positions-v3 .v3-table-toolbar__density,
+.positions-v3 .v3-table-toolbar__export-btn {
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  color: var(--ink-soft);
+}
+.positions-v3 .v3-table-toolbar__density-btn[data-active] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* Mobile cards (DataTable mobileCardRender wraps in GlassCard) — on
+   neutralise le glow + le radius arrondi via les sélecteurs internes. */
+.positions-v3 .v3-table-card.glass-card {
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FLAT STATE — cartes locales plates (zéro glass, zéro halo)
+   ════════════════════════════════════════════════════════════════ */
+.positions-flat__grid {
+  /* layout inchangé, défini dans v3-components.css */
+}
+
+.positions-flat__card {
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  /* Annulations explicites en cas de cascade glass-card résiduelle. */
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.positions-flat__card-head {
+  color: var(--ink-soft);
+}
+
+.positions-flat__ticker {
+  color: var(--ink-pure);
+  font-family: var(--type-mono);
+}
+
+.positions-flat__pnl {
+  font-family: var(--type-mono);
+  color: var(--ink-pure);
+}
+.positions-flat__pnl[data-tone="profit"] {
+  color: var(--pnl-up);
+}
+.positions-flat__pnl[data-tone="loss"] {
+  color: var(--pnl-down);
+}
+
+.positions-flat__meta {
+  color: var(--ink-mute);
+}
+.positions-flat__meta strong {
+  color: var(--ink-soft);
+}
+.positions-flat__meta strong[data-tone="profit"] {
+  color: var(--pnl-up);
+}
+.positions-flat__meta strong[data-tone="loss"] {
+  color: var(--pnl-down);
+}
+
+.positions-flat__stat-big {
+  color: var(--ink-pure);
+  font-family: var(--type-mono);
+}
+.positions-flat__stat-sub {
+  color: var(--ink-mute);
+}
+
+.positions-flat__recent-tk {
+  color: var(--ink-soft);
+}
+.positions-flat__recent-date {
+  color: var(--ink-mute);
+}
+.positions-flat__recent-pnl[data-tone="profit"] {
+  color: var(--pnl-up);
+}
+.positions-flat__recent-pnl[data-tone="loss"] {
+  color: var(--pnl-down);
+}
+
+.positions-flat__setup {
+  color: var(--ink-soft);
+}
+.positions-flat__donut-footer {
+  color: var(--ink-mute);
+}
+
+/* CTA Sniper — c'est une action décisionnelle → accent amber, à plat. */
+.positions-flat__cta {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+}
+.positions-flat__cta:hover {
+  background: var(--accent);
+  color: var(--depth-void);
+  border-color: var(--accent);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   EMPTY BRANCH (truly-empty A) — local container plat
+   ════════════════════════════════════════════════════════════════ */
+.positions-empty__panel {
+  max-width: 640px;
+  margin: 60px auto;
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  padding: var(--qc-space-6);
+}
+.positions-empty .empty-state__title {
+  color: var(--ink-pure);
+}
+.positions-empty .empty-state__desc {
+  color: var(--ink-soft);
+}
+.positions-empty .empty-state__icon {
+  color: var(--ink-mute);
+}

@@ -1,5 +1,7 @@
-import './styles/fonts.css';
 import './styles/tokens.css';
+import '@fontsource-variable/geist';
+import '@fontsource-variable/geist-mono';
+import './styles/fonts.css';
 import './styles/global.css';
 import './styles/animations.css';
 import './styles/responsive.css';
@@ -16,6 +18,14 @@ import './styles/v4-shell.css';
 import './styles/v4-dashboard.css';
 // v5-chain.css : Sprint 3 institutional refonte of /trading/chain.
 import './styles/v5-chain.css';
+// canonical.css — palette canonique (DA Brutalisme Financier). Chargé en dernier
+// pour faire autorité quand les pages migreront. Étape additive : aucune page
+// ne le consomme encore, aucun changement visuel attendu.
+import './styles/canonical.css';
+// pages-positions.css — page-vitrine /trading/positions, première consommatrice
+// de la palette canonique. Scopée à .positions-v3 / .positions-flat /
+// .positions-empty — n'affecte aucune autre page.
+import './styles/pages-positions.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

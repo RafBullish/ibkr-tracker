@@ -297,6 +297,35 @@ export default function SettingsGeneral() {
     killSwitch.setMaxLoss(n);
   };
 
+  // B4 — capital de référence manuel (CHF). Stocké brut, converti en USD
+  // au taux courant pour alimenter la cascade dans calculatePortfolioMetrics.
+  const initialCapitalChf = settings?.initialCapitalChf ?? null;
+  const [initialCapitalDraft, setInitialCapitalDraft] = useState(
+    initialCapitalChf != null ? String(initialCapitalChf) : ''
+  );
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing pattern, refactor tracked in BACKLOG.md (post-V1)
+    setInitialCapitalDraft(initialCapitalChf != null ? String(initialCapitalChf) : '');
+  }, [initialCapitalChf]);
+  const commitInitialCapital = () => {
+    const trimmed = String(initialCapitalDraft).trim();
+    if (trimmed === '') {
+      dispatch({ type: 'SET_INITIAL_CAPITAL', payload: null });
+      return;
+    }
+    const n = Number(trimmed);
+    if (!Number.isFinite(n) || n <= 0) {
+      dispatch({ type: 'SET_INITIAL_CAPITAL', payload: null });
+      return;
+    }
+    dispatch({ type: 'SET_INITIAL_CAPITAL', payload: n });
+  };
+  const draftNumber = Number(initialCapitalDraft);
+  const initialCapitalUsdPreview =
+    Number.isFinite(draftNumber) && draftNumber > 0 && liveRate > 0
+      ? draftNumber / liveRate
+      : null;
+
   const activeCount = Object.values(status).filter((s) => s.status === 'active').length;
   const inactiveCount = Object.values(status).filter((s) => s.status === 'inactive').length;
 
@@ -402,6 +431,55 @@ export default function SettingsGeneral() {
                 />
                 {refreshing ? 'Actualisation…' : 'Actualiser'}
               </button>
+            </div>
+          </Row>
+          <Row
+            label="Capital de référence (CHF)"
+            description="Capital que tu considères placé, pour le calcul des % de return. Tes apports mensuels restent suivis séparément via le TWR — ce montant ne fausse pas le timing."
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+                flexWrap: 'wrap',
+              }}
+            >
+              <input
+                type="number"
+                aria-label="Capital de référence en CHF"
+                className="settings-v3__input"
+                style={{ width: 130, textAlign: 'right' }}
+                value={initialCapitalDraft}
+                min="0"
+                step="100"
+                onChange={(e) => setInitialCapitalDraft(e.target.value)}
+                onBlur={commitInitialCapital}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur();
+                }}
+                placeholder="0"
+              />
+              <span
+                className="mono"
+                style={{ color: 'var(--text-tertiary)', fontSize: 'var(--fs-xs)' }}
+              >
+                CHF
+              </span>
+              {initialCapitalUsdPreview != null && (
+                <span
+                  className="mono"
+                  style={{ color: 'var(--text-tertiary)', fontSize: 'var(--fs-xs)' }}
+                >
+                  ≈{' '}
+                  {new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                    maximumFractionDigits: 0,
+                  }).format(initialCapitalUsdPreview)}{' '}
+                  au taux {liveRate.toFixed(4)}
+                </span>
+              )}
             </div>
           </Row>
         </Section>

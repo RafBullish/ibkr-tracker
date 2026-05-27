@@ -25,7 +25,12 @@
 
 import { Suspense, lazy, useMemo, useState } from 'react';
 import useLiveTheme from '../../hooks/useLiveTheme';
-import { TIMEFRAMES, computeDailyPnl, filterByTimeframe } from '../../utils/equity';
+import {
+  TIMEFRAMES,
+  computeDailyPnl,
+  filterByTimeframe,
+  aggregateDailyPnlByDate,
+} from '../../utils/equity';
 import { tradePnlUsd } from '../../utils/calculations';
 import { useClosedTrades, useSettings } from '../../store/useStore';
 
@@ -97,9 +102,15 @@ export default function DailyPnLChart({
   dailyPnL,
   closedTrades: closedTradesProp,
   liveRate: liveRateProp,
+  range: controlledRange,
+  onRangeChange,
   area = 'dailypnl',
 }) {
-  const [range, setRange] = useState('ALL');
+  // B3 — pattern hybride : range/onRangeChange en props = controlled,
+  // sinon useState local = uncontrolled (back-compat).
+  const [localRange, setLocalRange] = useState('ALL');
+  const range = controlledRange !== undefined ? controlledRange : localRange;
+  const setRange = onRangeChange || setLocalRange;
   const T = useLiveTheme();
 
   const storeClosedTrades = useClosedTrades();
@@ -107,15 +118,22 @@ export default function DailyPnLChart({
   const closedTrades = closedTradesProp ?? storeClosedTrades;
   const liveRate = liveRateProp ?? storeSettings?.liveRate ?? 1;
 
-  // Pipeline merge + filter
+  // B5-1 — agréger par DATE (1 point par jour) AVANT de cumuler.
+  // Bug pré-B5 : `data` (=equityHistory) contient UN POINT PAR TRADE ;
+  // si N trades clôturent le même jour, `dpMap.get(p.date)` collait le
+  // dailyPnl agrégé du jour à chacun des N points → cumul gonflé d'un
+  // facteur N (mesuré : ratio 2.029 sur fixture 100 trades / ~2 par jour).
+  //
+  // Source canonique = `dailyPnL` (useDailyPnL.js — déjà agrégé par date).
+  // Le fallback équityHistory passe par aggregateDailyPnlByDate pour
+  // sommer les delta intra-jour et rester correct quand `dailyPnL` absent.
   const mergedData = useMemo(() => {
+    if (Array.isArray(dailyPnL) && dailyPnL.length) {
+      return dailyPnL.map((d) => ({ date: d.date, dailyPnl: d.dailyPnl }));
+    }
     const base = Array.isArray(data) ? data : [];
     if (base.length === 0) return [];
-    if (Array.isArray(dailyPnL) && dailyPnL.length) {
-      const dpMap = new Map(dailyPnL.map((d) => [d.date, d.dailyPnl]));
-      return base.map((p) => ({ ...p, dailyPnl: dpMap.get(p.date) ?? 0 }));
-    }
-    return computeDailyPnl(base);
+    return aggregateDailyPnlByDate(computeDailyPnl(base));
   }, [data, dailyPnL]);
 
   const filtered = useMemo(() => filterByTimeframe(mergedData, range), [mergedData, range]);
@@ -292,7 +310,10 @@ export default function DailyPnLChart({
           <Suspense fallback={<ChartFallback message="Chargement…" />}>
             <LazyRecharts>
               {(R) => (
-                <R.ResponsiveContainer width="100%" height="100%">
+                // B3-PATCH — minWidth/minHeight évitent le warning recharts
+                // "width(-1)" pendant la transition Suspense (LazyRecharts)
+                // → parent grid pas encore dimensionné au premier paint.
+                <R.ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                   <R.ComposedChart
                     data={cumulSeries}
                     margin={{ top: 8, right: 12, bottom: 8, left: 12 }}

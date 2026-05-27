@@ -64,6 +64,12 @@ function loadInitialState() {
     // Daily snapshots (4K refonte Phase B). Persisté sous le key court `ds`
     // pour économiser quelques octets sur le payload settings global.
     if (Array.isArray(s.ds)) settings.dailySnapshots = s.ds;
+    // B4 — capital de référence manuel saisi en CHF. Stocké brut (la
+    // conversion CHF→USD se fait au moment du calcul avec liveRate
+    // courant, pour rester fidèle si le taux bouge).
+    if (typeof s.ic === 'number' && Number.isFinite(s.ic) && s.ic > 0) {
+      settings.initialCapitalChf = s.ic;
+    }
   }
 
   // Walk the migration chain from the stored version up to CURRENT_SCHEMA_VERSION.
@@ -137,6 +143,14 @@ function persistSettings(settings) {
     if (settings.gwAutoConnect !== undefined) toSave.gwAutoConnect = settings.gwAutoConnect;
     if (Array.isArray(settings.dailySnapshots) && settings.dailySnapshots.length > 0) {
       toSave.ds = settings.dailySnapshots;
+    }
+    // B4 — capital manuel en CHF (clé courte `ic`).
+    if (
+      typeof settings.initialCapitalChf === 'number' &&
+      Number.isFinite(settings.initialCapitalChf) &&
+      settings.initialCapitalChf > 0
+    ) {
+      toSave.ic = settings.initialCapitalChf;
     }
     localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(toSave));
   } catch {

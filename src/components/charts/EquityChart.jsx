@@ -77,8 +77,17 @@ function ChartFallback({ message }) {
   return <div className="trading-chart__empty">{message}</div>;
 }
 
-export default function EquityChart({ data, area = 'equity' }) {
-  const [range, setRange] = useState('ALL');
+export default function EquityChart({
+  data,
+  range: controlledRange,
+  onRangeChange,
+  area = 'equity',
+}) {
+  // B3 — pattern hybride : range/onRangeChange en props = controlled,
+  // sinon useState local = uncontrolled (back-compat).
+  const [localRange, setLocalRange] = useState('ALL');
+  const range = controlledRange !== undefined ? controlledRange : localRange;
+  const setRange = onRangeChange || setLocalRange;
   const T = useLiveTheme();
 
   const safeData = Array.isArray(data) ? data : [];
@@ -206,7 +215,10 @@ export default function EquityChart({ data, area = 'equity' }) {
           <Suspense fallback={<ChartFallback message="Chargement…" />}>
             <LazyRecharts>
               {(R) => (
-                <R.ResponsiveContainer width="100%" height="100%">
+                // B3-PATCH — minWidth/minHeight évitent le warning recharts
+                // "width(-1)" pendant la transition Suspense (LazyRecharts)
+                // → parent grid pas encore dimensionné au premier paint.
+                <R.ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                   <R.ComposedChart
                     data={filtered}
                     margin={{ top: 8, right: 12, bottom: 8, left: 12 }}

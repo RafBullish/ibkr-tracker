@@ -91,7 +91,7 @@ export default function GreekEvolutionChart({ data, height = 280, className }) {
             description="Les valeurs apparaîtront dès que plusieurs snapshots auront été capturés."
           />
         ) : (
-          <ResponsiveContainer width="100%" height={height}>
+          <ResponsiveContainer width="100%" height={height} minWidth={1} minHeight={1}>
             <LineChart data={data} margin={{ top: 8, right: 16, left: 8, bottom: 4 }}>
               <CartesianGrid vertical={false} stroke="var(--border-subtle)" strokeDasharray="3 3" />
               <XAxis

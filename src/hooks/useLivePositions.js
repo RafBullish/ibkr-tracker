@@ -25,6 +25,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useOpenPositions } from '../store/useStore';
 import { toFloat } from '../utils/math';
+import { calculateOpenPositionPnl } from '../utils/calculations';
 import {
   unrealizedPnlUsd,
   unrealizedPnlPct,
@@ -58,6 +59,10 @@ function buildRow(pos, context) {
   const days = daysHeld(pos.di, context.now);
   const unrealDollar = unrealizedPnlUsd(pos);
   const unrealPct = unrealizedPnlPct(pos);
+  // B5-3 — capital engagé (prime payée + frais) en USD. Source canonique :
+  // calculateOpenPositionPnl. liveRate=1 OK ici, costBasisUsd ne dépend
+  // pas du taux (pi × mul × qty ± fi en USD pur).
+  const { costBasisUsd } = calculateOpenPositionPnl(pos, 1);
 
   // Sidecar lookup. Sprint 1.3 ne livre PAS le tagging UI : la
   // sidecar reste vide pour les positions du vrai compte. La
@@ -85,7 +90,12 @@ function buildRow(pos, context) {
   });
 
   return {
-    id: pos.id,
+    // B5.3 — id défensif : si pos.id manque (positions importées hors
+    // migration v3→v4), génère un id déterministe basé sur les champs
+    // identifiants. Empêche les clés React dupliquées dans LivePositions.
+    id:
+      pos.id ||
+      `${pos.tk || 'unknown'}-${pos.ex || ''}-${pos.st || ''}-${pos.di || ''}-${pos.ty || ''}`,
     ticker: pos.tk,
     type: isStock ? 'STK' : pos.ty,
     dir: pos.dir,
@@ -97,6 +107,7 @@ function buildRow(pos, context) {
     mark: toFloat(pos.pc) || 0,
     unrealDollar,
     unrealPct,
+    costBasisUsd,
     delta: pos.delta ?? null, // sidecar live greek si dispo
     theta: pos.theta ?? null,
     ivr: ivrSnapshot,
@@ -114,11 +125,18 @@ function buildRow(pos, context) {
 }
 
 /**
- * Brick 6 simplification : totalNotional = Σ |mark × qty × mul|,
- * totalMaxRisk = Σ |unrealDollar quand < 0| (current open-loss).
- * Le « max risk » théorique (assignation puts ITM, etc.) sera
- * traité dans une brick risk ultérieure — ce qu'on affiche ici
- * est la perte ouverte courante en magnitude négative.
+ * totalNotional = Σ |mark × qty × mul|.
+ *
+ * B5-3 — totalMaxRisk = perte potentielle MAXIMALE de chaque position.
+ * Pour la stratégie Sniper OTM long-premium de Rafael, le risque max
+ * d'un long call/put = 100 % de la prime payée (= costBasisUsd).
+ * Convention : Max Risk affiché en négatif (perte). Σ négative sur
+ * positions longues.
+ *
+ * Pre-B5 ce champ sommait `unrealDollar quand < 0` (perte latente
+ * courante) — fluctuant et sans rapport avec le risque effectif d'un
+ * long-premium. Le label "Σ MAX RISK" parlait d'un truc, le calcul
+ * en faisait un autre. Σ Unreal Loss reste lisible ailleurs via Σ UNREAL.
  */
 function aggregate(rows) {
   let totalNotional = 0;
@@ -126,7 +144,7 @@ function aggregate(rows) {
   for (const r of rows) {
     const mul = r.type === 'STK' ? 1 : 100;
     totalNotional += Math.abs(r.mark * r.qty * mul);
-    if (r.unrealDollar < 0) totalMaxRisk += r.unrealDollar;
+    if (Number.isFinite(r.costBasisUsd)) totalMaxRisk -= r.costBasisUsd;
   }
   return {
     totalNotional: Number(totalNotional.toFixed(2)),

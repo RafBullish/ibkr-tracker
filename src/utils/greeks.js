@@ -1,19 +1,18 @@
 // ═══════════════════════════════════════════════════════════════
-//  GREEKS AGGREGATE v4 brick 5 — pur, sans React
+//  GREEKS AGGREGATE — CANONICAL sign-aware aggregator.
 //
 //  Aggrège un greeksMap (Map<positionId, {delta, gamma, theta,
 //  vega, spot, …}>) et la liste des openPositions en un objet
-//  consommé par <GreeksAggregate />.
+//  consommé par toute card / table Greeks (Positions.jsx KPI
+//  cards, Greeks.jsx Greeks Center, RiskMatrix Greeks strip).
 //
 //  SIGN HANDLING
-//    L'existant utils/calculations.js :: computePortfolioGreeks
-//    ignore pos.dir (Long/Short) — il aggrège tous les greeks
-//    comme si la position était Long. Pour un portefeuille short
-//    premium (Sniper OTM), ça inverse le signe attendu de Theta
-//    et Vega. Cette nouvelle fonction corrige ça en multipliant
-//    chaque greek par dirSign (+1 Long, −1 Short) AVANT
-//    l'agrégation. computePortfolioGreeks reste intact (legacy
-//    consumers : Positions.jsx, Greeks.jsx, ne touche pas).
+//    Chaque greek est multiplié par dirSign (+1 Long, −1 Short)
+//    AVANT l'agrégation. Pour un short call (Sniper OTM short
+//    premium) : Θ devient positif (decay encaissé), ν négatif
+//    (short vol). Le legacy `computePortfolioGreeks` (sign-
+//    agnostic, calculations.js) a été retiré en A1 ; toutes les
+//    autres pipelines manuelles ont été migrées en A3c.
 //
 //  UNIT CONVENTIONS
 //    Black-Scholes (utils/options/blackScholes.js) émet :
@@ -32,6 +31,13 @@
 //    pas aux autres greeks. Côté display, leurs cellules Δ Γ Θ ν
 //    rendent '—' par convention (le composant gère ce cas via
 //    type: 'STK' + delta: null dans la row).
+//
+//  UNAVAILABLE
+//    Quand greeksApi marque une position `source: 'unavailable'`
+//    (réseau down, contrat introuvable, IV manquante), la position
+//    est insérée dans `positions[]` avec tous les Greeks à null
+//    mais N'EST PAS agrégée. Donc agrégats restent à 0 / null
+//    sans NaN — c'est le cas runtime actuel quand /api/cboe répond 403.
 // ═══════════════════════════════════════════════════════════════
 
 import { toFloat, ensurePositive, roundTo2 } from './math';

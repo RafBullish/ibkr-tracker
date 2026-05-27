@@ -5,7 +5,15 @@
 //  rows whose signature already exists in currentState. Metadata with
 //  a leading underscore (internal IBKR identifiers) is stripped before
 //  persisting so we don't leak it back to the user on subsequent loads.
+//
+//  A3a — closedTrades are rebuilt here with `currentState.openPositions`
+//  as the historical opens pool, so a close in the current CSV can match
+//  an open imported in a prior CSV. parseIbkrCsv produces `parsed
+//  .closedTrades` with intra-CSV opens only (back-compat) ; mergeIbkrData
+//  overrides it with the inter-CSV-aware version.
 // ═══════════════════════════════════════════════════════════════
+
+import { buildClosedTrades } from './closedTrades';
 
 function positionKey(p) {
   return `${p.tk}|${p.as}|${p.dir}|${p.ty}|${p.st}|${p.ex}`;
@@ -61,13 +69,36 @@ export function mergeIbkrData(parsed, currentState) {
   }
 
   // ── Closed trades ──
+  // A3a — rebuild closedTrades with inter-CSV FIFO matching. The current
+  // CSV's raw trades (parsed.trades) are paired with the union of
+  // intra-CSV opens AND historical opens from currentState.openPositions.
+  // This rescues closes that previously fell into the CostBasis fallback
+  // because their matching open lived in a prior import.
+  const rebuiltClosedTrades = Array.isArray(parsed.trades)
+    ? buildClosedTrades(parsed.trades, currentState.openPositions)
+    : parsed.closedTrades || [];
+  const fifoStats = rebuiltClosedTrades.reduce(
+    (acc, ct) => {
+      if (ct._fifoFallbackReason) acc.fallback++;
+      else acc.matched++;
+      return acc;
+    },
+    { matched: 0, fallback: 0 }
+  );
+  stats.fifoMatched = fifoStats.matched;
+  stats.fifoFallback = fifoStats.fallback;
+
   const existingTradeKeys = new Set(currentState.closedTrades.map(closedTradeKey));
   const newClosedTrades = [];
-  for (const ct of parsed.closedTrades || []) {
+  for (const ct of rebuiltClosedTrades) {
     if (existingTradeKeys.has(closedTradeKey(ct))) {
       stats.closedTradesSkipped++;
     } else {
-      newClosedTrades.push(ct);
+      // Strip the diagnostic field before persisting — it's a transient
+      // marker for the import-time decision, not a long-lived attribute.
+      const clean = { ...ct };
+      delete clean._fifoFallbackReason;
+      newClosedTrades.push(clean);
       stats.closedTradesAdded++;
     }
   }

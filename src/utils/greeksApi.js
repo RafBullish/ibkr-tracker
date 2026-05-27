@@ -1,19 +1,41 @@
 // ═══════════════════════════════════════════════════════════════
-//  GREEKS API — Yahoo chain (IV, spot) + Black-Scholes (Δ/Γ/Θ/Vega)
+//  GREEKS API — LOCAL Black-Scholes solver (B2, voie A v1)
 //
-//  Source primaire : Yahoo Finance (chain par ticker × expiry).
-//  Yahoo n'expose pas les Greeks bruts, mais expose `impliedVolatility`
-//  par contrat et `regularMarketPrice` (spot) sur la même réponse.
-//  Les Greeks sont donc calculés analytiquement via blackScholes.js.
+//  Greeks are computed entirely client-side from blackScholes.js. No
+//  options chain endpoint is called. Only the underlying SPOT is
+//  fetched (Finnhub via /api/quote/[ticker]).
 //
-//  Mode "unavailable" — lorsque Yahoo manque (réseau, contrat absent,
-//  IV nulle, expiry passée), la position est marquée
-//  `source: 'unavailable'` avec tous les Greeks à null. Le consumer
-//  (computePortfolioGreeks, table Δ/Θ) skip les positions non-disponibles
-//  plutôt que d'agréger des zéros — les valeurs ne sont JAMAIS inventées.
+//  IV INPUT — "mark-implied", figé à l'import :
+//    L'IV est INVERSÉE depuis le mark du contrat tel qu'IBKR Flex
+//    l'a exporté (pos.pc, mappé depuis la colonne MarkPrice du CSV).
+//    Cette valeur est FIGÉE au moment de l'import — elle ne se met
+//    pas à jour en cours de session. Le store ne persiste pas (au
+//    moment d'écriture) de timestamp d'import propre, donc la
+//    fraîcheur de l'IV ne peut pas être affichée explicitement en v1.
+//    Limitation tracée pour B-tard : exposer `lastImportAt` dans
+//    settings au moment du merge, et un badge "IV @ import" discret
+//    dans l'UI Greeks. Pour v1, le champ `source: 'computed'` signale
+//    sans ambiguïté la provenance locale (≠ 'unavailable', ≠ 'bs').
+//
+//  SOURCES DU CALCUL :
+//    - S (spot)   : /api/quote/[underlying] — Finnhub primary (B1).
+//    - K (strike) : pos.st (CSV).
+//    - T (years)  : (pos.ex − now) / 365.
+//    - r          : RISK_FREE_RATE = 0.04 (blackScholes.js).
+//    - marketPrice: pos.pc (CSV MarkPrice).
+//    - type       : pos.ty (CALL ou PUT).
+//    - σ          : bsImpliedVol(...) — Newton-Raphson + fallback
+//                   bisection. Retourne null sur OTM-trop-lointain
+//                   (vega≈0), mark=0, T<=0, hors bracket no-arbitrage.
+//
+//  MODE "unavailable" — produit propre par aggregateGreeks consumer :
+//    `source: 'unavailable'` quand le calcul ne converge pas ou que
+//    l'un des inputs critiques manque (spot, mark, expiry passée).
+//    `aggregateGreeks` (greeks.js, sign-aware A3c) skip ces positions
+//    sans NaN bleed. Les Greeks ne sont JAMAIS inventés.
 // ═══════════════════════════════════════════════════════════════
 
-import { bsGreeks, RISK_FREE_RATE } from './options/blackScholes';
+import { bsGreeks, bsImpliedVol, RISK_FREE_RATE } from './options/blackScholes';
 
 const UNAVAILABLE = Object.freeze({
   delta: null,
@@ -27,74 +49,151 @@ const UNAVAILABLE = Object.freeze({
   source: 'unavailable',
 });
 
-/**
- * Fetch the Yahoo chain for a ticker + specific expiration date.
- * Returns { spot, calls[], puts[] } or null on error.
- */
-async function fetchYahooChain(ticker, expiryDate) {
+// ─── Spot cache + dedup (pattern B1.2 / B1.3) ─────────────────────
+//
+// FRESH_TTL : skip-if-fresh — un 2e calcul Greeks dans 5 min ne
+// retape pas /api/quote. Anti-flash + anti-refetch en session.
+
+const SPOT_CACHE_KEY = 'ibkr_spot_cache_v1';
+const SPOT_FRESH_TTL_MS = 5 * 60 * 1000; // 5 min
+const SPOT_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 h — anti-flash hydratation
+const RETRY_AFTER_FALLBACK_MS = 2000;
+const RETRY_AFTER_MAX_MS = 15_000;
+
+function loadSpotCache() {
+  if (typeof window === 'undefined') return {};
   try {
-    const ts = Math.floor(new Date(expiryDate + 'T12:00:00').getTime() / 1000);
-    const res = await fetch(`/api/yahoo/${ticker.toUpperCase()}?date=${ts}`);
-    if (!res.ok) return null;
-    const json = await res.json();
-    const result = json?.optionChain?.result?.[0];
-    if (!result?.options?.[0]) return null;
-    return {
-      spot: result.quote?.regularMarketPrice || 0,
-      calls: result.options[0].calls || [],
-      puts: result.options[0].puts || [],
-    };
+    const raw = window.localStorage.getItem(SPOT_CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return {};
+    const now = Date.now();
+    const fresh = {};
+    for (const [tk, entry] of Object.entries(parsed)) {
+      if (
+        entry &&
+        Number.isFinite(entry.spot) &&
+        Number.isFinite(entry.timestamp) &&
+        now - entry.timestamp < SPOT_MAX_AGE_MS
+      ) {
+        fresh[tk] = entry;
+      }
+    }
+    return fresh;
   } catch {
-    return null;
+    return {};
   }
 }
 
-/**
- * Find a contract in Yahoo's calls/puts array matching strike + side.
- */
-function findContract(chain, strike, type) {
-  const target = parseFloat(strike);
-  if (!Number.isFinite(target)) return null;
-  const list = type === 'PUT' ? chain.puts : chain.calls;
-  for (const contract of list) {
-    if (Math.abs(contract.strike - target) < 0.01) return contract;
+function persistSpotCache(cache) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(SPOT_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    /* quota / disabled — silent */
+  }
+}
+
+const spotCache = loadSpotCache();
+const inflightSpotByTicker = new Map();
+
+function parseRetryAfterMs(header) {
+  if (!header) return RETRY_AFTER_FALLBACK_MS;
+  const seconds = Number(header);
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.min(seconds * 1000, RETRY_AFTER_MAX_MS);
+  }
+  const date = Date.parse(header);
+  if (Number.isFinite(date)) {
+    return Math.min(Math.max(0, date - Date.now()), RETRY_AFTER_MAX_MS);
+  }
+  return RETRY_AFTER_FALLBACK_MS;
+}
+
+async function rawFetchSpot(ticker) {
+  const url = `/api/quote/${encodeURIComponent(ticker)}`;
+  let res = await fetch(url);
+  if (res.status === 429) {
+    const delayMs = parseRetryAfterMs(res.headers.get('Retry-After'));
+    await new Promise((r) => setTimeout(r, delayMs));
+    res = await fetch(url);
+  }
+  if (!res.ok) return null;
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    return null;
+  }
+  return Number.isFinite(data?.price) && data.price > 0 ? data.price : null;
+}
+
+async function fetchSpot(ticker) {
+  const existing = inflightSpotByTicker.get(ticker);
+  if (existing) return existing;
+  const promise = rawFetchSpot(ticker).finally(() => {
+    inflightSpotByTicker.delete(ticker);
+  });
+  inflightSpotByTicker.set(ticker, promise);
+  return promise;
+}
+
+async function getSpot(ticker) {
+  const now = Date.now();
+  const cached = spotCache[ticker];
+  if (cached && Number.isFinite(cached.spot) && now - cached.timestamp < SPOT_FRESH_TTL_MS) {
+    return cached.spot;
+  }
+  const spot = await fetchSpot(ticker);
+  if (Number.isFinite(spot) && spot > 0) {
+    spotCache[ticker] = { spot, timestamp: now };
+    persistSpotCache(spotCache);
+    return spot;
+  }
+  // Fall back to the stale (>5min, <24h) cache value if we just couldn't
+  // refresh — better than failing the whole calculation.
+  if (cached && Number.isFinite(cached.spot) && now - cached.timestamp < SPOT_MAX_AGE_MS) {
+    return cached.spot;
   }
   return null;
 }
 
-/**
- * Compute the greeks payload for a single position given its already-fetched
- * chain. Returns the shape persisted in the Map.
- */
-function computeGreeksFromChain(pos, chain) {
-  const spot = chain.spot > 0 ? chain.spot : null;
-  const contract = findContract(chain, pos.st, pos.ty);
-  if (!contract) return { ...UNAVAILABLE, spot };
+// ─── Per-position Greeks compute ──────────────────────────────────
 
-  const bid = Number.isFinite(contract.bid) ? contract.bid : null;
-  const ask = Number.isFinite(contract.ask) ? contract.ask : null;
-  const sigma = contract.impliedVolatility;
-
-  if (!Number.isFinite(sigma) || sigma <= 0) {
-    return { ...UNAVAILABLE, spot, bid, ask };
+function computeGreeksForPosition(pos, spot) {
+  if (!Number.isFinite(spot) || spot <= 0) {
+    return { ...UNAVAILABLE };
   }
-
-  const expiryMs = new Date(pos.ex + 'T12:00:00').getTime();
-  if (!Number.isFinite(expiryMs)) {
-    return { ...UNAVAILABLE, spot, iv: sigma, bid, ask };
-  }
-  const T = (expiryMs - Date.now()) / (365 * 86400000);
-  if (T <= 0 || !(spot > 0)) {
-    return { ...UNAVAILABLE, spot, iv: sigma, bid, ask };
-  }
-
   const K = parseFloat(pos.st);
+  const mark = parseFloat(pos.pc);
   const type = pos.ty === 'PUT' ? 'put' : 'call';
-  const g = bsGreeks({ S: spot, K, T, r: RISK_FREE_RATE, sigma, type });
-  if (!g) {
-    return { ...UNAVAILABLE, spot, iv: sigma, bid, ask };
+
+  if (!Number.isFinite(K) || K <= 0) return { ...UNAVAILABLE, spot };
+  if (!Number.isFinite(mark) || mark <= 0) return { ...UNAVAILABLE, spot };
+
+  const expiryMs = Date.parse(pos.ex + 'T12:00:00');
+  if (!Number.isFinite(expiryMs)) return { ...UNAVAILABLE, spot };
+  const T = (expiryMs - Date.now()) / (365 * 86_400_000);
+  if (!(T > 0)) return { ...UNAVAILABLE, spot };
+
+  const sigma = bsImpliedVol({
+    S: spot,
+    K,
+    T,
+    r: RISK_FREE_RATE,
+    marketPrice: mark,
+    type,
+  });
+  if (!Number.isFinite(sigma) || sigma <= 0) {
+    return { ...UNAVAILABLE, spot };
   }
 
+  const g = bsGreeks({ S: spot, K, T, r: RISK_FREE_RATE, sigma, type });
+  if (!g) return { ...UNAVAILABLE, spot, iv: sigma };
+
+  // Per-share BSM Greeks. theta is per-YEAR, vega per 1.00-sigma — the
+  // canonical aggregateGreeks (greeks.js) applies /365 and /100 + sign
+  // when summing. Do NOT pre-divide here.
   return {
     delta: g.delta,
     gamma: g.gamma,
@@ -102,50 +201,65 @@ function computeGreeksFromChain(pos, chain) {
     vega: g.vega,
     iv: sigma,
     spot,
-    bid,
-    ask,
-    source: 'bs',
+    bid: null,
+    ask: null,
+    source: 'computed',
   };
 }
 
 /**
- * Fetch Greeks for all open option positions, batching by (ticker × expiry).
- * Returns a Map<positionId, greeks>. Stock positions and positions missing
- * a key field (tk/ty/st/ex) are not included in the Map.
+ * Compute Greeks for all open option positions, locally via Black-Scholes.
+ *
+ * Signature preserved (positions) → Promise<Map<positionId, greeks>> so
+ * upstream consumers (useGreeksAggregate, Positions.jsx, Greeks.jsx) and
+ * the downstream aggregator (aggregateGreeks, greeks.js) don't change.
+ *
+ * Behaviour :
+ *   - Stocks and positions missing tk/ty/st/ex are skipped (not in Map).
+ *   - One /api/quote per unique underlying (deduplicated, cached 5 min).
+ *   - IV inversée du mark CSV (figé à l'import) via Newton-Raphson +
+ *     fallback bisection. Returns 'unavailable' when inversion fails.
+ *
+ * @param {Array<Object>} positions
+ * @returns {Promise<Map<string, Object>>}
  */
 export async function getGreeksForAllPositions(positions) {
   const result = new Map();
+  const list = Array.isArray(positions) ? positions : [];
 
-  // Group option positions by (ticker, expiry).
-  const groups = {};
-  for (const pos of positions) {
-    if (pos.as !== 'Option') continue;
-    if (!pos.tk || !pos.ty || !pos.st || !pos.ex) continue;
-    const key = `${pos.tk}|${pos.ex}`;
-    if (!groups[key]) groups[key] = { ticker: pos.tk, expiry: pos.ex, positions: [] };
-    groups[key].positions.push(pos);
-  }
-
-  // One Yahoo fetch per (ticker × expiry), in parallel.
-  const keys = Object.keys(groups);
-  const chains = await Promise.all(
-    keys.map((k) => fetchYahooChain(groups[k].ticker, groups[k].expiry))
+  // Filter to valid option positions only.
+  const options = list.filter(
+    (p) => p && p.as === 'Option' && p.tk && p.ty && p.st && p.ex
   );
+  if (options.length === 0) return result;
 
-  for (let i = 0; i < keys.length; i++) {
-    const chain = chains[i];
-    const positionsInGroup = groups[keys[i]].positions;
-    if (!chain) {
-      // Whole-group fetch failure → every position falls back to unavailable.
-      for (const pos of positionsInGroup) {
-        result.set(pos.id, { ...UNAVAILABLE });
+  // Unique underlyings — one /api/quote per underlying, not per position.
+  const uniqueTickers = Array.from(new Set(options.map((p) => p.tk)));
+
+  // Fetch spots in parallel. fetchSpot is module-dedup'd : 2 concurrent
+  // mounts (StrictMode) share the same in-flight promise.
+  const spotEntries = await Promise.all(
+    uniqueTickers.map(async (tk) => {
+      try {
+        return [tk, await getSpot(tk)];
+      } catch {
+        return [tk, null];
       }
-      continue;
-    }
-    for (const pos of positionsInGroup) {
-      result.set(pos.id, computeGreeksFromChain(pos, chain));
-    }
+    })
+  );
+  const spotByTicker = Object.fromEntries(spotEntries);
+
+  for (const pos of options) {
+    const greeks = computeGreeksForPosition(pos, spotByTicker[pos.tk]);
+    result.set(pos.id, greeks);
   }
 
   return result;
+}
+
+// ─── Test seam ────────────────────────────────────────────────────
+// Reset module-scope state between tests (vitest only).
+export function __resetGreeksApiForTests() {
+  inflightSpotByTicker.clear();
+  for (const key of Object.keys(spotCache)) delete spotCache[key];
 }

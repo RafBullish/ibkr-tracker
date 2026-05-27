@@ -24,7 +24,7 @@
 //  RiskMatrix lui-même.
 // ═══════════════════════════════════════════════════════════════
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import DashboardKPICards from '../components/dashboard/DashboardKPICards';
 import EquityChart from '../components/charts/EquityChart';
 import DailyPnLChart from '../components/charts/DailyPnLChart';
@@ -38,6 +38,7 @@ import TradeHistory from '../components/dashboard/TradeHistory';
 import CalendarMiniPlaceholder from '../components/dashboard/CalendarMiniPlaceholder';
 import useEquityHistory from '../hooks/useEquityHistory';
 import useDailyPnL from '../hooks/useDailyPnL';
+import useGreeksAggregate from '../hooks/useGreeksAggregate';
 import useRiskMatrix from '../hooks/useRiskMatrix';
 import useLivePositions from '../hooks/useLivePositions';
 import useWatchlist from '../hooks/useWatchlist';
@@ -112,29 +113,44 @@ export default function Dashboard() {
   const sectors = useSectorHeatmap();
   const ivMovers = useIVMovers();
   const alerts = useAlertsFeed();
+  // B4 — greeks hissés ici pour alimenter le strip dans le cockpit.
+  // DashboardKPICards garde son propre appel autonome (back-compat).
+  const greeks = useGreeksAggregate();
 
   // Merge portfolioMetrics (sharpe/sortino/sqn/cagr/recovery/rMultiples/
   // streaks/breakEven/fees/fxImpact/monthly) + riskMatrixData
-  // (currentDDPct/maxDDYtdPct/recoveryPctValue/vol30dPct) + equityHistory
+  // (currentDDPct/maxDDYtdPct/recoveryPctValue/volAnnPct) + equityHistory
+  // + greeks (Σ Δ/Γ/Θ/ν pour le strip Options Greeks B4)
   // pour que RiskMatrix puisse tout dériver via un seul objet `metrics`.
   const riskMetrics = useMemo(
-    () => ({ ...portfolioMetrics, ...riskMatrixData, equityHistory }),
-    [portfolioMetrics, riskMatrixData, equityHistory]
+    () => ({ ...portfolioMetrics, ...riskMatrixData, equityHistory, greeks }),
+    [portfolioMetrics, riskMatrixData, equityHistory, greeks]
   );
 
   // Persiste un snapshot quotidien des métriques (cf. useDailySnapshot.js).
   useDailySnapshotWriter();
 
+  // B3 — timeframe partagé entre Equity Curve et Cumulative P&L (lift state).
+  // Cliquer un timeframe sur l'un synchronise l'autre.
+  const [chartRange, setChartRange] = useState('ALL');
+
   return (
     <div className="dash-shell">
       <DashboardKPICards />
       <div className="dash-grid">
-        <EquityChart data={equityHistory} area="equity" />
+        <EquityChart
+          data={equityHistory}
+          range={chartRange}
+          onRangeChange={setChartRange}
+          area="equity"
+        />
         <DailyPnLChart
           data={equityHistory}
           dailyPnL={dailyPnL}
           closedTrades={closedTrades}
           liveRate={portfolioMetrics?.liveRate}
+          range={chartRange}
+          onRangeChange={setChartRange}
           area="dailypnl"
         />
         <RiskMatrix metrics={riskMetrics} area="risk" />

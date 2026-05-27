@@ -15,7 +15,7 @@
     font-size: 48px;
   }
   .page-container {
-    padding: var(--space-8);
+    padding: var(--qc-space-8);
   }
   .dashboard-hero-row {
     gap: var(--bento-gap-wide);
@@ -141,15 +141,15 @@
   }
 
   .page-container {
-    padding: var(--space-3);
-    gap: var(--space-3);
+    padding: var(--qc-space-3);
+    gap: var(--qc-space-3);
   }
   .page-title {
     font-size: 16px;
   }
 
   .dashboard-wrapper {
-    padding: var(--space-3);
+    padding: var(--qc-space-3);
     gap: var(--bento-gap-dense);
   }
   .kpi-strip {

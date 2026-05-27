@@ -5,6 +5,26 @@
 
 import { toFloat, ensurePositive, roundTo2 } from './math';
 import { currentMonthKey, extractMonthKey } from './dates';
+// A1 single-source-of-truth primitives — replace the inline formulas
+// that previously diverged between calculations.js and useTradingMetrics.js.
+// A2a additions : buildEquitySeries (returns%-based, capital-floor) and
+// computeVolatility (annualised, replaces the old vol30dAnnualized).
+import {
+  computeWinRate,
+  computeProfitFactor,
+  computeSharpe,
+  computeSortino,
+  computeCAGR,
+  computeCalmar,
+  computeRecoveryFactor,
+  buildEquitySeries,
+  computeVolatility,
+} from './metrics';
+// A3b — equity timeline + TWR.
+import { buildEquityTimeline } from './metrics/equityTimeline';
+import { computeTWR } from './metrics/computeTWR';
+import { safeNum, roundTo2Safe } from './safeNum';
+import { isValidFxRate } from './fx/helpers';
 
 // ─── Closed Trade P&L ────────────────────────────────────────
 
@@ -15,20 +35,30 @@ export function calculateClosedTradePnl(trade, fallbackFxRate) {
     po = toFloat(trade.po);
   const fi = toFloat(trade.fi),
     fo = toFloat(trade.fo);
-  const fxi = toFloat(trade.fxi) || fallbackFxRate;
-  const fxo = toFloat(trade.fxo) || fallbackFxRate;
+  // A3a — fxi/fxo come from trade-time storage when available. The
+  // `|| fallback` cascade falls back to the CURRENT liveRate when the
+  // per-trade rate is missing — a known limitation (mixes epochs ; a true
+  // fix would need a historical FX table, A3+). What we DO refuse is a
+  // silent 1 :1 conversion : if both trade.fxi and fallbackFxRate are
+  // invalid, the rate is null and CHF figures collapse to null.
+  const tradeFxi = toFloat(trade.fxi);
+  const tradeFxo = toFloat(trade.fxo);
+  const fbValid = isValidFxRate(fallbackFxRate);
+  const fxi = tradeFxi > 0 ? tradeFxi : fbValid ? fallbackFxRate : null;
+  const fxo = tradeFxo > 0 ? tradeFxo : fbValid ? fallbackFxRate : null;
   const isShort = trade.dir === 'Short';
 
   const grossIn = pi * mul * qty;
   const grossOut = po * mul * qty;
+  const fxOk = fxi != null && fxo != null;
 
   if (isShort) {
     const entryUsd = grossIn - fi;
     const exitUsd = grossOut + fo;
     return {
       usd: entryUsd - exitUsd,
-      chf: entryUsd * fxi - exitUsd * fxo,
-      fxImpactChf: entryUsd * (fxi - fxo),
+      chf: fxOk ? entryUsd * fxi - exitUsd * fxo : null,
+      fxImpactChf: fxOk ? entryUsd * (fxi - fxo) : null,
       feesUsd: fi + fo,
     };
   } else {
@@ -36,8 +66,8 @@ export function calculateClosedTradePnl(trade, fallbackFxRate) {
     const exitUsd = grossOut - fo;
     return {
       usd: exitUsd - entryUsd,
-      chf: exitUsd * fxo - entryUsd * fxi,
-      fxImpactChf: entryUsd * (fxo - fxi),
+      chf: fxOk ? exitUsd * fxo - entryUsd * fxi : null,
+      fxImpactChf: fxOk ? entryUsd * (fxo - fxi) : null,
       feesUsd: fi + fo,
     };
   }
@@ -68,19 +98,31 @@ export function calculateOpenPositionPnl(position, liveRate) {
   const pi = toFloat(position.pi),
     pc = toFloat(position.pc);
   const fi = toFloat(position.fi);
-  const fxi = toFloat(position.fxi) || liveRate;
+  // A3a — same FX guard as calculateClosedTradePnl. CHF emissions null
+  // when both per-position fxi and liveRate are invalid.
+  const posFxi = toFloat(position.fxi);
+  const lrValid = isValidFxRate(liveRate);
+  const fxi = posFxi > 0 ? posFxi : lrValid ? liveRate : null;
+  const lrForChf = lrValid ? liveRate : null;
   const isShort = position.dir === 'Short';
 
   const costBasisUsd = isShort ? pi * mul * qty - fi : pi * mul * qty + fi;
   const curValRaw = pc * mul * qty;
   const mktValUsd = isShort ? -curValRaw : curValRaw;
-  const mktValChf = mktValUsd * liveRate;
+  const mktValChf = lrForChf != null ? mktValUsd * lrForChf : null;
 
   const uPnlUsd = isShort ? costBasisUsd - curValRaw : curValRaw - costBasisUsd;
-  const uPnlChf = isShort
-    ? costBasisUsd * fxi - curValRaw * liveRate
-    : curValRaw * liveRate - costBasisUsd * fxi;
-  const fxImp = isShort ? costBasisUsd * (fxi - liveRate) : costBasisUsd * (liveRate - fxi);
+  const fxOk = fxi != null && lrForChf != null;
+  const uPnlChf = fxOk
+    ? isShort
+      ? costBasisUsd * fxi - curValRaw * lrForChf
+      : curValRaw * lrForChf - costBasisUsd * fxi
+    : null;
+  const fxImp = fxOk
+    ? isShort
+      ? costBasisUsd * (fxi - lrForChf)
+      : costBasisUsd * (lrForChf - fxi)
+    : null;
 
   return {
     marketValueUsd: mktValUsd,
@@ -92,10 +134,80 @@ export function calculateOpenPositionPnl(position, liveRate) {
   };
 }
 
+// ─── A2.2 — Initial capital from Cash Report ─────────────────
+//
+// Derives the USD-equivalent invested capital from a parsed Cash Report
+// (`settings.cashReport`). Tries per-currency aggregation first (CHF +
+// USD, summed in USD via liveRate) ; falls back to the BaseCurrency
+// aggregate using `cashReport.baseCurrency` (or a CHF-base heuristic
+// when the code is missing).
+//
+// Returns null when no usable Cash Report data is present so the
+// caller can advance through the resolution hierarchy (cashFlows →
+// settings → null) without ambiguity.
+//
+// Exported for direct testing — internal helper otherwise.
+//
+// @param {Object|undefined|null} cashReport  parsed CashReport from IBKR Flex
+// @param {number} liveRate                   CHF per USD
+// @returns {number|null}                     USD-equivalent initial capital
+export function deriveInitialFromCashReport(cashReport, liveRate) {
+  if (!cashReport || typeof cashReport !== 'object') return null;
+  const lr = typeof liveRate === 'number' && liveRate > 0 ? liveRate : null;
+
+  // (1) Per-currency aggregation — only counts if at least one currency
+  // exposes non-zero startingCash / deposits / withdrawals.
+  const currencies = cashReport.currencies || null;
+  if (currencies) {
+    let totalUsd = 0;
+    let hasSample = false;
+    for (const code of Object.keys(currencies)) {
+      if (code !== 'CHF' && code !== 'USD') continue;
+      const data = currencies[code] || {};
+      const sc = toFloat(data.startingCash);
+      const dep = toFloat(data.deposits);
+      const wd = toFloat(data.withdrawals);
+      if (sc !== 0 || dep !== 0 || wd !== 0) hasSample = true;
+      const net = sc + dep + wd;
+      if (code === 'USD') totalUsd += net;
+      else if (code === 'CHF' && lr) totalUsd += net / lr;
+    }
+    if (hasSample && totalUsd > 0) return totalUsd;
+  }
+
+  // (2) BaseCurrency aggregate.
+  const sc = toFloat(cashReport.startingCash);
+  const dep = toFloat(cashReport.deposits);
+  const wd = toFloat(cashReport.withdrawals);
+  if (sc === 0 && dep === 0 && wd === 0) return null;
+  const netBase = sc + dep + wd;
+  if (!(netBase > 0)) return null;
+
+  const base = cashReport.baseCurrency;
+  if (base === 'USD') return netBase;
+  if (base === 'CHF' && lr) return netBase / lr;
+  // Unknown base — best-effort assume CHF (the common quantumcall case)
+  // when liveRate is available. If liveRate is missing, fall back to
+  // taking the base aggregate at face value.
+  if (lr) return netBase / lr;
+  return null;
+}
+
 // ─── Full Portfolio Metrics ──────────────────────────────────
 
 export function calculatePortfolioMetrics(state) {
-  const liveRate = toFloat(state.settings.liveRate) || 1;
+  // A3a — FX integrity gate. The rawLiveRate comes from
+  // `state.settings.liveRate` (set by the FX refresh hook). When it
+  // fails isValidFxRate the legacy code converted everything at 1:1
+  // silently — A3a refuses : `fxValid=false` flags the cascade, all
+  // CHF emissions are nullified, the UI banner reads this flag.
+  //
+  // `liveRate` is kept as a safe arithmetic fallback (1) so the USD-side
+  // computations stay numerically valid ; the CHF side never reaches the
+  // output when fxValid is false.
+  const rawLiveRate = toFloat(state.settings.liveRate);
+  const fxValid = isValidFxRate(rawLiveRate);
+  const liveRate = fxValid ? rawLiveRate : 1;
 
   // ── Cash Flows ──
   let totalFundedUsd = 0,
@@ -111,10 +223,17 @@ export function calculatePortfolioMetrics(state) {
     } else if (e.ty === 'fx_buy_chf') {
       totalFundedUsd -= a1;
       totalDepositedChf += a2;
-    } else if (e.ty === 'div_usd' || e.ty === 'adj_usd') totalFundedUsd += a1;
-    else if (e.ty === 'fee_usd') totalFundedUsd -= a1;
+    } else if (e.ty === 'div_usd' || e.ty === 'adj_usd' || e.ty === 'dep_usd')
+      // A2.2 — `dep_usd` is the new explicit tag for USD deposits (parser
+      // line `sections.js:mapCashTxnRow`). `adj_usd` is kept for
+      // back-compat with persisted state from pre-A2.2 imports.
+      totalFundedUsd += a1;
+    else if (e.ty === 'fee_usd' || e.ty === 'wit_usd')
+      // A2.2 — `wit_usd` is the new explicit tag for USD withdrawals.
+      totalFundedUsd -= a1;
     else if (e.ty === 'dep_fx' || !e.ty) totalFundedUsd += toFloat(e.u || e.a1);
   });
+
 
   // ── Realized P&L ──
   let realizedPnlUsd = 0,
@@ -196,34 +315,125 @@ export function calculatePortfolioMetrics(state) {
       monthlyPnlChf += pnl * fxo;
     });
 
-  // ── Win Rate / Profit Factor / Expectancy ──
-  let winCount = 0,
-    lossCount = 0,
-    breakEvenCount = 0,
-    totalGains = 0,
-    totalLosses = 0;
-  state.closedTrades.forEach((t) => {
-    const pnl = tradePnlUsd(t, liveRate);
-    if (pnl > 0) {
-      winCount++;
-      totalGains += pnl;
-    } else if (pnl < 0) {
-      lossCount++;
-      totalLosses += Math.abs(pnl);
-    } else {
-      breakEvenCount++;
-    }
+  // ── Sorted closed trades + per-trade pnls (single pass) ──
+  // Sort once here so every downstream metric (streaks, equity points,
+  // Sharpe / Sortino / maxDD) consumes a consistent chronological view.
+  const sortedTrades = state.closedTrades
+    .slice()
+    .sort((a, b) => (a.do || '').localeCompare(b.do || ''));
+  const pnls = sortedTrades.map((t) => tradePnlUsd(t, liveRate));
+
+  // ── B4 / A2.2 — initialCapital resolution (nullable, FIVE sources) ──
+  // Priority order :
+  //   (1) settings.initialCapitalChf — manuel saisi par l'utilisateur en
+  //       CHF (sa devise). Converti en USD au taux courant. PRIME sur
+  //       l'auto-dérivation : décision actée — Rafael dépose 1500 CHF/mois,
+  //       un capital auto-dérivé gonflerait avec les apports et empêcherait
+  //       de distinguer l'edge de trading de l'effort d'épargne. Le TWR
+  //       (timeline+computeTWR) reste indépendant : ce manuel n'altère que
+  //       le numérateur/dénominateur des % de return et le gate de
+  //       significativité, jamais la chaîne TWR (cf. B4-AUDIT).
+  //   (2) settings.cashReport — IBKR Flex Query "Cash Report" section.
+  //       Authoritative because it includes withdrawals netted out from
+  //       deposits (the -200 in Tracker_TEST-2.csv that the per-transaction
+  //       Cash Transactions list misses if the export omits it). Per-currency
+  //       startingCash + deposits + withdrawals when available, else fall
+  //       back to the BaseCurrency aggregate using `cashReport.baseCurrency`.
+  //   (3) cashFlows — sum of per-transaction funding entries (dep_chf,
+  //       wit_chf, dep_usd, wit_usd, plus legacy adj_usd / fee_usd).
+  //   (4) settings.initialCapitalUsd — legacy USD-direct manual override
+  //       (pre-B4 scaffolding ; kept for back-compat with any value set via
+  //       localStorage avant que la saisie CHF arrive).
+  //   (5) null — "capital unknown" state. CAGR / Sharpe / Sortino / Vol
+  //       all collapse to "—" honestly.
+  const manualInitialChf = toFloat(state.settings?.initialCapitalChf);
+  const manualInitialUsd =
+    manualInitialChf > 0 && liveRate > 0 ? manualInitialChf / liveRate : null;
+  const cashReportInitialUsd = deriveInitialFromCashReport(state.settings?.cashReport, liveRate);
+  const depositedUsdEq = totalFundedUsd + (liveRate > 0 ? totalDepositedChf / liveRate : 0);
+  const settingsInitialUsd = toFloat(state.settings?.initialCapitalUsd);
+  let initialCapital;
+  let initialCapitalSource;
+  if (manualInitialUsd != null && manualInitialUsd > 0) {
+    initialCapital = manualInitialUsd;
+    initialCapitalSource = 'manual';
+  } else if (cashReportInitialUsd != null && cashReportInitialUsd > 0) {
+    initialCapital = cashReportInitialUsd;
+    initialCapitalSource = 'cashReport';
+  } else if (depositedUsdEq > 0) {
+    initialCapital = depositedUsdEq;
+    initialCapitalSource = 'cashTransactions';
+  } else if (settingsInitialUsd > 0) {
+    initialCapital = settingsInitialUsd;
+    initialCapitalSource = 'settings';
+  } else {
+    initialCapital = null;
+    initialCapitalSource = 'unknown';
+  }
+
+  const firstTradeDate = sortedTrades.length > 0 ? new Date(sortedTrades[0].do) : new Date();
+  const lastTradeDate =
+    sortedTrades.length > 0
+      ? new Date(sortedTrades[sortedTrades.length - 1].do || new Date())
+      : new Date();
+  const daysActive = Math.max(1, (lastTradeDate - firstTradeDate) / (1000 * 60 * 60 * 24));
+  const yearsActive = daysActive / 365.25;
+  const series = buildEquitySeries({ initialCapital, pnls });
+
+  // ── A3b — equity timeline (dated points on real equity base) ──
+  // Single source for : TWR sub-period chaining, Current/YTD/All-Time
+  // drawdowns (consistent base), NLV hero badge real-growth %.
+  const timeline = buildEquityTimeline({
+    closedTrades: state.closedTrades,
+    cashFlows: state.cashFlows,
+    initialCapital,
+    liveRate: rawLiveRate,
   });
+  // Adapter shape consumed by risk.js helpers (they look at `.equity`).
+  const realEquityPoints = timeline.points.map((p) => ({
+    date: p.date,
+    equity: p.realEquity,
+    cumPnL: p.cumPnL,
+    capitalDeployedToDate: p.capitalDeployedToDate,
+  }));
+
+  // ── A3b — TWR (time-weighted return, chained over sub-periods) ──
+  const twrResult = computeTWR({
+    points: timeline.points,
+    flows: timeline.flows,
+    yearsActive,
+    tradesCount: state.closedTrades.length,
+    initialCapital,
+  });
+  const twr = roundTo2Safe(twrResult.value, null);
+  const twrMode = twrResult.mode;
+  const twrSubPeriods = twrResult.subPeriods;
+
+  // ── Win Rate / Profit Factor / Expectancy (A2b gated) ──
+  // computeWinRate.winRate is null below MIN_DECISIVE_WINRATE (10).
+  // computeProfitFactor.profitFactor is null below MIN_LOSSES_PF (3) or
+  // when grossLoss === 0 (previously Infinity). Both fields flow through
+  // as-is — display layer treats null as "—" / fraction fallback.
+  // Expectancy stays computed because it's a dollar value, not a ratio :
+  // we derive it from RAW count fractions, not the gated percentage,
+  // so it remains meaningful even at low decisive counts.
+  const winData = computeWinRate(pnls);
+  const pfData = computeProfitFactor(pnls);
+  const winCount = winData.winCount;
+  const lossCount = winData.lossCount;
+  const breakEvenCount = winData.breakEvenCount;
+  const totalGains = pfData.grossProfit;
+  const totalLosses = pfData.grossLoss;
   const tradeCount = state.closedTrades.length;
-  const decisiveTrades = winCount + lossCount;
-  const winRate = decisiveTrades > 0 ? roundTo2((winCount / decisiveTrades) * 100) : 0;
-  const profitFactor =
-    totalLosses === 0 ? (totalGains > 0 ? Infinity : 0) : roundTo2(totalGains / totalLosses);
+  const decisiveTrades = winData.decisive;
+  const winRate = roundTo2Safe(winData.winRate, null);
+  const profitFactor = roundTo2Safe(pfData.profitFactor, null);
   const averageWin = winCount > 0 ? totalGains / winCount : 0;
   const averageLoss = lossCount > 0 ? totalLosses / lossCount : 0;
+  const winFracRaw = decisiveTrades > 0 ? winCount / decisiveTrades : 0;
   const expectancy =
     decisiveTrades > 0
-      ? roundTo2((winRate / 100) * averageWin - (1 - winRate / 100) * averageLoss)
+      ? roundTo2(winFracRaw * averageWin - (1 - winFracRaw) * averageLoss)
       : 0;
 
   // ── R-Multiples ──
@@ -245,25 +455,27 @@ export function calculatePortfolioMetrics(state) {
   const sqn =
     rStdDev > 0 ? roundTo2((rAverage / rStdDev) * Math.sqrt(Math.min(rMultiples.length, 100))) : 0;
 
-  // ── Streaks & Drawdown ──
+  // ── Max Drawdown ──
+  // Source : buildEquitySeries (single equity-curve pass).
+  // maxDrawdown stays in USD; maxDrawdownPct is now computed on the
+  // REAL peak equity (init + cumPnL), bounded to [0, 100], replacing
+  // the legacy maxDD/initialCapital ratio that could exceed 100 %.
+  const maxDrawdown = series.maxDD;
+
+  // ── Streaks & Equity Points ──
+  // Streak counters + equityPoints series are NOT a duplicated metric,
+  // they're a per-iteration derivation specific to this pipeline. Kept
+  // inline (over the already-computed pnls) — no formula duplication.
   let maxWinStreak = 0,
     maxLossStreak = 0,
     currentWinStreak = 0,
     currentLossStreak = 0;
-  const sortedTrades = state.closedTrades
-    .slice()
-    .sort((a, b) => (a.do || '').localeCompare(b.do || ''));
-  let equityCurve = 0,
-    equityPeak = 0,
-    maxDrawdown = 0;
+  let equityCurve = 0;
   const equityPoints = [0];
-  sortedTrades.forEach((t) => {
-    const pnl = tradePnlUsd(t, liveRate);
+  for (let i = 0; i < pnls.length; i++) {
+    const pnl = pnls[i];
     equityCurve += pnl;
     equityPoints.push(equityCurve);
-    if (equityCurve > equityPeak) equityPeak = equityCurve;
-    const dd = equityPeak - equityCurve;
-    if (dd > maxDrawdown) maxDrawdown = dd;
     if (pnl > 0) {
       currentWinStreak++;
       currentLossStreak = 0;
@@ -273,60 +485,64 @@ export function calculatePortfolioMetrics(state) {
       currentWinStreak = 0;
       if (currentLossStreak > maxLossStreak) maxLossStreak = currentLossStreak;
     }
-  });
+  }
   const currentStreak = currentWinStreak > 0 ? currentWinStreak : -currentLossStreak;
 
-  // ── Sharpe / Sortino ──
-  const monthlyReturns = {};
-  state.closedTrades.forEach((t) => {
-    const k = extractMonthKey(t.do);
-    if (k) monthlyReturns[k] = (monthlyReturns[k] || 0) + tradePnlUsd(t, liveRate);
+  // ── Sharpe / Sortino / Volatility (A2a) ──
+  // Returns are now fractional (series.returns) — the gate refuses to
+  // emit a value when obs<30 / years<0.25 / capitalRef<500. NULL is
+  // the honest signal ; the previous clamp [-5, +10] is retired.
+  const sharpeRaw = computeSharpe({
+    returns: series.returns,
+    yearsActive,
+    capitalRef: initialCapital,
   });
-  const returnValues = Object.values(monthlyReturns);
-  let sharpeRatio = 0,
-    sortinoRatio = 0;
-  if (returnValues.length > 1) {
-    const avgReturn = returnValues.reduce((a, b) => a + b, 0) / returnValues.length;
-    const downsideDev = Math.sqrt(
-      Math.max(
-        0,
-        returnValues.filter((r) => r < 0).reduce((s, r) => s + r * r, 0) / returnValues.length
-      )
-    );
-    sortinoRatio = downsideDev > 0 ? roundTo2(avgReturn / downsideDev) : 0;
-    const totalStdDev = Math.sqrt(
-      Math.max(
-        0,
-        returnValues.reduce((s, r) => s + Math.pow(r - avgReturn, 2), 0) / returnValues.length
-      )
-    );
-    sharpeRatio = totalStdDev > 0 ? roundTo2(avgReturn / totalStdDev) : 0;
-  }
+  const sortinoRaw = computeSortino({
+    returns: series.returns,
+    yearsActive,
+    capitalRef: initialCapital,
+  });
+  const volRaw = computeVolatility({
+    returns: series.returns,
+    yearsActive,
+    capitalRef: initialCapital,
+  });
+  const sharpeRatio = roundTo2Safe(sharpeRaw, null);
+  const sortinoRatio = roundTo2Safe(sortinoRaw, null);
+  const volAnnPct = roundTo2Safe(volRaw, null);
 
-  // ── CAGR & Calmar Ratio ──
-  // Use total deposited capital (USD-equivalent) as invested base, not NLV which moves with P&L.
-  // If we lack funding data, fall back to the current cost basis proxy (capital tied up + realized).
-  const firstTradeDate = sortedTrades.length > 0 ? new Date(sortedTrades[0].do) : new Date();
-  const lastTradeDate =
-    sortedTrades.length > 0
-      ? new Date(sortedTrades[sortedTrades.length - 1].do || new Date())
-      : new Date();
-  const daysActive = Math.max(1, (lastTradeDate - firstTradeDate) / (1000 * 60 * 60 * 24));
-  const yearsActive = daysActive / 365.25;
+  // ── CAGR & Calmar Ratio (A2.2 — annualised above 1 y, cumulative below) ──
+  // initialCapital may be null (cf. resolution block above). The gate
+  // inside computeCAGR rejects null via significanceCheck (capitalRef
+  // requirement) — no nullish-arithmetic risk here.
+  const endCapital = initialCapital != null ? initialCapital + realizedPnlUsd : null;
+  const cagrRaw = computeCAGR({
+    initialCapital,
+    endCapital,
+    yearsActive,
+    tradesCount: state.closedTrades.length,
+  });
+  const cagr = safeNum(cagrRaw, null);
+  // A2.2 — `cagrMode` tells the display layer whether the percentage is
+  // annualised (years≥1) or cumulative (0<years<1). The card label
+  // adapts accordingly: "CAGR" → "Cumulé". Null when years invalid.
+  const cagrModeValue =
+    cagr == null
+      ? null
+      : yearsActive >= 1
+        ? 'annualised'
+        : 'cumulative';
 
-  // Invested capital: prefer USD deposits, fallback to CHF converted at current rate
-  const depositedUsdEq = totalFundedUsd + (liveRate > 0 ? totalDepositedChf / liveRate : 0);
-  const initialCapital = depositedUsdEq > 0 ? depositedUsdEq : 0;
-  const endCapital = initialCapital + realizedPnlUsd;
+  // Max drawdown % — sourced from buildEquitySeries (per-step worst peak
+  // equity ratio, bounded [0, 100]). Null when the equity base is
+  // "unknown" (initialCapital null) — display layer renders "—".
+  const maxDrawdownPct = series.maxDDPct;
 
-  const cagr =
-    initialCapital > 0 && yearsActive > 0 && endCapital > 0
-      ? (Math.pow(endCapital / initialCapital, 1 / yearsActive) - 1) * 100
-      : 0;
-
-  // Calmar = CAGR / max drawdown as a percentage of initial capital
-  const maxDrawdownPct = initialCapital > 0 ? (maxDrawdown / initialCapital) * 100 : 0;
-  const calmarRatio = maxDrawdownPct > 0 ? roundTo2(cagr / maxDrawdownPct) : 0;
+  // A2b — Calmar requires an ANNUALISED CAGR ; under 1 y we feed it the
+  // cumulative value which would break the ratio's comparability with
+  // the 3.0 benchmark. computeCalmar gates on yearsActive ≥ 1 internally.
+  const calmarRaw = computeCalmar({ cagrPct: cagr, maxDrawdownPct, yearsActive });
+  const calmarRatio = roundTo2Safe(calmarRaw, null);
 
   // ── PRU (Prix de Revient Unitaire) ──
   let pruPoolUsd = 0,
@@ -349,44 +565,65 @@ export function calculatePortfolioMetrics(state) {
     }
   });
   const pru = pruPoolUsd > 0 ? pruPoolChf / pruPoolUsd : 0;
+  // Single source : computeRecoveryFactor. Resolves the A0-flagged
+  // collision (useTradingMetrics's misnamed `calmar` shares this impl).
+  const recoveryRaw = computeRecoveryFactor({
+    netProfit: realizedPnlUsd,
+    maxDD: maxDrawdown,
+  });
   const recoveryFactor =
-    maxDrawdown > 0 ? roundTo2(realizedPnlUsd / maxDrawdown) : realizedPnlUsd > 0 ? Infinity : 0;
-  let kellyPercent = 0;
-  if (averageLoss > 0 && winRate > 0) {
-    const wp = winRate / 100;
-    kellyPercent = roundTo2((wp - (1 - wp) / (averageWin / averageLoss)) * 100);
+    recoveryRaw === Infinity ? Infinity : recoveryRaw == null ? 0 : roundTo2(recoveryRaw);
+  // A2b — Kelly uses the RAW win fraction (winCount/decisive), not the
+  // gated percentage, so the formula still computes when decisive < 10.
+  // Display layer can independently choose to suppress the value below
+  // the gate if desired. Returns null when the inputs are degenerate.
+  let kellyPercent = null;
+  if (averageLoss > 0 && winFracRaw > 0 && averageWin > 0) {
+    const k = (winFracRaw - (1 - winFracRaw) / (averageWin / averageLoss)) * 100;
+    kellyPercent = roundTo2Safe(k, null);
   }
 
   return {
     totalFundedUsd,
+    // A3a — distinguishes NATIVE CHF amounts (totalDepositedChf,
+    // chfCashBalance, totalEverDepositedChf) which come directly from
+    // CHF-denominated cashFlows entries and stay valid regardless of FX
+    // status, from FX-DERIVED CHF figures (realizedPnlChf,
+    // unrealizedPnlChf, netLiquidationValueChf, monthlyPnlChf,
+    // totalFxImpact, openFxImpact) which multiply a USD value by liveRate
+    // and are nullified when fxValid is false.
     totalDepositedChf,
     chfCashBalance,
     cashAvailable: cashUsd,
     totalExposure,
     netLiquidationValueUsd,
-    netLiquidationValueChf,
+    netLiquidationValueChf: fxValid ? netLiquidationValueChf : null,
     nlvUsdSide,
     totalEverDepositedChf,
     allocationPercent,
     realizedPnlUsd,
-    realizedPnlChf,
+    realizedPnlChf: fxValid ? realizedPnlChf : null,
     unrealizedPnlUsd,
-    unrealizedPnlChf,
+    unrealizedPnlChf: fxValid ? unrealizedPnlChf : null,
     totalAllFees,
     monthlyPnlUsd,
-    monthlyPnlChf,
+    monthlyPnlChf: fxValid ? monthlyPnlChf : null,
     winRate,
     profitFactor,
     expectancy,
     maxDrawdown,
     equityPoints,
-    totalFxImpact,
-    openFxImpact,
+    totalFxImpact: fxValid ? totalFxImpact : null,
+    openFxImpact: fxValid ? openFxImpact : null,
     currentStreak,
     maxWinStreak,
     maxLossStreak,
     pru,
-    liveRate,
+    // A3a — `liveRate` exposed as null when invalid, so consumers can
+    // gate their CHF derivations on it. `fxValid` is the canonical flag
+    // for the UI banner.
+    liveRate: fxValid ? rawLiveRate : null,
+    fxValid,
     rAverage,
     rStdDev,
     sqn,
@@ -399,6 +636,34 @@ export function calculatePortfolioMetrics(state) {
     recoveryFactor,
     kellyPercent,
     calmarRatio,
+    // A1 — exposed so consumers (e.g. RiskMatrix.jsx) can stop deriving
+    // CAGR inline and read the canonical single-source value. Same units
+    // as before (percent), same sign convention.
+    cagr,
+    // A2.2 — `cagrMode` lets the display layer pick "CAGR" (annualised,
+    // years ≥ 1) vs "Cumulé" (cumulative return, 0 < years < 1) labels.
+    cagrMode: cagrModeValue,
+    // A3b — Time-Weighted Return (TWR) chained over funding sub-periods.
+    // The performance KPI neutralising the timing of deposits. `twrMode`
+    // mirrors `cagrMode` (annualised at years≥1, cumulative below).
+    // `twrSubPeriods` exposes the chain length for debug.
+    twr,
+    twrMode,
+    twrSubPeriods,
+    // A3b — Real-equity timeline (init+cumPnL per close-date) — single
+    // source for drawdowns (risk.js) and the NLV hero badge growth %.
+    realEquityPoints,
+    // A2.1/A2.2 — initialCapital + its resolution source
+    // ('cashReport' | 'cashTransactions' | 'settings' | 'unknown').
+    // Consumers (e.g. RiskMatrix.jsx Init Cap cell) read these
+    // instead of re-deriving.
+    initialCapital,
+    initialCapitalSource,
+    // A2a — annualised volatility (%) sourced from buildEquitySeries
+    // returns. Replaces the legacy `vol30dPct` field (per-trade-treated-
+    // as-daily on initialCapital base). Nullable when the significance
+    // gate fails (obs<30 / years<0.25 / capitalRef<500).
+    volAnnPct,
     winCount,
     lossCount,
     breakEvenCount,
@@ -413,36 +678,11 @@ export function calculatePortfolioMetrics(state) {
   };
 }
 
-// ─── Equity Curve with Drawdown ────────────────────────────
-
-export function computePortfolioGreeks(openPositions, greeksMap) {
-  let totalDelta = 0,
-    totalGamma = 0,
-    totalTheta = 0,
-    totalVega = 0;
-  let positionCount = 0;
-
-  openPositions.forEach((pos) => {
-    if (pos.as !== 'Option') return;
-    const g = greeksMap?.get(pos.id);
-    if (!g) return;
-    const qty = toFloat(pos.ct);
-    const mul = ensurePositive(pos.mu);
-    if (g.delta != null) totalDelta += g.delta * qty * mul;
-    if (g.gamma != null) totalGamma += g.gamma * qty * mul;
-    if (g.theta != null) totalTheta += g.theta * qty * mul;
-    if (g.vega != null) totalVega += g.vega * qty * mul;
-    positionCount++;
-  });
-
-  return {
-    totalDelta: roundTo2(totalDelta),
-    totalGamma: roundTo2(totalGamma),
-    totalTheta: roundTo2(totalTheta),
-    totalVega: roundTo2(totalVega),
-    positionCount,
-  };
-}
+// A1 — `computePortfolioGreeks` was retired. The function used to aggregate
+// greeks ignoring `pos.dir` (Long/Short), which inverted Theta/Vega signs
+// for Sniper-OTM short premium portfolios. All consumers (Positions.jsx,
+// Greeks.jsx) now consume `aggregateGreeks` from src/utils/greeks.js
+// (sign-aware, theta/day, vega/1%-IV).
 
 // ─── Equity Curve with Drawdown ────────────────────────────
 

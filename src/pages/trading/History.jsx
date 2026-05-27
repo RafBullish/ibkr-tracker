@@ -223,7 +223,9 @@ export default function History() {
 
   const stats = useMemo(() => {
     const m = calculateTradingMetrics(filtered, lr);
-    if (!m) return { total: 0, net: 0, winRate: 0, avgR: 0, best: 0, worst: 0 };
+    // A2b — winRate is nullable upstream when decisive<10. Preserve null
+    // here so MetricCard / WinRateDonut render "—" instead of "0 %".
+    if (!m) return { total: 0, net: 0, winRate: null, avgR: 0, best: 0, worst: 0 };
     return {
       total: m.totalPnlCount,
       net: m.totalPnl,

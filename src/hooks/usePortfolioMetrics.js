@@ -46,10 +46,13 @@ export function useKPIs() {
 
   return useMemo(() => {
     if (!tradingMetrics) {
+      // A2b — empty-state : nullable fields stay null so consumers don't
+      // misread a synthetic 0 as "zero win rate" / "PF of zero". Counts
+      // remain 0 because that's their real value when no trades exist.
       return {
         totalPnL: 0,
-        winRate: 0,
-        profitFactor: 0,
+        winRate: null,
+        profitFactor: null,
         expectancy: 0,
         avgWinner: 0,
         avgLoser: 0,
@@ -64,6 +67,7 @@ export function useKPIs() {
     }
     return {
       totalPnL: tradingMetrics.totalPnl,
+      // A2b — these two are now nullable (gated by useTradingMetrics).
       winRate: tradingMetrics.winRate,
       profitFactor: tradingMetrics.profitFactor,
       expectancy: tradingMetrics.expectancy,

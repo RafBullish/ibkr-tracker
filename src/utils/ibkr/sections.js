@@ -162,7 +162,29 @@ export function mapTradeRow(fields, headerMap) {
   };
 }
 
-/** Map a Cash Transactions row. Returns null if the row should be skipped. */
+/**
+ * Map a Cash Transactions row. Returns null if the row should be skipped.
+ *
+ * A2.2 — accepts the granular IBKR Flex `Type` values "Deposits" and
+ * "Withdrawals" in addition to the older combined "Deposits/Withdrawals".
+ * Real exports use the granular form (Tracker_TEST-2.csv : 6× Type="Deposits"
+ * worth 1500 CHF each), so the older filter silently dropped all funding
+ * → initialCapital=0 → CAGR/Sharpe/Sortino/Calmar/Vol = "—".
+ *
+ * Mapping (per currency × per direction) :
+ *   CHF + deposit    → 'dep_chf'      (back-compat tag, calculations.js sums)
+ *   CHF + withdrawal → 'wit_chf'
+ *   USD + deposit    → 'dep_usd'      (NEW — was 'adj_usd' for ambiguous case)
+ *   USD + withdrawal → 'wit_usd'      (NEW — was 'fee_usd', semantically wrong)
+ *   other currency   → ignored
+ *
+ * 'adj_usd' / 'fee_usd' are NOT emitted by this mapper anymore but the
+ * calculations.js cash-flow loop still recognises them for back-compat
+ * with persisted state from previous imports.
+ *
+ * `da` (date) is preserved so a future IRR / money-weighted-return primitive
+ * can honour the schedule of deposits.
+ */
 export function mapCashTxnRow(fields, headerMap) {
   const get = makeGetter(headerMap, fields);
   const level = get('LevelOfDetail');
@@ -173,11 +195,21 @@ export function mapCashTxnRow(fields, headerMap) {
   const amount = sf(get('Amount'));
   const date = isoDate(get('Date/Time'));
 
-  if (type !== 'Deposits/Withdrawals' || amount === 0) return null;
+  if (amount === 0) return null;
+
+  // Recognise funding rows : granular IBKR types ("Deposits" / "Withdrawals")
+  // and the legacy combined type. Any other Type (Dividends, Broker Interest,
+  // Withholding Tax, etc.) is intentionally skipped here — they may be
+  // captured by future parsers, but they are not "initial capital".
+  let direction = null;
+  if (type === 'Deposits') direction = 'dep';
+  else if (type === 'Withdrawals') direction = 'wit';
+  else if (type === 'Deposits/Withdrawals') direction = amount > 0 ? 'dep' : 'wit';
+  if (direction === null) return null;
 
   let cfType;
-  if (currency === 'CHF') cfType = amount > 0 ? 'dep_chf' : 'wit_chf';
-  else if (currency === 'USD') cfType = amount > 0 ? 'adj_usd' : 'fee_usd';
+  if (currency === 'CHF') cfType = direction === 'dep' ? 'dep_chf' : 'wit_chf';
+  else if (currency === 'USD') cfType = direction === 'dep' ? 'dep_usd' : 'wit_usd';
   else return null;
 
   return {
@@ -200,8 +232,16 @@ export function mapCashReportRow(fields, headerMap, report) {
     report.currencies[currency] = {
       endingCash: sf(get('EndingCash')),
       startingCash: sf(get('StartingCash')),
+      // A2.2 — preserve per-currency Deposits/Withdrawals when present.
+      // Some IBKR Flex layouts expose them at the Currency level too.
+      deposits: sf(get('Deposits')),
+      withdrawals: sf(get('Withdrawals')),
     };
   } else if (level === 'BaseCurrency') {
+    // A2.2 — capture the base currency code so downstream consumers know
+    // whether the BaseCurrency aggregates are in CHF or USD (or other).
+    // CurrencyPrimary may be set at BaseCurrency rows by some Flex exports.
+    if (currency) report.baseCurrency = currency;
     report.startingCash = sf(get('StartingCash'));
     report.endingCash = sf(get('EndingCash'));
     report.deposits = sf(get('Deposits'));

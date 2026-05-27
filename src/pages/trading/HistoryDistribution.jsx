@@ -45,7 +45,7 @@ export default function HistoryDistribution({ trades }) {
   if (!data.length) return null;
   return (
     <div style={{ height: 220 }}>
-      <ResponsiveContainer width="100%" height={220}>
+      <ResponsiveContainer width="100%" height={220} minWidth={1} minHeight={1}>
         <BarChart data={data} margin={{ top: 12, right: 16, left: 4, bottom: 4 }}>
           <CartesianGrid vertical={false} stroke="var(--border-subtle)" strokeDasharray="3 3" />
           <XAxis

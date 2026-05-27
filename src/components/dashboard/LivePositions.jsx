@@ -194,8 +194,16 @@ function AlertPill({ alert }) {
 
 function PositionRow({ pos, onTag }) {
   const isStock = pos.type === 'STK';
+  // B5 fix 3 — rail tone-coloré gauche selon P&L non-réalisé.
+  const rowTone = toneFromSign(pos.unrealDollar);
+  const rowClass =
+    rowTone === 'profit'
+      ? 'live-pos__row live-pos__row--profit'
+      : rowTone === 'loss'
+        ? 'live-pos__row live-pos__row--loss'
+        : 'live-pos__row';
   return (
-    <tr className="live-pos__row">
+    <tr className={rowClass}>
       <td className="live-pos__ticker">{pos.ticker || '—'}</td>
       <td>
         <span className={`live-pos__type-pill live-pos__type-pill--${pos.type}`}>{pos.type}</span>
@@ -282,6 +290,8 @@ export default function LivePositions({ data, area = 'positions' }) {
         deltaDollar: 0,
         thetaDollar: 0,
         closestDte: null,
+        inProfitCount: 0,
+        inLossCount: 0,
       };
     }
 
@@ -293,27 +303,38 @@ export default function LivePositions({ data, area = 'positions' }) {
     let deltaDollar = 0;
     let thetaDollar = 0;
     let closestDte = null;
+    let inProfitCount = 0;
+    let inLossCount = 0;
 
     for (const p of positions) {
       const qty = Number.isFinite(p.qty) ? p.qty : 0;
       const mark = Number.isFinite(p.mark) ? p.mark : 0;
       const isOption = p.type === 'CALL' || p.type === 'PUT';
       const mu = isOption ? 100 : 1;
+      // A3c — sign-aware aggregation. `p.delta` / `p.theta` are stored as
+      // per-share BSM values (positive for calls held long). A short
+      // call inverts the exposure : dir='Short' ⇒ Δ negative, Θ positive.
+      // Previously this block summed sign-agnostically, so a mixed book
+      // (long + short) would have produced wrong signs on the subheader
+      // and footer pills. Long-only books are unaffected (sign=+1).
+      const dirSign = p.dir === 'Short' ? -1 : 1;
 
       if (Number.isFinite(p.delta)) {
-        totalDelta += p.delta * qty;
+        totalDelta += dirSign * p.delta * qty;
         // delta dollar = delta × qty × mu × prix sous-jacent. Sans
         // spot price API on approxime via mark — ordre de grandeur
         // correct pour exposition directionnelle agrégée.
-        deltaDollar += p.delta * qty * mu * mark;
+        deltaDollar += dirSign * p.delta * qty * mu * mark;
       }
       if (Number.isFinite(p.theta)) {
-        totalTheta += p.theta * qty;
-        thetaDollar += p.theta * qty * mu;
+        totalTheta += dirSign * p.theta * qty;
+        thetaDollar += dirSign * p.theta * qty * mu;
       }
 
       if (Number.isFinite(p.unrealDollar)) {
         totalUnreal += p.unrealDollar;
+        if (p.unrealDollar > 0) inProfitCount++;
+        else if (p.unrealDollar < 0) inLossCount++;
         if (!bestUnreal || p.unrealDollar > bestUnreal.value) {
           bestUnreal = { ticker: p.ticker, value: p.unrealDollar };
         }
@@ -351,6 +372,8 @@ export default function LivePositions({ data, area = 'positions' }) {
       deltaDollar,
       thetaDollar,
       closestDte,
+      inProfitCount,
+      inLossCount,
     };
   }, [positions]);
 
@@ -423,8 +446,11 @@ export default function LivePositions({ data, area = 'positions' }) {
             </span>
           </div>
           <div className="live-pos__ctx-spacer" />
-          <div className="live-pos__ctx-badge live-pos__ctx-badge--accent">
-            OPEN {stats.openCount}
+          <div className="live-pos__ctx-badge live-pos__ctx-badge--wins">
+            IN PROFIT {stats.inProfitCount}
+          </div>
+          <div className="live-pos__ctx-badge live-pos__ctx-badge--losses">
+            IN LOSS {stats.inLossCount}
           </div>
         </div>
       )}
@@ -434,6 +460,31 @@ export default function LivePositions({ data, area = 'positions' }) {
           <div className="live-pos__empty">Aucune position ouverte</div>
         ) : (
           <table className="live-pos__table" aria-label="Live positions">
+            {/* B5.5 — colgroup explicite : pattern miroir TradeHistory.
+               Stabilise table-layout: fixed (sans ça, Chrome utilisait la
+               thead pour widths, ce qui combiné au border-left 3px des
+               tbody trs cassait le rendu et masquait 5/6 lignes). */}
+            <colgroup>
+              <col className="live-pos__col-ticker" />
+              <col className="live-pos__col-type" />
+              <col className="live-pos__col-str" />
+              <col className="live-pos__col-exp" />
+              <col className="live-pos__col-dte" />
+              <col className="live-pos__col-qty" />
+              <col className="live-pos__col-entry" />
+              <col className="live-pos__col-mark" />
+              <col className="live-pos__col-unrealdol" />
+              <col className="live-pos__col-unrealpct" />
+              <col className="live-pos__col-delta" />
+              <col className="live-pos__col-theta" />
+              <col className="live-pos__col-ivr" />
+              <col className="live-pos__col-edge" />
+              <col className="live-pos__col-ctier" />
+              <col className="live-pos__col-gate" />
+              <col className="live-pos__col-daysin" />
+              <col className="live-pos__col-spark" />
+              <col className="live-pos__col-alert" />
+            </colgroup>
             <thead>
               <tr>
                 <th>Ticker</th>
@@ -458,8 +509,19 @@ export default function LivePositions({ data, area = 'positions' }) {
               </tr>
             </thead>
             <tbody>
-              {positions.map((pos) => (
-                <PositionRow key={pos.id} pos={pos} onTag={setEditorPos} />
+              {/* B5.3 — clé composite avec fallback index : si pos.id manque
+                 (positions importées sans passer la migration v3→v4), plusieurs
+                 trs partageraient key=undefined et React n'en mounterait qu'1.
+                 Pattern miroir de TradeHistory ligne 433. */}
+              {positions.map((pos, i) => (
+                <PositionRow
+                  key={
+                    pos.id ||
+                    `pos-${pos.ticker || 'x'}-${pos.exp || 'x'}-${pos.strike || 'x'}-${i}`
+                  }
+                  pos={pos}
+                  onTag={setEditorPos}
+                />
               ))}
             </tbody>
           </table>

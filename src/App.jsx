@@ -8,6 +8,7 @@ import ErrorBoundary from './components/ui/ErrorBoundary';
 import GlassCard from './components/ui/GlassCard';
 import { useFxAutoRefresh } from './hooks/useFxAutoRefresh';
 import FxStaleBanner from './components/fx/FxStaleBanner';
+import FxInvalidBanner from './components/fx/FxInvalidBanner';
 import { FEATURE_GREEK_CENTER } from './constants/featureFlags';
 import Dashboard from './pages/Dashboard';
 import PreMarketBriefing from './pages/PreMarketBriefing';
@@ -39,6 +40,7 @@ export default function App() {
     <LazyMotion features={domAnimation}>
       <BrowserRouter>
         <ErrorBoundary>
+          <FxInvalidBanner />
           <FxStaleBanner />
           <Routes>
             <Route element={<AppShell />}>

@@ -33,11 +33,12 @@ import {
 } from 'lucide-react';
 import { useOpenPositions, useSettings, useClosedTrades, useDispatch } from '../../store/useStore';
 import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
-import {
-  calculateOpenPositionPnl,
-  computePortfolioGreeks,
-  tradePnlUsd,
-} from '../../utils/calculations';
+import { calculateOpenPositionPnl, tradePnlUsd } from '../../utils/calculations';
+// A1 — migrated from legacy computePortfolioGreeks (sign-agnostic) to
+// aggregateGreeks (sign-aware via pos.dir + correct units : theta/day,
+// vega/1%-IV). For Sniper-OTM short premium portfolios this means
+// Theta is now positive (decay encaissé) and Vega negative (short vol).
+import { aggregateGreeks } from '../../utils/greeks';
 import { formatUsd, formatPnlUsd } from '../../utils/format';
 import { daysToExpiration, holdingDays } from '../../utils/dates';
 import { toFloat, ensurePositive } from '../../utils/math';
@@ -45,8 +46,6 @@ import { getGreeksForAllPositions } from '../../utils/greeksApi';
 import { generateAlerts, getPositionAlerts } from '../../utils/alerts';
 // useMediaQuery no longer needed at page level — DataTable handles mobile cards internally
 
-import GlassCard from '../../components/ui/GlassCard';
-import MetricCard from '../../components/ui/MetricCard';
 import StatusBadge from '../../components/ui/StatusBadge';
 import InfoTooltip from '../../components/ui/InfoTooltip';
 import EmptyState from '../../components/ui/EmptyState';
@@ -99,7 +98,7 @@ function MiniDonut({ slices, size = 100, thickness = 14 }) {
         cy={cy}
         r={radius}
         fill="none"
-        stroke="var(--border-subtle)"
+        stroke="var(--line-hairline)"
         strokeWidth={thickness}
       />
       {withOffsets.map((s, i) => {
@@ -128,10 +127,58 @@ function LegendRow({ color, label, value }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
       <span style={{ width: 8, height: 8, borderRadius: 2, background: color, flexShrink: 0 }} />
-      <span style={{ color: 'var(--text-secondary)', minWidth: 44 }}>{label}</span>
-      <span className="mono" style={{ color: 'var(--text-tertiary)' }}>
+      <span style={{ color: 'var(--ink-soft)', minWidth: 44 }}>{label}</span>
+      <span className="mono" style={{ color: 'var(--ink-mute)' }}>
         {value}
       </span>
+    </div>
+  );
+}
+
+// ── Local KPI tile for the open-positions strip ──────────────
+// Remplace MetricCard sur cette page : surface plate canonique, valeur
+// neutre par défaut, focus amber sur les zones décisives (Positions,
+// Delta net, Capital engagé). Le rouge n'apparaît QUE pour les coûts /
+// pertes réels (Theta négatif, Max Loss).
+function fmtKpiValue(value, format, currency = 'USD') {
+  if (value == null || Number.isNaN(value)) return '—';
+  if (format === 'currency') {
+    const locale = currency === 'CHF' ? 'de-CH' : 'en-US';
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency,
+      currencyDisplay: currency === 'CHF' ? 'code' : 'narrowSymbol',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  }
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function KpiTile({
+  icon: Icon,
+  label,
+  tooltip,
+  value,
+  format = 'number',
+  currency = 'USD',
+  tone = 'neutral',
+  focus = false,
+}) {
+  const toneClass = tone === 'loss' ? ' is-loss' : tone === 'profit' ? ' is-profit' : '';
+  return (
+    <div className="positions-v3__kpi" data-focus={focus ? 'true' : undefined}>
+      <div className="positions-v3__kpi-label">
+        {Icon && <Icon size={12} aria-hidden="true" />}
+        <span>{label}</span>
+        {tooltip && <InfoTooltip content={tooltip} size={12} />}
+      </div>
+      <div className={`positions-v3__kpi-value${toneClass}`}>
+        {fmtKpiValue(value, format, currency)}
+      </div>
     </div>
   );
 }
@@ -229,10 +276,12 @@ function FlatState({ closedTrades, lr, navigate }) {
   }, [closedTrades, lr]);
 
   const mix = useMemo(() => assetMix(closedTrades), [closedTrades]);
+  // Slice « Action » = stocks/equity (mix descriptif passé). Pas un signal
+  // décisionnel → ink-mute, l'amber reste réservé aux zones d'action.
   const slices = [
-    { key: 'action', color: 'var(--accent)', pct: mix.action.pct },
-    { key: 'call', color: 'var(--profit)', pct: mix.call.pct },
-    { key: 'put', color: 'var(--loss)', pct: mix.put.pct },
+    { key: 'action', color: 'var(--ink-mute)', pct: mix.action.pct },
+    { key: 'call', color: 'var(--pnl-up)', pct: mix.call.pct },
+    { key: 'put', color: 'var(--pnl-down)', pct: mix.put.pct },
   ];
 
   const lastPnl = lastClosed ? tradePnlUsd(lastClosed, lr) : 0;
@@ -270,125 +319,117 @@ function FlatState({ closedTrades, lr, navigate }) {
       </motion.div>
 
       <div className="positions-flat__grid">
-        <motion.div variants={TILE_VARIANTS}>
-          <GlassCard hover={false} className="positions-flat__card">
-            <div className="positions-flat__card-head">
-              <Clock size={12} aria-hidden="true" />
-              <span className="uppercase-label">Dernière position clôturée</span>
-            </div>
-            {lastClosed ? (
-              <>
-                <div className="positions-flat__ticker-row">
-                  <span className="mono positions-flat__ticker">{lastClosed.tk}</span>
-                  <TypeBadge as={lastClosed.as} ty={lastClosed.ty} />
-                </div>
-                <div
-                  className="mono positions-flat__pnl"
-                  data-tone={lastPnl > 0 ? 'profit' : lastPnl < 0 ? 'loss' : 'neutral'}
-                >
-                  {formatPnlUsd(lastPnl)}
-                </div>
-                <div className="positions-flat__meta">
-                  <div>
-                    Clôturé le <strong>{lastClosed.do}</strong>
-                  </div>
-                  <div>
-                    Durée <strong>{lastDuration}j</strong>
-                  </div>
-                  {rMultiple != null && isFinite(rMultiple) && (
-                    <div>
-                      R-multiple{' '}
-                      <strong data-tone={rMultiple >= 0 ? 'profit' : 'loss'}>
-                        {rMultiple >= 0 ? '+' : ''}
-                        {rMultiple.toFixed(2)}R
-                      </strong>
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="positions-flat__placeholder">—</div>
-            )}
-          </GlassCard>
-        </motion.div>
-
-        <motion.div variants={TILE_VARIANTS}>
-          <GlassCard hover={false} className="positions-flat__card">
-            <div className="positions-flat__card-head">
-              <TrendingUp size={12} aria-hidden="true" />
-              <span className="uppercase-label">Stats récentes</span>
-            </div>
-            <div className="mono positions-flat__stat-big">
-              {recent.winRate.toFixed(0)}%
-              <span className="positions-flat__stat-sub">WR / {recent.sampleSize} trades</span>
-            </div>
-            <div className="positions-flat__recent-list">
-              {recent.last3.map((t, i) => (
-                <div key={t.id || i} className="positions-flat__recent">
-                  <span className="mono positions-flat__recent-tk">{t.tk}</span>
-                  <span className="positions-flat__recent-date">{t.do}</span>
-                  <span
-                    className="mono positions-flat__recent-pnl"
-                    data-tone={t.pnl > 0 ? 'profit' : t.pnl < 0 ? 'loss' : 'neutral'}
-                  >
-                    {formatPnlUsd(t.pnl)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </GlassCard>
-        </motion.div>
-
-        <motion.div variants={TILE_VARIANTS}>
-          <GlassCard hover={false} className="positions-flat__card">
-            <div className="positions-flat__card-head">
-              <Crosshair size={12} aria-hidden="true" />
-              <span className="uppercase-label">Prochain setup potentiel</span>
-            </div>
-            <p className="positions-flat__setup">
-              Scanne la Chain Options pour trouver ton prochain <strong>Sniper OTM</strong> : Delta
-              0.25-0.35, IV Rank &lt; 40, DTE 120-150.
-            </p>
-            <button
-              type="button"
-              className="positions-flat__cta"
-              onClick={() => navigate('/trading/chain')}
-            >
-              Ouvrir Chain Options <ArrowUpRight size={12} aria-hidden="true" />
-            </button>
-          </GlassCard>
-        </motion.div>
-
-        <motion.div variants={TILE_VARIANTS}>
-          <GlassCard hover={false} className="positions-flat__card">
-            <div className="positions-flat__card-head">
-              <TrendingDown size={12} aria-hidden="true" />
-              <span className="uppercase-label">Répartition historique</span>
-            </div>
-            <div className="positions-flat__donut-wrap">
-              <MiniDonut slices={slices} />
-              <div className="positions-flat__legend">
-                <LegendRow
-                  color="var(--accent)"
-                  label="Action"
-                  value={`${mix.action.count} · ${mix.action.pct.toFixed(0)}%`}
-                />
-                <LegendRow
-                  color="var(--profit)"
-                  label="Call"
-                  value={`${mix.call.count} · ${mix.call.pct.toFixed(0)}%`}
-                />
-                <LegendRow
-                  color="var(--loss)"
-                  label="Put"
-                  value={`${mix.put.count} · ${mix.put.pct.toFixed(0)}%`}
-                />
+        <motion.div variants={TILE_VARIANTS} className="positions-flat__card">
+          <div className="positions-flat__card-head">
+            <Clock size={12} aria-hidden="true" />
+            <span className="uppercase-label">Dernière position clôturée</span>
+          </div>
+          {lastClosed ? (
+            <>
+              <div className="positions-flat__ticker-row">
+                <span className="mono positions-flat__ticker">{lastClosed.tk}</span>
+                <TypeBadge as={lastClosed.as} ty={lastClosed.ty} />
               </div>
+              <div
+                className="mono positions-flat__pnl"
+                data-tone={lastPnl > 0 ? 'profit' : lastPnl < 0 ? 'loss' : 'neutral'}
+              >
+                {formatPnlUsd(lastPnl)}
+              </div>
+              <div className="positions-flat__meta">
+                <div>
+                  Clôturé le <strong>{lastClosed.do}</strong>
+                </div>
+                <div>
+                  Durée <strong>{lastDuration}j</strong>
+                </div>
+                {rMultiple != null && isFinite(rMultiple) && (
+                  <div>
+                    R-multiple{' '}
+                    <strong data-tone={rMultiple >= 0 ? 'profit' : 'loss'}>
+                      {rMultiple >= 0 ? '+' : ''}
+                      {rMultiple.toFixed(2)}R
+                    </strong>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="positions-flat__placeholder">—</div>
+          )}
+        </motion.div>
+
+        <motion.div variants={TILE_VARIANTS} className="positions-flat__card">
+          <div className="positions-flat__card-head">
+            <TrendingUp size={12} aria-hidden="true" />
+            <span className="uppercase-label">Stats récentes</span>
+          </div>
+          <div className="mono positions-flat__stat-big">
+            {recent.winRate.toFixed(0)}%
+            <span className="positions-flat__stat-sub">WR / {recent.sampleSize} trades</span>
+          </div>
+          <div className="positions-flat__recent-list">
+            {recent.last3.map((t, i) => (
+              <div key={t.id || i} className="positions-flat__recent">
+                <span className="mono positions-flat__recent-tk">{t.tk}</span>
+                <span className="positions-flat__recent-date">{t.do}</span>
+                <span
+                  className="mono positions-flat__recent-pnl"
+                  data-tone={t.pnl > 0 ? 'profit' : t.pnl < 0 ? 'loss' : 'neutral'}
+                >
+                  {formatPnlUsd(t.pnl)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div variants={TILE_VARIANTS} className="positions-flat__card">
+          <div className="positions-flat__card-head">
+            <Crosshair size={12} aria-hidden="true" />
+            <span className="uppercase-label">Prochain setup potentiel</span>
+          </div>
+          <p className="positions-flat__setup">
+            Scanne la Chain Options pour trouver ton prochain <strong>Sniper OTM</strong> : Delta
+            0.25-0.35, IV Rank &lt; 40, DTE 120-150.
+          </p>
+          <button
+            type="button"
+            className="positions-flat__cta"
+            onClick={() => navigate('/trading/chain')}
+          >
+            Ouvrir Chain Options <ArrowUpRight size={12} aria-hidden="true" />
+          </button>
+        </motion.div>
+
+        <motion.div variants={TILE_VARIANTS} className="positions-flat__card">
+          <div className="positions-flat__card-head">
+            <TrendingDown size={12} aria-hidden="true" />
+            <span className="uppercase-label">Répartition historique</span>
+          </div>
+          <div className="positions-flat__donut-wrap">
+            <MiniDonut slices={slices} />
+            <div className="positions-flat__legend">
+              <LegendRow
+                color="var(--ink-mute)"
+                label="Action"
+                value={`${mix.action.count} · ${mix.action.pct.toFixed(0)}%`}
+              />
+              <LegendRow
+                color="var(--pnl-up)"
+                label="Call"
+                value={`${mix.call.count} · ${mix.call.pct.toFixed(0)}%`}
+              />
+              <LegendRow
+                color="var(--pnl-down)"
+                label="Put"
+                value={`${mix.put.count} · ${mix.put.pct.toFixed(0)}%`}
+              />
             </div>
-            <div className="positions-flat__donut-footer">
-              Sur {mix.total} trade{mix.total > 1 ? 's' : ''} clos
-            </div>
-          </GlassCard>
+          </div>
+          <div className="positions-flat__donut-footer">
+            Sur {mix.total} trade{mix.total > 1 ? 's' : ''} clos
+          </div>
         </motion.div>
       </div>
     </motion.div>
@@ -478,42 +519,29 @@ export default function Positions() {
     [openPositions, lr, nlvUsd]
   );
 
+  // A3c — Greek aggregation removed from this block. The KPI cards
+  // (Delta Net, Theta Total) now read the sign-aware values exposed
+  // by `aggregateGreeks` below (greeks.sumDelta, greeks.thetaDaily).
+  // The legacy summing here was simultaneously sign-agnostic AND in
+  // per-year units (Theta) while the tooltip claimed "quotidienne".
+  // Both bugs fixed at the consumer site.
+  // Passe finale — `uPnlUsd` retiré du retour (calculé jamais lu).
   const summary = useMemo(() => {
-    let uPnlUsd = 0,
-      totalCost = 0,
-      totalTheta = 0,
-      totalMaxLoss = 0,
-      totalDelta = 0,
-      totalVega = 0;
-    positions.forEach(({ pos, r, costBasis, isOpt, maxLoss }) => {
-      uPnlUsd += r.unrealizedPnlUsd;
+    let totalCost = 0;
+    let totalMaxLoss = 0;
+    positions.forEach(({ costBasis, maxLoss }) => {
       totalCost += costBasis;
       totalMaxLoss += maxLoss;
-      if (isOpt) {
-        const g = greeksMap.get(pos.id);
-        const qty = toFloat(pos.ct);
-        const mul = ensurePositive(pos.mu);
-        // Skip rather than aggregate zeros when a greek is unavailable —
-        // matches the behavior of computePortfolioGreeks below and keeps
-        // "absent" semantically distinct from "exactly zero".
-        if (g?.theta != null) totalTheta += g.theta * qty * mul;
-        if (g?.delta != null) totalDelta += g.delta * qty * mul;
-        if (g?.vega != null) totalVega += g.vega * qty * mul;
-      }
     });
     return {
-      uPnlUsd,
       count: positions.length,
-      totalTheta,
       totalMaxLoss,
-      totalDelta,
-      totalVega,
       totalCost,
     };
-  }, [positions, greeksMap]);
+  }, [positions]);
 
   const greeks = useMemo(
-    () => computePortfolioGreeks(openPositions, greeksMap),
+    () => aggregateGreeks(openPositions, greeksMap),
     [openPositions, greeksMap]
   );
   const alerts = useMemo(
@@ -528,8 +556,8 @@ export default function Positions() {
   // ─── Branch A : truly empty ────────────────────────────────
   if (positions.length === 0 && closedTrades.length === 0) {
     return (
-      <div className="page-container">
-        <GlassCard variant="subtle" style={{ maxWidth: 640, margin: '60px auto' }}>
+      <div className="page-container positions-empty">
+        <div className="positions-empty__panel">
           <EmptyState
             icon={Briefcase}
             title="Aucune position ouverte"
@@ -544,7 +572,7 @@ export default function Positions() {
               </button>
             }
           />
-        </GlassCard>
+        </div>
       </div>
     );
   }
@@ -785,66 +813,68 @@ export default function Positions() {
         </div>
       </motion.div>
 
-      {/* KPI strip — 5 cartes */}
+      {/* KPI strip — 5 tuiles plates canoniques.
+          Focus (depth-focus + filet amber) = zones décisives de la page :
+          Positions (le sujet), Delta net (Σ Greeks), Capital engagé (capital).
+          Rouge sémantique = coût/perte réels : Theta négatif, Max Loss. */}
       <motion.div variants={TILE_VARIANTS} className="positions-v3__kpi-strip">
-        <MetricCard
+        <KpiTile
+          icon={Layers}
           label="Positions"
+          tooltip="Nombre de positions ouvertes (actions + options)."
           value={summary.count}
           format="number"
-          size="compact"
-          icon={Layers}
-          tooltip="Nombre de positions ouvertes (actions + options)."
+          focus
         />
-        <MetricCard
-          label="Delta Net"
-          value={greeks.totalDelta}
-          format="number"
-          size="compact"
+        <KpiTile
           icon={Sigma}
-          semantic={greeks.totalDelta > 0 ? 'profit' : greeks.totalDelta < 0 ? 'loss' : 'neutral'}
+          label="Delta net"
           tooltip={{
             title: 'Delta net',
-            body: 'Exposition directionnelle agrégée des options. +1 = $1 de P&L pour +$1 du sous-jacent.',
+            body: 'Exposition directionnelle agrégée (options + actions, sign-aware par dir). +1 = $1 de P&L pour +$1 du sous-jacent.',
           }}
+          value={greeks.sumDelta}
+          format="number"
+          focus
         />
-        <MetricCard
-          label="Theta Total"
-          value={summary.totalTheta}
-          format="currency"
-          currency="USD"
-          size="compact"
+        {/* Theta reads greeks.thetaDaily (sign-aware via aggregateGreeks,
+            BSM-theta / 365 → per-day units). Rouge UNIQUEMENT si négatif
+            (coût réel) ; positif = decay encaissé, affiché neutre. */}
+        <KpiTile
           icon={Clock}
-          semantic={summary.totalTheta < 0 ? 'loss' : 'profit'}
+          label="Theta total"
           tooltip={{
             title: 'Theta agrégé',
-            body: "Erosion temporelle quotidienne cumulée sur le portefeuille d'options.",
+            body: "Erosion temporelle quotidienne cumulée sur le portefeuille d'options (sign-aware par dir : positif = decay encaissé pour les short premium).",
           }}
-        />
-        <MetricCard
-          label="Capital engagé"
-          value={summary.totalCost}
+          value={greeks.thetaDaily}
           format="currency"
           currency="USD"
-          size="compact"
+          tone={greeks.thetaDaily < 0 ? 'loss' : 'neutral'}
+        />
+        <KpiTile
           icon={DollarSign}
-          semantic="neutral"
+          label="Capital engagé"
           tooltip={{
             title: 'Capital investi',
             body: 'Coût total absolu des positions ouvertes (entry price × qty × multiplier).',
           }}
-        />
-        <MetricCard
-          label="Max Loss"
-          value={summary.totalMaxLoss}
+          value={summary.totalCost}
           format="currency"
           currency="USD"
-          size="compact"
+          focus
+        />
+        <KpiTile
           icon={Activity}
-          semantic="loss"
+          label="Max loss"
           tooltip={{
             title: 'Max Loss',
             body: 'Perte maximum théorique si toutes les options expirent sans valeur (long options only).',
           }}
+          value={summary.totalMaxLoss}
+          format="currency"
+          currency="USD"
+          tone="loss"
         />
       </motion.div>
 
