@@ -59,6 +59,13 @@ import './styles/pages-premarket.css';
 // porte uniquement le wrapper .dashboard-page + cibles canoniques neuves
 // (.dashboard-page__panel/__panel-head) pour les futures migrations.
 import './styles/pages-dashboard.css';
+// pages-calendar.css — page-vitrine /insights/calendar, huitième et dernière
+// consommation des tokens canoniques. Calendar a été désintoxiquée de la
+// palette JS divergente (`T from '../../theme/tokens'`) — l'import T est
+// retiré, les 99 références T.* converties en var(--*) canoniques ou classes
+// scopées. theme/tokens.js reste intact (ErrorBoundary, CommandPalette,
+// WinRateDonut, ThemeSwitcher en dépendent) — purge dans CANONICAL-PURGE.
+import './styles/pages-calendar.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

@@ -1,0 +1,752 @@
+/* ════════════════════════════════════════════════════════════════
+   PAGES-CALENDAR.CSS — page-vitrine /insights/calendar (8ème et
+   dernière consommation des tokens canoniques).
+
+   Toutes les règles sont SCOPÉES à .calendar-page pour ne contaminer
+   aucune autre page. Chargée APRÈS pages-dashboard.css dans main.jsx.
+
+   ORIGINE : Calendar.jsx consommait une palette JS divergente via
+   `import T from '../../theme/tokens'` (99 références T.* en inline
+   styles + 8 <GlassCard>). Cette migration retire l'import T et
+   remplace par var(--*) canoniques ou classes scopées ci-dessous.
+
+   `theme/tokens.js` reste intact (ErrorBoundary, CommandPalette,
+   WinRateDonut, ThemeSwitcher en dépendent encore) — sa suppression
+   viendra dans CANONICAL-PURGE.
+
+   Sémantique appliquée (cohérente avec les 7 pages précédentes) :
+   - Rouge   = perte d'argent réelle (jour PnL <0, monthTotal, worst)
+   - Vert    = gain d'argent réel
+   - Amber   = signal décisionnel (today marker, action, macro events)
+   - Ink-soft= catégories neutres (CALL/PUT badges, greeks.delta)
+   - Bleu STK= résiduel #42A5F5 conservé, vague cyan-kill séparée
+   ════════════════════════════════════════════════════════════════ */
+
+/* Wrapper top-level — pose la page sur le fond le plus profond. */
+.calendar-page {
+  background: var(--depth-void);
+  position: relative;
+  z-index: 1;
+}
+
+.calendar-page .page-title {
+  color: var(--ink-pure);
+}
+.calendar-page .page-title svg {
+  color: var(--accent);
+  opacity: 1;
+}
+.calendar-page .page-subtitle {
+  color: var(--ink-soft);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   PANEL — wrapper local plat (remplace <GlassCard>)
+   ════════════════════════════════════════════════════════════════ */
+.calendar-page__panel {
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  padding: var(--qc-space-3) var(--qc-space-4);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.calendar-page__panel--subtle {
+  background: var(--depth-base);
+}
+
+.calendar-page__panel--center {
+  text-align: center;
+}
+
+.calendar-page__panel--flush {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   STYLED TABS (announcements / pnl / year)
+   ════════════════════════════════════════════════════════════════ */
+.calendar-page__tabs {
+  display: inline-flex;
+  background: var(--depth-base);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.calendar-page__tab {
+  padding: 6px 16px;
+  border-radius: 2px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--qc-font-sans);
+  color: var(--ink-mute);
+  background: transparent;
+  transition: all 150ms ease;
+  letter-spacing: 0.01em;
+}
+
+.calendar-page__tab[data-active] {
+  font-weight: 700;
+  color: var(--ink-pure);
+  background: var(--depth-raised);
+}
+
+/* Impact filter tabs (Tout / Moyen+ / Fort) */
+.calendar-page__impact-tab {
+  padding: 5px 12px;
+  border-radius: 2px;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--qc-font-sans);
+  color: var(--ink-mute);
+  background: transparent;
+  transition: all 150ms ease;
+}
+
+.calendar-page__impact-tab[data-active] {
+  font-weight: 700;
+  color: var(--ink-pure);
+  background: var(--depth-raised);
+}
+
+/* Refresh button */
+.calendar-page__refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 2px;
+  border: 1px solid var(--line-hairline);
+  background: var(--depth-base);
+  color: var(--ink-mute);
+  font-size: 11px;
+  font-family: var(--qc-font-sans);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.calendar-page__refresh-btn:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MONTH NAVIGATION
+   ════════════════════════════════════════════════════════════════ */
+.calendar-page__month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.calendar-page__month-nav-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-mute);
+  font-size: 20px;
+  padding: 4px 10px;
+  border-radius: 2px;
+  transition: color 0.15s;
+}
+
+.calendar-page__month-nav-btn:hover {
+  color: var(--ink-pure);
+}
+
+.calendar-page__month-label {
+  font-family: var(--qc-font-sans);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-pure);
+  text-transform: capitalize;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DAY HEADER ROW (L M M J V S D Σ)
+   ════════════════════════════════════════════════════════════════ */
+.calendar-page__day-headers {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 4px;
+}
+
+.calendar-page__day-headers--with-total {
+  grid-template-columns: repeat(7, 1fr) 54px;
+}
+
+.calendar-page__day-headers--no-total {
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-page__day-headers > div {
+  text-align: center;
+  font-size: 9px;
+  color: var(--ink-mute);
+  font-family: var(--qc-font-sans);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  padding: 4px 0;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ANNOUNCEMENTS GRID — calendar cells with event dots
+   ════════════════════════════════════════════════════════════════ */
+.calendar-page__ann-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.calendar-page__ann-cell {
+  position: relative;
+  text-align: center;
+  padding: 8px 0;
+  border-radius: 2px;
+  min-height: 52px;
+  transition: background 0.15s, border-color 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-page__ann-cell--clickable {
+  cursor: pointer;
+}
+
+.calendar-page__ann-cell--hovered {
+  background: var(--depth-focus);
+}
+
+.calendar-page__ann-cell--today {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  outline: 1.5px solid var(--accent);
+}
+
+.calendar-page__ann-cell-day {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.calendar-page__ann-cell-day--today {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.calendar-page__ann-cell-dots {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.calendar-page__ann-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* Type-coded dots — semantic alignment with the canonical palette */
+.calendar-page__ann-dot--earnings {
+  background: var(--pnl-up);   /* earnings = revenue event, vert */
+}
+.calendar-page__ann-dot--macro {
+  /* Macro events (FOMC/CPI/NFP) = category label, neutre ink-soft.
+     L'ancien T.greeks.delta (#2962FF) était un cyan/blue résiduel. */
+  background: var(--ink-soft);
+}
+.calendar-page__ann-dot--expiration {
+  background: var(--accent);   /* expiration = signal d'attention amber */
+}
+
+/* Hover tooltip popup */
+.calendar-page__ann-popup {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  padding: 6px 10px;
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: none;
+}
+
+.calendar-page__ann-popup-row {
+  font-family: var(--qc-font-mono);
+  font-size: 10px;
+  margin-bottom: 3px;
+}
+.calendar-page__ann-popup-row:last-child {
+  margin-bottom: 0;
+}
+.calendar-page__ann-popup-row--earnings {
+  color: var(--pnl-up);
+}
+.calendar-page__ann-popup-row--macro {
+  color: var(--ink-soft);
+}
+.calendar-page__ann-popup-row--expiration {
+  color: var(--accent);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   UPCOMING EVENTS LIST
+   ════════════════════════════════════════════════════════════════ */
+.calendar-page__upcoming {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.calendar-page__upcoming-head {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--ink-mute);
+  font-family: var(--qc-font-sans);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 0 4px;
+}
+
+.calendar-page__upcoming-row {
+  display: flex;
+  align-items: stretch;
+}
+
+.calendar-page__upcoming-accent {
+  width: 4px;
+  border-radius: 2px 0 0 2px;
+  flex-shrink: 0;
+}
+.calendar-page__upcoming-accent--earnings {
+  background: var(--pnl-up);
+}
+.calendar-page__upcoming-accent--macro {
+  background: var(--ink-soft);
+}
+.calendar-page__upcoming-accent--expiration {
+  background: var(--accent);
+}
+
+.calendar-page__upcoming-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  flex: 1;
+}
+
+.calendar-page__upcoming-date {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  min-width: 50px;
+}
+
+.calendar-page__upcoming-pill {
+  font-family: var(--qc-font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+.calendar-page__upcoming-pill--earnings {
+  background: color-mix(in srgb, var(--pnl-up) 14%, transparent);
+  color: var(--pnl-up);
+}
+.calendar-page__upcoming-pill--macro {
+  background: color-mix(in srgb, var(--ink-soft) 14%, transparent);
+  color: var(--ink-soft);
+}
+.calendar-page__upcoming-pill--expiration {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
+.calendar-page__impact-pill {
+  font-family: var(--qc-font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+.calendar-page__impact-pill--high {
+  background: color-mix(in srgb, var(--pnl-down) 18%, transparent);
+  color: var(--pnl-down);
+}
+.calendar-page__impact-pill--medium {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+
+.calendar-page__upcoming-label {
+  font-family: var(--qc-font-sans);
+  font-size: 13px;
+  color: var(--ink-pure);
+}
+
+.calendar-page__upcoming-eta {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 11px;
+  margin-left: auto;
+  color: var(--ink-mute);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   PNL HEATMAP — divergent red/gray/green
+   ════════════════════════════════════════════════════════════════ */
+.calendar-page__pnl-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr) 54px;
+  gap: 3px;
+  margin-bottom: 3px;
+}
+
+.calendar-page__pnl-cell {
+  position: relative;
+  border-radius: 2px;
+  min-height: 52px;
+  outline: 1px solid transparent;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 2px;
+}
+
+.calendar-page__pnl-cell--clickable {
+  cursor: pointer;
+}
+
+.calendar-page__pnl-cell--today {
+  outline: 1.5px solid var(--accent);
+}
+
+.calendar-page__pnl-cell--selected {
+  outline: 1.5px solid color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.calendar-page__pnl-cell:hover:not(.calendar-page__pnl-cell--today):not(
+    .calendar-page__pnl-cell--selected
+  ) {
+  outline-color: var(--line-hairline);
+}
+
+.calendar-page__pnl-day-number {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 9px;
+  color: var(--ink-mute);
+}
+
+.calendar-page__pnl-day-number--today {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.calendar-page__pnl-value {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.calendar-page__pnl-value--up {
+  color: var(--pnl-up);
+}
+.calendar-page__pnl-value--down {
+  color: var(--pnl-down);
+}
+
+.calendar-page__pnl-count-badge {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--ink-mute);
+  margin-top: 2px;
+  background: color-mix(in srgb, var(--depth-base) 50%, transparent);
+  border-radius: 2px;
+  padding: 0 4px;
+}
+
+/* Weekly total cell at right of each week row */
+.calendar-page__pnl-week-total {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 2px;
+}
+.calendar-page__pnl-week-total--up {
+  color: var(--pnl-up);
+  background: color-mix(in srgb, var(--pnl-up) 10%, transparent);
+}
+.calendar-page__pnl-week-total--down {
+  color: var(--pnl-down);
+  background: color-mix(in srgb, var(--pnl-down) 10%, transparent);
+}
+.calendar-page__pnl-week-total--neutral {
+  color: var(--ink-mute);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SELECTED DAY DETAIL
+   ════════════════════════════════════════════════════════════════ */
+.calendar-page__day-detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.calendar-page__day-detail-title {
+  font-family: var(--qc-font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-pure);
+}
+
+.calendar-page__day-detail-cta {
+  padding: 4px 12px;
+  border-radius: 2px;
+  border: 1px solid var(--line-hairline);
+  cursor: pointer;
+  background: var(--depth-raised);
+  color: var(--accent);
+  font-family: var(--qc-font-sans);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.calendar-page__trade-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.calendar-page__trade-row + .calendar-page__trade-row {
+  border-top: 1px solid var(--line-hairline);
+}
+
+.calendar-page__trade-ticker {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-pure);
+}
+
+.calendar-page__trade-type-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 2px;
+}
+
+/* Badge type (CALL / PUT / STK) — sémantique alignée :
+   CALL et PUT sont des TYPES d'instruments, pas des direction P&L.
+   Tonalité ink-soft neutre (pas de vert/rouge par défaut). */
+.calendar-page__trade-type-badge--call,
+.calendar-page__trade-type-badge--put {
+  background: color-mix(in srgb, var(--ink-soft) 18%, transparent);
+  color: var(--ink-soft);
+}
+
+/* STK badge : cyan-kill séparée — résiduel #42A5F5 conservé.
+   La valeur sera revue dans le sprint cyan-kill global. */
+.calendar-page__trade-type-badge--stk {
+  background: rgba(66, 165, 245, 0.15);
+  color: #42a5f5;
+}
+
+.calendar-page__trade-pnl {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 13px;
+  font-weight: 700;
+  margin-left: auto;
+}
+.calendar-page__trade-pnl--up {
+  color: var(--pnl-up);
+}
+.calendar-page__trade-pnl--down {
+  color: var(--pnl-down);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MONTHLY SUMMARY (Total / Best / Worst — 3 panels)
+   ════════════════════════════════════════════════════════════════ */
+.calendar-page__summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.calendar-page__summary-label {
+  font-family: var(--qc-font-sans);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--ink-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 4px;
+}
+
+.calendar-page__summary-value {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.calendar-page__summary-value--up {
+  color: var(--pnl-up);
+}
+.calendar-page__summary-value--down {
+  color: var(--pnl-down);
+}
+.calendar-page__summary-value--mute {
+  font-size: 14px;
+  color: var(--ink-mute);
+}
+
+.calendar-page__summary-day {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 10px;
+  color: var(--ink-mute);
+  margin-top: 2px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   API STATUS BANNER (4 états)
+   ════════════════════════════════════════════════════════════════ */
+.calendar-page__api-banner {
+  padding: 8px 12px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--qc-font-sans);
+  font-size: 11px;
+  border: 1px solid var(--line-hairline);
+  background: var(--depth-base);
+  color: var(--ink-soft);
+}
+
+.calendar-page__api-banner--down {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  color: var(--accent);
+}
+
+.calendar-page__api-banner--ok {
+  background: color-mix(in srgb, var(--pnl-up) 10%, transparent);
+  border-color: color-mix(in srgb, var(--pnl-up) 30%, transparent);
+  color: var(--pnl-up);
+}
+
+.calendar-page__api-banner--error {
+  background: color-mix(in srgb, var(--pnl-down) 10%, transparent);
+  color: var(--pnl-down);
+}
+
+.calendar-page__api-banner-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pnl-up);
+  flex-shrink: 0;
+}
+
+.calendar-page__api-banner-link {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LEGEND (3 dots at bottom of announcements view)
+   ════════════════════════════════════════════════════════════════ */
+.calendar-page__legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 4px 8px;
+  flex-wrap: wrap;
+}
+
+.calendar-page__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.calendar-page__legend-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.calendar-page__legend-dot--earnings {
+  background: var(--pnl-up);
+}
+.calendar-page__legend-dot--macro {
+  background: var(--ink-soft);
+}
+.calendar-page__legend-dot--expiration {
+  background: var(--accent);
+}
+
+.calendar-page__legend-label {
+  font-family: var(--qc-font-sans);
+  font-size: 10px;
+  color: var(--ink-mute);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CONTROLS ROW (tabs + impact + refresh)
+   ════════════════════════════════════════════════════════════════ */
+.calendar-page__controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.calendar-page__controls-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

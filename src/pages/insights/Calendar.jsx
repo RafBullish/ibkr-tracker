@@ -1,6 +1,22 @@
 // ═══════════════════════════════════════════════════════════════
-//  CALENDAR — Announcements grid (earnings + macro)
-//              + P&L day heatmap + Year view
+//  CALENDAR — page-vitrine canonique (CANONICAL-9)
+//
+//  Huitième et dernière consommation des tokens canoniques.
+//
+//  Désintoxication de la palette JS divergente : l'import
+//  `T from '../../theme/tokens'` a été retiré. Les 99 références T.*
+//  ont été converties en var(--*) canoniques ou classes scopées
+//  .calendar-page__* (cf. src/styles/pages-calendar.css).
+//
+//  Sémantique appliquée :
+//   - Rouge   = perte d'argent réelle uniquement
+//   - Vert    = gain d'argent réel uniquement
+//   - Amber   = signal décisionnel (today, action, expirations)
+//   - Ink-*   = catégories neutres (CALL/PUT badges, macro labels)
+//   - #42A5F5 = badge STK conservé (cyan-kill séparée)
+//
+//  Aucune modification de logique (feeds Finnhub, fallback macro 2026,
+//  agrégation PnL, AnnouncementsView/PnlHeatmap/YearView intacts).
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useMemo } from 'react';
@@ -10,8 +26,6 @@ import { tradePnlUsd } from '../../utils/calculations';
 import { formatPnlUsd } from '../../utils/format';
 import { toFloat } from '../../utils/math';
 import { MAJOR_US_TICKERS } from '../../utils/majorTickers';
-import T from '../../theme/tokens';
-import GlassCard from '../../components/ui/GlassCard';
 // YearHeatmap legacy (@uiw/react-heat-map) replaced by PnLCalendarHeatmap year mode
 import PnLCalendarHeatmap from '../../components/charts/PnLCalendarHeatmap';
 import useCalendarFeeds from '../../hooks/useCalendarFeeds';
@@ -19,8 +33,6 @@ import useApiStatus from '../../hooks/useApiStatus';
 import { macroEventsInRange } from '../../data/macroEvents2026';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 
-const mono = { fontFamily: T.fonts.mono, fontVariantNumeric: 'tabular-nums lining-nums' };
-const sans = { fontFamily: T.fonts.sans };
 const DAY_HEADERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
 const MONTH_NAMES_FR = [
@@ -83,43 +95,17 @@ function pad2(n) {
 
 function StyledTabs({ tabs, active, onChange }) {
   return (
-    <div
-      style={{
-        display: 'inline-flex',
-        background: T.surface.base,
-        border: `1px solid ${T.border?.subtle || 'rgba(255,255,255,0.06)'}`,
-        borderRadius: 8,
-        padding: 3,
-        gap: 2,
-      }}
-    >
-      {tabs.map((tab) => {
-        const isActive = tab.key === active;
-        return (
-          <button
-            key={tab.key}
-            onClick={() => onChange(tab.key)}
-            style={{
-              padding: '6px 16px',
-              borderRadius: 6,
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: 12,
-              fontWeight: isActive ? 700 : 500,
-              fontFamily: T.fonts.sans,
-              color: isActive ? T.text.primary : T.text.muted,
-              background: isActive ? T.surface.elevated : 'transparent',
-              boxShadow: isActive
-                ? `0 1px 4px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05)`
-                : 'none',
-              transition: 'all 150ms ease',
-              letterSpacing: '0.01em',
-            }}
-          >
-            {tab.label}
-          </button>
-        );
-      })}
+    <div className="calendar-page__tabs">
+      {tabs.map((tab) => (
+        <button
+          key={tab.key}
+          onClick={() => onChange(tab.key)}
+          className="calendar-page__tab"
+          data-active={tab.key === active || undefined}
+        >
+          {tab.label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -129,65 +115,12 @@ function StyledTabs({ tabs, active, onChange }) {
 function MonthNav({ viewYear, viewMonth, prevMonth, nextMonth }) {
   const label = `${MONTH_NAMES_FR[viewMonth]} ${viewYear}`;
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 16,
-      }}
-    >
-      <button
-        onClick={prevMonth}
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          color: T.text.muted,
-          fontSize: 20,
-          padding: '4px 10px',
-          borderRadius: 6,
-          transition: 'color 0.15s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = T.text.primary;
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = T.text.muted;
-        }}
-      >
+    <div className="calendar-page__month-nav">
+      <button onClick={prevMonth} className="calendar-page__month-nav-btn" aria-label="Mois précédent">
         &#8249;
       </button>
-      <span
-        style={{
-          ...sans,
-          fontSize: 15,
-          fontWeight: 700,
-          color: T.text.primary,
-          textTransform: 'capitalize',
-        }}
-      >
-        {label}
-      </span>
-      <button
-        onClick={nextMonth}
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          color: T.text.muted,
-          fontSize: 20,
-          padding: '4px 10px',
-          borderRadius: 6,
-          transition: 'color 0.15s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = T.text.primary;
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = T.text.muted;
-        }}
-      >
+      <span className="calendar-page__month-label">{label}</span>
+      <button onClick={nextMonth} className="calendar-page__month-nav-btn" aria-label="Mois suivant">
         &#8250;
       </button>
     </div>
@@ -197,47 +130,15 @@ function MonthNav({ viewYear, viewMonth, prevMonth, nextMonth }) {
 // ─── Day headers (single letter) ──────────────────────────
 
 function DayHeaderRow({ withWeekTotal }) {
+  const cls = withWeekTotal
+    ? 'calendar-page__day-headers calendar-page__day-headers--with-total'
+    : 'calendar-page__day-headers calendar-page__day-headers--no-total';
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: withWeekTotal ? 'repeat(7, 1fr) 54px' : 'repeat(7, 1fr)',
-        gap: 3,
-        marginBottom: 4,
-      }}
-    >
+    <div className={cls}>
       {DAY_HEADERS.map((d, i) => (
-        <div
-          key={`${d}-${i}`}
-          style={{
-            textAlign: 'center',
-            fontSize: 9,
-            color: T.text.muted,
-            ...sans,
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.14em',
-            padding: '4px 0',
-          }}
-        >
-          {d}
-        </div>
+        <div key={`${d}-${i}`}>{d}</div>
       ))}
-      {withWeekTotal && (
-        <div
-          style={{
-            textAlign: 'center',
-            fontSize: 9,
-            color: T.text.muted,
-            ...sans,
-            fontWeight: 700,
-            letterSpacing: '0.14em',
-            padding: '4px 0',
-          }}
-        >
-          &Sigma;
-        </div>
-      )}
+      {withWeekTotal && <div>&Sigma;</div>}
     </div>
   );
 }
@@ -297,7 +198,7 @@ function AnnouncementsView({ viewYear, viewMonth, todayStr, prevMonth, nextMonth
 
   return (
     <>
-      <GlassCard style={{ padding: '10px 12px' }}>
+      <section className="calendar-page__panel">
         <MonthNav
           viewYear={viewYear}
           viewMonth={viewMonth}
@@ -305,108 +206,56 @@ function AnnouncementsView({ viewYear, viewMonth, todayStr, prevMonth, nextMonth
           nextMonth={nextMonth}
         />
         <DayHeaderRow withWeekTotal={false} />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
+        <div className="calendar-page__ann-grid">
           {cells.map((day, i) => {
             if (day === null) return <div key={`empty-${i}`} />;
             const dateStr = `${viewYear}-${pad2(viewMonth + 1)}-${pad2(day)}`;
             const evts = dateEvents[dateStr] || [];
             const hasMacro = evts.some((e) => e.type === 'macro');
             const hasEarn = evts.some((e) => e.type === 'earn');
+            const hasExp = evts.some((e) => e.type === 'exp');
             const isToday = dateStr === todayStr;
             const isHovered = hoveredDate === dateStr;
+
+            const cellCls = [
+              'calendar-page__ann-cell',
+              evts.length > 0 && 'calendar-page__ann-cell--clickable',
+              isHovered && 'calendar-page__ann-cell--hovered',
+              isToday && 'calendar-page__ann-cell--today',
+            ]
+              .filter(Boolean)
+              .join(' ');
+
+            const dayCls = isToday
+              ? 'calendar-page__ann-cell-day calendar-page__ann-cell-day--today'
+              : 'calendar-page__ann-cell-day';
 
             return (
               <div
                 key={dateStr}
                 onMouseEnter={() => evts.length > 0 && setHoveredDate(dateStr)}
                 onMouseLeave={() => setHoveredDate(null)}
-                style={{
-                  position: 'relative',
-                  textAlign: 'center',
-                  padding: '8px 0',
-                  borderRadius: 6,
-                  minHeight: 52,
-                  cursor: evts.length > 0 ? 'pointer' : 'default',
-                  background: isToday
-                    ? `${T.accent.main}18`
-                    : isHovered
-                      ? T.surface.overlay
-                      : 'transparent',
-                  outline: isToday ? `1.5px solid var(--accent, ${T.accent.main})` : 'none',
-                  transition: 'background 0.15s, border-color 0.15s',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+                className={cellCls}
               >
-                <div
-                  style={{
-                    ...mono,
-                    fontSize: 12,
-                    fontWeight: isToday ? 700 : 400,
-                    color: isToday ? T.accent.main : T.text.secondary,
-                  }}
-                >
-                  {day}
-                </div>
-                {(hasMacro || hasEarn || evts.some((e) => e.type === 'exp')) && (
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: 3, marginTop: 4 }}>
-                    {hasEarn && (
-                      <span
-                        style={{ width: 6, height: 6, borderRadius: '50%', background: T.profit }}
-                      />
-                    )}
-                    {hasMacro && (
-                      <span
-                        style={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: '50%',
-                          background: T.greeks.delta,
-                        }}
-                      />
-                    )}
-                    {evts.some((e) => e.type === 'exp') && (
-                      <span
-                        style={{ width: 6, height: 6, borderRadius: '50%', background: T.warning }}
-                      />
-                    )}
+                <div className={dayCls}>{day}</div>
+                {(hasMacro || hasEarn || hasExp) && (
+                  <div className="calendar-page__ann-cell-dots">
+                    {hasEarn && <span className="calendar-page__ann-dot calendar-page__ann-dot--earnings" />}
+                    {hasMacro && <span className="calendar-page__ann-dot calendar-page__ann-dot--macro" />}
+                    {hasExp && <span className="calendar-page__ann-dot calendar-page__ann-dot--expiration" />}
                   </div>
                 )}
                 {isHovered && evts.length > 0 && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: '100%',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      background: T.surface.elevated,
-                      border: `1px solid ${T.glass.border}`,
-                      borderRadius: 8,
-                      padding: '6px 10px',
-                      whiteSpace: 'nowrap',
-                      zIndex: 10,
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-                    }}
-                  >
+                  <div className="calendar-page__ann-popup">
                     {evts.map((ev, j) => {
-                      const color =
+                      const rowCls =
                         ev.type === 'earn'
-                          ? T.profit
+                          ? 'calendar-page__ann-popup-row calendar-page__ann-popup-row--earnings'
                           : ev.type === 'exp'
-                            ? T.warning
-                            : T.greeks.delta;
+                            ? 'calendar-page__ann-popup-row calendar-page__ann-popup-row--expiration'
+                            : 'calendar-page__ann-popup-row calendar-page__ann-popup-row--macro';
                       return (
-                        <div
-                          key={j}
-                          style={{
-                            ...mono,
-                            fontSize: 10,
-                            color,
-                            marginBottom: j < evts.length - 1 ? 3 : 0,
-                          }}
-                        >
+                        <div key={j} className={rowCls}>
                           {ev.label}
                         </div>
                       );
@@ -417,92 +266,37 @@ function AnnouncementsView({ viewYear, viewMonth, todayStr, prevMonth, nextMonth
             );
           })}
         </div>
-      </GlassCard>
+      </section>
 
       {upcomingEvents.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div
-            style={{
-              fontSize: 9,
-              fontWeight: 700,
-              color: T.text.muted,
-              ...sans,
-              textTransform: 'uppercase',
-              letterSpacing: '0.12em',
-              padding: '0 4px',
-            }}
-          >
-            Prochains événements
-          </div>
+        <div className="calendar-page__upcoming">
+          <div className="calendar-page__upcoming-head">Prochains événements</div>
           {upcomingEvents.map((ev, i) => {
-            const accent =
-              ev.type === 'earn' ? T.profit : ev.type === 'exp' ? T.warning : T.greeks.delta;
+            const variant = ev.type === 'earn' ? 'earnings' : ev.type === 'exp' ? 'expiration' : 'macro';
             const label = ev.type === 'earn' ? 'EARN' : ev.type === 'exp' ? 'EXP' : 'MACRO';
             return (
-              <GlassCard key={`${ev.date}-${i}`} style={{ padding: 0, overflow: 'hidden' }}>
-                <div style={{ display: 'flex', alignItems: 'stretch' }}>
-                  <div
-                    style={{
-                      width: 4,
-                      borderRadius: '2px 0 0 2px',
-                      flexShrink: 0,
-                      background: accent,
-                    }}
-                  />
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '8px 12px',
-                      flex: 1,
-                    }}
-                  >
-                    <span
-                      style={{
-                        ...mono,
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: T.text.secondary,
-                        minWidth: 50,
-                      }}
-                    >
-                      {ev.date.slice(5)}
-                    </span>
-                    <span
-                      style={{
-                        ...mono,
-                        fontSize: 9,
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        padding: '2px 6px',
-                        borderRadius: 4,
-                        background: `${accent}15`,
-                        color: accent,
-                      }}
-                    >
+              <section
+                key={`${ev.date}-${i}`}
+                className="calendar-page__panel calendar-page__panel--flush"
+              >
+                <div className="calendar-page__upcoming-row">
+                  <div className={`calendar-page__upcoming-accent calendar-page__upcoming-accent--${variant}`} />
+                  <div className="calendar-page__upcoming-body">
+                    <span className="calendar-page__upcoming-date">{ev.date.slice(5)}</span>
+                    <span className={`calendar-page__upcoming-pill calendar-page__upcoming-pill--${variant}`}>
                       {label}
                     </span>
                     {ev.type === 'macro' && ev.impact && (
                       <span
-                        style={{
-                          ...mono,
-                          fontSize: 9,
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          padding: '2px 6px',
-                          borderRadius: 4,
-                          background: ev.impact === 'high' ? `${T.loss}20` : `${T.warning}20`,
-                          color: ev.impact === 'high' ? T.loss : T.warning,
-                        }}
+                        className={`calendar-page__impact-pill calendar-page__impact-pill--${
+                          ev.impact === 'high' ? 'high' : 'medium'
+                        }`}
                       >
                         {ev.impact}
                       </span>
                     )}
-                    <span style={{ ...sans, fontSize: 13, color: T.text.primary }}>{ev.label}</span>
-                    <span
-                      style={{ ...mono, fontSize: 11, marginLeft: 'auto', color: T.text.muted }}
-                    >
+                    <span className="calendar-page__upcoming-label">{ev.label}</span>
+                    <span className="calendar-page__upcoming-eta">
                       dans{' '}
                       {Math.max(
                         0,
@@ -512,7 +306,7 @@ function AnnouncementsView({ viewYear, viewMonth, todayStr, prevMonth, nextMonth
                     </span>
                   </div>
                 </div>
-              </GlassCard>
+              </section>
             );
           })}
         </div>
@@ -567,15 +361,15 @@ function PnlHeatmapView({ state, viewYear, viewMonth, todayStr, prevMonth, nextM
 
   const cells = getMonthDays(viewYear, viewMonth);
 
-  // Divergent heatmap: red for loss -> gray for zero -> green for profit
+  // Divergent heatmap : color-mix on canonical --pnl-up / --pnl-down,
+  // intensity proportional to |pnl|/maxAbsPnl. Le calcul reste identique
+  // à la version T-based, seules les couleurs source ont changé.
   function pnlBg(pnl) {
     if (pnl === 0 || maxAbsPnl === 0) return 'transparent';
     const intensity = Math.min(1, Math.abs(pnl) / maxAbsPnl);
-    const opacity = intensity * 0.6 + 0.15;
-    const alpha = Math.round(opacity * 255)
-      .toString(16)
-      .padStart(2, '0');
-    return pnl > 0 ? `${T.profit}${alpha}` : `${T.loss}${alpha}`;
+    const pct = Math.round((intensity * 0.6 + 0.15) * 100);
+    const tone = pnl > 0 ? 'var(--pnl-up)' : 'var(--pnl-down)';
+    return `color-mix(in srgb, ${tone} ${pct}%, transparent)`;
   }
 
   // Weekly rows with totals
@@ -606,7 +400,7 @@ function PnlHeatmapView({ state, viewYear, viewMonth, todayStr, prevMonth, nextM
 
   return (
     <>
-      <GlassCard style={{ padding: '10px 12px' }}>
+      <section className="calendar-page__panel">
         <MonthNav
           viewYear={viewYear}
           viewMonth={viewMonth}
@@ -615,15 +409,7 @@ function PnlHeatmapView({ state, viewYear, viewMonth, todayStr, prevMonth, nextM
         />
         <DayHeaderRow withWeekTotal={true} />
         {weeks.map((week, wi) => (
-          <div
-            key={wi}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(7, 1fr) 54px',
-              gap: 3,
-              marginBottom: 3,
-            }}
-          >
+          <div key={wi} className="calendar-page__pnl-week">
             {week.cells.map((day, di) => {
               if (day === null) return <div key={`empty-${wi}-${di}`} />;
               const dateStr = `${viewYear}-${pad2(viewMonth + 1)}-${pad2(day)}`;
@@ -631,58 +417,38 @@ function PnlHeatmapView({ state, viewYear, viewMonth, todayStr, prevMonth, nextM
               const count = dayCount[dateStr] || 0;
               const isToday = dateStr === todayStr;
               const hasTrade = pnl !== 0;
-              const color = pnl > 0 ? T.profit : pnl < 0 ? T.loss : T.text.muted;
               const isSelected = selectedDay === dateStr;
+
+              const cellCls = [
+                'calendar-page__pnl-cell',
+                count > 0 && 'calendar-page__pnl-cell--clickable',
+                isToday && 'calendar-page__pnl-cell--today',
+                isSelected && !isToday && 'calendar-page__pnl-cell--selected',
+              ]
+                .filter(Boolean)
+                .join(' ');
+
+              const dayNumCls = isToday
+                ? 'calendar-page__pnl-day-number calendar-page__pnl-day-number--today'
+                : 'calendar-page__pnl-day-number';
+
+              const valueCls = pnl > 0
+                ? 'calendar-page__pnl-value calendar-page__pnl-value--up'
+                : pnl < 0
+                  ? 'calendar-page__pnl-value calendar-page__pnl-value--down'
+                  : 'calendar-page__pnl-value';
 
               return (
                 <div
                   key={dateStr}
                   onClick={() => count > 0 && setSelectedDay(isSelected ? null : dateStr)}
-                  style={{
-                    position: 'relative',
-                    borderRadius: 6,
-                    minHeight: 52,
-                    background: hasTrade ? pnlBg(pnl) : 'transparent',
-                    outline: isToday
-                      ? `1.5px solid var(--accent, ${T.accent.main})`
-                      : isSelected
-                        ? `1.5px solid ${T.accent.main}80`
-                        : '1px solid transparent',
-                    transition: 'all 0.15s',
-                    cursor: count > 0 ? 'pointer' : 'default',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '4px 2px',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSelected && !isToday)
-                      e.currentTarget.style.outline = `1px solid ${T.glass.border}`;
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSelected && !isToday)
-                      e.currentTarget.style.outline = '1px solid transparent';
-                  }}
+                  className={cellCls}
+                  style={{ background: hasTrade ? pnlBg(pnl) : 'transparent' }}
                 >
-                  {/* Day number top-right */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 3,
-                      right: 5,
-                      ...mono,
-                      fontSize: 9,
-                      fontWeight: isToday ? 700 : 400,
-                      color: isToday ? T.accent.main : T.text.muted,
-                    }}
-                  >
-                    {day}
-                  </div>
+                  <div className={dayNumCls}>{day}</div>
 
-                  {/* P&L value center */}
                   {hasTrade ? (
-                    <div style={{ ...mono, fontSize: 11, fontWeight: 600, color, marginTop: 4 }}>
+                    <div className={valueCls}>
                       {pnl > 0 ? '+' : ''}
                       {pnl.toFixed(0)}
                     </div>
@@ -690,206 +456,113 @@ function PnlHeatmapView({ state, viewYear, viewMonth, todayStr, prevMonth, nextM
                     <div style={{ height: 14 }} />
                   )}
 
-                  {/* Trade count badge bottom */}
-                  {count > 0 && (
-                    <div
-                      style={{
-                        ...mono,
-                        fontSize: 8,
-                        fontWeight: 600,
-                        color: T.text.disabled,
-                        marginTop: 2,
-                        background: `${T.surface.base}80`,
-                        borderRadius: 3,
-                        padding: '0px 4px',
-                      }}
-                    >
-                      {count}t
-                    </div>
-                  )}
+                  {count > 0 && <div className="calendar-page__pnl-count-badge">{count}t</div>}
                 </div>
               );
             })}
             {/* Weekly total */}
             <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                ...mono,
-                fontSize: 10,
-                fontWeight: 600,
-                borderRadius: 6,
-                color: week.total > 0 ? T.profit : week.total < 0 ? T.loss : T.text.disabled,
-                background:
-                  week.total !== 0
-                    ? week.total > 0
-                      ? `${T.profit}10`
-                      : `${T.loss}10`
-                    : 'transparent',
-              }}
+              className={[
+                'calendar-page__pnl-week-total',
+                week.total > 0
+                  ? 'calendar-page__pnl-week-total--up'
+                  : week.total < 0
+                    ? 'calendar-page__pnl-week-total--down'
+                    : 'calendar-page__pnl-week-total--neutral',
+              ].join(' ')}
             >
               {week.total !== 0 ? `${week.total > 0 ? '+' : ''}${week.total.toFixed(0)}` : ''}
             </div>
           </div>
         ))}
-      </GlassCard>
+      </section>
 
       {/* Selected day detail panel */}
       {selectedDay && selectedTrades.length > 0 && (
-        <GlassCard style={{ padding: '10px 12px' }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 10,
-            }}
-          >
-            <span style={{ ...sans, fontSize: 13, fontWeight: 700, color: T.text.primary }}>
+        <section className="calendar-page__panel">
+          <div className="calendar-page__day-detail-head">
+            <span className="calendar-page__day-detail-title">
               Trades du {selectedDay.slice(5)}
             </span>
             <button
               onClick={() => navigate(`/trading/history?search=${selectedDay}`)}
-              style={{
-                padding: '4px 12px',
-                borderRadius: 6,
-                border: 'none',
-                cursor: 'pointer',
-                background: T.surface.elevated,
-                color: T.accent.main,
-                ...sans,
-                fontSize: 11,
-                fontWeight: 600,
-              }}
+              className="calendar-page__day-detail-cta"
             >
               Voir dans Historique &rarr;
             </button>
           </div>
           {selectedTrades.map((t, i) => {
             const pnl = tradePnlUsd(t, lr);
-            const color = pnl >= 0 ? T.profit : T.loss;
+            const pnlCls = pnl >= 0
+              ? 'calendar-page__trade-pnl calendar-page__trade-pnl--up'
+              : 'calendar-page__trade-pnl calendar-page__trade-pnl--down';
+            // Badge type — CALL/PUT/STK sont des TYPES d'instruments, pas
+            // des directions P&L. Tonalité ink-soft neutre pour CALL et PUT.
+            // STK garde son bleu #42A5F5 résiduel (vague cyan-kill séparée).
+            const badgeVariant =
+              t.as === 'Option'
+                ? t.ty === 'CALL'
+                  ? 'call'
+                  : 'put'
+                : 'stk';
             return (
-              <div
-                key={t.id || i}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '6px 0',
-                  borderTop: i > 0 ? `1px solid ${T.glass.border}` : 'none',
-                }}
-              >
-                <span style={{ ...mono, fontSize: 13, fontWeight: 700, color: T.text.primary }}>
-                  {t.tk}
-                </span>
+              <div key={t.id || i} className="calendar-page__trade-row">
+                <span className="calendar-page__trade-ticker">{t.tk}</span>
                 <span
-                  style={{
-                    fontSize: 9,
-                    fontWeight: 700,
-                    padding: '1px 6px',
-                    borderRadius: 3,
-                    background:
-                      t.as === 'Option'
-                        ? t.ty === 'CALL'
-                          ? `${T.profit}25`
-                          : `${T.loss}25`
-                        : '#42A5F525',
-                    color: t.as === 'Option' ? (t.ty === 'CALL' ? T.profit : T.loss) : '#42A5F5',
-                  }}
+                  className={`calendar-page__trade-type-badge calendar-page__trade-type-badge--${badgeVariant}`}
                 >
                   {t.as === 'Option' ? t.ty : 'STK'}
                 </span>
-                <span style={{ ...mono, fontSize: 13, fontWeight: 700, color, marginLeft: 'auto' }}>
-                  {formatPnlUsd(pnl)}
-                </span>
+                <span className={pnlCls}>{formatPnlUsd(pnl)}</span>
               </div>
             );
           })}
-        </GlassCard>
+        </section>
       )}
 
       {/* Monthly summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-        <GlassCard style={{ padding: '10px 12px', textAlign: 'center' }}>
+      <div className="calendar-page__summary-grid">
+        <section className="calendar-page__panel calendar-page__panel--center">
+          <div className="calendar-page__summary-label">Total du mois</div>
           <div
-            style={{
-              ...sans,
-              fontSize: 9,
-              fontWeight: 700,
-              color: T.text.muted,
-              textTransform: 'uppercase',
-              letterSpacing: '0.12em',
-              marginBottom: 4,
-            }}
-          >
-            Total du mois
-          </div>
-          <div
-            style={{
-              ...mono,
-              fontSize: 18,
-              fontWeight: 700,
-              color: monthTotal >= 0 ? T.profit : T.loss,
-            }}
+            className={[
+              'calendar-page__summary-value',
+              monthTotal > 0
+                ? 'calendar-page__summary-value--up'
+                : monthTotal < 0
+                  ? 'calendar-page__summary-value--down'
+                  : '',
+            ].filter(Boolean).join(' ')}
           >
             {monthTotal !== 0 ? formatPnlUsd(monthTotal) : '--'}
           </div>
-        </GlassCard>
-        <GlassCard style={{ padding: '10px 12px', textAlign: 'center' }}>
-          <div
-            style={{
-              ...sans,
-              fontSize: 9,
-              fontWeight: 700,
-              color: T.text.muted,
-              textTransform: 'uppercase',
-              letterSpacing: '0.12em',
-              marginBottom: 4,
-            }}
-          >
-            Meilleur jour
-          </div>
+        </section>
+        <section className="calendar-page__panel calendar-page__panel--center">
+          <div className="calendar-page__summary-label">Meilleur jour</div>
           {bestDay ? (
             <>
-              <div style={{ ...mono, fontSize: 14, fontWeight: 700, color: T.profit }}>
+              <div className="calendar-page__summary-value calendar-page__summary-value--up">
                 {formatPnlUsd(bestDay.pnl)}
               </div>
-              <div style={{ ...mono, fontSize: 10, color: T.text.muted, marginTop: 2 }}>
-                {bestDay.date.slice(5)}
-              </div>
+              <div className="calendar-page__summary-day">{bestDay.date.slice(5)}</div>
             </>
           ) : (
-            <div style={{ ...mono, fontSize: 14, color: T.text.disabled }}>--</div>
+            <div className="calendar-page__summary-value calendar-page__summary-value--mute">--</div>
           )}
-        </GlassCard>
-        <GlassCard style={{ padding: '10px 12px', textAlign: 'center' }}>
-          <div
-            style={{
-              ...sans,
-              fontSize: 9,
-              fontWeight: 700,
-              color: T.text.muted,
-              textTransform: 'uppercase',
-              letterSpacing: '0.12em',
-              marginBottom: 4,
-            }}
-          >
-            Pire jour
-          </div>
+        </section>
+        <section className="calendar-page__panel calendar-page__panel--center">
+          <div className="calendar-page__summary-label">Pire jour</div>
           {worstDay && worstDay.pnl < 0 ? (
             <>
-              <div style={{ ...mono, fontSize: 14, fontWeight: 700, color: T.loss }}>
+              <div className="calendar-page__summary-value calendar-page__summary-value--down">
                 {formatPnlUsd(worstDay.pnl)}
               </div>
-              <div style={{ ...mono, fontSize: 10, color: T.text.muted, marginTop: 2 }}>
-                {worstDay.date.slice(5)}
-              </div>
+              <div className="calendar-page__summary-day">{worstDay.date.slice(5)}</div>
             </>
           ) : (
-            <div style={{ ...mono, fontSize: 14, color: T.text.disabled }}>--</div>
+            <div className="calendar-page__summary-value calendar-page__summary-value--mute">--</div>
           )}
-        </GlassCard>
+        </section>
       </div>
     </>
   );
@@ -897,7 +570,7 @@ function PnlHeatmapView({ state, viewYear, viewMonth, todayStr, prevMonth, nextM
 
 // ─── Year View ────────────────────────────────────────────
 
-function YearView({ state, viewYear: _viewYear, setViewYear: _setViewYear }) {
+function YearView({ state }) {
   const lr = toFloat(state.settings?.liveRate) || 1;
 
   const dayMap = useMemo(() => {
@@ -911,9 +584,9 @@ function YearView({ state, viewYear: _viewYear, setViewYear: _setViewYear }) {
   }, [state.closedTrades, lr]);
 
   return (
-    <GlassCard hover={false} style={{ padding: '16px 16px' }}>
+    <section className="calendar-page__panel">
       <PnLCalendarHeatmap dayPnlMap={dayMap} mode="year" currency="USD" />
-    </GlassCard>
+    </section>
   );
 }
 
@@ -994,78 +667,34 @@ export default function Calendar() {
   const sharedProps = { state, viewYear, viewMonth, todayStr, prevMonth, nextMonth };
 
   return (
-    <div className="page-container">
+    <div className="page-container calendar-page">
       <div className="page-header">
         <div>
           <h1 className="page-title">Calendrier</h1>
           <p className="page-subtitle">Annonces earnings, événements macro, et P&amp;L par jour.</p>
         </div>
       </div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 10,
-          flexWrap: 'wrap',
-        }}
-      >
+      <div className="calendar-page__controls">
         <StyledTabs tabs={viewTabs} active={activeTab} onChange={setActiveTab} />
         {activeTab === 'announcements' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div
-              style={{
-                display: 'inline-flex',
-                background: T.surface.base,
-                border: `1px solid ${T.border?.subtle || 'rgba(255,255,255,0.06)'}`,
-                borderRadius: 8,
-                padding: 3,
-                gap: 2,
-              }}
-            >
-              {IMPACT_OPTIONS.map((opt) => {
-                const active = opt.key === minImpact;
-                return (
-                  <button
-                    key={opt.key}
-                    onClick={() => setMinImpact(opt.key)}
-                    style={{
-                      padding: '5px 12px',
-                      borderRadius: 6,
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: 11,
-                      fontWeight: active ? 700 : 500,
-                      fontFamily: T.fonts.sans,
-                      color: active ? T.text.primary : T.text.muted,
-                      background: active ? T.surface.elevated : 'transparent',
-                      transition: 'all 150ms ease',
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                );
-              })}
+          <div className="calendar-page__controls-right">
+            <div className="calendar-page__tabs">
+              {IMPACT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.key}
+                  onClick={() => setMinImpact(opt.key)}
+                  className="calendar-page__impact-tab"
+                  data-active={opt.key === minImpact || undefined}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
             <button
               onClick={refresh}
               disabled={loading}
               title="Rafraîchir les calendriers"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 10px',
-                borderRadius: 6,
-                border: `1px solid ${T.border?.subtle || 'rgba(255,255,255,0.06)'}`,
-                background: T.surface.base,
-                color: T.text.muted,
-                fontSize: 11,
-                fontFamily: T.fonts.sans,
-                fontWeight: 600,
-                cursor: loading ? 'wait' : 'pointer',
-                opacity: loading ? 0.6 : 1,
-              }}
+              className="calendar-page__refresh-btn"
             >
               <RefreshCw
                 size={12}
@@ -1092,32 +721,22 @@ export default function Calendar() {
           const connected = apiStatus.finnhub.status === 'active';
           const hasEvents = earnings.length > 0 || effectiveMacro.length > 0;
 
-          let bg,
-            border,
-            color,
-            icon = null,
-            content = null;
+          let variant = '';
+          let icon = null;
+          let content = null;
 
           if (notConfigured) {
-            bg = 'var(--neutral-bg)';
-            border = 'var(--border-default)';
-            color = 'var(--text-secondary)';
             icon = <AlertTriangle size={13} style={{ flexShrink: 0 }} />;
             content = (
               <span>
                 Clé Finnhub non configurée ·{' '}
-                <a
-                  href="#/settings/api"
-                  style={{ color: 'var(--accent-text)', textDecoration: 'underline' }}
-                >
+                <a href="#/settings/api" className="calendar-page__api-banner-link">
                   Réglages → API
                 </a>
               </span>
             );
           } else if (apiDown && fallbackActive) {
-            bg = `${T.warning}12`;
-            border = `${T.warning}30`;
-            color = T.warning;
+            variant = 'down';
             icon = <AlertTriangle size={13} style={{ flexShrink: 0 }} />;
             content = (
               <span>
@@ -1127,21 +746,8 @@ export default function Calendar() {
               </span>
             );
           } else if (connected && hasEvents) {
-            bg = 'var(--profit-bg)';
-            border = 'var(--profit-border)';
-            color = 'var(--profit-text)';
-            icon = (
-              <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: 'var(--profit)',
-                  animation: 'pulse-dot 2s ease-in-out infinite',
-                  flexShrink: 0,
-                }}
-              />
-            );
+            variant = 'ok';
+            icon = <span className="calendar-page__api-banner-dot" />;
             content = (
               <span>
                 Connecté · {earnings.length} résultat{earnings.length > 1 ? 's' : ''} +{' '}
@@ -1150,31 +756,17 @@ export default function Calendar() {
               </span>
             );
           } else if (connected) {
-            bg = 'var(--neutral-bg)';
-            border = 'var(--border-default)';
-            color = 'var(--text-secondary)';
             content = <span>Connecté · Aucun événement à venir sur la période</span>;
           } else {
             return null;
           }
 
+          const cls = variant
+            ? `calendar-page__api-banner calendar-page__api-banner--${variant}`
+            : 'calendar-page__api-banner';
+
           return (
-            <div
-              style={{
-                padding: '8px 12px',
-                borderRadius: 6,
-                background: bg,
-                color,
-                border: `1px solid ${border}`,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                ...sans,
-                fontSize: 11,
-              }}
-              role="status"
-              aria-live="polite"
-            >
+            <div className={cls} role="status" aria-live="polite">
               {icon}
               {content}
             </div>
@@ -1184,51 +776,31 @@ export default function Calendar() {
         !fallbackActive &&
         error &&
         apiStatus.finnhub.status === 'active' && (
-          <div
-            style={{
-              padding: '8px 12px',
-              borderRadius: 6,
-              background: `${T.loss}12`,
-              color: T.loss,
-              ...sans,
-              fontSize: 11,
-            }}
-          >
+          <div className="calendar-page__api-banner calendar-page__api-banner--error">
             Flux partiel : {error}
           </div>
         )}
 
       {activeTab === 'announcements' && <AnnouncementsView {...sharedProps} feeds={feeds} />}
       {activeTab === 'pnl' && <PnlHeatmapView {...sharedProps} />}
-      {activeTab === 'year' && (
-        <YearView state={state} viewYear={viewYear} setViewYear={setViewYear} />
-      )}
+      {activeTab === 'year' && <YearView state={state} />}
 
       {activeTab === 'announcements' && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 16,
-            padding: '4px 8px',
-            flexWrap: 'wrap',
-          }}
-        >
-          <LegendDot color={T.profit} label="Résultats (earnings)" />
-          <LegendDot color={T.greeks.delta} label="Macro (FOMC / CPI / NFP)" />
-          <LegendDot color={T.warning} label="Expiration position" />
+        <div className="calendar-page__legend">
+          <LegendDot variant="earnings" label="Résultats (earnings)" />
+          <LegendDot variant="macro" label="Macro (FOMC / CPI / NFP)" />
+          <LegendDot variant="expiration" label="Expiration position" />
         </div>
       )}
     </div>
   );
 }
 
-function LegendDot({ color, label }) {
+function LegendDot({ variant, label }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
-      <span style={{ ...sans, fontSize: 10, color: T.text.muted }}>{label}</span>
+    <div className="calendar-page__legend-item">
+      <span className={`calendar-page__legend-dot calendar-page__legend-dot--${variant}`} />
+      <span className="calendar-page__legend-label">{label}</span>
     </div>
   );
 }
