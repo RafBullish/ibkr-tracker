@@ -108,14 +108,17 @@ export default function Dashboard() {
   const closedTrades = useClosedTrades();
   const portfolioMetrics = usePortfolioMetrics();
   const riskMatrixData = useRiskMatrix();
-  const positions = useLivePositions();
+  // B4 — greeks hissés ici pour alimenter le strip dans le cockpit.
+  // DashboardKPICards garde son propre appel autonome (back-compat).
+  // Single source of truth pour Δ/Θ par position : on injecte greeksMap
+  // dans useLivePositions pour que la table Live Positions affiche les
+  // greeks calculés (cascade σ a→b→c) au lieu de '—'.
+  const greeks = useGreeksAggregate();
+  const positions = useLivePositions({ greeksMap: greeks.greeksMap });
   const watchlist = useWatchlist();
   const sectors = useSectorHeatmap();
   const ivMovers = useIVMovers();
   const alerts = useAlertsFeed();
-  // B4 — greeks hissés ici pour alimenter le strip dans le cockpit.
-  // DashboardKPICards garde son propre appel autonome (back-compat).
-  const greeks = useGreeksAggregate();
 
   // Merge portfolioMetrics (sharpe/sortino/sqn/cagr/recovery/rMultiples/
   // streaks/breakEven/fees/fxImpact/monthly) + riskMatrixData

@@ -7,6 +7,7 @@ import AppShell from './components/layout/AppShell';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import GlassCard from './components/ui/GlassCard';
 import { useFxAutoRefresh } from './hooks/useFxAutoRefresh';
+import { useFxLiveSync } from './hooks/useFxLiveSync';
 import FxStaleBanner from './components/fx/FxStaleBanner';
 import FxInvalidBanner from './components/fx/FxInvalidBanner';
 import { FEATURE_GREEK_CENTER } from './constants/featureFlags';
@@ -35,7 +36,12 @@ const Loader = () => (
 );
 
 export default function App() {
+  // FX cascade : Frankfurter (boot + 5min auto, fallback) puis Yahoo live
+  // (poll 60s, source canonique). useFxLiveSync écrit dans settings.liveRate
+  // dès qu'un quote live frais est dispo → ticker + footer + cockpit +
+  // conversions + FX Impact tous alimentés par la MÊME valeur.
   useFxAutoRefresh();
+  useFxLiveSync();
   return (
     <LazyMotion features={domAnimation}>
       <BrowserRouter>

@@ -89,6 +89,21 @@ function buildRow(pos, context) {
     ivr: ivrSnapshot,
   });
 
+  // Greeks projetés depuis greeksMap (single source of truth, calculé
+  // par greeksApi/positionGreeks avec cascade σ a→b→c). Stock = pas de
+  // greek. Fallback sur pos.delta/theta legacy si pas de map (e.g. avant
+  // que le fetch async ait résolu).
+  //
+  // Convention LivePositions : delta per-share, theta per-share-per-DAY.
+  // greeksMap stocke per-share-per-YEAR ; on /365 ici.
+  const greeks = !isStock ? context.greeksMap?.get(pos.id) : null;
+  const delta =
+    greeks?.delta != null ? greeks.delta : (pos.delta != null ? pos.delta : null);
+  const theta =
+    greeks?.theta != null ? greeks.theta / 365 : (pos.theta != null ? pos.theta : null);
+  const ivEstimated = !!(greeks?.ivEstimated);
+  const greeksSource = greeks?.source ?? null;
+
   return {
     // B5.3 — id défensif : si pos.id manque (positions importées hors
     // migration v3→v4), génère un id déterministe basé sur les champs
@@ -108,8 +123,10 @@ function buildRow(pos, context) {
     unrealDollar,
     unrealPct,
     costBasisUsd,
-    delta: pos.delta ?? null, // sidecar live greek si dispo
-    theta: pos.theta ?? null,
+    delta,
+    theta,
+    ivEstimated,
+    greeksSource,
     ivr: ivrSnapshot,
     edgeTier,
     capitalTier,
@@ -154,8 +171,12 @@ function aggregate(rows) {
 
 /**
  * @param {Object} [options]
- * @param {Date}   [options.now]       reference for DTE / daysHeld
- * @param {Array}  [options.earnings]  earnings calendar for EARN alert
+ * @param {Date}   [options.now]        reference for DTE / daysHeld
+ * @param {Array}  [options.earnings]   earnings calendar for EARN alert
+ * @param {Map}    [options.greeksMap]  greeks par position id (single source
+ *                                      of truth de greeksApi). Si absent,
+ *                                      les colonnes Δ/Θ tombent sur
+ *                                      pos.delta/pos.theta legacy (fixture).
  */
 export function useLivePositions(options = {}) {
   const openPositions = useOpenPositions();
@@ -166,7 +187,11 @@ export function useLivePositions(options = {}) {
     // buildRow → readSniperMeta side-effect makes the dep meaningful
     // even though the value itself isn't computed with.
     void metaVersion;
-    const ctx = { now: options.now, earnings: options.earnings };
+    const ctx = {
+      now: options.now,
+      earnings: options.earnings,
+      greeksMap: options.greeksMap,
+    };
     const rows = (openPositions || []).map((p) => buildRow(p, ctx));
     const { totalNotional, totalMaxRisk } = aggregate(rows);
     return {
@@ -175,15 +200,19 @@ export function useLivePositions(options = {}) {
       totalMaxRisk,
       count: rows.length,
     };
-  }, [openPositions, options.now, options.earnings, metaVersion]);
+  }, [openPositions, options.now, options.earnings, options.greeksMap, metaVersion]);
 }
 
 /**
  * Variante pure pour /__playground (pas de hook React).
- * Mêmes transforms, accept openPositions + earnings en arg.
+ * Mêmes transforms, accept openPositions + earnings + greeksMap en arg.
  */
 export function buildLivePositions(openPositions, options = {}) {
-  const ctx = { now: options.now, earnings: options.earnings };
+  const ctx = {
+    now: options.now,
+    earnings: options.earnings,
+    greeksMap: options.greeksMap,
+  };
   const rows = (openPositions || []).map((p) => buildRow(p, ctx));
   const { totalNotional, totalMaxRisk } = aggregate(rows);
   return {
