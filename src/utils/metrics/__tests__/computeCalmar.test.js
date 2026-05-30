@@ -1,19 +1,20 @@
 // ═══════════════════════════════════════════════════════════════
-//  computeCalmar — A2b (gated by yearsActive ≥ 1).
+//  computeCalmar — gate relâchée yearsActive > 0 (anciennement ≥ 1).
 //
-//  Calmar = annualised CAGR / |Max Drawdown %|. Since A2.2 the CAGR
-//  primitive may return a CUMULATIVE value when 0 < years < 1 — feeding
-//  that into a Calmar ratio breaks comparability with the annualised
-//  bench (3.0). A2b therefore refuses to emit a Calmar under 1 year.
+//  Le helper attend désormais une CAGR ANNUALISÉE de la part du caller
+//  (calculations.js force l'annualisation avant l'appel, même < 1 an).
+//  Le flag `preliminaryRatios` côté metrics + marqueur UI signalent
+//  l'artefact d'échantillon court.
 //
-//  Sharpe / Sortino / Vol are NOT subject to this gate : they
-//  annualise the dispersion of returns rather than a compound rate.
+//  Sharpe / Sortino / Vol n'ont jamais été gated sur years ≥ 1 ; le
+//  gating Calmar était l'incohérence visible (cockpit "—" alors que
+//  Sharpe affichait une valeur). Corrigé ici.
 // ═══════════════════════════════════════════════════════════════
 
 import { describe, it, expect } from 'vitest';
 import { computeCalmar } from '../computeCalmar';
 
-describe('computeCalmar — A2b yearsActive gate', () => {
+describe('computeCalmar — gate years > 0', () => {
   it('years ≥ 1 + valid inputs → finite ratio', () => {
     const result = computeCalmar({
       cagrPct: 12.0,
@@ -32,11 +33,21 @@ describe('computeCalmar — A2b yearsActive gate', () => {
     expect(result).toBeCloseTo(2.0, 5);
   });
 
-  it('years = 0.4 (cumulative regime) → null (Calmar requires annualised CAGR)', () => {
-    // Tracker_TEST-2 case after A2.2 : CAGR cumulative = 118 % at 0.4 y.
-    // 118/5=23.6 would mislead next to bench 3 → emit null instead.
+  it('years = 0.4 + cagr annualisé fourni → finite (caller a annualisé)', () => {
+    // Refonte : Calmar accepte years < 1 si le caller fournit déjà une
+    // CAGR annualisée. Le flag preliminaryRatios (côté metrics) signale
+    // l'artefact d'échantillon court à l'UI.
     expect(
       computeCalmar({ cagrPct: 118, maxDrawdownPct: 5, yearsActive: 0.4 })
+    ).toBeCloseTo(23.6, 1);
+  });
+
+  it('years = 0 ou négatif → null', () => {
+    expect(
+      computeCalmar({ cagrPct: 10, maxDrawdownPct: 5, yearsActive: 0 })
+    ).toBeNull();
+    expect(
+      computeCalmar({ cagrPct: 10, maxDrawdownPct: 5, yearsActive: -1 })
     ).toBeNull();
   });
 

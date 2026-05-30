@@ -1,31 +1,31 @@
 // @ts-check
 // ═══════════════════════════════════════════════════════════════
-//  computeCalmar — A2b : gated by yearsActive ≥ 1.
+//  computeCalmar — gate relâchée yearsActive > 0 (anciennement ≥ 1).
 //
-//  Calmar = annualised CAGR / |Max Drawdown %|. Since A2.2 the CAGR
-//  primitive returns a CUMULATIVE percentage when 0 < years < 1 (no
-//  annualisation), and an ANNUALISED percentage when years ≥ 1. Feeding
-//  a cumulative value into the Calmar ratio breaks comparability with
-//  the displayed benchmark (3.0 is an annualised target). A2b therefore
-//  requires `yearsActive ≥ 1` before producing a value : under 1 y the
-//  return is null, signalling "—" to the display layer.
+//  Calmar = annualised CAGR / |Max Drawdown %|. La math attend une CAGR
+//  annualisée — c'est au caller d'extrapoler la CAGR sur < 1 an si le
+//  besoin est de surfacer une valeur même préliminaire (callsite dans
+//  calculations.js force l'annualisation via (end/init)^(1/years) - 1
+//  avant d'appeler ce helper). Le flag `preliminaryRatios: yearsActive < 1`
+//  dans metrics + le marqueur côté UI signalent l'artefact aux échantillons
+//  courts.
 //
-//  Sharpe / Sortino / Vol are unaffected by this gate : they annualise
-//  the DISPERSION of returns (valid as soon as obs ≥ 30), not a
-//  compound rate, so they remain meaningful below 1 y of history.
+//  Historique : la version A2b gardait years ≥ 1 strict. Refonte ici
+//  (single-source FX + Calmar wired) : on accepte years > 0 dès que le
+//  caller a annualisé proprement. Les autres ratios (Sharpe / Sortino /
+//  SQN) ont toujours été dispo sous 1 an, le gating Calmar était
+//  l'incohérence visible — corrigé.
 // ═══════════════════════════════════════════════════════════════
 
 /**
  * @param {Object} args
- * @param {number|null|undefined} args.cagrPct           CAGR (annualised, percent)
+ * @param {number|null|undefined} args.cagrPct           CAGR annualisée %, fournie par le caller
  * @param {number|null|undefined} args.maxDrawdownPct    Max DD magnitude as %, > 0
- * @param {number|null|undefined} args.yearsActive       Elapsed years — required ≥ 1 for an annualised Calmar.
- * @returns {number|null} Calmar ratio, or null when inputs are invalid / years < 1.
+ * @param {number|null|undefined} args.yearsActive       Elapsed years — required > 0.
+ * @returns {number|null} Calmar ratio, or null when inputs are invalid / years ≤ 0.
  */
 export function computeCalmar({ cagrPct, maxDrawdownPct, yearsActive }) {
-  // A2b gate : Calmar is annualised by definition. Under 1 y the CAGR
-  // we receive is cumulative, not annualised, so the ratio is meaningless.
-  if (typeof yearsActive !== 'number' || !Number.isFinite(yearsActive) || yearsActive < 1) {
+  if (typeof yearsActive !== 'number' || !Number.isFinite(yearsActive) || !(yearsActive > 0)) {
     return null;
   }
   if (typeof cagrPct !== 'number' || !Number.isFinite(cagrPct)) return null;

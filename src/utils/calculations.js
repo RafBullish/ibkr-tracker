@@ -538,11 +538,36 @@ export function calculatePortfolioMetrics(state) {
   // "unknown" (initialCapital null) — display layer renders "—".
   const maxDrawdownPct = series.maxDDPct;
 
-  // A2b — Calmar requires an ANNUALISED CAGR ; under 1 y we feed it the
-  // cumulative value which would break the ratio's comparability with
-  // the 3.0 benchmark. computeCalmar gates on yearsActive ≥ 1 internally.
-  const calmarRaw = computeCalmar({ cagrPct: cagr, maxDrawdownPct, yearsActive });
+  // Calmar — feeded with un CAGR annualisé même quand yearsActive < 1.
+  // computeCAGR retourne le CUMULATIF sous 1 an (artefact si on l'envoie
+  // tel quel dans Calmar) ; on annualise localement via (end/init)^(1/y)
+  // pour préserver la dimension du ratio (3.0 bench reste comparable).
+  // Le flag `preliminaryRatios` (years < 1) signale l'artefact d'échantillon
+  // court au display layer — marqueur "préliminaire" sur le bloc de ratios.
+  let cagrAnnPct = null;
+  if (
+    initialCapital != null &&
+    endCapital != null &&
+    initialCapital > 0 &&
+    endCapital > 0 &&
+    yearsActive > 0
+  ) {
+    cagrAnnPct = (Math.pow(endCapital / initialCapital, 1 / yearsActive) - 1) * 100;
+    if (!Number.isFinite(cagrAnnPct)) cagrAnnPct = null;
+  }
+  const calmarRaw = computeCalmar({
+    cagrPct: cagrAnnPct,
+    maxDrawdownPct,
+    yearsActive,
+  });
   const calmarRatio = roundTo2Safe(calmarRaw, null);
+
+  // Préliminaire — années trop courtes pour stat signifiante (Sharpe ann.
+  // sur < 30 obs trim. tronqué, Calmar extrapolé). Vrai dès qu'on a un
+  // ratio mais que years < 1. Faux quand tout est null (rien à marquer).
+  const preliminaryRatios =
+    yearsActive > 0 && yearsActive < 1 &&
+    (sharpeRatio != null || sortinoRatio != null || calmarRatio != null);
 
   // ── PRU (Prix de Revient Unitaire) ──
   let pruPoolUsd = 0,
@@ -636,6 +661,15 @@ export function calculatePortfolioMetrics(state) {
     recoveryFactor,
     kellyPercent,
     calmarRatio,
+    // CAGR annualisé alimentant le Calmar (toujours annualisé, même
+    // sur < 1 an). Distinct du `cagr` ci-dessous qui respecte cagrMode
+    // pour le card label. Affiché dans le tooltip Calmar pour audit.
+    cagrAnnPct,
+    maxDrawdownPct,
+    // Échantillon < 1 an — Sharpe/Sortino/Calmar marqués préliminaires
+    // côté UI (RiskMatrix). True quand au moins un ratio est non-null.
+    preliminaryRatios,
+    yearsActive,
     // A1 — exposed so consumers (e.g. RiskMatrix.jsx) can stop deriving
     // CAGR inline and read the canonical single-source value. Same units
     // as before (percent), same sign convention.
