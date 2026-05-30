@@ -1,41 +1,30 @@
 // ═══════════════════════════════════════════════════════════════
-//  GREEKS API — LOCAL Black-Scholes solver (B2, voie A v1)
+//  GREEKS API — LOCAL Black-Scholes solver + cascade IV
 //
-//  Greeks are computed entirely client-side from blackScholes.js. No
-//  options chain endpoint is called. Only the underlying SPOT is
-//  fetched (Finnhub via /api/quote/[ticker]).
-//
-//  IV INPUT — "mark-implied", figé à l'import :
-//    L'IV est INVERSÉE depuis le mark du contrat tel qu'IBKR Flex
-//    l'a exporté (pos.pc, mappé depuis la colonne MarkPrice du CSV).
-//    Cette valeur est FIGÉE au moment de l'import — elle ne se met
-//    pas à jour en cours de session. Le store ne persiste pas (au
-//    moment d'écriture) de timestamp d'import propre, donc la
-//    fraîcheur de l'IV ne peut pas être affichée explicitement en v1.
-//    Limitation tracée pour B-tard : exposer `lastImportAt` dans
-//    settings au moment du merge, et un badge "IV @ import" discret
-//    dans l'UI Greeks. Pour v1, le champ `source: 'computed'` signale
-//    sans ambiguïté la provenance locale (≠ 'unavailable', ≠ 'bs').
+//  Greeks are computed entirely client-side. Le calcul délégué à
+//  `positionGreeks` (utils/positionGreeks.js) qui applique la cascade
+//  σ (mark → chain cache → 0.30 default). Cette refonte fait passer
+//  le taux de couverture de 2/5 à 5/5 sur les positions du compte :
+//  les marks ITM stales (CVX/AVGO/XOM exemple-type) ne sortent plus
+//  rien — ils sont marqués `source: 'default'` + `ivEstimated: true`
+//  et propagent à l'UI un badge discret.
 //
 //  SOURCES DU CALCUL :
 //    - S (spot)   : /api/quote/[underlying] — Finnhub primary (B1).
 //    - K (strike) : pos.st (CSV).
 //    - T (years)  : (pos.ex − now) / 365.
-//    - r          : RISK_FREE_RATE = 0.04 (blackScholes.js).
-//    - marketPrice: pos.pc (CSV MarkPrice).
-//    - type       : pos.ty (CALL ou PUT).
-//    - σ          : bsImpliedVol(...) — Newton-Raphson + fallback
-//                   bisection. Retourne null sur OTM-trop-lointain
-//                   (vega≈0), mark=0, T<=0, hors bracket no-arbitrage.
+//    - r          : RISK_FREE_RATE = 0.04 (taux unique repo).
+//    - σ          : cascade positionGreeks (a)→(b)→(c).
 //
-//  MODE "unavailable" — produit propre par aggregateGreeks consumer :
-//    `source: 'unavailable'` quand le calcul ne converge pas ou que
-//    l'un des inputs critiques manque (spot, mark, expiry passée).
-//    `aggregateGreeks` (greeks.js, sign-aware A3c) skip ces positions
-//    sans NaN bleed. Les Greeks ne sont JAMAIS inventés.
+//  DEDUP / MEMO :
+//    Trois callsites consomment getGreeksForAllPositions (Greeks
+//    page, Positions page, useGreeksAggregate). Le résultat est
+//    memoizé par identité des positions (id+pc+st+ex+ty+ct+dir)
+//    avec TTL 30 s. Concurrents partagent l'inflight promise.
+//    Source unique de vérité pour les 3 consumers + l'agrégateur.
 // ═══════════════════════════════════════════════════════════════
 
-import { bsGreeks, bsImpliedVol, RISK_FREE_RATE } from './options/blackScholes';
+import { positionGreeks, readChainIvCache } from './positionGreeks';
 
 const UNAVAILABLE = Object.freeze({
   delta: null,
@@ -43,9 +32,11 @@ const UNAVAILABLE = Object.freeze({
   theta: null,
   vega: null,
   iv: null,
+  sigma: null,
   spot: null,
   bid: null,
   ask: null,
+  ivEstimated: false,
   source: 'unavailable',
 });
 
@@ -160,84 +151,59 @@ async function getSpot(ticker) {
 
 // ─── Per-position Greeks compute ──────────────────────────────────
 
-function computeGreeksForPosition(pos, spot) {
+function computeGreeksForPosition(pos, spot, chainIv) {
   if (!Number.isFinite(spot) || spot <= 0) {
     return { ...UNAVAILABLE };
   }
-  const K = parseFloat(pos.st);
-  const mark = parseFloat(pos.pc);
-  const type = pos.ty === 'PUT' ? 'put' : 'call';
 
-  if (!Number.isFinite(K) || K <= 0) return { ...UNAVAILABLE, spot };
-  if (!Number.isFinite(mark) || mark <= 0) return { ...UNAVAILABLE, spot };
+  const g = positionGreeks(pos, { spot, chainIv });
+  if (!g) return { ...UNAVAILABLE, spot };
 
-  const expiryMs = Date.parse(pos.ex + 'T12:00:00');
-  if (!Number.isFinite(expiryMs)) return { ...UNAVAILABLE, spot };
-  const T = (expiryMs - Date.now()) / (365 * 86_400_000);
-  if (!(T > 0)) return { ...UNAVAILABLE, spot };
-
-  const sigma = bsImpliedVol({
-    S: spot,
-    K,
-    T,
-    r: RISK_FREE_RATE,
-    marketPrice: mark,
-    type,
-  });
-  if (!Number.isFinite(sigma) || sigma <= 0) {
-    return { ...UNAVAILABLE, spot };
-  }
-
-  const g = bsGreeks({ S: spot, K, T, r: RISK_FREE_RATE, sigma, type });
-  if (!g) return { ...UNAVAILABLE, spot, iv: sigma };
-
-  // Per-share BSM Greeks. theta is per-YEAR, vega per 1.00-sigma — the
-  // canonical aggregateGreeks (greeks.js) applies /365 and /100 + sign
-  // when summing. Do NOT pre-divide here.
   return {
     delta: g.delta,
     gamma: g.gamma,
     theta: g.theta,
     vega: g.vega,
-    iv: sigma,
-    spot,
+    iv: g.iv,
+    sigma: g.sigma,
+    spot: g.spot,
     bid: null,
     ask: null,
-    source: 'computed',
+    ivEstimated: g.ivEstimated,
+    source: g.source, // 'mark' | 'chain' | 'default'
   };
 }
 
-/**
- * Compute Greeks for all open option positions, locally via Black-Scholes.
- *
- * Signature preserved (positions) → Promise<Map<positionId, greeks>> so
- * upstream consumers (useGreeksAggregate, Positions.jsx, Greeks.jsx) and
- * the downstream aggregator (aggregateGreeks, greeks.js) don't change.
- *
- * Behaviour :
- *   - Stocks and positions missing tk/ty/st/ex are skipped (not in Map).
- *   - One /api/quote per unique underlying (deduplicated, cached 5 min).
- *   - IV inversée du mark CSV (figé à l'import) via Newton-Raphson +
- *     fallback bisection. Returns 'unavailable' when inversion fails.
- *
- * @param {Array<Object>} positions
- * @returns {Promise<Map<string, Object>>}
- */
-export async function getGreeksForAllPositions(positions) {
-  const result = new Map();
-  const list = Array.isArray(positions) ? positions : [];
+// ─── Map-level memo (single-source-of-truth) ──────────────────────
+//
+// 3 React callsites peuvent appeler getGreeksForAllPositions à la
+// même tick (Greeks page, Positions page, useGreeksAggregate). On
+// dedup via clé sur identité des positions + TTL 30 s. Les concurrents
+// partagent l'inflight promise.
 
-  // Filter to valid option positions only.
-  const options = list.filter(
-    (p) => p && p.as === 'Option' && p.tk && p.ty && p.st && p.ex
-  );
+const MEMO_TTL_MS = 30_000;
+let _memo = { key: null, map: null, timestamp: 0, inflight: null, inflightKey: null };
+
+function positionsKey(list) {
+  return list
+    .filter((p) => p && p.as === 'Option')
+    .map((p) => `${p.id}:${p.tk}:${p.ty}:${p.st}:${p.ex}:${p.pc}:${p.ct}:${p.dir}`)
+    .join('|');
+}
+
+/**
+ * Permet à Chain.jsx d'invalider la memo après écriture du cache
+ * chainIv, pour que les fallbacks (b) prennent effet immédiatement.
+ */
+export function invalidateGreeksMemo() {
+  _memo = { key: null, map: null, timestamp: 0, inflight: null, inflightKey: null };
+}
+
+async function computeGreeksMap(options) {
+  const result = new Map();
   if (options.length === 0) return result;
 
-  // Unique underlyings — one /api/quote per underlying, not per position.
   const uniqueTickers = Array.from(new Set(options.map((p) => p.tk)));
-
-  // Fetch spots in parallel. fetchSpot is module-dedup'd : 2 concurrent
-  // mounts (StrictMode) share the same in-flight promise.
   const spotEntries = await Promise.all(
     uniqueTickers.map(async (tk) => {
       try {
@@ -249,12 +215,64 @@ export async function getGreeksForAllPositions(positions) {
   );
   const spotByTicker = Object.fromEntries(spotEntries);
 
-  for (const pos of options) {
-    const greeks = computeGreeksForPosition(pos, spotByTicker[pos.tk]);
-    result.set(pos.id, greeks);
+  // Chain IV cache lookup, one read per underlying (cheap localStorage).
+  const chainIvByTicker = {};
+  for (const tk of uniqueTickers) {
+    chainIvByTicker[tk] = readChainIvCache(tk);
   }
 
+  for (const pos of options) {
+    result.set(pos.id, computeGreeksForPosition(pos, spotByTicker[pos.tk], chainIvByTicker[pos.tk]));
+  }
   return result;
+}
+
+/**
+ * Compute Greeks for all open option positions, locally via Black-Scholes.
+ *
+ * Cascade σ (a) mark → (b) chainIv cache → (c) 0.30 default. Toutes les
+ * positions option valides obtiennent un greeks ; flag `ivEstimated:true`
+ * + `source:'default'` quand la cascade tombe sur (c).
+ *
+ * Signature préservée (positions) → Promise<Map<positionId, greeks>> pour
+ * que les consumers existants (useGreeksAggregate, Positions.jsx,
+ * Greeks.jsx) marchent transparently. Plus de fallback `unavailable`
+ * silencieux pour les marks ITM stales — seul cas restant : spot KO
+ * (réseau down) ou contrat inexploitable (expiry < now, strike absent).
+ *
+ * @param {Array<Object>} positions
+ * @returns {Promise<Map<string, Object>>}
+ */
+export async function getGreeksForAllPositions(positions) {
+  const list = Array.isArray(positions) ? positions : [];
+  const options = list.filter((p) => p && p.as === 'Option' && p.tk && p.ty && p.st && p.ex);
+  if (options.length === 0) return new Map();
+
+  const key = positionsKey(options);
+  const now = Date.now();
+
+  // Synchronous cache hit.
+  if (_memo.key === key && _memo.map && now - _memo.timestamp < MEMO_TTL_MS) {
+    return _memo.map;
+  }
+
+  // In-flight dedup for concurrent callers.
+  if (_memo.inflightKey === key && _memo.inflight) return _memo.inflight;
+
+  _memo.inflightKey = key;
+  _memo.inflight = (async () => {
+    const map = await computeGreeksMap(options);
+    if (_memo.inflightKey === key) {
+      _memo.key = key;
+      _memo.map = map;
+      _memo.timestamp = Date.now();
+      _memo.inflight = null;
+      _memo.inflightKey = null;
+    }
+    return map;
+  })();
+
+  return _memo.inflight;
 }
 
 // ─── Test seam ────────────────────────────────────────────────────
@@ -262,4 +280,5 @@ export async function getGreeksForAllPositions(positions) {
 export function __resetGreeksApiForTests() {
   inflightSpotByTicker.clear();
   for (const key of Object.keys(spotCache)) delete spotCache[key];
+  invalidateGreeksMemo();
 }

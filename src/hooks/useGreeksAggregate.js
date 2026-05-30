@@ -68,7 +68,10 @@ export function useGreeksAggregate() {
 
   return useMemo(() => {
     const base = greeksMap ? aggregateGreeks(openPositions, greeksMap) : EMPTY_AGGREGATE;
-    return { ...base, loading, error };
+    // Expose la map brute pour les consumers qui veulent projeter
+    // par-position (LivePositions Dashboard, Greeks/Positions tables).
+    // Une seule source de vérité ; greeksApi memoize en interne.
+    return { ...base, loading, error, greeksMap: greeksMap || null };
   }, [openPositions, greeksMap, loading, error]);
 }
 

@@ -2,8 +2,16 @@
 //  getGreeksForAllPositions — local Black-Scholes pipeline (B2)
 //
 //  Mocks /api/quote/[ticker] via vi.stubGlobal('fetch'). Verifies
-//  the Map shape, source flags, and that bad inputs (spot missing,
-//  mark=0, expiry passed) produce 'unavailable' cleanly.
+//  the Map shape, source flags, and the cascade σ (a)→(b)→(c) :
+//
+//    source: 'mark'        IV inversée depuis le mark CSV
+//    source: 'chain'       IV depuis cache localStorage qc:chainIv
+//    source: 'default'     fallback σ=0.30 + ivEstimated:true
+//    source: 'unavailable' spot KO (réseau down) ou contrat invalide
+//
+//  Le mark=0 ou mark<intrinsic ne fail plus — il tombe sur (c). Seul
+//  cas 'unavailable' restant : spot manquant (502 /api/quote) ou
+//  expiry passée / strike absent.
 // ═══════════════════════════════════════════════════════════════
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -51,7 +59,7 @@ function futureExpiry(daysOut = 60) {
 }
 
 describe('getGreeksForAllPositions — B2 local BSM', () => {
-  it('option position with valid spot + mark → source "computed", greeks finite', async () => {
+  it('option position with valid spot + mark → source "mark", greeks finite', async () => {
     const positions = [
       {
         id: 'p1',
@@ -70,7 +78,8 @@ describe('getGreeksForAllPositions — B2 local BSM', () => {
     const map = await getGreeksForAllPositions(positions);
     expect(map.size).toBe(1);
     const g = map.get('p1');
-    expect(g.source).toBe('computed');
+    expect(g.source).toBe('mark');
+    expect(g.ivEstimated).toBe(false);
     expect(Number.isFinite(g.delta)).toBe(true);
     expect(Number.isFinite(g.gamma)).toBe(true);
     expect(Number.isFinite(g.theta)).toBe(true);
@@ -105,7 +114,9 @@ describe('getGreeksForAllPositions — B2 local BSM', () => {
     expect(map.get('p1').delta).toBeNull();
   });
 
-  it('mark = 0 → "unavailable" (spot still recorded for context)', async () => {
+  it('mark = 0 → fallback (c) σ=0.30, source "default", ivEstimated:true', async () => {
+    // Nouveau contrat cascade : mark=0 = (a) KO → (b) pas de cache → (c) σ=0.30.
+    // Plus de bleed 'unavailable' silencieux ; UI marque "~" via ivEstimated.
     const positions = [
       {
         id: 'p1',
@@ -122,9 +133,13 @@ describe('getGreeksForAllPositions — B2 local BSM', () => {
       },
     ];
     const map = await getGreeksForAllPositions(positions);
-    expect(map.get('p1').source).toBe('unavailable');
-    expect(map.get('p1').spot).toBe(160);
-    expect(map.get('p1').delta).toBeNull();
+    const g = map.get('p1');
+    expect(g.source).toBe('default');
+    expect(g.ivEstimated).toBe(true);
+    expect(g.spot).toBe(160);
+    expect(g.sigma).toBeCloseTo(0.3, 5);
+    expect(Number.isFinite(g.delta)).toBe(true);
+    expect(Number.isFinite(g.theta)).toBe(true);
   });
 
   it('expiry passée → "unavailable"', async () => {
@@ -211,9 +226,9 @@ describe('getGreeksForAllPositions — B2 local BSM', () => {
     ];
     const map = await getGreeksForAllPositions(positions);
     expect(map.size).toBe(3);
-    // Each one computed (CVX spot 160 known).
+    // Each one computed via cascade (a) IV inversion from mark (CVX spot 160 known).
     for (const id of ['p1', 'p2', 'p3']) {
-      expect(map.get(id).source).toBe('computed');
+      expect(map.get(id).source).toBe('mark');
     }
     // Exactly 1 network call for CVX (not 3).
     const cvxCalls = fetchSpy.mock.calls.filter((c) =>

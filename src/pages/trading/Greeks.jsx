@@ -230,6 +230,10 @@ export default function Greeks() {
         iv,
         ivRank,
         exposure,
+        // Cascade σ (positionGreeks) marque la position quand le fallback (c)
+        // a été utilisé — IV de 30% par défaut, donc valeur "approximative".
+        // Surface ~ + italic + opacité dans la cellule IV de la table.
+        ivEstimated: !!g.ivEstimated,
       };
     });
   }, [optionPositions, greeksMap]);

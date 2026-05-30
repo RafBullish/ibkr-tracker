@@ -93,7 +93,17 @@ export default function PerPositionGreeksTable({ rows = [], className }) {
           <span className="mono" style={{ textAlign: 'right' }}>
             {fmtNum(r.vega)}
           </span>
-          <span className="mono" style={{ textAlign: 'right', color: 'var(--text-tertiary)' }}>
+          <span
+            className="mono"
+            style={{
+              textAlign: 'right',
+              color: 'var(--text-tertiary)',
+              opacity: r.ivEstimated ? 0.6 : 1,
+              fontStyle: r.ivEstimated ? 'italic' : 'normal',
+            }}
+            title={r.ivEstimated ? 'IV estimée (mark hors plage no-arbitrage, défaut σ=30%)' : undefined}
+          >
+            {r.ivEstimated ? '~' : ''}
             {fmtPct(r.iv ? r.iv * 100 : r.iv)}
           </span>
           <span className="mono" style={{ textAlign: 'right', color: 'var(--text-tertiary)' }}>

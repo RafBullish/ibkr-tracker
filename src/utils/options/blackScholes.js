@@ -10,6 +10,10 @@
 //  - K : strike
 //  - T : time to expiry in YEARS (e.g. 120 DTE → 120/365)
 //  - r : risk-free rate (fraction, e.g. 0.04 for 4%)
+//  - q : continuous dividend yield (fraction, default 0). Equity
+//        options without dividend = 0 ; index/ETF call sites may
+//        pass q>0. Pass-through param ; q=0 is byte-identical to
+//        the dividend-free formulas (e^(-qT) = 1).
 //  - sigma : annualized IV (fraction, e.g. 0.30 for 30%)
 //  - type : 'call' | 'put'
 //  - Greeks are per-share. Consumers multiply by the contract
@@ -39,7 +43,7 @@ function erf(y) {
   return sign * (1 - poly * Math.exp(-ay * ay));
 }
 
-function normalCdf(x) {
+export function normalCdf(x) {
   return 0.5 * (1 + erf(x / Math.SQRT2));
 }
 
@@ -59,44 +63,48 @@ function validType(type) {
 
 // ── Core pricing ──────────────────────────────────────────────
 
-export function bsPrice({ S, K, T, r = RISK_FREE_RATE, sigma, type }) {
+export function bsPrice({ S, K, T, r = RISK_FREE_RATE, q = 0, sigma, type }) {
   if (!validSpotStrikeTime(S, K, T) || !validSigma(sigma) || !validType(type)) return null;
-  if (!Number.isFinite(r)) return null;
+  if (!Number.isFinite(r) || !Number.isFinite(q)) return null;
 
   const sqrtT = Math.sqrt(T);
-  const d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * sqrtT);
+  const d1 = (Math.log(S / K) + (r - q + 0.5 * sigma * sigma) * T) / (sigma * sqrtT);
   const d2 = d1 - sigma * sqrtT;
-  const discountedK = K * Math.exp(-r * T);
+  const Sd = S * Math.exp(-q * T);
+  const Kd = K * Math.exp(-r * T);
 
   if (type === 'call') {
-    return S * normalCdf(d1) - discountedK * normalCdf(d2);
+    return Sd * normalCdf(d1) - Kd * normalCdf(d2);
   }
-  return discountedK * normalCdf(-d2) - S * normalCdf(-d1);
+  return Kd * normalCdf(-d2) - Sd * normalCdf(-d1);
 }
 
 // ── Greeks (per share) ────────────────────────────────────────
 
-export function bsGreeks({ S, K, T, r = RISK_FREE_RATE, sigma, type }) {
+export function bsGreeks({ S, K, T, r = RISK_FREE_RATE, q = 0, sigma, type }) {
   if (!validSpotStrikeTime(S, K, T) || !validSigma(sigma) || !validType(type)) return null;
-  if (!Number.isFinite(r)) return null;
+  if (!Number.isFinite(r) || !Number.isFinite(q)) return null;
 
   const sqrtT = Math.sqrt(T);
-  const d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * sqrtT);
+  const d1 = (Math.log(S / K) + (r - q + 0.5 * sigma * sigma) * T) / (sigma * sqrtT);
   const d2 = d1 - sigma * sqrtT;
   const pdfD1 = normalPdf(d1);
-  const discountedK = K * Math.exp(-r * T);
+  const Sd = S * Math.exp(-q * T);
+  const Kd = K * Math.exp(-r * T);
 
-  const gamma = pdfD1 / (S * sigma * sqrtT);
-  const vega = S * pdfD1 * sqrtT;
+  const gamma = (Math.exp(-q * T) * pdfD1) / (S * sigma * sqrtT);
+  const vega = Sd * pdfD1 * sqrtT;
 
   if (type === 'call') {
-    const delta = normalCdf(d1);
-    const theta = -(S * pdfD1 * sigma) / (2 * sqrtT) - r * discountedK * normalCdf(d2);
+    const delta = Math.exp(-q * T) * normalCdf(d1);
+    const theta =
+      -(Sd * pdfD1 * sigma) / (2 * sqrtT) - r * Kd * normalCdf(d2) + q * Sd * normalCdf(d1);
     const rho = K * T * Math.exp(-r * T) * normalCdf(d2);
     return { delta, gamma, theta, vega, rho };
   }
-  const delta = normalCdf(d1) - 1;
-  const theta = -(S * pdfD1 * sigma) / (2 * sqrtT) + r * discountedK * normalCdf(-d2);
+  const delta = Math.exp(-q * T) * (normalCdf(d1) - 1);
+  const theta =
+    -(Sd * pdfD1 * sigma) / (2 * sqrtT) + r * Kd * normalCdf(-d2) - q * Sd * normalCdf(-d1);
   const rho = -K * T * Math.exp(-r * T) * normalCdf(-d2);
   return { delta, gamma, theta, vega, rho };
 }
@@ -111,27 +119,29 @@ const IV_NEWTON_ITER = 50;
 const IV_BISECT_ITER = 100;
 const IV_MIN_VEGA = 1e-10;
 
-export function bsImpliedVol({ S, K, T, r = RISK_FREE_RATE, marketPrice, type }) {
+export function bsImpliedVol({ S, K, T, r = RISK_FREE_RATE, q = 0, marketPrice, type }) {
   if (!validSpotStrikeTime(S, K, T) || !validType(type)) return null;
-  if (!Number.isFinite(r) || !Number.isFinite(marketPrice) || marketPrice <= 0) return null;
+  if (!Number.isFinite(r) || !Number.isFinite(q)) return null;
+  if (!Number.isFinite(marketPrice) || marketPrice <= 0) return null;
 
   // No-arbitrage bounds: price must sit between intrinsic and the
   // contract's upper bound. Outside that bracket, no σ exists.
-  const discountedK = K * Math.exp(-r * T);
-  const intrinsic = type === 'call' ? Math.max(S - discountedK, 0) : Math.max(discountedK - S, 0);
-  const upperBound = type === 'call' ? S : discountedK;
+  const Sd = S * Math.exp(-q * T);
+  const Kd = K * Math.exp(-r * T);
+  const intrinsic = type === 'call' ? Math.max(Sd - Kd, 0) : Math.max(Kd - Sd, 0);
+  const upperBound = type === 'call' ? Sd : Kd;
   if (marketPrice < intrinsic - IV_PRICE_TOL) return null;
   if (marketPrice > upperBound + IV_PRICE_TOL) return null;
 
   // Newton-Raphson — fast when vega is well-behaved.
   let sigma = 0.3;
   for (let i = 0; i < IV_NEWTON_ITER; i++) {
-    const price = bsPrice({ S, K, T, r, sigma, type });
+    const price = bsPrice({ S, K, T, r, q, sigma, type });
     if (price == null) break;
     const diff = price - marketPrice;
     if (Math.abs(diff) < IV_PRICE_TOL) return sigma;
 
-    const greeks = bsGreeks({ S, K, T, r, sigma, type });
+    const greeks = bsGreeks({ S, K, T, r, q, sigma, type });
     if (!greeks || Math.abs(greeks.vega) < IV_MIN_VEGA) break;
 
     let next = sigma - diff / greeks.vega;
@@ -145,14 +155,14 @@ export function bsImpliedVol({ S, K, T, r = RISK_FREE_RATE, marketPrice, type })
   // root exists within the [MIN, MAX] bracket.
   let lo = IV_MIN_SIGMA;
   let hi = IV_MAX_SIGMA;
-  const priceAtLo = bsPrice({ S, K, T, r, sigma: lo, type });
-  const priceAtHi = bsPrice({ S, K, T, r, sigma: hi, type });
+  const priceAtLo = bsPrice({ S, K, T, r, q, sigma: lo, type });
+  const priceAtHi = bsPrice({ S, K, T, r, q, sigma: hi, type });
   if (priceAtLo == null || priceAtHi == null) return null;
   if ((priceAtLo - marketPrice) * (priceAtHi - marketPrice) > 0) return null;
 
   for (let i = 0; i < IV_BISECT_ITER; i++) {
     const mid = (lo + hi) / 2;
-    const priceMid = bsPrice({ S, K, T, r, sigma: mid, type });
+    const priceMid = bsPrice({ S, K, T, r, q, sigma: mid, type });
     if (priceMid == null) return null;
     const diff = priceMid - marketPrice;
     if (Math.abs(diff) < IV_PRICE_TOL) return mid;

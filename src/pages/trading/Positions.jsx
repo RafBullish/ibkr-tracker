@@ -681,6 +681,17 @@ export default function Positions() {
         const g = greeksMap.get(row.pos.id);
         const d = g?.delta;
         if (d == null) return '—';
+        // Cascade fallback (c) σ=0.30 → marquage discret : ~ prefix + opacity + title
+        if (g.ivEstimated) {
+          return (
+            <span
+              style={{ opacity: 0.65, fontStyle: 'italic' }}
+              title="IV estimée (mark hors plage no-arbitrage, défaut σ=30%)"
+            >
+              ~{d.toFixed(2)}
+            </span>
+          );
+        }
         return d.toFixed(2);
       },
     },
@@ -695,6 +706,17 @@ export default function Positions() {
         const g = greeksMap.get(row.pos.id);
         const t = g?.theta;
         if (t == null) return '—';
+        if (g.ivEstimated) {
+          return (
+            <span
+              className="text-loss"
+              style={{ opacity: 0.65, fontStyle: 'italic' }}
+              title="IV estimée (mark hors plage no-arbitrage, défaut σ=30%)"
+            >
+              ~{t.toFixed(2)}
+            </span>
+          );
+        }
         return <span className="text-loss">{t.toFixed(2)}</span>;
       },
     },

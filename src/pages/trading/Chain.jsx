@@ -21,11 +21,12 @@
 //    - Pas d'animation Bloomberg-grade
 // ═══════════════════════════════════════════════════════════════
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch } from '../../store/useStore';
 import OptionsChainTable from '../../components/charts/OptionsChainTable';
 import AddTradeModal from '../../components/trades/AddTradeModal';
 import { bsGreeks, RISK_FREE_RATE } from '../../utils/options/blackScholes';
+import { invalidateGreeksMemo } from '../../utils/greeksApi';
 import {
   computeMaxPain,
   computeRR25,
@@ -360,6 +361,53 @@ export default function Chain() {
       gammaFlip: findGammaFlip(rows, spot),
     };
   }, [yahooData, rows]);
+
+  // ── Chain IV cache writer ──────────────────────────────────────
+  //
+  // À chaque load de chaîne, on persiste la surface IV dans
+  // localStorage 'qc:chainIv:{ticker}'. Pattern identique à
+  // 'ibkr_spot_cache_v1'. Lu par positionGreeks() en fallback (b)
+  // quand l'inversion d'IV depuis le mark échoue (positions ITM
+  // stales). Strictement opportuniste — aucun consumer ne dépend
+  // de ce cache existant.
+  //
+  // Format écrit :
+  //   { timestamp, atm, byStrike: { '520': iv, '525': iv, ... } }
+  //
+  // byStrike prend l'IV call (Sniper OTM portfolio = majoritairement
+  // calls) en première intention, put en fallback si call manque.
+  useEffect(() => {
+    if (!yahooData || typeof window === 'undefined') return;
+    if (!Number.isFinite(stats?.atmIv) || stats.atmIv <= 0) return;
+
+    const byStrike = {};
+    for (const r of rows) {
+      const iv =
+        Number.isFinite(r.call?.iv) && r.call.iv > 0
+          ? r.call.iv
+          : Number.isFinite(r.put?.iv) && r.put.iv > 0
+            ? r.put.iv
+            : null;
+      if (iv != null) byStrike[String(r.strike)] = iv;
+    }
+
+    try {
+      const payload = {
+        timestamp: Date.now(),
+        atm: stats.atmIv,
+        byStrike,
+      };
+      window.localStorage.setItem(
+        `qc:chainIv:${yahooData.ticker}`,
+        JSON.stringify(payload)
+      );
+      // Invalide la memo greeksApi pour que les fallbacks (b) prennent
+      // effet sans devoir attendre l'expiration du TTL 30 s.
+      invalidateGreeksMemo();
+    } catch {
+      /* quota / disabled — silent */
+    }
+  }, [yahooData, rows, stats?.atmIv]);
 
   const handleRowClick = (side, strike, contract) => {
     if (!yahooData || !contract) return;
