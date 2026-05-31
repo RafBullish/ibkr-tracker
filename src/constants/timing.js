@@ -19,6 +19,10 @@ export const POLLING = {
   MARKET_QUOTES_MS: TIME.ONE_MINUTE_MS,
   // Wall-clock NY time refresh (market status badge).
   NY_CLOCK_MS: TIME.ONE_MINUTE_MS,
+  // Local IBKR bridge poll — useIbkrLive hook hits /ibkr/account (proxied to
+  // bridge/serve.py on 127.0.0.1:8765). Aligned with bridge/ibkr_poller.py's
+  // own 5 s refresh so the end-to-end cadence stays coherent.
+  IBKR_LIVE_MS: 5_000,
 };
 
 export const DEBOUNCE = {

@@ -31,6 +31,7 @@ import BottomNav from './BottomNav';
 import CommandPalette from '../ui/CommandPalette';
 import CheatsheetModal from '../ui/CheatsheetModal';
 import useMediaQuery from '../../hooks/useMediaQuery';
+import useIbkrLive from '../../hooks/useIbkrLive';
 import { FEATURE_GREEK_CENTER } from '../../constants/featureFlags';
 
 // ⌘1..9 navigation map. Order matches CommandBar pills (NAV) so the
@@ -96,6 +97,11 @@ export default function AppShell() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const isMobile = useMediaQuery('(max-width: 767px)');
+
+  // Bridge IBKR (étape 3) — polling /ibkr/account toutes les 5s quand
+  // settings.gwAutoConnect est ON. Gating + erreurs silencieuses internes
+  // au hook : si OFF ou si le bridge local n'est pas lancé, aucune action.
+  useIbkrLive();
 
   useEffect(() => {
     const handler = (e) => {

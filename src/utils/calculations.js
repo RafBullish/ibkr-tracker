@@ -5,6 +5,7 @@
 
 import { toFloat, ensurePositive, roundTo2 } from './math';
 import { currentMonthKey, extractMonthKey } from './dates';
+import { FRESHNESS } from '../constants/timing';
 // A1 single-source-of-truth primitives — replace the inline formulas
 // that previously diverged between calculations.js and useTradingMetrics.js.
 // A2a additions : buildEquitySeries (returns%-based, capital-floor) and
@@ -269,26 +270,75 @@ export function calculatePortfolioMetrics(state) {
   });
 
   // ── Cash & NLV ──
-  // Prefer IBKR CashReport per-currency balances (authoritative) over reconstruction
+  // Priority cascade (highest → lowest) :
+  //   (1) settings.ibkrLiveData FRESH (<LIVE_DATA_MAX_AGE_MS) — snapshot
+  //       from the local IBKR bridge (bridge/ibkr_poller.py). NLV and
+  //       totalCashValue come straight from Gateway's API and override
+  //       the reconstruction below. Same freshness threshold as the LIVE
+  //       badge so the cards and the badge stay coherent.
+  //   (2) settings.cashReport — IBKR Flex CashReport per-currency
+  //       balances (authoritative on historical balances).
+  //   (3) Reconstruction from cashFlows + closedTrades + openPositions.
+  //
+  // Tier (1) only takes effect when its inputs are valid; otherwise the
+  // existing tier (2)/(3) cascade runs unchanged — users without the
+  // bridge see zero behavior change.
   const cashReport = state.settings?.cashReport;
   const hasCurrencyBalances =
     cashReport?.currencies?.USD != null || cashReport?.currencies?.CHF != null;
 
-  const cashUsd = hasCurrencyBalances
+  let cashUsd = hasCurrencyBalances
     ? roundTo2(cashReport.currencies.USD?.endingCash || 0)
     : roundTo2(totalFundedUsd + realizedPnlUsd - capitalTiedUp);
-  const chfCashBalance = hasCurrencyBalances
+  let chfCashBalance = hasCurrencyBalances
     ? roundTo2(cashReport.currencies.CHF?.endingCash || 0)
     : roundTo2(totalDepositedChf);
 
   const positionsValueUsd = state.openPositions.reduce((s, p) => {
     return s + toFloat(p.pc) * ensurePositive(p.mu) * toFloat(p.ct) * (p.dir === 'Short' ? -1 : 1);
   }, 0);
-  const nlvUsdSide = roundTo2(cashUsd + positionsValueUsd);
-  const netLiquidationValueChf = roundTo2(nlvUsdSide * liveRate + chfCashBalance);
-  const netLiquidationValueUsd = roundTo2(
+  let nlvUsdSide = roundTo2(cashUsd + positionsValueUsd);
+  let netLiquidationValueChf = roundTo2(nlvUsdSide * liveRate + chfCashBalance);
+  let netLiquidationValueUsd = roundTo2(
     nlvUsdSide + (liveRate > 0 ? chfCashBalance / liveRate : 0)
   );
+
+  // Tier (1) override — bridge live snapshot. Mappage direct dans la devise
+  // de base du compte : CHF-base → netLiquidation alimente chf, dérivation
+  // usd via liveRate ; USD-base → symétrique. Devise inattendue (rare) :
+  // on laisse tomber l'override et la cascade (2)/(3) garde la main.
+  const liveData = state.settings?.ibkrLiveData;
+  const liveAgeMs = liveData?.timestamp
+    ? Date.now() - new Date(liveData.timestamp).getTime()
+    : Infinity;
+  const liveBridgeFresh =
+    Number.isFinite(liveAgeMs) &&
+    liveAgeMs < FRESHNESS.LIVE_DATA_MAX_AGE_MS &&
+    typeof liveData?.netLiquidation === 'number' &&
+    liveData.netLiquidation > 0;
+  if (liveBridgeFresh) {
+    const nlv = liveData.netLiquidation;
+    const totalCash =
+      typeof liveData.totalCashValue === 'number' ? liveData.totalCashValue : null;
+    const ccy = liveData.currency;
+    if (ccy === 'CHF') {
+      netLiquidationValueChf = roundTo2(nlv);
+      if (liveRate > 0) netLiquidationValueUsd = roundTo2(nlv / liveRate);
+      if (totalCash != null) {
+        chfCashBalance = roundTo2(totalCash);
+        if (liveRate > 0) cashUsd = roundTo2(totalCash / liveRate);
+      }
+      nlvUsdSide = roundTo2(cashUsd + positionsValueUsd);
+    } else if (ccy === 'USD') {
+      netLiquidationValueUsd = roundTo2(nlv);
+      if (liveRate > 0) netLiquidationValueChf = roundTo2(nlv * liveRate);
+      if (totalCash != null) {
+        cashUsd = roundTo2(totalCash);
+        if (liveRate > 0) chfCashBalance = roundTo2(totalCash * liveRate);
+      }
+      nlvUsdSide = roundTo2(cashUsd + positionsValueUsd);
+    }
+  }
 
   let totalEverDepositedChf = 0;
   state.cashFlows.forEach((e) => {

@@ -188,6 +188,15 @@ export default defineConfig({
         secure: false, // Self-signed certificate
         rewrite: (path) => path.replace(/^\/api\/ibkr/, ''),
       },
+      // Local IBKR bridge (bridge/serve.py on 127.0.0.1:8765). Same-origin
+      // path so the app's CSP `connect-src 'self'` is not violated — no
+      // vercel.json change needed. Dev only; in production the bridge lives
+      // on the user's own machine and is not reachable through Vercel.
+      '/ibkr': {
+        target: 'http://127.0.0.1:8765',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ibkr/, ''),
+      },
     },
   },
 });
