@@ -1,3 +1,5 @@
-# QuantumCall — dépendances du bridge IBKR (Étape 1)
-# ib_async = fork maintenu de ib_insync. Requiert Python 3.10 ou plus récent.
+# QuantumCall — dépendances du bridge IBKR (Étape 2, archi 2 processus)
+# ib_async = fork maintenu de ib_insync. Requiert Python 3.10+.
+# Utilisé uniquement par bridge/ibkr_poller.py.
+# bridge/serve.py n'a AUCUNE dépendance externe (stdlib http.server + json).
 ib_async>=1.0.1
