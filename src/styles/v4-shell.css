@@ -1,20 +1,19 @@
 /* ════════════════════════════════════════════════════════════════
    v4-shell.css — Institutional Terminal v4 brick 1 (+ v5 Sprint 1)
-   Shell-level chrome only : CommandBar (32 px), TickerTape (24 px,
-   v5 Sprint 1.4), StatusBar (22 px). Token-driven, tied to tokens.css.
+   Shell-level chrome only : CommandBar (64 px), TickerTape (64 px,
+   scrolling marquee), StatusBar (36 px). Token-driven, tied to tokens.css.
 
    Loaded after v3-components.css in main.jsx so its rules win when
    class names overlap legacy headers/sidebars.
+
+   Source unique pour la hauteur TickerTape : --qc-ticker-h dans
+   tokens.css (= 64 px). Toute autre valeur dans ce fichier est
+   un commentaire à corriger.
    ════════════════════════════════════════════════════════════════ */
 
 /* ─── Shell-level vars ───────────────────────────────────────────── */
-/* 4K refonte 2026-05-10 : hauteurs shell agrandies. Phase B.2 bump
-   le cmdbar de 56→64 pour accommoder les tabs en mots entiers full-
-   height avec underline ancré à la border-bottom du shell.
-   Le fallback de --shell-tickertape-h reste aligné sur --tickertape. */
 :root {
   --shell-cmdbar-h: 64px;
-  --shell-tickertape-h: var(--tickertape, 40px);
   --shell-statusbar-h: 36px;
   --shell-pill-h: 36px;
   --shell-hairline: var(--qc-border-subtle);
@@ -118,66 +117,102 @@
 .cmdbar__nav {
   display: flex;
   align-items: stretch;
-  gap: 2px;
+  gap: 4px;
   flex: 1 1 auto;
   justify-content: center;
   min-width: 0;
   height: 100%;
 }
 
-/* 4K refonte Phase B.2 — tabs full-height (64 px), mots entiers,
-   text-transform: none. L'underline 2 px s'ancre à bottom: 0 du tab
-   et touche la border-bottom du shell. */
+/* Tabs full-height (64 px), mots entiers, text-transform: none.
+   Underline géré par <motion.span class="nav-pill__underline"> dans le JSX
+   (framer-motion layoutId) — pas de pseudo-élément ::after ici, sinon
+   double soulignement. */
 .nav-pill {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 7px;
   height: 100%;
   padding: 0 18px;
   font-family: var(--qc-font-mono);
-  font-size: 13px;
-  font-weight: 400;
+  font-size: 15px;
+  font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: none;
-  color: var(--qc-text-secondary);
+  color: var(--ink-soft);
   background: transparent;
   border: none;
-  border-radius: 0;
+  border-radius: var(--qc-radius-sm);
   cursor: pointer;
-  transition: color 120ms ease-out;
+  transition:
+    color var(--qc-transition-fast),
+    background-color var(--qc-transition-fast);
   white-space: nowrap;
 }
 
 .nav-pill:hover {
-  color: var(--qc-text-primary);
-  background: transparent;
+  color: var(--ink-pure);
+  background: var(--depth-focus);
 }
 
 .nav-pill:focus-visible {
-  outline: 1px solid var(--qc-accent);
+  outline: 1px solid var(--accent);
   outline-offset: -2px;
 }
 
+/* Onglet actif : texte blanc + weight 600. L'amber passe sur l'icône
+   (.nav-pill__icon) ET sur le filet (.nav-pill__underline), pas sur le
+   texte — équilibre visuel : présence forte sans surcharger. */
 .nav-pill[data-active],
 .nav-pill[aria-current="page"] {
-  color: var(--qc-accent);
+  color: var(--ink-pure);
   background: transparent;
-  font-weight: 500;
+  font-weight: 600;
 }
 
-.nav-pill[data-active]::after,
-.nav-pill[aria-current="page"]::after {
-  /* Trait ancré à la bordure inférieure du shell — le pill prend
-     toute la hauteur du cmdbar, donc bottom: 0 fait coïncider le
-     trait avec la border-bottom du shell. */
-  content: "";
+/* Icône suit currentColor par défaut (inactif = --ink-soft, hover =
+   --ink-pure). Override --accent quand le pill est actif. Le z-index
+   sur l'icône ET le label garde la lisibilité au-dessus du filet. */
+.nav-pill__icon {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  color: currentColor;
+  transition: color var(--qc-transition-fast);
+}
+
+.nav-pill[data-active] .nav-pill__icon,
+.nav-pill[aria-current="page"] .nav-pill__icon {
+  color: var(--accent);
+}
+
+.nav-pill__label {
+  position: relative;
+  z-index: 1;
+}
+
+/* Filet amber animé via framer-motion layoutId : glisse entre onglets
+   au changement de route. Insets 14 px gauche/droite, halo amber doux
+   (color-mix 60 % du token) pour faire ressortir l'état actif sans
+   blinder l'œil. */
+.nav-pill__underline {
   position: absolute;
-  left: 18px;
-  right: 18px;
+  left: 14px;
+  right: 14px;
   bottom: 0;
-  height: 2px;
-  background: var(--qc-accent);
+  height: 2.5px;
+  background: var(--accent);
+  border-radius: 1.25px;
+  pointer-events: none;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-pill {
+    transition: none;
+  }
 }
 
 .cmdbar__right {
@@ -555,16 +590,20 @@
 }
 
 /* ============================================================
-   TICKER TAPE B1.7 — Single-track seamless marquee
-   translateX(-50%) sur contenu dupliqué = loop mathématiquement parfait
+   TICKER TAPE — Scrolling marquee (19 curated cells)
+   Bandeau défilant type Bloomberg. translateX 0 → -50 % sur contenu
+   dupliqué = loop seamless. Hover pause, reduced-motion fallback en
+   scroll manuel. Hauteur unique --qc-ticker-h (= 64 px dans tokens.css).
    ============================================================ */
 
 .ticker-tape {
   position: relative;
   height: var(--qc-ticker-h);
   background: var(--qc-bg-surface);
-  border-bottom: 1px solid var(--qc-border-subtle);
+  border-bottom: 1px solid var(--line-hairline);
   overflow: hidden;
+  /* Fade des 48 px aux extrémités — les cellules apparaissent/disparaissent
+     en douceur au lieu d'être tronquées net par le clipping de overflow. */
   mask-image: linear-gradient(90deg, transparent 0, #000 48px, #000 calc(100% - 48px), transparent 100%);
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 48px, #000 calc(100% - 48px), transparent 100%);
 }
@@ -579,10 +618,11 @@
 .ticker-tape__track {
   display: inline-flex;
   align-items: stretch;
+  width: auto;
   height: 100%;
   white-space: nowrap;
   will-change: transform;
-  animation: ticker-marquee 90s linear infinite;
+  animation: ticker-marquee 75s linear infinite;
 }
 
 .ticker-tape:hover .ticker-tape__track {
@@ -594,7 +634,8 @@
   to   { transform: translateX(-50%); }
 }
 
-/* Reduced-motion : contenu unique, scroll manuel, pas d'animation */
+/* Reduced-motion : pas d'animation, contenu rendu une seule fois côté JSX,
+   scroll manuel via overflow-x. Scrollbar discrète. */
 .ticker-tape--reduced .ticker-tape__viewport {
   overflow-x: auto;
   overflow-y: hidden;
@@ -610,84 +651,86 @@
 }
 
 .ticker-tape--reduced .ticker-tape__viewport::-webkit-scrollbar-thumb {
-  background: var(--qc-border-default);
+  background: var(--line-hairline);
   border-radius: 2px;
 }
 
-/* ===== CELLULE — B1.10 strict Bloomberg terminal look ===== */
+/* ===== CELLULE — bloc texte empilé [symbole · change%] / [prix héro]
+   + sparkline à droite. flex:0 0 auto + min-width:240px : largeur fixe
+   minimale, contenu non rétréci → le track déborde réellement, ce qui
+   est nécessaire pour que le marquee révèle du contenu. Border-right sur
+   TOUTES les cellules (pas de :last-child:none) pour que les séparateurs
+   restent continus dans la boucle dupliquée. ===== */
 .ticker-cell {
-  display: inline-flex;
+  flex: 0 0 auto;
+  min-width: 240px;
+  display: flex;
   align-items: center;
-  height: 100%;
+  justify-content: flex-start;
+  gap: 14px;
   padding: 0 24px;
-  border-right: 1px solid var(--qc-border-subtle);
-  min-width: 220px;
-  flex-shrink: 0;
-  line-height: 1;
+  border-right: 1px solid var(--line-hairline);
 }
 
-/* Groupe data (symbole + prix + change%) aligné sur baseline commune */
-.ticker-cell__data {
+.ticker-cell__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.ticker-cell__head {
   display: flex;
   align-items: baseline;
+  justify-content: flex-start;
   gap: 10px;
 }
 
+/* Symbole = label discret qui recule devant le prix héro. */
 .ticker-cell__symbol {
-  font-family: var(--qc-font-sans);
-  font-size: 15px;
-  font-weight: var(--qc-fw-bold);
-  color: var(--qc-text-secondary);
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  line-height: 1;
-}
-
-.ticker-cell__value {
   font-family: var(--qc-font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 18px;
-  font-weight: var(--qc-fw-medium);
-  color: var(--qc-text-primary);
-  letter-spacing: -0.02em;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
   line-height: 1;
 }
 
+/* ───────────────────────────────────────────────────────────────
+   EXCEPTION COULEUR ASSUMÉE — règle DA du projet :
+   rouge = perte d'argent RÉELLE uniquement (P&L portefeuille).
+   Sur CE bandeau de données marché public, hausse=vert / baisse=
+   rouge est l'exception explicite (Bloomberg/Reuters convention).
+   N'autorise PAS la même chromatique ailleurs.
+   ─────────────────────────────────────────────────────────────── */
 .ticker-cell__change {
   font-family: var(--qc-font-mono);
   font-variant-numeric: tabular-nums;
   font-size: 14px;
-  font-weight: var(--qc-fw-regular);
+  font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1;
   position: relative;
 }
 
-.ticker-cell__sparkline {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 22px;
-  width: 56px;
-  flex-shrink: 0;
-  opacity: 0.85;
+.ticker-cell__change.qc-profit {
+  color: var(--pnl-up);
 }
 
-.ticker-cell__sparkline svg {
-  display: block;
+.ticker-cell__change.qc-loss {
+  color: var(--pnl-down);
 }
 
-/* ===== B1.10 polish — triangle directionnel + badge glow plat ===== */
 .ticker-cell__arrow {
-  font-size: 10px;
+  font-size: 11px;
   margin-right: 4px;
   display: inline-block;
 }
 
 /* Badge glow sur mouvements forts (|change%| > 2) — fond plat translucide
-   dérivé du token via color-mix (theme-aware). Marge négative pour aligner
-   le badge sur la baseline du chiffre malgré son padding. */
+   dérivé du token via color-mix (theme-aware). */
 .ticker-cell__change--glow {
   padding: 2px 6px;
   border-radius: var(--qc-radius-sm);
@@ -695,12 +738,43 @@
 }
 
 .ticker-cell__change--glow.qc-profit {
-  background: color-mix(in srgb, var(--qc-profit) 15%, transparent);
+  background: color-mix(in srgb, var(--pnl-up) 15%, transparent);
 }
 
 .ticker-cell__change--glow.qc-loss {
-  background: color-mix(in srgb, var(--qc-loss) 15%, transparent);
+  background: color-mix(in srgb, var(--pnl-down) 15%, transparent);
 }
+
+/* PRIX — héros, domine par la taille. tabular-nums + nowrap pour rester
+   verrouillé sur sa colonne. */
+.ticker-cell__value {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink-pure);
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ticker-cell__sparkline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  width: 60px;
+  flex-shrink: 0;
+  opacity: 0.95;
+}
+
+.ticker-cell__sparkline svg {
+  display: block;
+}
+
+/* Les sparklines restent visibles à toutes les largeurs : avec le marquee,
+   la largeur de viewport ne contraint plus le nombre de cellules visibles
+   (le scroll révèle tout). */
 
 /* ════════════════════════════════════════════════════════════════
    STATUS BAR — v5 Sprint 1.2 additions

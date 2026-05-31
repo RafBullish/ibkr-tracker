@@ -1,31 +1,37 @@
 // ═══════════════════════════════════════════════════════════════
-//  TICKER TAPE — B1.6 polish Bloomberg (refonte visuelle)
+//  TICKER TAPE — Scrolling marquee, 19 curated instruments
 //
-//  Une seule ligne qui défile gauche → droite en continu, hauteur
-//  var(--qc-ticker-h) = 44 px. Séparateurs verticaux discrets entre
-//  cellules via border-right (au lieu de gap track). Marquee CSS
-//  infinite (track primary + clone à left:100% pour boucle seamless),
-//  hover pause, reduced-motion fallback (clone retirée du DOM +
-//  overflow-x manuel).
+//  Bandeau DÉFILANT type Bloomberg. Avec 19 cellules la bande déborde
+//  largement la viewport → marquee CSS infinite (translateX 0 → -50%
+//  sur contenu dupliqué) révèle progressivement tout le contenu.
+//  Hover pause. prefers-reduced-motion : pas d'animation, scroll manuel
+//  via overflow-x auto (fallback minimal). Hauteur 64 px via le token
+//  --qc-ticker-h (cf. tokens.css).
 //
-//  Ordre figé : SPX · NDX · DJI · RUT · VIX · USD/CHF · EUR/USD ·
-//  GOLD · [positions equities dynamiques dédupées] · BTC · ETH.
-//  Les positions s'insèrent entre GOLD et BTC.
+//  Liste curée, éditable à la main. Le book d'open positions vit
+//  ailleurs (LivePositions), ce bandeau = contexte marché pur.
 //
-//  Cellule = symbole · prix mono blanc · change% avec ▲ ▼ ·
-//  sparkline 7-j 48×18 (TickerSparkline inline, couleur résolue via
-//  sparkColor useMemo — voir B1.5). Le prix reste TOUJOURS blanc peu
-//  importe l'état (STALE/CLOSED se traduisent UNIQUEMENT par une
-//  réduction d'opacité de la cellule entière, pas de badge texte).
+//  Cellule = bloc texte empilé [symbole · change%] / [prix héro 24 px]
+//  + sparkline 60×32 à droite. Le prix domine par la taille (héros).
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo } from 'react';
 import useMarketQuotes from '../../hooks/useMarketQuotes';
 import { useMarketSparklines } from '../../hooks/useMarketSparklines';
-import { useOpenPositions } from '../../store/useStore';
 import { isMarketOpen, getAssetClass } from '../../utils/marketHours';
 
-// Ordre figé. Positions s'insèrent entre GOLD et BTC (cf. sequence).
+// Liste curée, éditable à la main. Ajouter / retirer un ticker = touche
+// uniquement ce bloc. classKey pilote l'horaire de marché pour deriveState.
+//
+// Notes classKey :
+//   - US10Y : sémantiquement RATES, mais marketHours.js ne connaît que
+//     US_INDICES/FX/CRYPTO/COMMODITIES/EQUITIES. ^TNX = indice CBOE coté
+//     pendant la session NYSE → US_INDICES couvre correctement.
+//   - INTL_INDICES (DAX/FTSE/NIKKEI) : classe non enregistrée dans
+//     marketHours.js → isMarketOpen renvoie false → state CLOSED en
+//     permanence. Sans impact visuel (pas de règle CSS sur l'état
+//     CLOSED), prix/spark s'affichent normalement. Étendre marketHours.js
+//     si une vraie détection de session étrangère devient nécessaire.
 const STATIC_TICKERS = [
   { display: 'SPX',     fetch: '^SPX',     classKey: 'US_INDICES' },
   { display: 'NDX',     fetch: '^NDX',     classKey: 'US_INDICES' },
@@ -35,14 +41,22 @@ const STATIC_TICKERS = [
   { display: 'USD/CHF', fetch: 'USDCHF=X', classKey: 'FX' },
   { display: 'EUR/USD', fetch: 'EURUSD=X', classKey: 'FX' },
   { display: 'GOLD',    fetch: 'GC=F',     classKey: 'COMMODITIES' },
+  { display: 'US10Y',   fetch: '^TNX',     classKey: 'US_INDICES' },
+  { display: 'DXY',     fetch: 'DX-Y.NYB', classKey: 'FX' },
+  { display: 'CRUDE',   fetch: 'CL=F',     classKey: 'COMMODITIES' },
+  { display: 'DAX',     fetch: '^GDAXI',   classKey: 'INTL_INDICES' },
+  { display: 'FTSE',    fetch: '^FTSE',    classKey: 'INTL_INDICES' },
+  { display: 'NIKKEI',  fetch: '^N225',    classKey: 'INTL_INDICES' },
   { display: 'BTC',     fetch: 'BTC-USD',  classKey: 'CRYPTO' },
   { display: 'ETH',     fetch: 'ETH-USD',  classKey: 'CRYPTO' },
+  { display: 'SILVER',  fetch: 'SI=F',     classKey: 'COMMODITIES' },
+  { display: 'COPPER',  fetch: 'HG=F',     classKey: 'COMMODITIES' },
+  { display: 'NATGAS',  fetch: 'NG=F',     classKey: 'COMMODITIES' },
 ];
 
 const STATIC_FETCH_SYMBOLS = STATIC_TICKERS.map((t) => t.fetch);
-const STATIC_DISPLAY_SET = new Set(STATIC_TICKERS.map((t) => t.display.toUpperCase()));
 
-// Note B1 : ^SPX et ^VIX peuvent rater Finnhub puis tomber sur Yahoo
+// Note : ^SPX et ^VIX peuvent rater Finnhub puis tomber sur Yahoo
 // (cascade auto côté /api/quote). Fallback SPX / VIX sans caret possible.
 
 function deriveState(quote, classKey, now) {
@@ -58,25 +72,25 @@ function deriveState(quote, classKey, now) {
 
 function formatPrice(price, ticker) {
   if (price == null) return '—';
+  // US10Y / ^TNX : la valeur brute renvoyée par /api/quote est déjà dans la
+  // bonne unité (~4.4 pour 4.4 %). Pas de division ici — la division /10
+  // ajoutée lors d'une brique précédente affichait 0.45 et a été retirée.
+  // Le proxy semble normaliser le quirk Yahoo en amont ou Finnhub répond
+  // directement dans la bonne échelle.
   const classKey = getAssetClass(ticker);
   if (classKey === 'FX') return price.toFixed(4);
   if (price >= 1000) {
-    // fr-CH sépare les milliers via U+202F (narrow no-break space) qui
-    // rend trop large en mono. Remplacé par U+2009 (thin space) plus
-    // compact, ET letter-spacing -0.02em côté CSS resserre encore.
-    return Math.round(price).toLocaleString('fr-CH').replace(/[  \s]/g, ' ');
+    // de-CH = apostrophe Suisse-allemande (7'580), cohérent avec le reste
+    // de l'app qui formate les CHF dans cette locale.
+    return new Intl.NumberFormat('de-CH').format(Math.round(price));
   }
   return price.toFixed(2);
 }
 
-// Wrapper sparkline inline (B1.5) : ne dépend pas de ui/Sparkline.jsx qui
-// résout encore via var(--profit)/var(--loss) (vars retirées en Phase 0.5
-// → undefined → stroke par défaut noir). On force ici une couleur explicite
-// passée en prop, déterministe et résolue par tokens.css principal.
-//
-// B1.6 : défauts ramenés à 48×18 stroke 1.25 pour rendu plus discret
-// en hauteur 44 px du ticker.
-function TickerSparkline({ prices, color, width = 56, height = 22, stroke = 1.5 }) {
+// Sparkline inline : couleur explicite passée en prop (pas de dépendance
+// au composant ui/Sparkline). Defaults 60×32 stroke 2 pour rendu plus
+// contrasté qu'avant, lisible d'un œil dans le bandeau 64 px.
+function TickerSparkline({ prices, color, width = 60, height = 32, stroke = 2 }) {
   if (!prices || prices.length < 2) return null;
   const min = Math.min(...prices);
   const max = Math.max(...prices);
@@ -118,32 +132,32 @@ function TickerCell({ ticker, quote, spark, state }) {
   const isStrongMove = change != null && Math.abs(change) > 2;
 
   const sparkColor = useMemo(() => {
-    if (!spark?.prices || spark.prices.length < 2) return 'var(--qc-text-secondary)';
+    if (!spark?.prices || spark.prices.length < 2) return 'var(--ink-soft)';
     const first = spark.prices[0];
     const last = spark.prices[spark.prices.length - 1];
-    if (last > first) return 'var(--qc-profit)';
-    if (last < first) return 'var(--qc-loss)';
-    return 'var(--qc-text-secondary)';
+    if (last > first) return 'var(--pnl-up)';
+    if (last < first) return 'var(--pnl-down)';
+    return 'var(--ink-soft)';
   }, [spark]);
 
   return (
     <div className={`ticker-cell ${stateClass}`}>
-      <div className="ticker-cell__data">
-        <span className="ticker-cell__symbol">{ticker.display}</span>
+      <div className="ticker-cell__text">
+        <div className="ticker-cell__head">
+          <span className="ticker-cell__symbol">{ticker.display}</span>
+          {change != null && Number.isFinite(change) && (
+            <span
+              className={`ticker-cell__change qc-pct ${changeClass}${isStrongMove ? ' ticker-cell__change--glow' : ''}`}
+            >
+              {changeArrow && <span className="ticker-cell__arrow">{changeArrow}</span>}
+              {Math.abs(change).toFixed(2)}%
+            </span>
+          )}
+        </div>
         {state === 'OFFLINE' ? (
           <span className="ticker-cell__value ticker-cell__value--offline qc-num">—</span>
         ) : (
-          <>
-            <span className="ticker-cell__value qc-num">{formatPrice(price, ticker.display)}</span>
-            {change != null && Number.isFinite(change) && (
-              <span
-                className={`ticker-cell__change qc-pct ${changeClass}${isStrongMove ? ' ticker-cell__change--glow' : ''}`}
-              >
-                {changeArrow && <span className="ticker-cell__arrow">{changeArrow}</span>}
-                {Math.abs(change).toFixed(2)}%
-              </span>
-            )}
-          </>
+          <span className="ticker-cell__value qc-num">{formatPrice(price, ticker.display)}</span>
         )}
       </div>
       {state !== 'OFFLINE' && spark?.prices && spark.prices.length > 1 && (
@@ -156,44 +170,12 @@ function TickerCell({ ticker, quote, spark, state }) {
 }
 
 export default function TickerTape() {
-  const positions = useOpenPositions();
   const now = new Date();
+  const { quotes } = useMarketQuotes(STATIC_FETCH_SYMBOLS);
+  const { sparklines } = useMarketSparklines(STATIC_FETCH_SYMBOLS);
 
-  // Underlyings positions dédupés ET déjà filtrés contre les statiques.
-  const positionUnderlyings = useMemo(
-    () => [
-      ...new Set(
-        (positions || [])
-          .map((p) => p?.tk)
-          .filter(Boolean)
-          .filter((s) => !STATIC_DISPLAY_SET.has(s.toUpperCase()))
-      ),
-    ],
-    [positions]
-  );
-
-  // Séquence d'affichage : statics jusqu'à GOLD inclus → positions → BTC, ETH.
-  const sequence = useMemo(() => {
-    const goldIdx = STATIC_TICKERS.findIndex((t) => t.display === 'GOLD');
-    const beforePositions = STATIC_TICKERS.slice(0, goldIdx + 1);
-    const afterPositions = STATIC_TICKERS.slice(goldIdx + 1);
-    const positionTickers = positionUnderlyings.map((s) => ({
-      display: s.toUpperCase(),
-      fetch: s,
-      classKey: 'EQUITIES',
-    }));
-    return [...beforePositions, ...positionTickers, ...afterPositions];
-  }, [positionUnderlyings]);
-
-  // Symbols à fetcher : statics + underlyings positions.
-  const allFetchSymbols = useMemo(
-    () => [...STATIC_FETCH_SYMBOLS, ...positionUnderlyings],
-    [positionUnderlyings]
-  );
-
-  const { quotes } = useMarketQuotes(allFetchSymbols);
-  const { sparklines } = useMarketSparklines(allFetchSymbols);
-
+  // Marquee seamless = liste rendue 2× (track translateX 0 → -50 %).
+  // En reduced-motion, contenu rendu 1× + overflow-x:auto pour scroll manuel.
   const prefersReducedMotion = useMemo(
     () =>
       typeof window !== 'undefined' &&
@@ -201,13 +183,13 @@ export default function TickerTape() {
     []
   );
 
-  const renderCell = (ticker, idx) => (
+  const renderCell = (t, key) => (
     <TickerCell
-      key={`${ticker.fetch}-${idx}`}
-      ticker={ticker}
-      quote={quotes[ticker.fetch]}
-      spark={sparklines[ticker.fetch]}
-      state={deriveState(quotes[ticker.fetch], ticker.classKey, now)}
+      key={key}
+      ticker={t}
+      quote={quotes[t.fetch]}
+      spark={sparklines[t.fetch]}
+      state={deriveState(quotes[t.fetch], t.classKey, now)}
     />
   );
 
@@ -215,8 +197,9 @@ export default function TickerTape() {
     <div className={`ticker-tape ${prefersReducedMotion ? 'ticker-tape--reduced' : ''}`}>
       <div className="ticker-tape__viewport">
         <div className="ticker-tape__track">
-          {sequence.map((t, i) => renderCell(t, i))}
-          {!prefersReducedMotion && sequence.map((t, i) => renderCell(t, `dup-${i}`))}
+          {STATIC_TICKERS.map((t) => renderCell(t, t.fetch))}
+          {!prefersReducedMotion &&
+            STATIC_TICKERS.map((t) => renderCell(t, `dup-${t.fetch}`))}
         </div>
       </div>
     </div>

@@ -17,7 +17,20 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import {
+  Search,
+  LayoutDashboard,
+  Sunrise,
+  Layers,
+  History,
+  Sigma,
+  Link2,
+  BarChart3,
+  Calendar,
+  BookOpen,
+  Import,
+} from 'lucide-react';
+import { motion, useReducedMotion } from 'framer-motion';
 import Tooltip from '../ui/Tooltip';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import { useOpenPositions, useSettings } from '../../store/useStore';
@@ -30,22 +43,23 @@ import { FEATURE_GREEK_CENTER } from '../../constants/featureFlags';
 // style au profit de mots entiers, plus lisibles en 4K et moins
 // dépendants du tooltip pour l'auto-description.
 const NAV = [
-  { tab: 'Dashboard', label: 'Tableau de bord', path: '/dashboard', shortcut: '⌘1' },
-  { tab: 'Premarket', label: 'Pré-marché', path: '/premarket', shortcut: '' },
-  { tab: 'Positions', label: 'Positions', path: '/trading/positions', shortcut: '⌘2' },
-  { tab: 'History', label: 'Historique', path: '/trading/history', shortcut: '⌘3' },
+  { tab: 'Dashboard', label: 'Tableau de bord', path: '/dashboard',         shortcut: '⌘1', icon: LayoutDashboard },
+  { tab: 'Premarket', label: 'Pré-marché',      path: '/premarket',         shortcut: '',   icon: Sunrise },
+  { tab: 'Positions', label: 'Positions',       path: '/trading/positions', shortcut: '⌘2', icon: Layers },
+  { tab: 'History',   label: 'Historique',      path: '/trading/history',   shortcut: '⌘3', icon: History },
   {
     tab: 'Greeks',
     label: 'Greeks Center',
     path: '/trading/greeks',
     shortcut: '⌘4',
     flag: 'GREEK_CENTER',
+    icon: Sigma,
   },
-  { tab: 'Chain', label: 'Chain Options', path: '/trading/chain', shortcut: '⌘5' },
-  { tab: 'Analytics', label: 'Analytics', path: '/insights/analytics', shortcut: '⌘6' },
-  { tab: 'Calendar', label: 'Calendrier', path: '/insights/calendar', shortcut: '⌘7' },
-  { tab: 'Journal', label: 'Journal', path: '/insights/journal', shortcut: '⌘8' },
-  { tab: 'Import', label: 'Import', path: '/settings/import', shortcut: '⌘9' },
+  { tab: 'Chain',     label: 'Chain Options',   path: '/trading/chain',     shortcut: '⌘5', icon: Link2 },
+  { tab: 'Analytics', label: 'Analytics',       path: '/insights/analytics',shortcut: '⌘6', icon: BarChart3 },
+  { tab: 'Calendar',  label: 'Calendrier',      path: '/insights/calendar', shortcut: '⌘7', icon: Calendar },
+  { tab: 'Journal',   label: 'Journal',         path: '/insights/journal',  shortcut: '⌘8', icon: BookOpen },
+  { tab: 'Import',    label: 'Import',          path: '/settings/import',   shortcut: '⌘9', icon: Import },
 ];
 
 const BREADCRUMB_MAP = {
@@ -122,6 +136,16 @@ export default function CommandBar({ onOpenCommand }) {
   const settings = useSettings();
   const isMobile = useMediaQuery('(max-width: 767px)');
   const isCompact = useMediaQuery('(max-width: 1023px)');
+  const reducedMotion = useReducedMotion();
+
+  // Underline animé via layoutId : un seul motion.span partagé entre tous
+  // les onglets (rendu uniquement dans le pill actif). framer-motion détecte
+  // le changement de parent et glisse le filet de l'ancien onglet vers le
+  // nouveau au changement de route. En reduced-motion : duration 0 = filet
+  // instantané, pas de glisse.
+  const underlineTransition = reducedMotion
+    ? { duration: 0 }
+    : { type: 'spring', stiffness: 380, damping: 32 };
 
   const breadcrumb = BREADCRUMB_MAP[pathname];
   const navItems = NAV.filter(
@@ -150,12 +174,13 @@ export default function CommandBar({ onOpenCommand }) {
         )}
       </div>
 
-      {/* CENTRE — navigation tabs (sentence case, underline indicator) */}
+      {/* CENTRE — navigation tabs (icône + label, sliding underline) */}
       {!isCompact && (
         <nav className="cmdbar__nav" aria-label="Navigation principale">
           {navItems.map((n) => {
             const active = isActive(n.path, pathname);
             const tipContent = n.shortcut ? `${n.label} (${n.shortcut})` : n.label;
+            const Icon = n.icon;
             return (
               <Tooltip key={n.path} content={tipContent}>
                 <button
@@ -166,7 +191,23 @@ export default function CommandBar({ onOpenCommand }) {
                   aria-current={active ? 'page' : undefined}
                   aria-label={n.label}
                 >
-                  {n.tab}
+                  {Icon && (
+                    <Icon
+                      size={16}
+                      strokeWidth={1.75}
+                      className="nav-pill__icon"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <span className="nav-pill__label">{n.tab}</span>
+                  {active && (
+                    <motion.span
+                      layoutId="nav-underline"
+                      className="nav-pill__underline"
+                      transition={underlineTransition}
+                      aria-hidden="true"
+                    />
+                  )}
                 </button>
               </Tooltip>
             );
