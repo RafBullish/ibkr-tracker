@@ -26,7 +26,7 @@ Indépendant de l'app (`src/`, `api/` non touchés). Read-only des deux côtés
 - Dans Gateway : API activée + **"Read-Only API" coché** + port **4002**.
 - **Python 3.10+** sur Windows.
 
-## Installation (PowerShell, depuis la racine du repo)
+## Installation (PowerShell, depuis la racine du repo, **une seule fois**)
 
 ```powershell
 python -m venv .venv
@@ -34,11 +34,42 @@ python -m venv .venv
 pip install -r bridge\requirements.txt
 ```
 
-> `aiohttp` n'est plus dans `requirements.txt` — le serveur HTTP utilise
-> uniquement `http.server` de la stdlib. Si tu avais déjà fait étape 1 ou la
-> v1 cassée d'étape 2, ré-exécuter `pip install` ne fait aucun mal.
+## Workflow quotidien (lancement automatisé)
 
-## Lancer — DEUX terminaux PowerShell
+1. Ouvre **IB Gateway** + login paper (port 4002, "Read-Only API" coché).
+2. **Double-clic sur `start.bat`** à la racine (ou `python bridge\launch.py` depuis PowerShell).
+3. Ouvre **http://127.0.0.1:5173** dans le navigateur — l'app QuantumCall.
+
+Le launcher (`bridge/launch.py`) démarre **trois processus séparés** (jamais fusionnés —
+fusionner les deux Python redéclencherait le conflit d'event-loop aiohttp/ib_async qu'on
+a éliminé en archi 2 processus) :
+
+- `bridge/ibkr_poller.py` — connexion IBKR + écriture `snapshot.json`
+- `bridge/serve.py`      — serveur HTTP `/health` + `/account`
+- `npm run dev`          — Vite dev server (l'app React)
+
+Sortie multiplexée avec préfixes `[poller]` / `[serve]` / `[vite]` dans le même
+terminal. **Un seul `Ctrl-C` arrête les trois proprement** : envoi de `CTRL_BREAK_EVENT`
+aux enfants (le poller a le temps d'écrire son snapshot `connected:false` final), puis
+fallback `taskkill /F /T` après 5s si l'un d'eux résiste.
+
+Options utiles :
+
+```powershell
+python bridge\launch.py --client-id 33     # change le clientId IBKR (défaut 30)
+python bridge\launch.py --no-vite          # bridge seul, tu gères `npm run dev` à part
+python bridge\launch.py --log-level DEBUG  # logs ib_async verbeux (debug connexion)
+python bridge\launch.py --http-port 9000   # change le port du serveur bridge
+```
+
+**IB Gateway pas encore lancé au moment du `start.bat` ?** Pas grave — le poller
+retentera sa connexion toutes les 10s, et le serveur HTTP répond `connected:false`
+entre temps. L'app affichera son badge `PAPER`/`REAL` jusqu'à ce que la connexion arrive.
+
+## Lancer manuellement — DEUX terminaux PowerShell (fallback)
+
+Si tu préfères gérer chaque processus à la main (debug d'un seul côté, ou
+juste pour voir leurs logs séparément), l'ancien workflow reste valable.
 
 **Ordre important :** démarre le poller en premier (sinon le serveur ne
 trouve pas `snapshot.json` et répond `warming-up` jusqu'au premier cycle).

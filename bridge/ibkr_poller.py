@@ -38,6 +38,18 @@ import sys
 import time
 from datetime import datetime, timezone
 
+# Force UTF-8 sur stdout/stderr. Sans ça, print('→') ou tout autre caractère
+# hors cp1252 crashe en UnicodeEncodeError quand un parent capture stdout via
+# un pipe (typique : lancement via bridge/launch.py, qui pipe et fait retomber
+# Python sur l'encodage locale = cp1252 sur Windows). Couvre le lancement
+# direct ; le launcher pose en plus PYTHONIOENCODING=utf-8 dans l'env des
+# enfants (ceinture + bretelles).
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, OSError):
+        pass
+
 try:
     from ib_async import IB, util
 except ImportError:
