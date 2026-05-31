@@ -22,6 +22,12 @@ export function applyAction(state, action) {
     case 'SET_FX_SOURCE':
       return { ...state, settings: { ...state.settings, fxSource: action.payload } };
 
+    case 'SET_GW_AUTO_CONNECT':
+      // Toggle UI ↔ useIbkrLive : false coupe le polling /ibkr/account au
+      // prochain effect run, true le relance. Persisté automatiquement par
+      // le subscribe localStorage (persistSettings lit settings.gwAutoConnect).
+      return { ...state, settings: { ...state.settings, gwAutoConnect: Boolean(action.payload) } };
+
     case 'SET_INITIAL_CAPITAL': {
       // B4 — capital de référence manuel en CHF. Payload null/0/NaN
       // efface la saisie (retour au fallback auto). Stocké brut, la

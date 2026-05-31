@@ -9,8 +9,9 @@
 
 import { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Server, KeyRound, FileText } from 'lucide-react';
+import { Server, KeyRound, FileText, Plug } from 'lucide-react';
 import useApiStatus, { SERVICE_ORDER } from '../../hooks/useApiStatus';
+import { useSettings, useDispatch } from '../../store/useStore';
 import GlassCard from '../../components/ui/GlassCard';
 import ApiServiceCard from '../../components/ui/ApiServiceCard';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -94,6 +95,9 @@ function ConfigFlexModal({ open, onClose }) {
 export default function SettingsApi() {
   const reducedMotion = useReducedMotion();
   const status = useApiStatus();
+  const settings = useSettings();
+  const dispatch = useDispatch();
+  const gwAutoConnect = Boolean(settings?.gwAutoConnect);
   const [configOpen, setConfigOpen] = useState(null);
 
   const activeCount = Object.values(status).filter((s) => s.status === 'active').length;
@@ -132,6 +136,46 @@ export default function SettingsApi() {
             onConfig={key === 'flex' ? () => setConfigOpen('flex') : undefined}
           />
         ))}
+      </motion.div>
+
+      <motion.div variants={TILE_VARIANTS}>
+        <GlassCard variant="subtle" hover={false} style={{ padding: 'var(--space-4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+            <Plug
+              size={14}
+              aria-hidden="true"
+              style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}
+            />
+            <div style={{ flex: 1 }}>
+              <div className="uppercase-label" style={{ marginBottom: 4 }}>
+                Connexion live IBKR (bridge)
+              </div>
+              <p
+                style={{
+                  color: 'var(--text-secondary)',
+                  fontSize: 'var(--fs-sm)',
+                  margin: 0,
+                  lineHeight: 1.55,
+                }}
+              >
+                Active la synchro temps réel via le bridge local (port 8765). Désactiver fige
+                l'app sur les imports Flex et les saisies manuelles.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="settings-page__toggle"
+              data-active={gwAutoConnect || undefined}
+              onClick={() =>
+                dispatch({ type: 'SET_GW_AUTO_CONNECT', payload: !gwAutoConnect })
+              }
+              aria-pressed={gwAutoConnect}
+              aria-label="Activer la connexion live IBKR"
+            >
+              <span className="settings-page__toggle-track" aria-hidden="true" />
+            </button>
+          </div>
+        </GlassCard>
       </motion.div>
 
       <motion.div variants={TILE_VARIANTS}>
