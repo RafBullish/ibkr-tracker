@@ -26,6 +26,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useMarketQuotes from '../hooks/useMarketQuotes';
 import useSniperGates from '../hooks/useSniperGates';
+import { useFx } from '../hooks/useFx';
 
 const ROUTINE_ITEMS = [
   { id: 'macro', label: 'Calendrier macro' },
@@ -152,6 +153,7 @@ export default function PreMarketBriefing() {
 
   const { quotes } = useMarketQuotes(PREMARKET_INDICES);
   const sniperGates = useSniperGates();
+  const { rate: fxRate, formatRate: formatFxRate } = useFx();
 
   const phaseInfo = useMemo(() => nextPhase(now), [now]);
   const vixInfo = useMemo(() => vixRegime(quotes?.VIX), [quotes]);
@@ -275,7 +277,9 @@ export default function PreMarketBriefing() {
         </div>
         <div className="premarket-page__regime-cell">
           <span className="premarket-page__regime-label">USD/CHF</span>
-          <span className="premarket-page__regime-value">——</span>
+          <span className="premarket-page__regime-value">
+            {fxRate > 0 ? formatFxRate(fxRate) : '——'}
+          </span>
           <span className="premarket-page__regime-sub">via FX hook</span>
         </div>
         <div className="premarket-page__regime-cell">
