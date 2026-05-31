@@ -3,7 +3,7 @@
 //                  used by Calendar + Settings General + Settings API
 //                  to stay perfectly in sync (fixes §13.4).
 //
-//  Covers the seven services the project talks to:
+//  Covers the eight services the project talks to:
 //    1. flex      — IBKR Flex Query (status derived from localStorage
 //                    creds + settings.lastSync recency)
 //    2. chart     — Yahoo Finance chart proxy (live /api/chart/SPY,
@@ -17,6 +17,10 @@
 //                    otherwise)
 //    7. storage   — Browser localStorage meta (always active unless
 //                    quota / disabled)
+//    8. ibkrLive  — Local IBKR bridge meta (status derived from
+//                    settings.ibkrLiveData.timestamp recency vs
+//                    FRESHNESS.LIVE_DATA_MAX_AGE_MS — same signal as
+//                    the LIVE badge in CommandBar, kept in sync)
 //
 //  Returned shape per service:
 //    {
@@ -34,11 +38,15 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useRef, useState } from 'react';
-import { POLLING, TIME } from '../constants/timing';
+import { POLLING, TIME, FRESHNESS } from '../constants/timing';
 
 const DEFAULT_REFRESH_MS = POLLING.API_STATUS_MS;
 
 const SERVICE_META = {
+  ibkrLive: {
+    label: 'IBKR Live (bridge)',
+    description: 'Connexion temps réel au compte via le bridge local (port 8765).',
+  },
   flex: {
     label: 'IBKR Flex Query',
     description: "Synchronisation CSV via le Flex Web Service d'IBKR.",
@@ -136,6 +144,34 @@ async function probeFx() {
   return { status: r.ok ? 'active' : 'inactive', latency: r.latency, error: r.error };
 }
 
+function probeIbkrLive() {
+  // Bridge isn't HTTP-probed live: the /ibkr proxy only exists in dev (Vite),
+  // and in prod the bridge sits on the user's machine — unreachable from
+  // Vercel. We derive status from the freshest snapshot useIbkrLive wrote to
+  // settings.ibkrLiveData.timestamp, against the same FRESHNESS threshold
+  // CommandBar uses for the LIVE badge. Keeps the two surfaces coherent.
+  try {
+    const rawSettings = window.localStorage.getItem('ibkr_u_s');
+    const settings = rawSettings ? JSON.parse(rawSettings) : null;
+    const liveTs = settings?.ibkrLiveData?.timestamp;
+    if (!liveTs) {
+      return { status: 'unconfigured', latency: null, error: 'Aucune snapshot reçue du bridge' };
+    }
+    const ageMs = Date.now() - new Date(liveTs).getTime();
+    if (ageMs > FRESHNESS.LIVE_DATA_MAX_AGE_MS) {
+      const ageMin = Math.round(ageMs / TIME.ONE_MINUTE_MS);
+      return {
+        status: 'inactive',
+        latency: null,
+        error: `Dernière snapshot il y a ${ageMin} min — bridge déconnecté ?`,
+      };
+    }
+    return { status: 'active', latency: null, error: null };
+  } catch {
+    return { status: 'inactive', latency: null, error: 'localStorage illisible' };
+  }
+}
+
 function probeFlex() {
   // Flex isn't HTTP-probed live (it's a heavy sync). We derive status from
   // persisted credentials and the last-sync timestamp.
@@ -184,7 +220,8 @@ export default function useApiStatus({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
     aliveRef.current = true;
 
     const run = async () => {
-      const [flex, chart, yahoo, finnhub, fx, storage] = await Promise.all([
+      const [ibkrLive, flex, chart, yahoo, finnhub, fx, storage] = await Promise.all([
+        Promise.resolve(probeIbkrLive()),
         Promise.resolve(probeFlex()),
         probeChart(),
         probeYahoo(),
@@ -205,6 +242,7 @@ export default function useApiStatus({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
 
       setStatus((prev) => ({
         ...prev,
+        ibkrLive: { ...prev.ibkrLive, ...ibkrLive, lastCheck: now },
         flex: { ...prev.flex, ...flex, lastCheck: now },
         chart: { ...prev.chart, ...chart, lastCheck: now },
         yahoo: { ...prev.yahoo, ...yahoo, lastCheck: now },
@@ -227,5 +265,5 @@ export default function useApiStatus({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
 }
 
 // ─── Helpers exposed for Settings pages ──────────────────────
-export const SERVICE_ORDER = ['flex', 'chart', 'yahoo', 'finnhub', 'fx', 'vercel', 'storage'];
+export const SERVICE_ORDER = ['ibkrLive', 'flex', 'chart', 'yahoo', 'finnhub', 'fx', 'vercel', 'storage'];
 export { SERVICE_META };
