@@ -28,7 +28,7 @@ import {
   BarChart3,
   Calendar,
   BookOpen,
-  Import,
+  Settings,
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import Tooltip from '../ui/Tooltip';
@@ -59,7 +59,7 @@ const NAV = [
   { tab: 'Analytics', label: 'Analytics',       path: '/insights/analytics',shortcut: '⌘6', icon: BarChart3 },
   { tab: 'Calendar',  label: 'Calendrier',      path: '/insights/calendar', shortcut: '⌘7', icon: Calendar },
   { tab: 'Journal',   label: 'Journal',         path: '/insights/journal',  shortcut: '⌘8', icon: BookOpen },
-  { tab: 'Import',    label: 'Import',          path: '/settings/import',   shortcut: '⌘9', icon: Import },
+  { tab: 'Settings',  label: 'Réglages',        path: '/settings/general',  shortcut: '⌘9', icon: Settings },
 ];
 
 const BREADCRUMB_MAP = {
@@ -80,6 +80,10 @@ const BREADCRUMB_MAP = {
 
 function isActive(navPath, pathname) {
   if (navPath === '/dashboard') return pathname === navPath;
+  // Onglet Settings allume sur toute la zone /settings/* (general · api · import)
+  if (navPath.startsWith('/settings')) {
+    return pathname === '/settings' || pathname.startsWith('/settings/');
+  }
   return pathname === navPath || pathname.startsWith(navPath);
 }
 
