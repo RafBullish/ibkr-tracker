@@ -1,19 +1,20 @@
 // ═══════════════════════════════════════════════════════════════
-//  CUMULATIVE P&L CHART v2 — 4K refonte Phase C.1.8
-//  (anciennement DailyPnLChart bar chart en Phase C.1.7)
+//  UNREALIZED + CUMUL P&L CHART v3 — Phase D polish
+//  (anciennement Cumulative P&L chart C.1.8, bar chart C.1.7)
 //
-//  Module bento row 1 col 4-6 (480 px). Area chart cumulative :
-//    - Cumul = somme running des dailyPnl filtrés par range
-//    - Color du gradient + line dynamique selon signe du cumul final
-//    - Reference line dashed amber au peak cumul (PEAK +$X)
-//    - Reference line à y=0 (zéro)
-//    - Badges conditionnels header : 🎯 ATH (si at peak > 0),
-//      DRAWDOWN (si > -20% du peak)
-//    - Sub-header CUMUL CURRENT / PEAK CUMUL / SLOPE / DAY
-//    - Footer BEST TRADE / WORST TRADE / MAX DD CUMUL
+//  Card hybride :
+//    - GROS CHIFFRE (sub-header) = P&L NON RÉALISÉ live, via
+//      usePortfolioMetrics().unrealizedPnlUsd. Même valeur que la
+//      KPI card UNREALIZED, sous-ligne CHF via liveRate.
+//    - COURBE = cumul du P&L réalisé sur closedTrades, agrégé par
+//      date (running sum). Color du gradient + line selon signe du
+//      cumul final.
+//    - Reference line dashed amber au peak cumul + reference y=0.
+//    - Badges conditionnels header (ATH / DRAWDOWN) sur la courbe.
+//    - Footer BEST/WORST TRADE / MAX DD CUMUL (réalisé).
 //
 //  L'export default reste `DailyPnLChart` pour minimiser le diff
-//  Dashboard.jsx (cohérence brief Phase C.1.8 §1.1).
+//  Dashboard.jsx.
 //
 //  Props :
 //    data         : Array<{date, equity}> — equityHistory base
@@ -33,19 +34,36 @@ import {
 } from '../../utils/equity';
 import { tradePnlUsd } from '../../utils/calculations';
 import { useClosedTrades, useSettings } from '../../store/useStore';
+import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
 
 const LazyRecharts = lazy(() =>
   import('recharts').then((mod) => ({ default: ({ children }) => children(mod) }))
 );
 
+// Phase D polish — formatters de-CH apostrophe milliers.
 const fmtUsd = (v) => {
   if (v == null || !Number.isFinite(v)) return '—';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-    signDisplay: 'auto',
-  }).format(v);
+  const sign = v < 0 ? '-' : '';
+  return `${sign}$${Math.round(Math.abs(v)).toLocaleString('de-CH')}`;
+};
+
+const fmtUsdSigned = (v) => {
+  if (v == null || !Number.isFinite(v)) return '—';
+  if (v === 0) return '$0';
+  const sign = v > 0 ? '+' : '−';
+  return `${sign}$${Math.round(Math.abs(v)).toLocaleString('de-CH')}`;
+};
+
+const fmtChfLine = (usd, liveRate) => {
+  if (usd == null || !Number.isFinite(usd) || !Number.isFinite(liveRate) || liveRate <= 0) {
+    return null;
+  }
+  const chf = usd * liveRate;
+  const abs = Math.abs(chf);
+  const body = abs >= 100 ? Math.round(abs).toLocaleString('de-CH') : abs.toFixed(2);
+  if (chf === 0) return 'CHF 0';
+  const sign = chf < 0 ? '-' : chf > 0 ? '+' : '';
+  return `CHF ${sign}${body}`;
 };
 
 const fmtAxisDate = (iso) => {
@@ -58,9 +76,7 @@ const fmtAxisDate = (iso) => {
 const fmtAxisCumul = (v) => {
   if (!Number.isFinite(v)) return '';
   const sign = v > 0 ? '+' : v < 0 ? '−' : '';
-  const abs = Math.abs(v);
-  if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(1)}k`;
-  return `${sign}$${Math.round(abs)}`;
+  return `${sign}$${Math.round(Math.abs(v)).toLocaleString('de-CH')}`;
 };
 
 function CumulTooltip({ active, payload }) {
@@ -117,6 +133,12 @@ export default function DailyPnLChart({
   const storeSettings = useSettings();
   const closedTrades = closedTradesProp ?? storeClosedTrades;
   const liveRate = liveRateProp ?? storeSettings?.liveRate ?? 1;
+
+  // Phase D polish — le gros chiffre du sub-header devient le P&L
+  // NON RÉALISÉ live (mêmes data que la KPI card UNREALIZED). La
+  // courbe en-dessous garde sa source : cumul du P&L réalisé.
+  const portfolioMetrics = usePortfolioMetrics();
+  const liveUnreal = portfolioMetrics?.unrealizedPnlUsd ?? null;
 
   // B5-1 — agréger par DATE (1 point par jour) AVANT de cumuler.
   // Bug pré-B5 : `data` (=equityHistory) contient UN POINT PAR TRADE ;
@@ -228,8 +250,16 @@ export default function DailyPnLChart({
   const cumulTone = cumulCurrent > 0 ? 'profit' : cumulCurrent < 0 ? 'loss' : 'mute';
   const slopeTone = slopePerDay > 0 ? 'profit' : slopePerDay < 0 ? 'loss' : 'mute';
   const cumulColor = cumulCurrent >= 0 ? T.profit : T.loss;
-  const cumulSign = cumulCurrent > 0 ? '+' : cumulCurrent < 0 ? '−' : '';
   const slopeSign = slopePerDay > 0 ? '+' : slopePerDay < 0 ? '−' : '';
+
+  // ─── Live unrealized (gros chiffre) ────────────────────────
+  const liveUnrealTone =
+    liveUnreal == null || !Number.isFinite(liveUnreal) || liveUnreal === 0
+      ? 'mute'
+      : liveUnreal > 0
+        ? 'profit'
+        : 'loss';
+  const chfUnreal = fmtChfLine(liveUnreal, liveRate);
 
   return (
     <section
@@ -239,11 +269,12 @@ export default function DailyPnLChart({
     >
       <header className="trading-chart__header">
         <div className="trading-chart__title-wrap">
-          <span className="trading-chart__title">Cumulative P&amp;L</span>
+          <span className="trading-chart__title">Unrealized P&amp;L</span>
           <span className="trading-chart__sub">
+            Courbe = réalisé cumulé
             {daysCount > 0
-              ? `${daysCount} j · ${daysActive} actif${daysActive > 1 ? 's' : ''}`
-              : '—'}
+              ? ` · ${daysCount} j · ${daysActive} actif${daysActive > 1 ? 's' : ''}`
+              : ''}
           </span>
           {isInDrawdown ? (
             <span className="trading-chart__warn-badge" title={`Drawdown ${ddFromPeakPct.toFixed(1)}% vs peak`}>
@@ -280,11 +311,13 @@ export default function DailyPnLChart({
 
       <div className="trading-chart__subheader">
         <div className="trading-chart__kpi">
-          <span className="trading-chart__kpi-label">CUMUL CURRENT</span>
-          <span className={`trading-chart__kpi-value trading-chart__kpi-value--${cumulTone}`}>
-            {cumulSign}
-            {fmtUsd(Math.abs(cumulCurrent))}
+          <span className="trading-chart__kpi-label">UNREALIZED · LIVE</span>
+          <span
+            className={`trading-chart__kpi-value trading-chart__kpi-value--${liveUnrealTone}`}
+          >
+            {fmtUsdSigned(liveUnreal)}
           </span>
+          {chfUnreal ? <span className="trading-chart__kpi-sub">{chfUnreal}</span> : null}
         </div>
         <div className="trading-chart__kpi-divider" aria-hidden="true" />
         <div className="trading-chart__kpi">
@@ -324,7 +357,7 @@ export default function DailyPnLChart({
                         <stop offset="100%" stopColor={cumulColor} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <R.CartesianGrid stroke={T.chart.grid} strokeDasharray="0" vertical={false} />
+                    <R.CartesianGrid stroke={T.chart.grid} strokeDasharray="0" vertical={true} horizontal={true} />
                     <R.XAxis
                       dataKey="date"
                       stroke={T.text.tertiary}
@@ -332,16 +365,17 @@ export default function DailyPnLChart({
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={fmtAxisDate}
-                      minTickGap={50}
-                      height={20}
+                      minTickGap={30}
+                      height={22}
                     />
                     <R.YAxis
                       stroke={T.text.tertiary}
                       tick={{ fontFamily: T.fonts.mono, fontSize: 10, fill: T.text.tertiary }}
                       axisLine={false}
                       tickLine={false}
-                      width={54}
+                      width={64}
                       tickFormatter={fmtAxisCumul}
+                      tickCount={7}
                       domain={['auto', 'auto']}
                     />
                     <R.ReferenceLine
@@ -372,7 +406,7 @@ export default function DailyPnLChart({
                       stroke={cumulColor}
                       strokeWidth={2.2}
                       isAnimationActive={false}
-                      activeDot={{ r: 4, fill: cumulColor, stroke: 'none' }}
+                      activeDot={{ r: 5, fill: cumulColor, stroke: T.surface.base, strokeWidth: 2 }}
                     />
                     <R.Tooltip
                       content={<CumulTooltip />}

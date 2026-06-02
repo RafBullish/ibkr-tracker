@@ -25,25 +25,19 @@ const LazyRecharts = lazy(() =>
   import('recharts').then((mod) => ({ default: ({ children }) => children(mod) }))
 );
 
+// Phase D polish — formatters de-CH apostrophe milliers
+// (cohérent avec le reste de l'app : fmtChfLine, dashboard KPI).
 const fmtUsd = (v) => {
   if (v == null || !Number.isFinite(v)) return '—';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-    signDisplay: 'auto',
-  }).format(v);
+  const sign = v < 0 ? '-' : '';
+  return `${sign}$${Math.round(Math.abs(v)).toLocaleString('de-CH')}`;
 };
 
 const fmtUsdSigned = (v) => {
   if (v == null || !Number.isFinite(v)) return '—';
   if (v === 0) return '$0';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-    signDisplay: 'exceptZero',
-  }).format(v);
+  const sign = v > 0 ? '+' : '−';
+  return `${sign}$${Math.round(Math.abs(v)).toLocaleString('de-CH')}`;
 };
 
 const fmtAxisDate = (iso) => {
@@ -55,8 +49,8 @@ const fmtAxisDate = (iso) => {
 
 const fmtAxisUsd = (v) => {
   if (!Number.isFinite(v)) return '';
-  if (Math.abs(v) >= 1000) return `$${(v / 1000).toFixed(1)}k`;
-  return `$${Math.round(v)}`;
+  const sign = v < 0 ? '-' : '';
+  return `${sign}$${Math.round(Math.abs(v)).toLocaleString('de-CH')}`;
 };
 
 function EquityTooltip({ active, payload }) {
@@ -229,7 +223,7 @@ export default function EquityChart({
                         <stop offset="100%" stopColor={T.profit} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <R.CartesianGrid stroke={T.chart.grid} strokeDasharray="0" vertical={false} />
+                    <R.CartesianGrid stroke={T.chart.grid} strokeDasharray="0" vertical={true} horizontal={true} />
                     <R.XAxis
                       dataKey="date"
                       stroke={T.text.tertiary}
@@ -237,16 +231,17 @@ export default function EquityChart({
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={fmtAxisDate}
-                      minTickGap={50}
-                      height={20}
+                      minTickGap={30}
+                      height={22}
                     />
                     <R.YAxis
                       stroke={T.text.tertiary}
                       tick={{ fontFamily: T.fonts.mono, fontSize: 10, fill: T.text.tertiary }}
                       axisLine={false}
                       tickLine={false}
-                      width={54}
+                      width={64}
                       tickFormatter={fmtAxisUsd}
+                      tickCount={7}
                       domain={['dataMin - 50', 'dataMax + 50']}
                     />
                     {hasZeroCross ? (
@@ -270,7 +265,7 @@ export default function EquityChart({
                       stroke={T.profit}
                       strokeWidth={2}
                       isAnimationActive={false}
-                      activeDot={{ r: 4, fill: T.profit, stroke: 'none' }}
+                      activeDot={{ r: 5, fill: T.profit, stroke: T.surface.base, strokeWidth: 2 }}
                     />
                     <R.Tooltip
                       content={<EquityTooltip />}

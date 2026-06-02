@@ -50,13 +50,14 @@
   font-family: var(--qc-font-mono);
 }
 
-/* Heights par grid-area — Phase C.2.6 : row 1 à 520 px (4K scale,
-   était 480) — split en 2 charts trading-grade + RiskMatrix. */
+/* Heights par grid-area — Phase D polish : equity + dailypnl
+   passent à 580 px (+60) pour donner du canvas aux courbes hero
+   sans changer la grille 3/3/6. Risk reste à 520. */
 .dash-grid > [style*="grid-area: equity"] {
-  height: 520px;
+  height: 580px;
 }
 .dash-grid > [style*="grid-area: dailypnl"] {
-  height: 520px;
+  height: 580px;
 }
 .dash-grid > [style*="grid-area: risk"] {
   height: 520px;
@@ -376,7 +377,7 @@
   background: linear-gradient(180deg,
     var(--qc-bg-overlay) 0%,
     var(--qc-bg-surface) 100%);
-  border: 1px solid var(--qc-border-default);
+  border: 1px solid var(--qc-border-strong);
   border-top-color: var(--qc-border-strong);
   border-radius: var(--qc-radius);
   box-shadow:
@@ -538,6 +539,19 @@
   background: var(--qc-border-subtle);
   margin: 4px 0;
   flex-shrink: 0;
+}
+
+/* Phase D polish — sous-ligne CHF sous un gros chiffre KPI.
+   Utilisée par DailyPnLChart pour afficher la conversion CHF
+   du P&L unrealized live. Padded au layout column existant. */
+.trading-chart__kpi-sub {
+  font-size: 11px;
+  color: var(--qc-text-tertiary);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums slashed-zero;
+  white-space: nowrap;
+  line-height: 1;
+  margin-top: 2px;
 }
 
 .trading-chart__body {
