@@ -3072,13 +3072,17 @@
   gap: 8px;
 }
 
-/* Rangée HERO : NLV + Day P&L, largeurs égales, hauteur 300 px. */
+/* Rangée HERO : NLV + Day P&L, largeurs égales.
+   Brique 2 : hauteur passée en auto (chart 180 px + readout + texte
+   empilés pleine largeur). Min 300 px préservé pour ne pas dégrader
+   l'aspect quand la série est vide. */
 .dash-kpi-cards__row--hero {
   grid-template-columns: 1fr 1fr;
 }
 
 .dash-kpi-cards__row--hero .dash-kpi-card {
-  height: 300px;
+  height: auto;
+  min-height: 300px;
 }
 
 /* Rangée SECONDARY : 5 cards égales, hauteur 190 px (vs 240 px legacy). */
@@ -3174,6 +3178,12 @@
   text-overflow: ellipsis;
 }
 
+/* Brique 1 — hero only : titres NLV / REALIZED un cran au-dessus. */
+.dash-kpi-card--hero .dash-kpi-card__label {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
 /* Hint "neutral" (sans Pill component) — version pillée subtile pour
    matcher visuellement les pills colorées en top-right. */
 .dash-kpi-card__hint {
@@ -3232,8 +3242,8 @@
 
 /* Pill hero — delta NLV avec arrow + montant + % */
 .dash-kpi-card__pill--hero {
-  padding: 4px 10px;
-  font-size: 12px;
+  padding: 6px 12px;
+  font-size: 17px;
 }
 
 .dash-kpi-card__pill--hero.dash-kpi-card__pill--profit {
@@ -3246,7 +3256,7 @@
 
 .dash-kpi-card__pill--hero .dash-kpi-card__pill-sub {
   opacity: 0.85;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .dash-kpi-card__pill--profit {
@@ -3321,6 +3331,18 @@
   font-weight: 500;
 }
 
+/* Brique 3 — wrapper top-right pour grouper ViewToggle + RangeSelector
+   sur la carte NLV hero. Flex-wrap : si l'espace manque (zoom 90 %,
+   thèmes denses), les 2 segments passent sur 2 lignes proprement. */
+.dash-kpi-card__top-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
 /* ── Zone 2 : money (USD + CHF) ──────────────────────────────── */
 
 .dash-kpi-card__money {
@@ -3343,8 +3365,9 @@
 }
 
 .dash-kpi-card--hero .dash-kpi-card__value {
-  font-size: var(--qc-fs-hero, 40px);
-  letter-spacing: -0.01em;
+  font-size: 64px;
+  line-height: 0.95;
+  letter-spacing: -0.018em;
 }
 
 .dash-kpi-card__chf {
@@ -3586,14 +3609,17 @@
   color: var(--qc-text-primary);
 }
 
-/* ── Hero card mid-zone : value/CHF/delta à gauche, spark à droite */
+/* ── Hero card mid-zone : empilage pleine largeur (brique 2)
+   Ordre : texte (value/CHF/pill/micro-stats) → readout → chart Recharts.
+   Plus de grid 0.8fr 1.5fr — le chart respire en pleine largeur, la
+   carte grandit naturellement en hauteur. */
 
 .dash-kpi-card--hero .dash-kpi-card__hero-mid {
-  display: grid;
-  grid-template-columns: 0.8fr 1.5fr;
-  gap: 16px;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
   flex: 1;
+  min-width: 0;
   min-height: 0;
 }
 
@@ -3601,6 +3627,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  width: 100%;
   min-width: 0;
 }
 
@@ -3608,16 +3635,268 @@
   margin-top: 10px;
 }
 
-.dash-kpi-card__hero-spark {
-  height: 130px;
+/* ── Brique 6 — Bloc densité hero (gauge expo + bande forme) ─────
+   Empilé pleine largeur dans __hero-mid entre le bloc texte et le
+   readout. Mono, fin, statique (pas de hover). Sources réutilisées
+   depuis les cartes EXPOSURE / AVAIL CAPITAL et closedTrades. */
+
+.dash-kpi-card__hero-density {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   width: 100%;
+}
+
+.dash-kpi-card__hero-density-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-family: var(--qc-font-mono);
+  font-size: 12px;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.dash-kpi-card__hero-density-title {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-mute);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dash-kpi-card__hero-density-detail {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  color: var(--ink-mute);
+}
+
+.dash-kpi-card__hero-density-value {
+  color: var(--ink-pure);
+  font-weight: 500;
+}
+
+.dash-kpi-card__hero-density-value--accent { color: var(--accent); }
+.dash-kpi-card__hero-density-value--profit { color: var(--pnl-up); }
+.dash-kpi-card__hero-density-value--loss { color: var(--pnl-down); }
+.dash-kpi-card__hero-density-value--mute { color: var(--ink-mute); }
+
+.dash-kpi-card__hero-density-label {
+  color: var(--ink-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+}
+
+.dash-kpi-card__hero-density-sep {
+  color: var(--ink-mute);
+  opacity: 0.55;
+}
+
+/* Élément 1 — Jauge d'exposition (carte NLV).
+   Bar 8px, fill amber, marqueur vertical au plafond + label "MAX 70%"
+   centré sous le marqueur. padding-bottom = place pour le label. */
+.dash-kpi-card__hero-gauge {
+  position: relative;
+  padding-bottom: 16px;
+}
+
+.dash-kpi-card__hero-gauge-track {
+  position: relative;
+  height: 8px;
+  background: var(--depth-base);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+}
+
+.dash-kpi-card__hero-gauge-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 240ms ease;
+}
+
+.dash-kpi-card__hero-gauge-marker {
+  position: absolute;
+  top: -3px;
+  width: 1.5px;
+  height: 14px;
+  background: var(--accent);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.dash-kpi-card__hero-gauge-cap {
+  position: absolute;
+  top: 13px;
+  font-family: var(--qc-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: none;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+/* Élément 2 — Bande de forme (carte Realized).
+   n ticks (≤18) côte à côte, gap 3px, vert/rouge selon signe P&L.
+   La série en cours (k derniers de même signe) est entourée d'un
+   outline blanc discret via box-shadow. */
+.dash-kpi-card__hero-form-band {
+  display: flex;
+  gap: 3px;
+  width: 100%;
+  height: 15px;
+}
+
+.dash-kpi-card__hero-form-band-empty {
+  width: 100%;
+  height: 15px;
+}
+
+.dash-kpi-card__hero-form-tick {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  border-radius: 2px;
+  cursor: default;
+}
+
+.dash-kpi-card__hero-form-tick--up { background: var(--pnl-up); }
+.dash-kpi-card__hero-form-tick--down { background: var(--pnl-down); }
+
+.dash-kpi-card__hero-form-tick.is-streak {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink-pure) 38%, transparent);
+}
+
+/* Readout (lecture point-par-point) — flex baseline, mono, tabular-nums.
+   Reste lisible quand la série est vide (placeholder vide via min-height). */
+.dash-kpi-card__hero-readout {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  width: 100%;
+  min-height: 18px;
+  font-family: var(--qc-font-mono);
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.dash-kpi-card__hero-readout-date {
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.dash-kpi-card__hero-readout-sep {
+  color: var(--ink-mute);
+  opacity: 0.55;
+}
+
+.dash-kpi-card__hero-readout-value {
+  color: var(--ink-pure);
+  font-weight: 600;
+}
+
+.dash-kpi-card__hero-readout-value--profit { color: var(--pnl-up); }
+.dash-kpi-card__hero-readout-value--loss { color: var(--pnl-down); }
+.dash-kpi-card__hero-readout-value--mute { color: var(--ink-pure); }
+
+.dash-kpi-card__hero-readout-label {
+  color: var(--ink-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 11px;
+}
+
+.dash-kpi-card__hero-readout-delta {
+  font-weight: 600;
+}
+
+.dash-kpi-card__hero-readout-delta--profit { color: var(--pnl-up); }
+.dash-kpi-card__hero-readout-delta--loss { color: var(--pnl-down); }
+.dash-kpi-card__hero-readout-delta--mute { color: var(--ink-mute); }
+
+/* Brique 5 — bouton bascule Mesure A → B placé à gauche du readout.
+   État actif = bg amber (--accent) + icône sombre, cohérent avec le
+   marqueur "moy" amber de la Distribution. Cosmétique alignée sur les
+   segments du RangeSelector pour rester homogène. */
+.dash-kpi-card__measure-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--qc-border-subtle);
+  background: color-mix(in srgb, var(--qc-text-primary) 3%, transparent);
+  color: var(--qc-text-tertiary);
+  border-radius: 3px;
+  padding: 3px 5px;
+  cursor: pointer;
+  line-height: 1;
+  transition:
+    color 120ms ease-out,
+    background-color 120ms ease-out,
+    border-color 120ms ease-out;
+}
+
+.dash-kpi-card__measure-btn:hover {
+  color: var(--qc-text-secondary);
+  border-color: var(--qc-border-default);
+}
+
+.dash-kpi-card__measure-btn:focus-visible {
+  outline: 1px solid var(--accent-amber);
+  outline-offset: 1px;
+}
+
+.dash-kpi-card__measure-btn.is-active {
+  background: var(--accent-amber);
+  color: var(--qc-bg-base);
+  border-color: var(--accent-amber);
+}
+
+/* Wrap du contenu readout (séparé du bouton pour ne pas qu'il étire). */
+.dash-kpi-card__hero-readout-content {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+/* Chart Recharts pleine largeur, hauteur fixe pour rester stable
+   quand la série change (range selector). */
+.dash-kpi-card__hero-chart {
+  width: 100%;
+  height: 180px;
   min-width: 0;
   position: relative;
 }
 
-.dash-kpi-card__hero-spark .sparkline,
-.dash-kpi-card__hero-spark .sparkline-wrap {
-  height: 130px;
+/* Fix brique 5 — affordance Mesure : crosshair quand le mode est actif.
+   data-measure=true posé par KpiCardHero sur ce conteneur. */
+.dash-kpi-card__hero-chart[data-measure='true'] {
+  cursor: crosshair;
+}
+
+.dash-kpi-card__hero-chart-empty {
+  width: 100%;
+  height: 100%;
+  min-height: 150px;
+}
+
+/* Axes Recharts : tabular-nums + couleurs déjà via var() dans le JSX
+   (le SVG inline hérite des CSS custom properties → theme switch OK). */
+.dash-kpi-card__hero-chart .recharts-cartesian-axis-tick text {
+  font-variant-numeric: tabular-nums slashed-zero;
 }
 
 /* B2.3 — Mini-stats inline sous le pavé value/CHF/delta des héros.
@@ -3638,7 +3917,7 @@
 
 .dash-kpi-card__micro-stat-label {
   font-family: var(--qc-font-sans);
-  font-size: var(--qc-fs-micro, 10px);
+  font-size: 12px;
   font-weight: 500;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.08em;
@@ -3647,7 +3926,7 @@
 }
 
 .dash-kpi-card__micro-stat-value {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   font-variant-numeric: tabular-nums slashed-zero;
   letter-spacing: -0.01em;
@@ -3660,9 +3939,13 @@
 .dash-kpi-card__micro-stat-value--neutral { color: var(--qc-text-primary); }
 .dash-kpi-card__micro-stat-value--mute { color: var(--qc-text-tertiary); }
 
-/* Footer héros : valeurs un peu plus grandes pour densifier visuellement. */
+/* Footer héros : labels 12 px / valeurs 16 px pour matcher l'échelle hero. */
+.dash-kpi-card--hero .dash-kpi-card__cell-label {
+  font-size: 12px;
+}
+
 .dash-kpi-card--hero .dash-kpi-card__cell-value {
-  font-size: 15px;
+  font-size: 16px;
 }
 
 /* ── Win Rate card mid-zone : value+W·L à gauche, donut à droite */
@@ -3994,6 +4277,11 @@
   }
   .dash-kpi-card--hero .dash-kpi-card__value {
     font-size: 32px;
+  }
+  /* Brique 2 : chart hero ramené à 120 px sur mobile pour respirer
+     sans pousser la carte hors de l'écran. */
+  .dash-kpi-card__hero-chart {
+    height: 120px;
   }
   /* Sur mobile le range selector 6 segments prend trop de place — on
      le masque, le user voit le range par défaut (30J). */

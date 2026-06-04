@@ -26,7 +26,8 @@
 //    RISK $ via SL_amount (Card 6).
 // ═══════════════════════════════════════════════════════════════
 
-import { useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Ruler } from 'lucide-react';
 import { usePortfolioMetrics, useKPIs } from '../../hooks/usePortfolioMetrics';
 import useAvailableCapital from '../../hooks/useAvailableCapital';
 import useEquityHistory from '../../hooks/useEquityHistory';
@@ -34,9 +35,37 @@ import useDailyPnL from '../../hooks/useDailyPnL';
 import useDailySnapshot from '../../hooks/useDailySnapshot';
 import useGreeksAggregate from '../../hooks/useGreeksAggregate';
 import useMarketSession from '../../hooks/useMarketSession';
+import useLiveTheme from '../../hooks/useLiveTheme';
 import { useClosedTrades, useOpenPositions } from '../../store/useStore';
 import { tradePnlUsd, calculateOpenPositionPnl } from '../../utils/calculations';
 import Sparkline from './Sparkline';
+
+// Recharts est déjà code-splitté ailleurs (EquityChart, DailyPnLChart) :
+// même `lazy(import('recharts'))` réutilise le même chunk côté Rollup.
+const LazyRecharts = lazy(() =>
+  import('recharts').then((mod) => ({ default: ({ children }) => children(mod) }))
+);
+
+// Fix racine brique 5 — marges des charts hero, partagées entre la
+// config Recharts (margin / YAxis.width) et le calcul géométrique x→index
+// fait dans KpiCardHero. CRITIQUE : toute divergence entre ces valeurs
+// et celles passées aux composants Recharts fausse l'index calculé.
+// Les YAxis sont orientées à droite → la zone plot est rognée à droite
+// par MARGIN_RIGHT + YAXIS_WIDTH, à gauche par MARGIN_LEFT.
+const HERO_CHART_MARGIN_LEFT = 4;
+const HERO_CHART_MARGIN_RIGHT = 8;
+const HERO_CHART_MARGIN_TOP = 14;
+const HERO_CHART_MARGIN_BOTTOM = 4;
+const HERO_CHART_YAXIS_WIDTH = 64;
+const HERO_CHART_MARGINS = {
+  top: HERO_CHART_MARGIN_TOP,
+  right: HERO_CHART_MARGIN_RIGHT,
+  bottom: HERO_CHART_MARGIN_BOTTOM,
+  left: HERO_CHART_MARGIN_LEFT,
+};
+const HERO_CHART_PLOT_OFFSET_LEFT = HERO_CHART_MARGIN_LEFT;
+const HERO_CHART_PLOT_OFFSET_RIGHT =
+  HERO_CHART_MARGIN_RIGHT + HERO_CHART_YAXIS_WIDTH;
 
 // ─── Range selector ─────────────────────────────────────────────
 
@@ -71,6 +100,47 @@ function RangeSelector({ value, onChange }) {
   );
 }
 
+// Brique 3 — segmented control [Équité | Drawdown], NLV uniquement.
+// Réutilise volontairement les classes .dash-kpi-card__range / __range-btn :
+// même langage visuel que le RangeSelector (brief). Pas de nouveau CSS.
+function ViewToggle({ value, onChange, options, ariaLabel = 'Vue affichée' }) {
+  return (
+    <div
+      className="dash-kpi-card__range dash-kpi-card__view"
+      role="tablist"
+      aria-label={ariaLabel}
+    >
+      {options.map((opt) => {
+        const active = opt.key === value;
+        return (
+          <button
+            key={opt.key}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            className={`dash-kpi-card__range-btn${active ? ' is-active' : ''}`}
+            onClick={() => onChange(opt.key)}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+const NLV_VIEWS = [
+  { key: 'equity', label: 'Équité' },
+  { key: 'drawdown', label: 'Drawdown' },
+];
+
+// Brique 4 — toggle Realized.
+const REALIZED_VIEWS = [
+  { key: 'cumulative', label: 'Cumulé' },
+  { key: 'daily', label: 'Quotidien' },
+  { key: 'distribution', label: 'Distribution' },
+];
+
 // ─── Formatters ──────────────────────────────────────────────────
 
 const fmtUsdCompact = (v) => {
@@ -86,12 +156,6 @@ const fmtUsdSigned = (v) => {
   if (v === 0) return '$0';
   const sign = v > 0 ? '+' : '−';
   return `${sign}$${Math.round(Math.abs(v)).toLocaleString('en-US')}`;
-};
-
-// Axis labels NLV : "$1,516" (jamais "$1.52K" — brief B.4).
-const fmtAxisUsd = (v) => {
-  if (!Number.isFinite(v)) return '';
-  return `$${v.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 };
 
 const fmtChfLine = (chf, { signed = false } = {}) => {
@@ -125,6 +189,146 @@ const arrow = (v) => {
 };
 
 const clamp01Pct = (v) => Math.max(0, Math.min(100, Number.isFinite(v) ? v : 0));
+
+// ─── Formatters readout / chart axes (locale de-CH, brique 2) ───
+// Apostrophe milliers (de-CH) + signe moins typographique − (U+2212).
+// Volontairement séparés des formatters du grand chiffre value (en-US)
+// pour éviter de toucher au rendu existant du hero text.
+
+const fmtUsdDeCH = (v) => {
+  if (v == null || !Number.isFinite(v)) return '—';
+  const sign = v < 0 ? '−' : '';
+  return `${sign}$${Math.round(Math.abs(v)).toLocaleString('de-CH')}`;
+};
+
+const fmtUsdSignedDeCH = (v) => {
+  if (v == null || !Number.isFinite(v)) return '—';
+  if (v === 0) return '$0';
+  const sign = v > 0 ? '+' : '−';
+  return `${sign}$${Math.round(Math.abs(v)).toLocaleString('de-CH')}`;
+};
+
+const fmtPctSignedDeCH = (v, frac = 1) => {
+  if (v == null || !Number.isFinite(v)) return '—';
+  if (v === 0) return '0.0%';
+  const sign = v > 0 ? '+' : '−';
+  return `${sign}${Math.abs(v).toFixed(frac)}%`;
+};
+
+const fmtDateDeCH = (iso) => {
+  if (!iso || typeof iso !== 'string') return '—';
+  const parts = iso.split('-');
+  if (parts.length !== 3) return iso;
+  return `${parts[2]}.${parts[1]}.${parts[0]}`;
+};
+
+const fmtAxisDateDeCH = (iso) => {
+  if (!iso || typeof iso !== 'string') return '';
+  const parts = iso.split('-');
+  if (parts.length !== 3) return iso;
+  return `${parts[2]}.${parts[1]}`;
+};
+
+// Brique 3 — formatter axe Y vue Drawdown (toujours négatif ou 0).
+const fmtAxisPctDeCH = (v) => {
+  if (!Number.isFinite(v)) return '';
+  if (v === 0) return '0%';
+  const sign = v < 0 ? '−' : '+';
+  return `${sign}${Math.abs(v).toFixed(1)}%`;
+};
+
+// Brique 5 — formatter "points" pour Δ drawdown (pas de signe %, on
+// ajoute "pt" en label dans le readout).
+const fmtPpSignedDeCH = (v, frac = 1) => {
+  if (v == null || !Number.isFinite(v)) return '—';
+  if (v === 0) return '0.0';
+  const sign = v > 0 ? '+' : '−';
+  return `${sign}${Math.abs(v).toFixed(frac)}`;
+};
+
+// Brique 5 — écart calendaire entre 2 dates ISO (YYYY-MM-DD), en jours
+// entiers signés (positif si b > a). Robuste aux fuseaux (utilise UTC).
+function diffDays(a, b) {
+  if (!a?.date || !b?.date) return null;
+  const da = new Date(`${a.date}T00:00:00Z`).getTime();
+  const db = new Date(`${b.date}T00:00:00Z`).getTime();
+  if (!Number.isFinite(da) || !Number.isFinite(db)) return null;
+  return Math.round((db - da) / 86400000);
+}
+
+// Brique 4 — formatter axe Y Distribution (entiers de trades).
+const fmtAxisCountDeCH = (v) => {
+  if (!Number.isFinite(v)) return '';
+  return Math.round(v).toLocaleString('de-CH');
+};
+
+// Brique 4 — daily P&L par jour à partir de la série cumulée RANGÉE.
+// daily[0] = cum[0] (cf. brief, première valeur du range = cumul brut) ;
+// daily[i] = cum[i] − cum[i−1]. Conserve `cumulative` pour le readout.
+function computeRealizedDailySeries(rangedCumSeries) {
+  if (!Array.isArray(rangedCumSeries) || rangedCumSeries.length === 0) return [];
+  return rangedCumSeries.map((p, i, arr) => ({
+    date: p.date,
+    value: i === 0 ? p.value : p.value - arr[i - 1].value,
+    cumulative: p.value,
+  }));
+}
+
+// Brique 4 — histogramme des P&L par trade clôturé.
+// Bins alignés sur 0 (une borne tombe sur 0 → aucun bin ne chevauche 0).
+// Largeur 150 $ par défaut (brief). Renvoie [{lo, hi, mid, count, sign}, …]
+// dont mid = (lo+hi)/2, sign = 'up' si lo >= 0 sinon 'down'.
+function computeDistributionBins(trades, liveRate, binWidth = 150) {
+  if (!Array.isArray(trades) || trades.length === 0) return [];
+  const pnls = trades
+    .map((t) => tradePnlUsd(t, liveRate))
+    .filter((v) => Number.isFinite(v));
+  if (pnls.length === 0) return [];
+  const minPnl = Math.min(...pnls);
+  const maxPnl = Math.max(...pnls);
+  const minBinIdx = Math.floor(minPnl / binWidth);
+  // Math.floor(maxPnl/binWidth) + 1 pour couvrir le max strictement
+  // (intervalle [lo, hi), maxPnl appartient au bin floor(max/bw)).
+  const maxBinIdx = Math.floor(maxPnl / binWidth) + 1;
+  const bins = [];
+  for (let i = minBinIdx; i < maxBinIdx; i++) {
+    const lo = i * binWidth;
+    const hi = (i + 1) * binWidth;
+    bins.push({
+      lo,
+      hi,
+      mid: (lo + hi) / 2,
+      count: 0,
+      sign: lo >= 0 ? 'up' : 'down',
+    });
+  }
+  for (const p of pnls) {
+    const idx = Math.floor(p / binWidth) - minBinIdx;
+    if (idx >= 0 && idx < bins.length) bins[idx].count++;
+  }
+  return bins;
+}
+
+// Brique 3 — drawdown underwater calculé depuis la série affichée.
+// peak[i] = max(série[0..i]) ; dd[i] = (val[i] / peak[i] − 1) × 100.
+// Renvoie {date, value, peak} pour que le readout puisse afficher le pic.
+function computeDrawdownSeries(series) {
+  if (!Array.isArray(series) || series.length === 0) return [];
+  const out = new Array(series.length);
+  let peak = -Infinity;
+  for (let i = 0; i < series.length; i++) {
+    const p = series[i];
+    const v = Number(p?.value);
+    if (Number.isFinite(v) && v > peak) peak = v;
+    const safePeak = peak === -Infinity ? 0 : peak;
+    const dd =
+      safePeak !== 0 && Number.isFinite(v)
+        ? (v / Math.abs(safePeak) - 1) * 100
+        : 0;
+    out[i] = { date: p?.date, value: dd, peak: safePeak };
+  }
+  return out;
+}
 
 // ─── Sub-primitives ─────────────────────────────────────────────
 
@@ -253,6 +457,172 @@ function WinRateDonut({ winRate, profitFactor }) {
   );
 }
 
+// ─── Brique 6 — éléments de densité hero (gauge + bande forme) ──
+//
+// Posés dans __hero-mid, entre __hero-text et __hero-readout. Statique :
+// pas de hover Recharts, pas d'index. Empile en pleine largeur, fin.
+// Sources strictement déjà présentes côté composant (cf. brief brique 6).
+
+function HeroExposureGauge({
+  exposureUsd,
+  exposurePctNlv,
+  availableUsd,
+  capPct,
+}) {
+  const fillPct = clamp01Pct(exposurePctNlv);
+  const capPos = clamp01Pct(capPct);
+  const hasFill = Number.isFinite(exposurePctNlv);
+  const hasCap = Number.isFinite(capPct);
+  return (
+    <div className="dash-kpi-card__hero-density">
+      <div className="dash-kpi-card__hero-density-head">
+        <span className="dash-kpi-card__hero-density-title">EXPOSITION</span>
+        <span className="dash-kpi-card__hero-density-detail">
+          <span className="dash-kpi-card__hero-density-label">Déployé</span>
+          <span className="dash-kpi-card__hero-density-value">
+            {fmtUsdDeCH(exposureUsd)}
+          </span>
+          <span className="dash-kpi-card__hero-density-sep">·</span>
+          <span className="dash-kpi-card__hero-density-value dash-kpi-card__hero-density-value--accent">
+            {hasFill ? `${exposurePctNlv.toFixed(1)}%` : '——'}
+          </span>
+          <span className="dash-kpi-card__hero-density-label">NLV</span>
+          <span className="dash-kpi-card__hero-density-sep">·</span>
+          <span className="dash-kpi-card__hero-density-label">disponible</span>
+          <span className="dash-kpi-card__hero-density-value">
+            {fmtUsdDeCH(availableUsd)}
+          </span>
+        </span>
+      </div>
+      <div className="dash-kpi-card__hero-gauge">
+        <div className="dash-kpi-card__hero-gauge-track" aria-hidden="true">
+          <div
+            className="dash-kpi-card__hero-gauge-fill"
+            style={{ width: `${fillPct}%` }}
+          />
+          {hasCap ? (
+            <span
+              className="dash-kpi-card__hero-gauge-marker"
+              style={{ left: `${capPos}%` }}
+            />
+          ) : null}
+          {hasCap ? (
+            <span
+              className="dash-kpi-card__hero-gauge-cap"
+              style={{ left: `${capPos}%` }}
+            >
+              MAX {Math.round(capPos)}%
+            </span>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroFormBand({ trades, liveRate, currentStreak, max = 18 }) {
+  const recent = useMemo(() => {
+    if (!Array.isArray(trades) || trades.length === 0) return [];
+    const sorted = trades
+      .slice()
+      .filter((t) => t.do || t.di)
+      .sort((a, b) => (a.do || a.di || '').localeCompare(b.do || b.di || ''));
+    return sorted.slice(-max).map((t) => {
+      const pnl = tradePnlUsd(t, liveRate || 1);
+      return {
+        date: t.do || t.di,
+        pnl,
+        sign: pnl >= 0 ? 'up' : 'down',
+      };
+    });
+  }, [trades, liveRate, max]);
+
+  const n = recent.length;
+  const nbG = recent.filter((r) => r.pnl >= 0).length;
+  const nbP = n - nbG;
+
+  // Streak trailing : on privilégie la métrique globale (`currentStreak`)
+  // — c'est la même par construction tant que le streak ≤ n. Fallback
+  // dérivé du sous-ensemble visible si la métrique manque.
+  const fallbackStreak = useMemo(() => {
+    if (n === 0) return 0;
+    const lastSign = recent[n - 1].sign;
+    let k = 0;
+    for (let i = n - 1; i >= 0; i--) {
+      if (recent[i].sign === lastSign) k++;
+      else break;
+    }
+    return lastSign === 'up' ? k : -k;
+  }, [recent, n]);
+  const streak = Number.isFinite(currentStreak) ? currentStreak : fallbackStreak;
+
+  // Longueur de la série courante VISIBLE dans la bande (peut être < |streak|
+  // si le streak global déborde le sous-ensemble n). Sert au surlignage.
+  const streakInWindow = useMemo(() => {
+    if (n === 0) return 0;
+    const lastSign = recent[n - 1].sign;
+    let k = 0;
+    for (let i = n - 1; i >= 0; i--) {
+      if (recent[i].sign === lastSign) k++;
+      else break;
+    }
+    return k;
+  }, [recent, n]);
+
+  const arrowChar = streak > 0 ? '▲' : streak < 0 ? '▼' : '·';
+  const streakTone = streak > 0 ? 'profit' : streak < 0 ? 'loss' : 'mute';
+
+  return (
+    <div className="dash-kpi-card__hero-density">
+      <div className="dash-kpi-card__hero-density-head">
+        <span className="dash-kpi-card__hero-density-title">
+          {`FORME · ${n} ${n > 1 ? 'DERNIERS TRADES' : 'DERNIER TRADE'}`}
+        </span>
+        {n > 0 ? (
+          <span className="dash-kpi-card__hero-density-detail">
+            <span className="dash-kpi-card__hero-density-value dash-kpi-card__hero-density-value--profit">
+              {nbG} G
+            </span>
+            <span className="dash-kpi-card__hero-density-sep">/</span>
+            <span className="dash-kpi-card__hero-density-value dash-kpi-card__hero-density-value--loss">
+              {nbP} P
+            </span>
+            <span className="dash-kpi-card__hero-density-sep">·</span>
+            <span className="dash-kpi-card__hero-density-label">série</span>
+            <span
+              className={`dash-kpi-card__hero-density-value dash-kpi-card__hero-density-value--${streakTone}`}
+            >
+              {arrowChar}
+              {Math.abs(streak)}
+            </span>
+          </span>
+        ) : null}
+      </div>
+      {n > 0 ? (
+        <div
+          className="dash-kpi-card__hero-form-band"
+          role="img"
+          aria-label={`Forme — ${nbG} gagnants et ${nbP} perdants sur les ${n} derniers trades`}
+        >
+          {recent.map((t, i) => {
+            const isStreak = i >= n - streakInWindow;
+            return (
+              <span
+                key={`${t.date}-${i}`}
+                className={`dash-kpi-card__hero-form-tick dash-kpi-card__hero-form-tick--${t.sign}${isStreak ? ' is-streak' : ''}`}
+                title={`${fmtDateDeCH(t.date)} · ${fmtUsdSignedDeCH(t.pnl)}`}
+                aria-hidden="true"
+              />
+            );
+          })}
+        </div>
+      ) : (
+        <div className="dash-kpi-card__hero-form-band-empty" aria-hidden="true" />
+      )}
+    </div>
+  );
+}
+
 // ─── Derivations ────────────────────────────────────────────────
 
 function useRealizedAllTimeSeries(closedTrades, liveRate) {
@@ -318,6 +688,701 @@ function todayPnlUsd(dailyPnL) {
   return hit ? hit.dailyPnl : 0;
 }
 
+// ─── Readouts hero (brique 2) ─────────────────────────────────
+//
+// Pilote la ligne `__hero-readout` au-dessus du chart. Reçoit le point
+// courant (= survolé si curseur sur graphe, sinon dernier point), la
+// série complète et un flag `isHover` (pour réagir si besoin).
+
+function ReadoutBit({ kind = 'text', tone, children }) {
+  const cls = `dash-kpi-card__hero-readout-${kind}${tone ? ` dash-kpi-card__hero-readout-${kind}--${tone}` : ''}`;
+  return <span className={cls}>{children}</span>;
+}
+
+function renderNlvReadout(point, all) {
+  if (!point) return null;
+  const first = all?.[0]?.value;
+  const peak = all && all.length > 0 ? Math.max(...all.map((p) => p.value)) : null;
+  const deltaStartPct =
+    Number.isFinite(first) && Math.abs(first) > 0
+      ? ((point.value - first) / Math.abs(first)) * 100
+      : null;
+  const deltaPeakPct =
+    Number.isFinite(peak) && Math.abs(peak) > 0
+      ? ((point.value - peak) / Math.abs(peak)) * 100
+      : null;
+  return (
+    <>
+      <ReadoutBit kind="date">{fmtDateDeCH(point.date)}</ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="value">{fmtUsdDeCH(point.value)}</ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="label">vs début</ReadoutBit>
+      <ReadoutBit kind="delta" tone={toneSign(deltaStartPct)}>
+        {fmtPctSignedDeCH(deltaStartPct)}
+      </ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="label">vs pic</ReadoutBit>
+      <ReadoutBit kind="delta" tone={toneSign(deltaPeakPct)}>
+        {fmtPctSignedDeCH(deltaPeakPct)}
+      </ReadoutBit>
+    </>
+  );
+}
+
+// ─── Brique 5 — readouts du mode Mesure (A→B) ─────────────────
+//
+// Un par vue temporelle. Le signe des Δ suit l'ordre des clics (B−A) ;
+// le nombre de jours et la somme Quotidien s'expriment en valeur
+// absolue / sur [min(idxA,idxB), max] (cf. brief).
+
+function renderMeasureEquityReadout(a, b) {
+  if (!a || !b) return null;
+  const days = diffDays(a, b);
+  const absDays = days != null ? Math.abs(days) : null;
+  const deltaUsd = b.value - a.value;
+  const deltaPct =
+    Number.isFinite(a.value) && Math.abs(a.value) > 0
+      ? (deltaUsd / Math.abs(a.value)) * 100
+      : null;
+  const annPct =
+    absDays != null && absDays > 0 && a.value > 0 && b.value > 0
+      ? (Math.pow(b.value / a.value, 365 / absDays) - 1) * 100
+      : null;
+  return (
+    <>
+      <ReadoutBit kind="date">{fmtDateDeCH(a.date)}</ReadoutBit>
+      <ReadoutBit kind="label">→</ReadoutBit>
+      <ReadoutBit kind="date">{fmtDateDeCH(b.date)}</ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="value" tone={toneSign(deltaUsd)}>
+        {fmtUsdSignedDeCH(deltaUsd)}
+      </ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="delta" tone={toneSign(deltaPct)}>
+        {fmtPctSignedDeCH(deltaPct)}
+      </ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="value">{absDays != null ? absDays : '—'}</ReadoutBit>
+      <ReadoutBit kind="label">j</ReadoutBit>
+      {annPct != null ? (
+        <>
+          <ReadoutBit kind="sep">·</ReadoutBit>
+          <ReadoutBit kind="label">ann</ReadoutBit>
+          <ReadoutBit kind="delta" tone={toneSign(annPct)}>
+            {fmtPctSignedDeCH(annPct)}
+          </ReadoutBit>
+        </>
+      ) : null}
+    </>
+  );
+}
+
+function renderMeasureDrawdownReadout(a, b) {
+  if (!a || !b) return null;
+  const days = diffDays(a, b);
+  const absDays = days != null ? Math.abs(days) : null;
+  const deltaPt = b.value - a.value;
+  return (
+    <>
+      <ReadoutBit kind="date">{fmtDateDeCH(a.date)}</ReadoutBit>
+      <ReadoutBit kind="label">→</ReadoutBit>
+      <ReadoutBit kind="date">{fmtDateDeCH(b.date)}</ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="value" tone={toneSign(deltaPt)}>
+        {fmtPpSignedDeCH(deltaPt)}
+      </ReadoutBit>
+      <ReadoutBit kind="label">pt</ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="value">{absDays != null ? absDays : '—'}</ReadoutBit>
+      <ReadoutBit kind="label">j</ReadoutBit>
+    </>
+  );
+}
+
+function renderMeasureCumulativeReadout(a, b) {
+  if (!a || !b) return null;
+  const days = diffDays(a, b);
+  const absDays = days != null ? Math.abs(days) : null;
+  const deltaUsd = b.value - a.value;
+  const perDay = absDays != null && absDays > 0 ? deltaUsd / absDays : null;
+  return (
+    <>
+      <ReadoutBit kind="date">{fmtDateDeCH(a.date)}</ReadoutBit>
+      <ReadoutBit kind="label">→</ReadoutBit>
+      <ReadoutBit kind="date">{fmtDateDeCH(b.date)}</ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="value" tone={toneSign(deltaUsd)}>
+        {fmtUsdSignedDeCH(deltaUsd)}
+      </ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="value">{absDays != null ? absDays : '—'}</ReadoutBit>
+      <ReadoutBit kind="label">j</ReadoutBit>
+      {perDay != null ? (
+        <>
+          <ReadoutBit kind="sep">·</ReadoutBit>
+          <ReadoutBit kind="delta" tone={toneSign(perDay)}>
+            {fmtUsdSignedDeCH(perDay)}
+          </ReadoutBit>
+          <ReadoutBit kind="label">/j</ReadoutBit>
+        </>
+      ) : null}
+    </>
+  );
+}
+
+function renderMeasureDailyReadout(a, b, data) {
+  if (!a || !b || !Array.isArray(data)) return null;
+  const idxA = data.findIndex((p) => p?.date === a.date);
+  const idxB = data.findIndex((p) => p?.date === b.date);
+  if (idxA < 0 || idxB < 0) return null;
+  const lo = Math.min(idxA, idxB);
+  const hi = Math.max(idxA, idxB);
+  let sum = 0;
+  for (let i = lo; i <= hi; i++) {
+    const v = Number(data[i]?.value);
+    if (Number.isFinite(v)) sum += v;
+  }
+  const count = hi - lo + 1;
+  const mean = count > 0 ? sum / count : null;
+  return (
+    <>
+      <ReadoutBit kind="date">{fmtDateDeCH(a.date)}</ReadoutBit>
+      <ReadoutBit kind="label">→</ReadoutBit>
+      <ReadoutBit kind="date">{fmtDateDeCH(b.date)}</ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="label">somme</ReadoutBit>
+      <ReadoutBit kind="value" tone={toneSign(sum)}>
+        {fmtUsdSignedDeCH(sum)}
+      </ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="value">{count}</ReadoutBit>
+      <ReadoutBit kind="label">{count > 1 ? 'jours' : 'jour'}</ReadoutBit>
+      {mean != null ? (
+        <>
+          <ReadoutBit kind="sep">·</ReadoutBit>
+          <ReadoutBit kind="delta" tone={toneSign(mean)}>
+            {fmtUsdSignedDeCH(mean)}
+          </ReadoutBit>
+          <ReadoutBit kind="label">/j</ReadoutBit>
+        </>
+      ) : null}
+    </>
+  );
+}
+
+// Brique 4 — readout vue Quotidien (Realized).
+// {date} · {P&L jour $ signé, vert/rouge} ce jour · {cumulé $ signé} cumulé
+function renderRealizedDailyReadout(point) {
+  if (!point) return null;
+  const day = point.value;
+  const cum = point.cumulative;
+  return (
+    <>
+      <ReadoutBit kind="date">{fmtDateDeCH(point.date)}</ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="value" tone={toneSign(day)}>
+        {fmtUsdSignedDeCH(day)}
+      </ReadoutBit>
+      <ReadoutBit kind="label">ce jour</ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="delta" tone={toneSign(cum)}>
+        {fmtUsdSignedDeCH(cum)}
+      </ReadoutBit>
+      <ReadoutBit kind="label">cumulé</ReadoutBit>
+    </>
+  );
+}
+
+// Brique 4 — readout vue Distribution (Realized).
+// {lo $} à {hi $} · {n} trades · sur {total} total
+// Le total all-time est rappelé en queue pour matérialiser le "N trades"
+// que demande le brief (la Distribution n'est pas bornée par le range).
+function renderDistributionReadout(point, bins) {
+  if (!point) return null;
+  const total = Array.isArray(bins)
+    ? bins.reduce((s, b) => s + (b?.count || 0), 0)
+    : 0;
+  return (
+    <>
+      <ReadoutBit kind="date">{fmtUsdDeCH(point.lo)}</ReadoutBit>
+      <ReadoutBit kind="label">à</ReadoutBit>
+      <ReadoutBit kind="date">{fmtUsdDeCH(point.hi)}</ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="value" tone={point.sign === 'up' ? 'profit' : 'loss'}>
+        {fmtAxisCountDeCH(point.count)}
+      </ReadoutBit>
+      <ReadoutBit kind="label">{point.count > 1 ? 'trades' : 'trade'}</ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="label">sur</ReadoutBit>
+      <ReadoutBit kind="delta" tone="mute">
+        {fmtAxisCountDeCH(total)}
+      </ReadoutBit>
+      <ReadoutBit kind="label">total</ReadoutBit>
+    </>
+  );
+}
+
+// Brique 3 — readout vue Drawdown (NLV uniquement).
+// {date} · {dd% signé, rouge si <0} · sous le pic ({pic $})
+function renderDrawdownReadout(point) {
+  if (!point) return null;
+  const dd = point.value;
+  const peak = point.peak;
+  return (
+    <>
+      <ReadoutBit kind="date">{fmtDateDeCH(point.date)}</ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="value" tone={toneSign(dd)}>
+        {fmtPctSignedDeCH(dd, 2)}
+      </ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="label">sous le pic</ReadoutBit>
+      <ReadoutBit kind="delta" tone="mute">
+        ({Number.isFinite(peak) ? fmtUsdDeCH(peak) : '—'})
+      </ReadoutBit>
+    </>
+  );
+}
+
+function renderRealizedReadout(point, all) {
+  if (!point) return null;
+  const idx = Array.isArray(all)
+    ? all.findIndex((p) => p.date === point.date)
+    : -1;
+  const prev = idx > 0 ? all[idx - 1].value : null;
+  const dayPnl = prev != null ? point.value - prev : null;
+  return (
+    <>
+      <ReadoutBit kind="date">{fmtDateDeCH(point.date)}</ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      <ReadoutBit kind="value" tone={toneSign(point.value)}>
+        {fmtUsdSignedDeCH(point.value)}
+      </ReadoutBit>
+      <ReadoutBit kind="label">cumulé</ReadoutBit>
+      <ReadoutBit kind="sep">·</ReadoutBit>
+      {dayPnl != null ? (
+        <>
+          <ReadoutBit kind="delta" tone={toneSign(dayPnl)}>
+            {fmtUsdSignedDeCH(dayPnl)}
+          </ReadoutBit>
+          <ReadoutBit kind="label">ce jour</ReadoutBit>
+        </>
+      ) : (
+        <ReadoutBit kind="label">— ce jour</ReadoutBit>
+      )}
+    </>
+  );
+}
+
+// ─── HeroAreaChart (brique 2) ──────────────────────────────────
+//
+// Recharts AreaChart pleine largeur pour la zone graphique des 2 cartes
+// hero. Source de données INCHANGÉE (alimenté avec la même série que
+// le Sparkline précédent). Reporte le point survolé via onActiveChange
+// pour piloter __hero-readout (lecture point-par-point).
+//
+// Pattern Recharts idiomatique :
+//   - ComposedChart.onMouseMove → state.activePayload[0].payload
+//   - Tooltip content={() => null} pour avoir le cursor sans bulle
+//   - Couleurs via var(--*) du theme : le SVG inline hérite des
+//     CSS custom properties, donc le theme switch est instantané.
+
+function HeroAreaChart({
+  data,
+  withZeroBaseline,
+  chartId,
+  onActiveChange,
+  measureADate = null,
+  measureBDate = null,
+  measureLocked = false,
+  tone = 'up', // brique 3 — 'up' = vert (équité), 'down' = rouge (drawdown)
+  yFormatter = fmtUsdDeCH,
+  showPeakLine = true,
+  baseValue, // Recharts Area.baseValue ('auto' | number) — undefined = défaut Recharts
+  yDomain = ['dataMin', 'dataMax'],
+}) {
+  const T = useLiveTheme();
+  const peak = useMemo(() => {
+    if (!data || data.length === 0) return null;
+    return Math.max(...data.map((p) => p.value));
+  }, [data]);
+
+  if (!data || data.length < 2) {
+    return <div className="dash-kpi-card__hero-chart-empty" aria-hidden="true" />;
+  }
+
+  const lineColor = tone === 'down' ? 'var(--pnl-down)' : 'var(--pnl-up)';
+  const gradId = `heroGrad-${chartId || 'x'}-${tone}`;
+
+  return (
+    <Suspense
+      fallback={<div className="dash-kpi-card__hero-chart-empty" aria-hidden="true" />}
+    >
+      <LazyRecharts>
+        {(R) => (
+          <R.ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+            <R.ComposedChart data={data} margin={HERO_CHART_MARGINS}>
+              <defs>
+                <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={lineColor} stopOpacity={0.28} />
+                  <stop offset="100%" stopColor={lineColor} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <R.CartesianGrid
+                stroke="var(--line-hairline)"
+                strokeDasharray="0"
+                vertical={false}
+                horizontal
+              />
+              <R.XAxis
+                dataKey="date"
+                stroke="var(--ink-mute)"
+                tick={{ fontFamily: T.fonts.mono, fontSize: 10, fill: 'var(--ink-mute)' }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={fmtAxisDateDeCH}
+                minTickGap={42}
+                height={20}
+              />
+              <R.YAxis
+                orientation="right"
+                stroke="var(--ink-mute)"
+                tick={{ fontFamily: T.fonts.mono, fontSize: 10, fill: 'var(--ink-mute)' }}
+                axisLine={false}
+                tickLine={false}
+                width={HERO_CHART_YAXIS_WIDTH}
+                tickFormatter={yFormatter}
+                tickCount={4}
+                domain={yDomain}
+              />
+              {withZeroBaseline ? (
+                <R.ReferenceLine
+                  y={0}
+                  stroke="var(--line-emphasis)"
+                  strokeDasharray="2 3"
+                />
+              ) : null}
+              {showPeakLine && Number.isFinite(peak) ? (
+                <R.ReferenceLine
+                  y={peak}
+                  stroke="var(--line-emphasis)"
+                  strokeDasharray="3 3"
+                  ifOverflow="extendDomain"
+                  label={{
+                    value: `PIC ${yFormatter(peak)}`,
+                    position: 'insideTopLeft',
+                    fill: 'var(--ink-mute)',
+                    fontFamily: T.fonts.mono,
+                    fontSize: 10,
+                    offset: 4,
+                  }}
+                />
+              ) : null}
+              <R.Area
+                dataKey="value"
+                type="monotone"
+                fill={`url(#${gradId})`}
+                stroke={lineColor}
+                strokeWidth={2}
+                baseValue={baseValue}
+                isAnimationActive={false}
+                activeDot={{
+                  r: 4,
+                  fill: lineColor,
+                  stroke: 'var(--qc-bg-surface)',
+                  strokeWidth: 2,
+                }}
+              />
+              {measureADate && measureBDate ? (
+                <R.ReferenceArea
+                  x1={measureADate}
+                  x2={measureBDate}
+                  fill="var(--accent-amber)"
+                  fillOpacity={0.12}
+                  stroke="none"
+                  ifOverflow="visible"
+                />
+              ) : null}
+              {measureADate ? (
+                <R.ReferenceLine
+                  x={measureADate}
+                  stroke="var(--accent-amber)"
+                  strokeWidth={2}
+                  ifOverflow="visible"
+                />
+              ) : null}
+              {measureBDate ? (
+                <R.ReferenceLine
+                  x={measureBDate}
+                  stroke="var(--accent-amber)"
+                  strokeWidth={2}
+                  strokeDasharray={measureLocked ? '0' : '3 3'}
+                  ifOverflow="visible"
+                />
+              ) : null}
+              <R.Tooltip
+                content={() => null}
+                cursor={{ stroke: 'var(--line-emphasis)', strokeDasharray: '2 3' }}
+                isAnimationActive={false}
+              />
+            </R.ComposedChart>
+          </R.ResponsiveContainer>
+        )}
+      </LazyRecharts>
+    </Suspense>
+  );
+}
+
+// ─── HeroBarChart — vue Quotidien Realized (brique 4) ──────────
+//
+// Barres P&L par jour, couleur par signe. Réutilise le même style
+// d'axes / gridlines / cursor que HeroAreaChart pour rester cohérent
+// visuellement entre les vues du toggle.
+
+function HeroBarChart({
+  data,
+  chartId,
+  onActiveChange,
+  measureADate = null,
+  measureBDate = null,
+  measureLocked = false,
+  xDataKey = 'date',
+  yDataKey = 'value',
+  xFormatter = fmtAxisDateDeCH,
+  yFormatter = fmtUsdDeCH,
+  positiveColor = 'var(--pnl-up)',
+  negativeColor = 'var(--pnl-down)',
+}) {
+  const T = useLiveTheme();
+  if (!data || data.length === 0) {
+    return <div className="dash-kpi-card__hero-chart-empty" aria-hidden="true" />;
+  }
+  return (
+    <Suspense
+      fallback={<div className="dash-kpi-card__hero-chart-empty" aria-hidden="true" />}
+    >
+      <LazyRecharts>
+        {(R) => (
+          <R.ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+            <R.BarChart
+              data={data}
+              margin={HERO_CHART_MARGINS}
+              barCategoryGap="20%"
+            >
+              <R.CartesianGrid
+                stroke="var(--line-hairline)"
+                strokeDasharray="0"
+                vertical={false}
+                horizontal
+              />
+              <R.XAxis
+                dataKey={xDataKey}
+                stroke="var(--ink-mute)"
+                tick={{ fontFamily: T.fonts.mono, fontSize: 10, fill: 'var(--ink-mute)' }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={xFormatter}
+                minTickGap={42}
+                height={20}
+              />
+              <R.YAxis
+                orientation="right"
+                stroke="var(--ink-mute)"
+                tick={{ fontFamily: T.fonts.mono, fontSize: 10, fill: 'var(--ink-mute)' }}
+                axisLine={false}
+                tickLine={false}
+                width={HERO_CHART_YAXIS_WIDTH}
+                tickFormatter={yFormatter}
+                tickCount={4}
+              />
+              <R.ReferenceLine
+                y={0}
+                stroke="var(--line-emphasis)"
+                strokeDasharray="2 3"
+              />
+              <R.Bar dataKey={yDataKey} isAnimationActive={false}>
+                {data.map((d, i) => (
+                  <R.Cell
+                    key={`${chartId || 'b'}-${i}`}
+                    fill={(d?.[yDataKey] ?? 0) >= 0 ? positiveColor : negativeColor}
+                  />
+                ))}
+              </R.Bar>
+              {measureADate && measureBDate ? (
+                <R.ReferenceArea
+                  x1={measureADate}
+                  x2={measureBDate}
+                  fill="var(--accent-amber)"
+                  fillOpacity={0.12}
+                  stroke="none"
+                  ifOverflow="visible"
+                />
+              ) : null}
+              {measureADate ? (
+                <R.ReferenceLine
+                  x={measureADate}
+                  stroke="var(--accent-amber)"
+                  strokeWidth={2}
+                  ifOverflow="visible"
+                />
+              ) : null}
+              {measureBDate ? (
+                <R.ReferenceLine
+                  x={measureBDate}
+                  stroke="var(--accent-amber)"
+                  strokeWidth={2}
+                  strokeDasharray={measureLocked ? '0' : '3 3'}
+                  ifOverflow="visible"
+                />
+              ) : null}
+              <R.Tooltip
+                content={() => null}
+                cursor={{ fill: 'var(--line-hairline)' }}
+                isAnimationActive={false}
+              />
+            </R.BarChart>
+          </R.ResponsiveContainer>
+        )}
+      </LazyRecharts>
+    </Suspense>
+  );
+}
+
+// ─── HeroHistogram — vue Distribution Realized (brique 4) ──────
+//
+// Axe X numérique (montants $), axe Y entiers (count), bins de largeur
+// fixe alignés sur 0. Marqueurs verticaux : break-even (0) + expectancy
+// (amber pointillés). Le hover renvoie le bin survolé (lo/hi/count/sign).
+
+function HeroHistogram({
+  data,
+  chartId,
+  onActiveChange,
+  expectancy,
+  binWidth = 150,
+}) {
+  const T = useLiveTheme();
+  if (!data || data.length === 0) {
+    return <div className="dash-kpi-card__hero-chart-empty" aria-hidden="true" />;
+  }
+  const xMin = data[0].lo;
+  const xMax = data[data.length - 1].hi;
+  // Ticks tous les 2 bins pour ne pas saturer l'axe X.
+  const tickStep = binWidth * Math.max(1, Math.ceil(data.length / 6));
+  const ticks = [];
+  for (let v = Math.ceil(xMin / tickStep) * tickStep; v <= xMax; v += tickStep) {
+    ticks.push(v);
+  }
+  if (ticks[0] !== xMin) ticks.unshift(xMin);
+  if (ticks[ticks.length - 1] !== xMax) ticks.push(xMax);
+  return (
+    <Suspense
+      fallback={<div className="dash-kpi-card__hero-chart-empty" aria-hidden="true" />}
+    >
+      <LazyRecharts>
+        {(R) => (
+          <R.ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+            <R.BarChart
+              data={data}
+              margin={{ top: 14, right: 8, bottom: 4, left: 4 }}
+              onMouseMove={(state) => {
+                if (state?.isTooltipActive && state.activePayload?.[0]?.payload) {
+                  onActiveChange?.(state.activePayload[0].payload);
+                }
+              }}
+              onMouseLeave={() => onActiveChange?.(null)}
+            >
+              <R.CartesianGrid
+                stroke="var(--line-hairline)"
+                strokeDasharray="0"
+                vertical={false}
+                horizontal
+              />
+              <R.XAxis
+                type="number"
+                dataKey="mid"
+                stroke="var(--ink-mute)"
+                tick={{ fontFamily: T.fonts.mono, fontSize: 10, fill: 'var(--ink-mute)' }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={fmtUsdDeCH}
+                domain={[xMin, xMax]}
+                ticks={ticks}
+                height={20}
+                allowDataOverflow={false}
+              />
+              <R.YAxis
+                orientation="right"
+                stroke="var(--ink-mute)"
+                tick={{ fontFamily: T.fonts.mono, fontSize: 10, fill: 'var(--ink-mute)' }}
+                axisLine={false}
+                tickLine={false}
+                width={48}
+                tickFormatter={fmtAxisCountDeCH}
+                tickCount={4}
+                allowDecimals={false}
+              />
+              <R.ReferenceLine
+                x={0}
+                stroke="var(--line-emphasis)"
+                strokeDasharray="2 3"
+              />
+              {Number.isFinite(expectancy) ? (
+                <R.ReferenceLine
+                  x={expectancy}
+                  stroke="var(--accent-amber)"
+                  strokeDasharray="3 3"
+                  label={{
+                    value: `moy ${fmtUsdSignedDeCH(expectancy)}`,
+                    position: 'insideTopRight',
+                    fill: 'var(--accent-amber)',
+                    fontFamily: T.fonts.mono,
+                    fontSize: 10,
+                    offset: 4,
+                  }}
+                />
+              ) : null}
+              <R.Bar dataKey="count" isAnimationActive={false}>
+                {data.map((d, i) => (
+                  <R.Cell
+                    key={`${chartId || 'h'}-${i}`}
+                    fill={d.sign === 'up' ? 'var(--pnl-up)' : 'var(--pnl-down)'}
+                  />
+                ))}
+              </R.Bar>
+              <R.Tooltip
+                content={() => null}
+                cursor={{ fill: 'var(--line-hairline)' }}
+                isAnimationActive={false}
+              />
+            </R.BarChart>
+          </R.ResponsiveContainer>
+        )}
+      </LazyRecharts>
+    </Suspense>
+  );
+}
+
+// Brique 4 — dispatch chart selon `kind` ('area' default, 'bar', 'histogram').
+// Brique 5 — `extraProps` propage les hooks de mesure (onPointClick,
+// measureADate/measureBDate/measureLocked) aux composants temporels.
+// L'Histogram (Distribution, axe X numérique) reçoit aussi les
+// extraProps mais ses props mesure sont ignorées (pas de mesure
+// possible sur axe non temporel).
+function renderHeroChart(chart, extraProps = {}) {
+  if (!chart) return null;
+  // eslint-disable-next-line no-unused-vars
+  const { kind = 'area', renderReadout, renderMeasureReadout, ...chartProps } = chart;
+  if (kind === 'bar') {
+    return <HeroBarChart {...chartProps} {...extraProps} />;
+  }
+  if (kind === 'histogram') {
+    return <HeroHistogram {...chartProps} {...extraProps} />;
+  }
+  return <HeroAreaChart {...chartProps} {...extraProps} />;
+}
+
 // ─── Card shells ────────────────────────────────────────────────
 
 function KpiCardHero({
@@ -332,11 +1397,175 @@ function KpiCardHero({
   deltaUsd,
   deltaPct,
   microStats,
-  spark,
+  // chart : { kind?, data, chartId, renderReadout, renderMeasureReadout, … }
+  chart,
+  // Brique 6 — bloc densité (gauge / bande forme) entre __hero-text et readout.
+  densityBlock = null,
   footerCells,
 }) {
   const deltaTone = toneSign(deltaUsd);
   const showRange = range != null && typeof setRange === 'function';
+
+  // Brique 2 — point survolé propagé par HeroAreaChart.onActiveChange.
+  // Brique 5 — on capture aussi l'index actif (Recharts activeTooltipIndex)
+  // pour pouvoir le committer en mode Mesure au clic.
+  // Fix brique 5 — l'index est aussi tenu dans un useRef pour que le
+  // handler de clic le lise sans stale closure (useCallback ne peut pas
+  // capturer un state qui change à chaque tick souris sans le re-créer).
+  const [activePoint, setActivePoint] = useState(null);
+  const [activeIndex, setActiveIndex] = useState(null);
+  const activeIndexRef = useRef(null);
+  // Fix racine — l'index n'est plus dérivé du onMouseMove Recharts (qui
+  // ne propageait jamais activeTooltipIndex sur ces ComposedChart/BarChart),
+  // mais calculé géométriquement depuis la position X du curseur sur ce
+  // conteneur. Ref sur le <div .__hero-chart> pour getBoundingClientRect.
+  const chartBoxRef = useRef(null);
+
+  const handleActiveChange = useCallback((point, index) => {
+    const idx = typeof index === 'number' ? index : null;
+    setActivePoint(point);
+    setActiveIndex(idx);
+    activeIndexRef.current = idx;
+  }, []);
+  const fallbackPoint = useMemo(() => {
+    const d = chart?.data;
+    return Array.isArray(d) && d.length > 0 ? d[d.length - 1] : null;
+  }, [chart?.data]);
+  const currentPoint = activePoint || fallbackPoint;
+  const isHovering = activePoint != null;
+
+  // Brique 5 — mode Mesure. State local À la carte. canMeasure déduit
+  // du kind (toutes les vues temporelles : area / bar). La Distribution
+  // (histogram, XAxis numérique) ne le supporte pas.
+  const canMeasure = chart != null && chart.kind !== 'histogram';
+  const [measureMode, setMeasureMode] = useState(false);
+  const [anchorA, setAnchorA] = useState(null);
+  const [anchorB, setAnchorB] = useState(null);
+  const [locked, setLocked] = useState(false);
+
+  // Reset des ancres quand la série/la vue change (switch view, switch
+  // range côté parent → nouvelle référence data ou nouveau chartId).
+  // Le mode mesure reste actif (acceptable d'après le brief).
+  useEffect(() => {
+    setAnchorA(null);
+    setAnchorB(null);
+    setLocked(false);
+  }, [chart?.chartId, chart?.data]);
+
+  // Distribution : pas de mesure possible, on force OFF pour qu'aucune
+  // bande fantôme ne traîne quand on rebascule sur une vue temporelle.
+  useEffect(() => {
+    if (!canMeasure) {
+      setMeasureMode(false);
+      setAnchorA(null);
+      setAnchorB(null);
+      setLocked(false);
+    }
+  }, [canMeasure]);
+
+  // Fix brique 5 — le clic est désormais capturé sur le <div> wrapper du
+  // chart (cf. JSX plus bas), pas sur le composant Recharts. Raison :
+  //   (A) le onClick de Recharts sur ComposedChart/BarChart ne se
+  //       déclenche pas de façon fiable (clic hors bar, transition de
+  //       state interne, etc.) — un onClick de div toujours via bubbling.
+  //   (B) l'index actif est lu depuis activeIndexRef.current, pas depuis
+  //       le state `activeIndex`, pour qu'aucune stale closure n'oublie
+  //       le dernier survol (useCallback avec deps incomplètes serait
+  //       un piège silencieux).
+  const handleChartContainerClick = useCallback(() => {
+    if (!measureMode) return;
+    const idx = activeIndexRef.current;
+    if (idx == null) return;
+    if (locked) {
+      setAnchorA(null);
+      setAnchorB(null);
+      setLocked(false);
+      return;
+    }
+    if (anchorA == null) {
+      setAnchorA(idx);
+      setAnchorB(null);
+      setLocked(false);
+      return;
+    }
+    if (idx === anchorA) return; // ignore B == A
+    setAnchorB(idx);
+    setLocked(true);
+  }, [measureMode, anchorA, locked]);
+
+  // Fix racine — survol par géométrie sur les vues temporelles (canMeasure).
+  // Distribution garde le comportement Recharts par défaut (axe X numérique,
+  // pas d'index séquentiel utilisable depuis la position X simple).
+  const handleBoxMove = useCallback(
+    (e) => {
+      if (!canMeasure) return;
+      const box = chartBoxRef.current;
+      const data = chart?.data;
+      if (!box || !Array.isArray(data) || data.length === 0) return;
+      const rect = box.getBoundingClientRect();
+      const plotLeft = rect.left + HERO_CHART_PLOT_OFFSET_LEFT;
+      const plotRight = rect.right - HERO_CHART_PLOT_OFFSET_RIGHT;
+      const width = plotRight - plotLeft;
+      if (width <= 0) return;
+      const ratio = Math.min(
+        1,
+        Math.max(0, (e.clientX - plotLeft) / width)
+      );
+      const idx = Math.min(
+        data.length - 1,
+        Math.max(0, Math.round(ratio * (data.length - 1)))
+      );
+      handleActiveChange(data[idx], idx);
+    },
+    [canMeasure, chart?.data, handleActiveChange]
+  );
+
+  const handleBoxLeave = useCallback(() => {
+    if (!canMeasure) return;
+    handleActiveChange(null, null);
+  }, [canMeasure, handleActiveChange]);
+
+  // Calcule les ancres "vivantes" (B preview = activeIndex tant que
+  // non locked) et les dates correspondantes pour les ReferenceLine/Area.
+  const data = chart?.data;
+  const aPt =
+    measureMode && anchorA != null && Array.isArray(data) ? data[anchorA] : null;
+  const bPtIndex = (() => {
+    if (!measureMode) return null;
+    if (anchorB != null) return anchorB;
+    if (anchorA != null && !locked && activeIndex != null && activeIndex !== anchorA)
+      return activeIndex;
+    return null;
+  })();
+  const bPt = bPtIndex != null && Array.isArray(data) ? data[bPtIndex] : null;
+  const measureADate = aPt?.date || null;
+  const measureBDate = bPt?.date || null;
+
+  // Readout : mode mesure shunte le rendu normal.
+  let readoutContent = null;
+  if (chart) {
+    if (measureMode && !aPt) {
+      readoutContent = (
+        <ReadoutBit kind="label">
+          Mesure — clique le point A, puis le point B
+        </ReadoutBit>
+      );
+    } else if (measureMode && aPt && !bPt) {
+      readoutContent = (
+        <>
+          <ReadoutBit kind="label">Mesure — A sur</ReadoutBit>
+          <ReadoutBit kind="date">{fmtDateDeCH(aPt.date)}</ReadoutBit>
+          <ReadoutBit kind="sep">·</ReadoutBit>
+          <ReadoutBit kind="label">survole et clique B</ReadoutBit>
+        </>
+      );
+    } else if (measureMode && aPt && bPt && chart.renderMeasureReadout) {
+      readoutContent = chart.renderMeasureReadout(aPt, bPt, chart.data, locked);
+    } else if (chart.renderReadout) {
+      readoutContent = chart.renderReadout(currentPoint, chart.data, isHovering);
+    }
+  }
+
   return (
     <section className="dash-kpi-card dash-kpi-card--hero" data-tone={valueTone}>
       <div className="dash-kpi-card__top">
@@ -382,7 +1611,46 @@ function KpiCardHero({
             </div>
           ) : null}
         </div>
-        <div className="dash-kpi-card__hero-spark">{spark}</div>
+        {densityBlock}
+        {chart ? (
+          <>
+            <div
+              className="dash-kpi-card__hero-readout"
+              role="status"
+              aria-live="polite"
+              data-hover={isHovering ? 'true' : undefined}
+              data-measure={measureMode ? 'true' : undefined}
+            >
+              {canMeasure ? (
+                <button
+                  type="button"
+                  className={`dash-kpi-card__measure-btn${measureMode ? ' is-active' : ''}`}
+                  onClick={() => setMeasureMode((m) => !m)}
+                  aria-pressed={measureMode}
+                  title={measureMode ? 'Désactiver la mesure' : 'Outil mesure A → B'}
+                >
+                  <Ruler size={13} aria-hidden="true" />
+                </button>
+              ) : null}
+              <span className="dash-kpi-card__hero-readout-content">{readoutContent}</span>
+            </div>
+            <div
+              ref={chartBoxRef}
+              className="dash-kpi-card__hero-chart"
+              data-measure={measureMode ? 'true' : undefined}
+              onClick={handleChartContainerClick}
+              onMouseMove={handleBoxMove}
+              onMouseLeave={handleBoxLeave}
+            >
+              {renderHeroChart(chart, {
+                onActiveChange: handleActiveChange,
+                measureADate,
+                measureBDate,
+                measureLocked: locked,
+              })}
+            </div>
+          </>
+        ) : null}
       </div>
       <KpiFooter cells={footerCells} />
     </section>
@@ -522,6 +1790,37 @@ export default function DashboardKPICards() {
     const slice = rangeConf.days == null ? base : base.slice(-rangeConf.days);
     return slice.map((p) => ({ date: p.date, value: p.equity }));
   }, [metrics, equityHistory, rangeConf.days]);
+
+  // Brique 3 — toggle de vue Équité / Drawdown, NLV uniquement.
+  // L'état vit dans le parent (la carte NLV est sans état propre côté
+  // KpiCardHero pour cette dimension). Drawdown dérivé de la série déjà
+  // filtrée par le range : changer de range recompose les 2 vues.
+  const [nlvView, setNlvView] = useState('equity');
+  const nlvDrawdownSeries = useMemo(
+    () => computeDrawdownSeries(nlvSeries),
+    [nlvSeries]
+  );
+
+  // Brique 4 — toggle Realized : Cumulé (défaut, ALL-TIME comme avant) /
+  // Quotidien (rangé) / Distribution (all-time, indépendant du range).
+  // Cumulé conserve sciemment realizedAllTimeSeries pour rester pixel-
+  // identique au comportement antérieur (cf. brief).
+  const [realizedView, setRealizedView] = useState('cumulative');
+  const realizedRangedCumSeries = useMemo(() => {
+    if (!Array.isArray(realizedAllTimeSeries) || realizedAllTimeSeries.length === 0)
+      return [];
+    return rangeConf.days == null
+      ? realizedAllTimeSeries
+      : realizedAllTimeSeries.slice(-rangeConf.days);
+  }, [realizedAllTimeSeries, rangeConf.days]);
+  const realizedDailySeries = useMemo(
+    () => computeRealizedDailySeries(realizedRangedCumSeries),
+    [realizedRangedCumSeries]
+  );
+  const realizedDistributionBins = useMemo(
+    () => computeDistributionBins(closedTrades, liveRate || 1, 150),
+    [closedTrades, liveRate]
+  );
 
   const dayPnlSeries = useMemo(() => {
     if (!dailyPnL || dailyPnL.length === 0) return [];
@@ -682,6 +1981,17 @@ export default function DashboardKPICards() {
         <KpiCardHero
           range={range}
           setRange={setRange}
+          topRight={
+            <span className="dash-kpi-card__top-tools">
+              <ViewToggle
+                value={nlvView}
+                onChange={setNlvView}
+                options={NLV_VIEWS}
+                ariaLabel="Vue affichée NLV"
+              />
+              <RangeSelector value={range} onChange={setRange} />
+            </span>
+          }
           value={fmtUsdCompact(nlvUsd)}
           valueTone="accent"
           chfLine={nlvChfLine}
@@ -706,21 +2016,38 @@ export default function DashboardKPICards() {
               title: 'P&L cumulé du mois en cours',
             },
           ]}
-          spark={
-            <Sparkline
-              data={nlvSeries}
-              color={toneSign(rangeDeltaUsd) === 'loss' ? 'loss' : 'profit'}
-              height={130}
-              area
-              dot
-              strokeWidth={2}
-              dotRadius={4}
-              dotHaloRadius={8}
-              gradientOpacity={0.4}
-              gridlines={3}
-              axisLabels
-              formatLabel={fmtAxisUsd}
+          densityBlock={
+            <HeroExposureGauge
+              exposureUsd={exposureUsd}
+              exposurePctNlv={expoPctNlv}
+              availableUsd={availableUsd}
+              capPct={SNIPER_DEFAULTS.notionalMaxPct}
             />
+          }
+          chart={
+            nlvView === 'drawdown'
+              ? {
+                  data: nlvDrawdownSeries,
+                  chartId: 'nlv-dd',
+                  tone: 'down',
+                  withZeroBaseline: true,
+                  showPeakLine: false,
+                  yFormatter: fmtAxisPctDeCH,
+                  baseValue: 0,
+                  // Si jamais le drawdown reste à 0 (plus-hauts continus), on
+                  // garantit un petit espace visuel sous la ligne 0 pour que
+                  // la base de référence ne paraisse pas cassée.
+                  yDomain: [(dataMin) => Math.min(dataMin, -0.1), 0],
+                  renderReadout: renderDrawdownReadout,
+                  renderMeasureReadout: renderMeasureDrawdownReadout,
+                }
+              : {
+                  data: nlvSeries,
+                  chartId: 'nlv',
+                  withZeroBaseline: false,
+                  renderReadout: renderNlvReadout,
+                  renderMeasureReadout: renderMeasureEquityReadout,
+                }
           }
           footerCells={[
             {
@@ -753,13 +2080,21 @@ export default function DashboardKPICards() {
           label="REALIZED · P&L CUMULÉ"
           liveBadge={null}
           topRight={
-            realizedPctDisplay != null ? (
-              <Pill tone={realTone === 'mute' ? 'mute' : realTone}>
-                {fmtPctSigned(realizedPctDisplay, 1)}
-              </Pill>
-            ) : (
-              <Pill tone="mute">ALL-TIME</Pill>
-            )
+            <span className="dash-kpi-card__top-tools">
+              <ViewToggle
+                value={realizedView}
+                onChange={setRealizedView}
+                options={REALIZED_VIEWS}
+                ariaLabel="Vue affichée Realized"
+              />
+              {realizedPctDisplay != null ? (
+                <Pill tone={realTone === 'mute' ? 'mute' : realTone}>
+                  {fmtPctSigned(realizedPctDisplay, 1)}
+                </Pill>
+              ) : (
+                <Pill tone="mute">ALL-TIME</Pill>
+              )}
+            </span>
           }
           value={fmtUsdSigned(realizedUsd)}
           valueTone={realTone}
@@ -802,21 +2137,37 @@ export default function DashboardKPICards() {
                     : 'mute',
             },
           ]}
-          spark={
-            <Sparkline
-              data={realizedAllTimeSeries}
-              color={realTone === 'loss' ? 'loss' : 'profit'}
-              height={130}
-              area
-              dot
-              strokeWidth={2}
-              dotRadius={4}
-              dotHaloRadius={8}
-              gradientOpacity={0.4}
-              gridlines={3}
-              axisLabels
-              formatLabel={fmtAxisUsd}
+          densityBlock={
+            <HeroFormBand
+              trades={closedTrades}
+              liveRate={liveRate || 1}
+              currentStreak={currentStreak}
             />
+          }
+          chart={
+            realizedView === 'daily'
+              ? {
+                  kind: 'bar',
+                  data: realizedDailySeries,
+                  chartId: 'realized-daily',
+                  renderReadout: renderRealizedDailyReadout,
+                  renderMeasureReadout: renderMeasureDailyReadout,
+                }
+              : realizedView === 'distribution'
+                ? {
+                    kind: 'histogram',
+                    data: realizedDistributionBins,
+                    chartId: 'realized-dist',
+                    expectancy: expectancy,
+                    renderReadout: renderDistributionReadout,
+                  }
+                : {
+                    data: realizedAllTimeSeries,
+                    chartId: 'realized',
+                    withZeroBaseline: true,
+                    renderReadout: renderRealizedReadout,
+                    renderMeasureReadout: renderMeasureCumulativeReadout,
+                  }
           }
           footerCells={[
             {
