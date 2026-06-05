@@ -3546,6 +3546,12 @@
   grid-template-columns: repeat(4, 1fr);
 }
 
+/* Brique 7 — rails enrichis hero (6 cellules). Scope hero uniquement :
+   les 5 KPI secondaires gardent leur grille --2/--3/--4. */
+.dash-kpi-card__footer--6 {
+  grid-template-columns: repeat(6, 1fr);
+}
+
 .dash-kpi-card__cell {
   display: flex;
   flex-direction: column;
@@ -3555,14 +3561,16 @@
 
 .dash-kpi-card__footer--2 .dash-kpi-card__cell:nth-child(1),
 .dash-kpi-card__footer--3 .dash-kpi-card__cell:not(:last-child),
-.dash-kpi-card__footer--4 .dash-kpi-card__cell:not(:last-child) {
+.dash-kpi-card__footer--4 .dash-kpi-card__cell:not(:last-child),
+.dash-kpi-card__footer--6 .dash-kpi-card__cell:not(:last-child) {
   border-right: 1px solid color-mix(in srgb, var(--qc-text-primary) 6%, transparent);
   padding-right: 8px;
 }
 
 .dash-kpi-card__footer--2 .dash-kpi-card__cell:nth-child(2),
 .dash-kpi-card__footer--3 .dash-kpi-card__cell:not(:first-child),
-.dash-kpi-card__footer--4 .dash-kpi-card__cell:not(:first-child) {
+.dash-kpi-card__footer--4 .dash-kpi-card__cell:not(:first-child),
+.dash-kpi-card__footer--6 .dash-kpi-card__cell:not(:first-child) {
   padding-left: 8px;
 }
 
@@ -4298,6 +4306,18 @@
     padding-right: 0;
   }
   .dash-kpi-card__footer--4 .dash-kpi-card__cell:not(:first-child) {
+    padding-left: 0;
+  }
+  /* Brique 7 — sur mobile le footer 6 colonnes passe en 3×2 pour rester lisible */
+  .dash-kpi-card__footer--6 {
+    grid-template-columns: repeat(3, 1fr);
+    row-gap: 8px;
+  }
+  .dash-kpi-card__footer--6 .dash-kpi-card__cell:not(:last-child) {
+    border-right: none;
+    padding-right: 0;
+  }
+  .dash-kpi-card__footer--6 .dash-kpi-card__cell:not(:first-child) {
     padding-left: 0;
   }
 }

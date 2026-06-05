@@ -38,6 +38,7 @@ import useMarketSession from '../../hooks/useMarketSession';
 import useLiveTheme from '../../hooks/useLiveTheme';
 import { useClosedTrades, useOpenPositions } from '../../store/useStore';
 import { tradePnlUsd, calculateOpenPositionPnl } from '../../utils/calculations';
+import { currentDrawdownPct } from '../../utils/risk';
 import Sparkline from './Sparkline';
 
 // Recharts est déjà code-splitté ailleurs (EquityChart, DailyPnLChart) :
@@ -334,11 +335,13 @@ function computeDrawdownSeries(series) {
 
 function KpiFooter({ cells }) {
   const cn =
-    cells.length === 4
-      ? 'dash-kpi-card__footer--4'
-      : cells.length === 3
-        ? 'dash-kpi-card__footer--3'
-        : 'dash-kpi-card__footer--2';
+    cells.length === 6
+      ? 'dash-kpi-card__footer--6'
+      : cells.length === 4
+        ? 'dash-kpi-card__footer--4'
+        : cells.length === 3
+          ? 'dash-kpi-card__footer--3'
+          : 'dash-kpi-card__footer--2';
   return (
     <footer className={`dash-kpi-card__footer ${cn}`}>
       {cells.map((c, i) => (
@@ -1844,6 +1847,18 @@ export default function DashboardKPICards() {
   const averageLoss = metrics?.averageLoss;
   const currentStreak = metrics?.currentStreak;
   const sumDelta = greeks?.sumDelta;
+  // Brique 7 — rails enrichis (4 → 6 cellules).
+  // DD ACTUEL : primitive pure currentDrawdownPct (utils/risk) sur la
+  // timeline canonique realEquityPoints (init + cumPnL) — même calcul
+  // que m.currentDDPct du cockpit RiskMatrix, identique au pixel.
+  // MAX DD / KELLY : champs déjà calculés par calculatePortfolioMetrics
+  // (utils/calculations) et exposés via le même objet metrics ci-dessus.
+  const currentDDPct = useMemo(
+    () => currentDrawdownPct(metrics?.realEquityPoints || []),
+    [metrics?.realEquityPoints]
+  );
+  const maxDDPct = metrics?.maxDrawdownPct;
+  const kellyPct = metrics?.kellyPercent;
 
   // ─── CHF lines ──────────────────────────────────────────────
   const nlvChfLine = fxOk && nlvUsd != null ? fmtChfLine(nlvUsd * liveRate) : null;
@@ -2067,6 +2082,19 @@ export default function DashboardKPICards() {
               title: 'Plus haut gain cumulé jamais atteint (max all-time de la courbe equity)',
             },
             {
+              label: 'DD ACTUEL',
+              value: Number.isFinite(currentDDPct) ? fmtPctSignedDeCH(currentDDPct, 2) : '——',
+              tone: Number.isFinite(currentDDPct) && currentDDPct < 0 ? 'loss' : 'mute',
+              title: 'Drawdown courant — écart au pic all-time (même calcul que Current DD du cockpit)',
+            },
+            {
+              label: 'MAX DD',
+              value:
+                Number.isFinite(maxDDPct) && maxDDPct > 0 ? `−${maxDDPct.toFixed(2)}%` : '——',
+              tone: Number.isFinite(maxDDPct) && maxDDPct > 0 ? 'loss' : 'mute',
+              title: 'Max Drawdown all-time (même valeur que Max DD All-Time du cockpit)',
+            },
+            {
               label: 'ALL-TIME',
               value: Number.isFinite(allTimePnlUsd) ? fmtUsdSigned(allTimePnlUsd) : '——',
               tone: toneSign(allTimePnlUsd),
@@ -2194,9 +2222,26 @@ export default function DashboardKPICards() {
               title: 'Expectancy par trade (winRate × avgWin − lossRate × avgLoss)',
             },
             {
-              label: 'TRADES',
-              value: tradeCount,
+              label: 'AVG W',
+              value:
+                winCount > 0 && Number.isFinite(averageWin) ? fmtUsdSigned(averageWin) : '—',
+              tone: Number.isFinite(averageWin) && averageWin > 0 ? 'profit' : 'mute',
+              title: 'Gain moyen par trade gagnant',
+            },
+            {
+              label: 'AVG L',
+              value:
+                lossCount > 0 && Number.isFinite(averageLoss)
+                  ? fmtUsdSigned(-Math.abs(averageLoss))
+                  : '—',
+              tone: Number.isFinite(averageLoss) && averageLoss > 0 ? 'loss' : 'mute',
+              title: 'Perte moyenne par trade perdant',
+            },
+            {
+              label: 'KELLY',
+              value: Number.isFinite(kellyPct) ? `${kellyPct.toFixed(1)}%` : '—',
               tone: 'neutral',
+              title: 'Kelly Optimal — fraction du capital à risquer (même valeur que le cockpit)',
             },
           ]}
         />
