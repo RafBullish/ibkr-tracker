@@ -3146,7 +3146,7 @@
 }
 
 .dash-kpi-card--hero {
-  padding: 16px 20px;
+  padding: 16px;
 }
 
 /* ── Zone 1 : top (label + indicator droite) ──────────────────── */
@@ -3954,6 +3954,98 @@
 
 .dash-kpi-card--hero .dash-kpi-card__cell-value {
   font-size: 16px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Brique 9 — Redesign hero "Bloomberg" (scope strict : --hero)
+   Densité + petit texte +1/+2 cran + filets de séparation entre zones.
+   AUCUNE incidence hors .dash-kpi-card--hero.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Grand chiffre : variable dédiée + weight 700 + chasse resserrée. */
+.dash-kpi-card--hero .dash-kpi-card__value {
+  font-family: var(--qc-font-hero);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+/* Rythme vertical resserré dans la mid-zone. */
+.dash-kpi-card--hero .dash-kpi-card__hero-mid {
+  gap: 10px;
+}
+
+/* Brique 12 — encore +1 cran pour confort zoom 90 %. */
+
+/* CHF line (override existant 14 → 15). */
+.dash-kpi-card--hero .dash-kpi-card__chf {
+  font-size: 15px;
+}
+
+/* Readout container : 13 → 14. */
+.dash-kpi-card--hero .dash-kpi-card__hero-readout {
+  font-size: 14px;
+}
+
+/* Micro-stats : label 13→14, value 18→20. */
+.dash-kpi-card--hero .dash-kpi-card__micro-stats {
+  padding-top: 10px;
+  margin-top: 2px;
+  border-top: 1px solid var(--qc-border-subtle);
+}
+.dash-kpi-card--hero .dash-kpi-card__micro-stat-label {
+  font-size: 14px;
+}
+.dash-kpi-card--hero .dash-kpi-card__micro-stat-value {
+  font-size: 20px;
+}
+
+/* Zone densité : base 14, détail EXPOSITION 15 (cohérent avec CHF). */
+.dash-kpi-card--hero .dash-kpi-card__hero-density {
+  padding-top: 10px;
+  border-top: 1px solid var(--qc-border-subtle);
+  font-size: 14px;
+}
+.dash-kpi-card--hero .dash-kpi-card__hero-density-title {
+  font-size: 14px;
+}
+.dash-kpi-card--hero .dash-kpi-card__hero-density-detail,
+.dash-kpi-card--hero .dash-kpi-card__hero-density-value {
+  font-size: 15px;
+}
+.dash-kpi-card--hero .dash-kpi-card__hero-density-label {
+  font-size: 14px;
+}
+
+/* Chart hero : filet supérieur. */
+.dash-kpi-card--hero .dash-kpi-card__hero-chart {
+  padding-top: 8px;
+  border-top: 1px solid var(--qc-border-subtle);
+}
+
+/* Readout label : 13 → 14. */
+.dash-kpi-card--hero .dash-kpi-card__hero-readout-label {
+  font-size: 14px;
+}
+
+/* Rails footer : labels 13→14, valeurs 20→23, séparateurs 10 %.
+   Option E (brique 12) : paddings inter-cellule 8→4 et letter-spacing
+   -0.01em sur les valeurs, pour absorber 5 cas de 7-char (ex. −15.87%,
+   −$3'890) qui débordaient à 23 px. */
+.dash-kpi-card--hero .dash-kpi-card__cell-label {
+  font-size: 14px;
+}
+.dash-kpi-card--hero .dash-kpi-card__cell-value {
+  font-size: 23px;
+  letter-spacing: -0.01em;
+}
+.dash-kpi-card--hero .dash-kpi-card__footer--6 .dash-kpi-card__cell:not(:last-child) {
+  padding-right: 4px;
+}
+.dash-kpi-card--hero .dash-kpi-card__footer--6 .dash-kpi-card__cell:not(:first-child) {
+  padding-left: 4px;
+}
+.dash-kpi-card--hero .dash-kpi-card__footer--6 .dash-kpi-card__cell:not(:last-child) {
+  border-right-color: color-mix(in srgb, var(--qc-text-primary) 10%, transparent);
 }
 
 /* ── Win Rate card mid-zone : value+W·L à gauche, donut à droite */

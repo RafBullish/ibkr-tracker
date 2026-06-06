@@ -14,7 +14,7 @@
   /* — Encre (texte) — */
   --ink-pure:          #FAFAFA;  /* données pures */
   --ink-soft:          #9A9AA2;  /* labels secondaires */
-  --ink-mute:          #74747C;  /* captions / tertiaire */
+  --ink-mute:          #8A8A92;  /* captions / tertiaire (WCAG AA ≥ 4.5:1 sur depth-raised) */
 
   /* — P&L sémantique (mat) — */
   --pnl-up:            #10B981;

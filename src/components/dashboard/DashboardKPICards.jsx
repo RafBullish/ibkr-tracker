@@ -57,7 +57,7 @@ const HERO_CHART_MARGIN_LEFT = 4;
 const HERO_CHART_MARGIN_RIGHT = 8;
 const HERO_CHART_MARGIN_TOP = 14;
 const HERO_CHART_MARGIN_BOTTOM = 4;
-const HERO_CHART_YAXIS_WIDTH = 64;
+const HERO_CHART_YAXIS_WIDTH = 88;
 const HERO_CHART_MARGINS = {
   top: HERO_CHART_MARGIN_TOP,
   right: HERO_CHART_MARGIN_RIGHT,
@@ -1041,17 +1041,17 @@ function HeroAreaChart({
               <R.XAxis
                 dataKey="date"
                 stroke="var(--ink-mute)"
-                tick={{ fontFamily: T.fonts.mono, fontSize: 10, fill: 'var(--ink-mute)' }}
+                tick={{ fontFamily: T.fonts.mono, fontSize: 15, fill: 'var(--ink-mute)' }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={fmtAxisDateDeCH}
                 minTickGap={42}
-                height={20}
+                height={28}
               />
               <R.YAxis
                 orientation="right"
                 stroke="var(--ink-mute)"
-                tick={{ fontFamily: T.fonts.mono, fontSize: 10, fill: 'var(--ink-mute)' }}
+                tick={{ fontFamily: T.fonts.mono, fontSize: 15, fill: 'var(--ink-mute)' }}
                 axisLine={false}
                 tickLine={false}
                 width={HERO_CHART_YAXIS_WIDTH}
@@ -1077,7 +1077,7 @@ function HeroAreaChart({
                     position: 'insideTopLeft',
                     fill: 'var(--ink-mute)',
                     fontFamily: T.fonts.mono,
-                    fontSize: 10,
+                    fontSize: 15,
                     offset: 4,
                   }}
                 />
@@ -1182,17 +1182,17 @@ function HeroBarChart({
               <R.XAxis
                 dataKey={xDataKey}
                 stroke="var(--ink-mute)"
-                tick={{ fontFamily: T.fonts.mono, fontSize: 10, fill: 'var(--ink-mute)' }}
+                tick={{ fontFamily: T.fonts.mono, fontSize: 15, fill: 'var(--ink-mute)' }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={xFormatter}
                 minTickGap={42}
-                height={20}
+                height={28}
               />
               <R.YAxis
                 orientation="right"
                 stroke="var(--ink-mute)"
-                tick={{ fontFamily: T.fonts.mono, fontSize: 10, fill: 'var(--ink-mute)' }}
+                tick={{ fontFamily: T.fonts.mono, fontSize: 15, fill: 'var(--ink-mute)' }}
                 axisLine={false}
                 tickLine={false}
                 width={HERO_CHART_YAXIS_WIDTH}
@@ -1306,22 +1306,22 @@ function HeroHistogram({
                 type="number"
                 dataKey="mid"
                 stroke="var(--ink-mute)"
-                tick={{ fontFamily: T.fonts.mono, fontSize: 10, fill: 'var(--ink-mute)' }}
+                tick={{ fontFamily: T.fonts.mono, fontSize: 15, fill: 'var(--ink-mute)' }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={fmtUsdDeCH}
                 domain={[xMin, xMax]}
                 ticks={ticks}
-                height={20}
+                height={28}
                 allowDataOverflow={false}
               />
               <R.YAxis
                 orientation="right"
                 stroke="var(--ink-mute)"
-                tick={{ fontFamily: T.fonts.mono, fontSize: 10, fill: 'var(--ink-mute)' }}
+                tick={{ fontFamily: T.fonts.mono, fontSize: 15, fill: 'var(--ink-mute)' }}
                 axisLine={false}
                 tickLine={false}
-                width={48}
+                width={64}
                 tickFormatter={fmtAxisCountDeCH}
                 tickCount={4}
                 allowDecimals={false}
@@ -1341,7 +1341,7 @@ function HeroHistogram({
                     position: 'insideTopRight',
                     fill: 'var(--accent-amber)',
                     fontFamily: T.fonts.mono,
-                    fontSize: 10,
+                    fontSize: 15,
                     offset: 4,
                   }}
                 />
