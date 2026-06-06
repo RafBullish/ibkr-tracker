@@ -52,7 +52,7 @@ const DeltaBadge = forwardRef(function DeltaBadge(
     value,
     format = 'absolute',
     currency = 'USD',
-    locales = 'en-US',
+    locales = 'de-CH',
     size = 'md',
     showIcon = true,
     className,

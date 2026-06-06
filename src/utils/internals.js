@@ -31,7 +31,7 @@ export function formatIntSigned(n) {
   if (n == null || !Number.isFinite(n)) return '—';
   if (n === 0) return '0';
   const sign = n > 0 ? '+' : '−';
-  return `${sign}${Math.abs(n).toLocaleString('en-US')}`;
+  return `${sign}${Math.abs(n).toLocaleString('de-CH')}`;
 }
 
 /**

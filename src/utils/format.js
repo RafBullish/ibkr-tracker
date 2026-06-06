@@ -1,29 +1,22 @@
 // ═══════════════════════════════════════════════════════════════
-//  FORMATTING UTILITIES — DUAL CURRENCY
+//  FORMATTING UTILITIES — DUAL CURRENCY (de-CH thousands separator)
 // ═══════════════════════════════════════════════════════════════
 
 import { toFloat } from './math';
 
+const NUM_FMT_DE_CH_2D = new Intl.NumberFormat('de-CH', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 export function formatUsd(amount) {
   const n = toFloat(amount);
-  return (
-    (n < 0 ? '-' : '') +
-    '$' +
-    Math.abs(n)
-      .toFixed(2)
-      .replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-  );
+  return (n < 0 ? '-' : '') + '$' + NUM_FMT_DE_CH_2D.format(Math.abs(n));
 }
 
 export function formatChf(amount) {
   const n = toFloat(amount);
-  return (
-    (n < 0 ? '-' : '') +
-    'CHF ' +
-    Math.abs(n)
-      .toFixed(2)
-      .replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-  );
+  return (n < 0 ? '-' : '') + 'CHF ' + NUM_FMT_DE_CH_2D.format(Math.abs(n));
 }
 
 export function formatPercent(value) {

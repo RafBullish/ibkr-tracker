@@ -74,7 +74,7 @@ function RelativeTime({ timestamp }) {
 
 function TickerTooltipBody({ label, quote }) {
   const digits = digitsFor(quote?.price);
-  const numFmt = new Intl.NumberFormat('en-US', {
+  const numFmt = new Intl.NumberFormat('de-CH', {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
@@ -190,7 +190,7 @@ export default function MarketTicker({ symbol, label, quote, error, loading }) {
         <div className="market-ticker__price-row mono">
           <NumberFlow
             value={quote.price}
-            locales="en-US"
+            locales="de-CH"
             format={priceFmt}
             transformTiming={NF_TIMING}
             spinTiming={NF_SPIN}
@@ -199,14 +199,14 @@ export default function MarketTicker({ symbol, label, quote, error, loading }) {
         <div className={`market-ticker__delta-row mono tone-${toneClass}`}>
           <NumberFlow
             value={quote.change ?? 0}
-            locales="en-US"
+            locales="de-CH"
             format={changeFmt}
             transformTiming={NF_TIMING}
             spinTiming={NF_SPIN}
           />
           <NumberFlow
             value={(quote.changePercent ?? 0) * 0.01}
-            locales="en-US"
+            locales="de-CH"
             format={pctFmt}
             transformTiming={NF_TIMING}
             spinTiming={NF_SPIN}

@@ -14,7 +14,7 @@ const CHF_FMT = new Intl.NumberFormat('de-CH', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
-const USD_FMT = new Intl.NumberFormat('en-US', {
+const USD_FMT = new Intl.NumberFormat('de-CH', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });

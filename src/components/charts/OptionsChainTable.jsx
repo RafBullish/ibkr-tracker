@@ -52,7 +52,7 @@ function isSniperOtm(c, side) {
 
 function fmtNum(v, digits = 2) {
   if (v == null || !isFinite(v)) return '—';
-  return v.toLocaleString('en-US', {
+  return v.toLocaleString('de-CH', {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });

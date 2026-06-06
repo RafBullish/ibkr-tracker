@@ -109,17 +109,24 @@ function buildMockEvolution(currentGreeks, days = 30) {
 // glass/blur chrome. ─────────────────────────────────────────────
 function fmtNumber(v) {
   if (v == null || Number.isNaN(v)) return '—';
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('de-CH', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(v);
 }
+const GR_USD_FMT_2D = new Intl.NumberFormat('de-CH', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 function fmtCurrency(v, currency = 'USD') {
   if (v == null || Number.isNaN(v)) return '—';
-  return new Intl.NumberFormat('en-US', {
+  if (currency === 'USD') {
+    return (v < 0 ? '-' : '') + '$' + GR_USD_FMT_2D.format(Math.abs(v));
+  }
+  return new Intl.NumberFormat('de-CH', {
     style: 'currency',
     currency,
-    currencyDisplay: 'narrowSymbol',
+    currencyDisplay: 'code',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(v);

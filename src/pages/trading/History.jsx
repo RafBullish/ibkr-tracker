@@ -138,32 +138,30 @@ function KpiTile({ label, tooltip, value, tone = 'neutral' }) {
 // ── Local formatters (Intl) — équivalent fonctionnel de MetricCard ──
 function fmtCount(v) {
   if (v == null || Number.isNaN(v)) return '—';
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('de-CH', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(v);
 }
 function fmtNumber(v) {
   if (v == null || Number.isNaN(v)) return '—';
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('de-CH', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(v);
 }
+const HIST_USD_FMT_2D = new Intl.NumberFormat('de-CH', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 function fmtCurrency(v) {
   if (v == null || Number.isNaN(v)) return '—';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    currencyDisplay: 'narrowSymbol',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(v);
+  return (v < 0 ? '-' : '') + '$' + HIST_USD_FMT_2D.format(Math.abs(v));
 }
 function fmtPercent(v) {
   if (v == null || Number.isNaN(v)) return '—';
   return (
-    new Intl.NumberFormat('en-US', {
+    new Intl.NumberFormat('de-CH', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(v) + '%'

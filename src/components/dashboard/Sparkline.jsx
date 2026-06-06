@@ -61,7 +61,7 @@ function normalize(data) {
 const defaultFmt = (v) => {
   if (!Number.isFinite(v)) return '';
   const abs = Math.abs(v);
-  if (abs >= 1000) return v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  if (abs >= 1000) return v.toLocaleString('de-CH', { maximumFractionDigits: 0 });
   return v.toFixed(2);
 };
 

@@ -122,7 +122,7 @@ function nextPhase(now) {
 
 function fmtIndex(q) {
   if (!q || !Number.isFinite(q.price)) return '——';
-  if (q.price >= 1000) return q.price.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  if (q.price >= 1000) return q.price.toLocaleString('de-CH', { maximumFractionDigits: 0 });
   return q.price.toFixed(2);
 }
 

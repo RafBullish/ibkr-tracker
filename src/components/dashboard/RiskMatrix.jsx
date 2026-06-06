@@ -50,25 +50,16 @@ const fmtPctSigned = (v, decimals = 1) => {
   return `${sign}${Math.abs(v).toFixed(decimals)}%`;
 };
 
+const USD_FMT_0D_RM = new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 });
 const fmtUsd = (v) => {
   if (v == null || !Number.isFinite(v)) return '—';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-    signDisplay: 'auto',
-  }).format(v);
+  return (v < 0 ? '-' : '') + '$' + USD_FMT_0D_RM.format(Math.abs(v));
 };
 
 const fmtUsdSigned = (v) => {
   if (v == null || !Number.isFinite(v)) return '—';
   if (v === 0) return '$0';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-    signDisplay: 'exceptZero',
-  }).format(v);
+  return (v > 0 ? '+' : '-') + '$' + USD_FMT_0D_RM.format(Math.abs(v));
 };
 
 function deltaVsBench(value, bench, profitIfAbove = true) {
@@ -461,7 +452,7 @@ const fmtNumSigned = (v, decimals = 0) => {
 const fmtUsdCompact = (v) => {
   if (v == null || !Number.isFinite(v)) return '—';
   const sign = v > 0 ? '+' : v < 0 ? '−' : '';
-  return `${sign}$${Math.abs(Math.round(v)).toLocaleString('en-US')}`;
+  return `${sign}$${Math.abs(Math.round(v)).toLocaleString('de-CH')}`;
 };
 
 const toneFromSign = (v) => {

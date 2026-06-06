@@ -147,16 +147,16 @@ const REALIZED_VIEWS = [
 const fmtUsdCompact = (v) => {
   if (v == null || !Number.isFinite(v)) return '——';
   if (Math.abs(v) >= 1_000_000) {
-    return `$${(v / 1_000_000).toLocaleString('en-US', { maximumFractionDigits: 2 })}M`;
+    return `$${(v / 1_000_000).toLocaleString('de-CH', { maximumFractionDigits: 2 })}M`;
   }
-  return `$${Math.round(v).toLocaleString('en-US')}`;
+  return `$${Math.round(v).toLocaleString('de-CH')}`;
 };
 
 const fmtUsdSigned = (v) => {
   if (v == null || !Number.isFinite(v)) return '——';
   if (v === 0) return '$0';
   const sign = v > 0 ? '+' : '−';
-  return `${sign}$${Math.round(Math.abs(v)).toLocaleString('en-US')}`;
+  return `${sign}$${Math.round(Math.abs(v)).toLocaleString('de-CH')}`;
 };
 
 const fmtChfLine = (chf, { signed = false } = {}) => {

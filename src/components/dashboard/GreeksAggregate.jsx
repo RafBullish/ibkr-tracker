@@ -17,13 +17,10 @@
 //    Σ Vega   : profit > 0 (long vol), loss < 0 (short vol)
 // ═══════════════════════════════════════════════════════════════
 
+const USD_FMT_0D = new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 });
 const fmtUsd = (v) => {
   if (v == null || !Number.isFinite(v)) return '—';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(v);
+  return (v < 0 ? '-' : '') + '$' + USD_FMT_0D.format(Math.abs(v));
 };
 
 const fmtUsdSigned = (v, digits = 2) => {

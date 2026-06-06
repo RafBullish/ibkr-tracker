@@ -38,7 +38,7 @@ const fmtUsd = (v) => {
   const sign = v > 0 ? '+' : '−';
   const abs = Math.abs(v);
   if (abs >= 1000) {
-    return `${sign}$${Math.round(abs).toLocaleString('en-US')}`;
+    return `${sign}$${Math.round(abs).toLocaleString('de-CH')}`;
   }
   return `${sign}$${abs.toFixed(0)}`;
 };

@@ -140,19 +140,25 @@ function LegendRow({ color, label, value }) {
 // neutre par défaut, focus amber sur les zones décisives (Positions,
 // Delta net, Capital engagé). Le rouge n'apparaît QUE pour les coûts /
 // pertes réels (Theta négatif, Max Loss).
+const POS_NUM_FMT_2D = new Intl.NumberFormat('de-CH', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 function fmtKpiValue(value, format, currency = 'USD') {
   if (value == null || Number.isNaN(value)) return '—';
   if (format === 'currency') {
-    const locale = currency === 'CHF' ? 'de-CH' : 'en-US';
-    return new Intl.NumberFormat(locale, {
+    if (currency === 'USD') {
+      return (value < 0 ? '-' : '') + '$' + POS_NUM_FMT_2D.format(Math.abs(value));
+    }
+    return new Intl.NumberFormat('de-CH', {
       style: 'currency',
       currency,
-      currencyDisplay: currency === 'CHF' ? 'code' : 'narrowSymbol',
+      currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value);
   }
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('de-CH', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(value);

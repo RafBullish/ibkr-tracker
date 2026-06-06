@@ -434,19 +434,13 @@ export default function Journal() {
               <strong>Limite perte quotidienne atteinte.</strong>
               <span>
                 Pertes du jour{' '}
-                {new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: 'USD',
-                  signDisplay: 'always',
-                  maximumFractionDigits: 0,
-                }).format(killSwitch.dailyPnlUsd)}{' '}
+                {(killSwitch.dailyPnlUsd >= 0 ? '+' : '-') +
+                  '$' +
+                  new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 }).format(Math.abs(killSwitch.dailyPnlUsd))}{' '}
                 · Seuil{' '}
-                {new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: 'USD',
-                  signDisplay: 'always',
-                  maximumFractionDigits: 0,
-                }).format(killSwitch.maxLoss)}
+                {(killSwitch.maxLoss >= 0 ? '+' : '-') +
+                  '$' +
+                  new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 }).format(Math.abs(killSwitch.maxLoss))}
                 . Pause session recommandée.
               </span>
             </div>
@@ -583,7 +577,7 @@ export default function Journal() {
                         >
                           {l.pnl === 0
                             ? '—'
-                            : `${l.pnl >= 0 ? '+' : ''}${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(l.pnl)}`}
+                            : `${l.pnl >= 0 ? '+' : '-'}$${new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 }).format(Math.abs(l.pnl))}`}
                         </span>
                       </div>
                     );

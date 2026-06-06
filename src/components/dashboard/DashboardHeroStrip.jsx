@@ -28,12 +28,12 @@ const fmtUsdCompact = (v) => {
   if (v == null || !Number.isFinite(v)) return '——';
   const abs = Math.abs(v);
   if (abs >= 1_000_000) {
-    return `$${(v / 1_000_000).toLocaleString('en-US', { maximumFractionDigits: 2 })}M`;
+    return `$${(v / 1_000_000).toLocaleString('de-CH', { maximumFractionDigits: 2 })}M`;
   }
   if (abs >= 10_000) {
-    return `$${Math.round(v).toLocaleString('en-US')}`;
+    return `$${Math.round(v).toLocaleString('de-CH')}`;
   }
-  return `$${v.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  return `$${v.toLocaleString('de-CH', { maximumFractionDigits: 0 })}`;
 };
 
 const fmtUsdSigned = (v) => {
@@ -42,7 +42,7 @@ const fmtUsdSigned = (v) => {
   const sign = v > 0 ? '+' : '−';
   const abs = Math.abs(v);
   if (abs >= 10_000) {
-    return `${sign}$${Math.round(abs).toLocaleString('en-US')}`;
+    return `${sign}$${Math.round(abs).toLocaleString('de-CH')}`;
   }
   return `${sign}$${abs.toFixed(0)}`;
 };

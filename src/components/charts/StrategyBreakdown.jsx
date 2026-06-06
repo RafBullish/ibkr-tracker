@@ -24,15 +24,11 @@ const TOOLTIP = {
   example: 'Sniper OTM · 12 trades · 75% WR · +$4 200 Net → stratégie rentable à conserver.',
 };
 
+const SB_USD_FMT_0D = new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 });
 function fmtCurrency(v) {
   if (v == null || !Number.isFinite(v)) return '—';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    currencyDisplay: 'narrowSymbol',
-    maximumFractionDigits: 0,
-    signDisplay: Math.abs(v) > 0 ? 'always' : 'auto',
-  }).format(v);
+  const sign = v > 0 ? '+' : v < 0 ? '-' : '';
+  return sign + '$' + SB_USD_FMT_0D.format(Math.abs(v));
 }
 function fmtPct(v) {
   if (v == null || !Number.isFinite(v)) return '—';

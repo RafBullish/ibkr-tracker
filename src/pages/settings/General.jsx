@@ -486,11 +486,9 @@ export default function SettingsGeneral() {
                   }}
                 >
                   ≈{' '}
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                    maximumFractionDigits: 0,
-                  }).format(initialCapitalUsdPreview)}{' '}
+                  {(initialCapitalUsdPreview < 0 ? '-' : '') +
+                    '$' +
+                    new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 }).format(Math.abs(initialCapitalUsdPreview))}{' '}
                   au taux {liveRate.toFixed(4)}
                 </span>
               )}
@@ -603,13 +601,13 @@ export default function SettingsGeneral() {
             description="Mis à jour en temps réel depuis les trades clôturés du jour."
           >
             <span className={`mono settings-page__kill-switch ${killSwitchToneClass(killSwitch.dailyPnlUsd)}`}>
-              {new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                currencyDisplay: 'narrowSymbol',
-                signDisplay: killSwitch.dailyPnlUsd !== 0 ? 'always' : 'auto',
-                maximumFractionDigits: 0,
-              }).format(killSwitch.dailyPnlUsd)}
+              {(killSwitch.dailyPnlUsd > 0
+                ? '+'
+                : killSwitch.dailyPnlUsd < 0
+                  ? '-'
+                  : '') +
+                '$' +
+                new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 }).format(Math.abs(killSwitch.dailyPnlUsd))}
             </span>
           </Row>
           <Row

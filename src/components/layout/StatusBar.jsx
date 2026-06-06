@@ -89,14 +89,11 @@ const fmtFxRate = (v) => {
   return v.toFixed(4);
 };
 
+const USD_FMT_0D_SB = new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 });
 const fmtPnlUsd = (v) => {
   if (v == null || !Number.isFinite(v)) return '——';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-    signDisplay: 'exceptZero',
-  }).format(v);
+  const sign = v > 0 ? '+' : v < 0 ? '-' : '';
+  return sign + '$' + USD_FMT_0D_SB.format(Math.abs(v));
 };
 
 function FeedCell({ apiStatus, label, featured = false }) {

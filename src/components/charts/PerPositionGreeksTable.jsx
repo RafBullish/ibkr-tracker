@@ -10,18 +10,14 @@ import EmptyState from '../ui/EmptyState';
 import StatusBadge from '../ui/StatusBadge';
 import { Layers } from 'lucide-react';
 
+const PPG_USD_FMT_0D = new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 });
 function fmtUsd(v) {
   if (v == null || !Number.isFinite(v)) return '—';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    currencyDisplay: 'narrowSymbol',
-    maximumFractionDigits: 0,
-  }).format(v);
+  return (v < 0 ? '-' : '') + '$' + PPG_USD_FMT_0D.format(Math.abs(v));
 }
 function fmtNum(v, digits = 2) {
   if (v == null || !Number.isFinite(v)) return '—';
-  return v.toLocaleString('en-US', {
+  return v.toLocaleString('de-CH', {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });

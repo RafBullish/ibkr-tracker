@@ -27,14 +27,11 @@ const LazyRecharts = lazy(() =>
   import('recharts').then((mod) => ({ default: ({ children }) => children(mod) }))
 );
 
+const USD_FMT_0D_MC = new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 });
 const fmtUsd = (v) => {
   if (v == null || !Number.isFinite(v)) return '—';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-    signDisplay: 'exceptZero',
-  }).format(v);
+  const sign = v > 0 ? '+' : v < 0 ? '-' : '';
+  return sign + '$' + USD_FMT_0D_MC.format(Math.abs(v));
 };
 
 const fmtAxisDate = (iso) => {

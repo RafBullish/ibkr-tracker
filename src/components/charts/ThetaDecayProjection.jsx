@@ -48,14 +48,20 @@ export default function ThetaDecayProjection({
     );
   }
 
-  const formatCurrency = (v) =>
-    new Intl.NumberFormat('en-US', {
+  const formatCurrency = (v) => {
+    if (currency === 'USD') {
+      const fmt = new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 });
+      const sign = v > 0 ? '+' : v < 0 ? '-' : '';
+      return sign + '$' + fmt.format(Math.abs(v));
+    }
+    return new Intl.NumberFormat('de-CH', {
       style: 'currency',
       currency,
-      currencyDisplay: 'narrowSymbol',
+      currencyDisplay: 'code',
       maximumFractionDigits: 0,
       signDisplay: 'always',
     }).format(v);
+  };
 
   return (
     <div className={['theta-decay', className].filter(Boolean).join(' ')}>

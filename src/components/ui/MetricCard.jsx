@@ -29,40 +29,47 @@ import InfoTooltip from './InfoTooltip';
 import useMediaQuery from '../../hooks/useMediaQuery';
 
 const LOCALE_BY_CURRENCY = {
-  USD: 'en-US',
+  USD: 'de-CH',
   CHF: 'de-CH',
   EUR: 'de-DE',
 };
 
 function formatValue(value, format, currency) {
   if (value == null || Number.isNaN(value)) return '—';
-  const locale = LOCALE_BY_CURRENCY[currency] || 'en-US';
+  const locale = LOCALE_BY_CURRENCY[currency] || 'de-CH';
   switch (format) {
     case 'currency':
+      if ((currency || 'USD') === 'USD') {
+        const fmt = new Intl.NumberFormat('de-CH', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+        return (value < 0 ? '-' : '') + '$' + fmt.format(Math.abs(value));
+      }
       return new Intl.NumberFormat(locale, {
         style: 'currency',
-        currency: currency || 'USD',
-        currencyDisplay: currency === 'CHF' ? 'code' : 'narrowSymbol',
+        currency,
+        currencyDisplay: 'code',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format(value);
     case 'percent':
       return (
-        new Intl.NumberFormat('en-US', {
+        new Intl.NumberFormat('de-CH', {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         }).format(value) + '%'
       );
     case 'r-multiple':
       return (
-        new Intl.NumberFormat('en-US', {
+        new Intl.NumberFormat('de-CH', {
           minimumFractionDigits: 1,
           maximumFractionDigits: 2,
         }).format(value) + 'R'
       );
     case 'number':
     default:
-      return new Intl.NumberFormat('en-US', {
+      return new Intl.NumberFormat('de-CH', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
       }).format(value);
@@ -145,7 +152,7 @@ const MetricCard = forwardRef(function MetricCard(
                 value={delta}
                 format={autoDeltaFormat}
                 currency={currency}
-                locales={LOCALE_BY_CURRENCY[currency] || 'en-US'}
+                locales={LOCALE_BY_CURRENCY[currency] || 'de-CH'}
                 size={size === 'compact' ? 'sm' : 'md'}
               />
               {deltaPeriod && <span className="metric-card__delta-period">{deltaPeriod}</span>}

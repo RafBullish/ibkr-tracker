@@ -125,7 +125,7 @@ function computeAtmIv(rows, spot) {
 const fmtUsd = (v) => {
   if (v == null || !Number.isFinite(v)) return '——';
   return v >= 1000
-    ? `$${v.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+    ? `$${v.toLocaleString('de-CH', { maximumFractionDigits: 0 })}`
     : `$${v.toFixed(2)}`;
 };
 

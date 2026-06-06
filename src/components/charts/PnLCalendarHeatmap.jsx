@@ -60,22 +60,37 @@ function formatShortPnl(pnl, currency = 'USD') {
   if (pnl == null) return '';
   const abs = Math.abs(pnl);
   const sign = pnl > 0 ? '+' : pnl < 0 ? '−' : '';
-  const fmt = new Intl.NumberFormat('en-US', {
+  if (currency === 'USD') {
+    const fmt = new Intl.NumberFormat('de-CH', {
+      notation: abs >= 1000 ? 'compact' : 'standard',
+      maximumFractionDigits: abs >= 1000 ? 1 : 0,
+    });
+    return `${sign}$${fmt.format(abs)}`;
+  }
+  const fmt = new Intl.NumberFormat('de-CH', {
     notation: abs >= 1000 ? 'compact' : 'standard',
     maximumFractionDigits: abs >= 1000 ? 1 : 0,
     style: 'currency',
     currency,
-    currencyDisplay: 'narrowSymbol',
+    currencyDisplay: 'code',
   });
-  return `${sign}${fmt.format(abs)}`.replace(/^(\+|−)\$?/, (m, s) => s + (abs >= 1000 ? '$' : '$'));
+  return `${sign}${fmt.format(abs)}`;
 }
 
 function formatFullPnl(pnl, currency = 'USD') {
   if (pnl == null) return '—';
-  return new Intl.NumberFormat('en-US', {
+  if (currency === 'USD') {
+    const fmt = new Intl.NumberFormat('de-CH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const sign = pnl > 0 ? '+' : pnl < 0 ? '-' : '';
+    return `${sign}$${fmt.format(Math.abs(pnl))}`;
+  }
+  return new Intl.NumberFormat('de-CH', {
     style: 'currency',
     currency,
-    currencyDisplay: 'narrowSymbol',
+    currencyDisplay: 'code',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
     signDisplay: 'always',

@@ -50,12 +50,11 @@ const FR_MONTHS = [
 
 const fmtUsd = (v, digits = 0) => {
   if (v == null || !Number.isFinite(v)) return '—';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
+  const fmt = new Intl.NumberFormat('de-CH', {
     maximumFractionDigits: digits,
     minimumFractionDigits: digits,
-  }).format(v);
+  });
+  return (v < 0 ? '-' : '') + '$' + fmt.format(Math.abs(v));
 };
 
 const fmtUsdSigned = (v, digits = 2) => {
