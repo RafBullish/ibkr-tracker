@@ -5,6 +5,24 @@
 @import "@fontsource/jetbrains-mono/500.css";
 @import "@fontsource/jetbrains-mono/600.css";
 
+/* Brique 11 — Iosevka Extended pour le gros chiffre héro.
+   Pack PkgWebFont-Iosevka-34.6.1 (be5invis/Iosevka, OFL-1.1).
+   Subset strict (charset hero: 0-9 $ + - − ' . % space). */
+@font-face {
+  font-family: 'Iosevka QC Hero';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/iosevka-extended/Iosevka-Extended.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Iosevka QC Hero';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/iosevka-extended/Iosevka-ExtendedBold.woff2') format('woff2');
+}
+
 :root {
   --font-sans: "Inter Tight", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;

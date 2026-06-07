@@ -40,7 +40,7 @@
   /* ===== TYPOGRAPHY ===== */
   --qc-font-sans: 'Geist Variable', 'Inter', system-ui, sans-serif;
   --qc-font-mono: 'Geist Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
-  --qc-font-hero: 'Geist Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+  --qc-font-hero: 'Iosevka QC Hero', 'Geist Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
 
   --qc-fs-caption: 11px;
   --qc-fs-label: 11px;
