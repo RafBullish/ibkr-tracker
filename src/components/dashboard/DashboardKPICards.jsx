@@ -1786,13 +1786,21 @@ export default function DashboardKPICards() {
   // the first trade. The series now reads `metrics.realEquityPoints`
   // (the A3b canonical timeline) so both the visual line and the % pill
   // anchor on the REAL portfolio equity, not on the bare cumulative P&L.
-  const nlvSeries = useMemo(() => {
+  // Série de base canonique (full, non rangée) — partagée entre la courbe
+  // du chart (via nlvSeries) et la cellule PEAK de la rail, pour que
+  // l'annotation PIC et PEAK dérivent de la MÊME timeline par construction.
+  const nlvBaseSeries = useMemo(() => {
     const real = metrics?.realEquityPoints;
     const base = Array.isArray(real) && real.length > 0 ? real : equityHistory;
-    if (!base || base.length === 0) return [];
-    const slice = rangeConf.days == null ? base : base.slice(-rangeConf.days);
+    return Array.isArray(base) ? base : [];
+  }, [metrics, equityHistory]);
+
+  const nlvSeries = useMemo(() => {
+    if (nlvBaseSeries.length === 0) return [];
+    const slice =
+      rangeConf.days == null ? nlvBaseSeries : nlvBaseSeries.slice(-rangeConf.days);
     return slice.map((p) => ({ date: p.date, value: p.equity }));
-  }, [metrics, equityHistory, rangeConf.days]);
+  }, [nlvBaseSeries, rangeConf.days]);
 
   // Brique 3 — toggle de vue Équité / Drawdown, NLV uniquement.
   // L'état vit dans le parent (la carte NLV est sans état propre côté
@@ -1904,10 +1912,13 @@ export default function DashboardKPICards() {
     if (nlvSeries.length === 0) return null;
     return Math.min(...nlvSeries.map((p) => p.value));
   }, [nlvSeries]);
+  // PEAK = max all-time de la timeline NLV canonique (nlvBaseSeries), la
+  // même série que celle qui alimente l'annotation PIC du chart — et non
+  // plus equityHistory (cumPnL seul) qui donnait le pic du réalisé.
   const peakAllTime = useMemo(() => {
-    if (!equityHistory || equityHistory.length === 0) return null;
-    return Math.max(...equityHistory.map((p) => p.equity));
-  }, [equityHistory]);
+    if (nlvBaseSeries.length === 0) return null;
+    return Math.max(...nlvBaseSeries.map((p) => p.equity));
+  }, [nlvBaseSeries]);
 
   // ALL-TIME = realized + unrealized (somme P&L totale).
   const allTimePnlUsd = useMemo(() => {
@@ -2079,7 +2090,7 @@ export default function DashboardKPICards() {
               label: 'PEAK',
               value: peakAllTime != null ? fmtUsdCompact(peakAllTime) : '——',
               tone: peakAllTime != null && peakAllTime >= 0 ? 'profit' : 'mute',
-              title: 'Plus haut gain cumulé jamais atteint (max all-time de la courbe equity)',
+              title: 'Plus haute NLV jamais atteinte (max all-time de la courbe equity réelle)',
             },
             {
               label: 'DD ACTUEL',
