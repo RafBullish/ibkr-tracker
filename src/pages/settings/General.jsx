@@ -15,8 +15,8 @@
 //  uniquement pour la Zone dangereuse (point d'attention).
 //
 //  Sections: Profil · Localisation · Apparence · Mode trading ·
-//  Gestion du risque · Connexions API · Données · Cash flows ·
-//  Zone dangereuse
+//  Gestion du risque · Stratégie Sniper · Connexions API · Données ·
+//  Cash flows · Zone dangereuse
 // ═══════════════════════════════════════════════════════════════
 
 import { Fragment, useEffect, useRef, useState } from 'react';
@@ -33,6 +33,7 @@ import {
   Database,
   ChevronRight,
   ShieldAlert,
+  Crosshair,
   Trash2,
   AlertTriangle,
   Wallet,
@@ -57,6 +58,12 @@ import ApiServiceCard from '../../components/ui/ApiServiceCard';
 import InfoTooltip from '../../components/ui/InfoTooltip';
 import Modal from '../../components/ui/Modal';
 import { todayDateString } from '../../utils/dates';
+import {
+  tierParams,
+  sanitizeTier,
+  EDGE_KEYS,
+  CAPITAL_KEYS,
+} from '../../utils/sniperMeta';
 import { CONTAINER_VARIANTS, TILE_VARIANTS } from '../../theme/animationVariants';
 
 const CASH_FLOW_TYPES = [
@@ -304,6 +311,18 @@ export default function SettingsGeneral() {
     const n = Number(maxLossDraft);
     if (!Number.isFinite(n)) return;
     killSwitch.setMaxLoss(n);
+  };
+
+  // Brique 13 — tier Sniper actif. Pas de draft : un <select> commit
+  // immédiatement via SET_ACTIVE_SNIPER_TIER (payload {e, c} complet
+  // pour rester atomique). Label/params dérivés via tierParams().
+  const activeTier = sanitizeTier(settings?.activeSniperTier);
+  const activeTierInfo = tierParams(activeTier);
+  const commitTier = (patch) => {
+    dispatch({
+      type: 'SET_ACTIVE_SNIPER_TIER',
+      payload: { ...activeTier, ...patch },
+    });
   };
 
   // B4 — capital de référence manuel (CHF). Stocké brut, converti en USD
@@ -621,6 +640,69 @@ export default function SettingsGeneral() {
               }
               size="sm"
             />
+          </Row>
+        </Section>
+      </motion.div>
+
+      {/* ── Stratégie Sniper (Brique 13) ── */}
+      <motion.div variants={TILE_VARIANTS}>
+        <Section
+          icon={Crosshair}
+          title="Stratégie Sniper"
+          description="Tier actif de la matrice E0–E4 × C1–C5 (Sniper OTM v1.0 Finale). Pilote le badge TIER du cockpit et le bloc TIER ACTIF du Dashboard."
+        >
+          <Row
+            label="Tier actif (matrice E×C)"
+            description="Edge tier = conviction (IV Rank à l'entrée). Capital tier = taille de position en % NLV."
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+                flexWrap: 'wrap',
+              }}
+            >
+              <select
+                aria-label="Edge tier (E0 à E4)"
+                className="settings-page__input"
+                style={{ width: 84, minWidth: 'auto' }}
+                value={activeTier.e}
+                onChange={(e) => commitTier({ e: e.target.value })}
+              >
+                {EDGE_KEYS.map((k) => (
+                  <option key={k} value={k}>
+                    {k}
+                  </option>
+                ))}
+              </select>
+              <span
+                className="mono"
+                style={{ color: 'var(--ink-mute)', fontSize: 'var(--fs-xs)' }}
+              >
+                ×
+              </span>
+              <select
+                aria-label="Capital tier (C1 à C5)"
+                className="settings-page__input"
+                style={{ width: 84, minWidth: 'auto' }}
+                value={activeTier.c}
+                onChange={(e) => commitTier({ c: e.target.value })}
+              >
+                {CAPITAL_KEYS.map((k) => (
+                  <option key={k} value={k}>
+                    {k}
+                  </option>
+                ))}
+              </select>
+              <span
+                className="mono"
+                style={{ color: 'var(--ink-mute)', fontSize: 'var(--fs-xs)' }}
+              >
+                → TIER {activeTierInfo.label} · cash floor {activeTierInfo.cashFloorPct}% ·
+                notional max {activeTierInfo.notionalMaxPct}%
+              </span>
+            </div>
           </Row>
         </Section>
       </motion.div>
