@@ -21,9 +21,9 @@
 //    - Card 6 Expo  : marker + label CAP au-dessus + bloc TIER ACTIF
 //    - Card 7 WR    : donut 74×74, bloc STREAK, AVG W signé explicite
 //
-//  Hardcoded TODO Phase C (signalés en rapport) :
-//    CASH FLR (Card 2), MAX 70 % NLV (Card 6), TIER ACTIF (Card 6),
-//    RISK $ via SL_amount (Card 6).
+//  Brique 13 (Phase C résolu) : CASH FLR / MAX % NLV / TIER ACTIF
+//    dérivés de settings.activeSniperTier via utils/sniperMeta
+//    tierParams() ; RISK $ = Σ effectiveSlDollar (utils/risk, SL35).
 // ═══════════════════════════════════════════════════════════════
 
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -36,9 +36,10 @@ import useDailySnapshot from '../../hooks/useDailySnapshot';
 import useGreeksAggregate from '../../hooks/useGreeksAggregate';
 import useMarketSession from '../../hooks/useMarketSession';
 import useLiveTheme from '../../hooks/useLiveTheme';
-import { useClosedTrades, useOpenPositions } from '../../store/useStore';
+import { useClosedTrades, useOpenPositions, useSettings } from '../../store/useStore';
 import { tradePnlUsd, calculateOpenPositionPnl } from '../../utils/calculations';
-import { currentDrawdownPct } from '../../utils/risk';
+import { currentDrawdownPct, totalSlDollar } from '../../utils/risk';
+import { tierParams } from '../../utils/sniperMeta';
 import Sparkline from './Sparkline';
 
 // Recharts est déjà code-splitté ailleurs (EquityChart, DailyPnLChart) :
@@ -1748,13 +1749,6 @@ function KpiCardWinRate({
 
 // ─── Main component ─────────────────────────────────────────────
 
-// TODO Phase C : lier au tier Sniper actif quand exposé par le store.
-const SNIPER_DEFAULTS = {
-  cashFloorPct: 30,
-  notionalMaxPct: 70,
-  tierLabel: 'A · E0×C1',
-};
-
 export default function DashboardKPICards() {
   const metrics = usePortfolioMetrics();
   const kpis = useKPIs();
@@ -1765,6 +1759,16 @@ export default function DashboardKPICards() {
   const openPositions = useOpenPositions();
   const greeks = useGreeksAggregate();
   const marketSession = useMarketSession();
+  const settings = useSettings();
+
+  // Brique 13 — paramètres du tier Sniper actif, dérivés de la
+  // coordonnée matrice persistée (settings.activeSniperTier) via la
+  // source de vérité unique utils/sniperMeta. Remplace l'ancien
+  // SNIPER_DEFAULTS hardcodé (TODO Phase C résolu).
+  const sniperTier = useMemo(
+    () => tierParams(settings?.activeSniperTier),
+    [settings?.activeSniperTier]
+  );
 
   const [range, setRange] = useState('30J');
   const rangeConf = RANGES.find((r) => r.key === range) || RANGES[2];
@@ -1990,13 +1994,11 @@ export default function DashboardKPICards() {
   }, [realizedUsd, metrics]);
   const realizedPctDisplay = realizedPct;
 
-  // ─── Card 6 Risk $ : proxy via unrealizedPnl 1re position ───
-  const riskUsd = useMemo(() => {
-    if (!openPositions || openPositions.length === 0) return null;
-    const first = openPositions[0];
-    const r = calculateOpenPositionPnl(first, liveRate || 1);
-    return r.unrealizedPnlUsd;
-  }, [openPositions, liveRate]);
+  // ─── Card 6 Risk $ : Σ effectiveSlDollar (gate SL35) ────────
+  // Brique 13 — somme des risques max par position (35 % du coût
+  // d'entrée, surcharge pos.slDollar prioritaire). Remplace l'ancien
+  // proxy "unrealized de la 1re position" qui n'était pas un risque.
+  const riskUsd = useMemo(() => totalSlDollar(openPositions), [openPositions]);
 
   // ─── Render ─────────────────────────────────────────────────
 
@@ -2047,7 +2049,7 @@ export default function DashboardKPICards() {
               exposureUsd={exposureUsd}
               exposurePctNlv={expoPctNlv}
               availableUsd={availableUsd}
-              capPct={SNIPER_DEFAULTS.notionalMaxPct}
+              capPct={sniperTier.notionalMaxPct}
             />
           }
           chart={
@@ -2298,9 +2300,9 @@ export default function DashboardKPICards() {
             },
             {
               label: 'CASH FLR',
-              value: `${SNIPER_DEFAULTS.cashFloorPct}%`,
+              value: `${sniperTier.cashFloorPct}%`,
               tone: 'amber',
-              title: 'Plancher de cash du tier Sniper actif (valeur statique — TODO Phase C)',
+              title: `Plancher de cash du tier Sniper actif (${sniperTier.label})`,
             },
           ]}
         />
@@ -2427,19 +2429,19 @@ export default function DashboardKPICards() {
                   {expoPctNlv != null ? `${expoPctNlv.toFixed(1)}% NLV` : '—— NLV'}
                 </span>
                 <span className="dash-kpi-card__bar-denom">
-                  MAX {SNIPER_DEFAULTS.notionalMaxPct}%
+                  MAX {sniperTier.notionalMaxPct}%
                 </span>
               </div>
               <FillBarWithMarker
                 pct={expoPctNlv}
                 color="amber"
-                markerPct={SNIPER_DEFAULTS.notionalMaxPct}
+                markerPct={sniperTier.notionalMaxPct}
               />
               <div className="dash-kpi-card__info-slot dash-kpi-card__info-slot--tight">
                 <InfoBlock
                   tone="amber"
                   label="TIER ACTIF"
-                  value={SNIPER_DEFAULTS.tierLabel}
+                  value={sniperTier.label}
                   valueTone="amber"
                 />
               </div>
@@ -2448,10 +2450,13 @@ export default function DashboardKPICards() {
           footerCells={[
             {
               label: 'RISK $',
-              value: Number.isFinite(riskUsd) ? fmtUsdSigned(riskUsd) : '—',
-              tone: toneSign(riskUsd),
+              // Risque potentiel (pas une perte réalisée) → ton neutre,
+              // jamais rouge. Affiché signé négatif : montant perdu si
+              // tous les stops SL35 se déclenchent.
+              value: Number.isFinite(riskUsd) ? fmtUsdSigned(-riskUsd) : '—',
+              tone: 'mute',
               title:
-                'Proxy via unrealizedPnl de la 1re position (TODO Phase C : pos.slDollar quand exposé)',
+                'Σ risque max par position : surcharge slDollar sinon 35% du coût d’entrée (gate SL35)',
             },
             {
               label: 'DELTA',

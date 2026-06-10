@@ -33,8 +33,9 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo } from 'react';
-import { useClosedTrades } from '../../store/useStore';
+import { useClosedTrades, useSettings } from '../../store/useStore';
 import { tradePnlUsd } from '../../utils/calculations';
+import { tierParams } from '../../utils/sniperMeta';
 
 // ─── Formatters ─────────────────────────────────────────────────
 
@@ -557,6 +558,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
   // null downstream is safe — USD calculations are FX-independent.
   const liveRate = m.liveRate;
   const closedTrades = useClosedTrades();
+  const settings = useSettings();
   const tradeCount = m.tradeCount ?? 0;
 
   // A2.1 — read the canonical resolution from calculatePortfolioMetrics
@@ -741,8 +743,21 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
     return (m.totalFxImpact / Math.abs(m.realizedPnlChf)) * 100;
   }, [m.totalFxImpact, m.realizedPnlChf]);
 
-  // (D) TIER badge — reste hardcodé "TIER A · E0×C1" (TODO Phase C.3
-  // quand `settings.activeSniperTier` sera exposé par le store).
+  // (D) TIER badge — Brique 13 : dérivé de settings.activeSniperTier
+  // via tierParams() (utils/sniperMeta), même source que TIER ACTIF
+  // du Dashboard. TODO Phase C.3 résolu.
+  const tierLabel = tierParams(settings?.activeSniperTier).label;
+
+  // (E) QueryID Flex — lu depuis la config Flex de Settings → API
+  // (clé localStorage ibkr_flex_queryid, hors store zustand). Fallback
+  // sur l'ID historique tant que rien n'est configuré.
+  const flexQueryId = useMemo(() => {
+    try {
+      return window.localStorage.getItem('ibkr_flex_queryid') || '1443387';
+    } catch {
+      return '1443387';
+    }
+  }, []);
 
   // ── Passe finale — underwater % sur realEquity ────────────────
   // 7e (et dernière) implémentation drawdown migrée vers la base
@@ -900,7 +915,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
           </span>
         </div>
         <div className="risk-matrix__context risk-matrix__context--right">
-          <span className="risk-matrix__tier-badge">TIER A · E0×C1</span>
+          <span className="risk-matrix__tier-badge">TIER {tierLabel}</span>
           <span className="risk-matrix__edge-badge" data-tone={edge.tone}>
             <span className="risk-matrix__edge-dot" aria-hidden="true" />
             {edge.label}
@@ -1325,7 +1340,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
       </div>
 
       <footer className="risk-matrix__footer">
-        <span>Updated {updatedStr} CET · IBKR Flex Sync · QueryID 1443387</span>
+        <span>Updated {updatedStr} CET · IBKR Flex Sync · QueryID {flexQueryId}</span>
         <div className="risk-matrix__footer-cmd-wrap">
           <span className="risk-matrix__footer-cmd-label">PMET</span>
           <span className="risk-matrix__footer-cmd">&lt;GO&gt;</span>
