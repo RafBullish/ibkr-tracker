@@ -201,6 +201,58 @@ export function positionNotional(pos) {
   return Math.abs(mark * qty * mul);
 }
 
+// ─── Brique 13 — risque max par position (gate SL35) ───────────
+
+const SL_DERIVED_FRACTION = 0.35;
+
+/**
+ * Risque max en USD pour UNE position ouverte — le montant perdu si
+ * le stop SL35 (35 % de la prime, Sniper OTM v1.0) se déclenche.
+ *
+ * Dérivation par défaut : pi × ct × mu × 0.35 (coût d'entrée hors
+ * commissions × fraction SL35). Surcharge manuelle optionnelle via
+ * pos.slDollar (string, convention du modèle ; null = dérivé).
+ *
+ * Retourne null quand le coût d'entrée n'est pas calculable (inputs
+ * absents/invalides) ET qu'aucune surcharge valide n'existe — le
+ * caller affiche '—', il n'invente pas un 0.
+ *
+ * @param {object} pos  open position (formes du store, numbers-as-strings)
+ * @returns {number|null} ≥ 0
+ */
+export function effectiveSlDollar(pos) {
+  if (!pos) return null;
+  const manual = toFloat(pos.slDollar);
+  if (manual > 0) return manual;
+  const pi = toFloat(pos.pi);
+  const qty = toFloat(pos.ct);
+  const mul = pos.as === 'Action' ? 1 : toFloat(pos.mu) || 100;
+  const entryCost = pi * qty * mul;
+  if (!(entryCost > 0)) return null;
+  return entryCost * SL_DERIVED_FRACTION;
+}
+
+/**
+ * Somme des risques max (effectiveSlDollar) sur les positions
+ * ouvertes. null quand aucune position n'a de risque calculable.
+ *
+ * @param {Array<object>} openPositions
+ * @returns {number|null} ≥ 0
+ */
+export function totalSlDollar(openPositions) {
+  if (!Array.isArray(openPositions) || openPositions.length === 0) return null;
+  let sum = 0;
+  let any = false;
+  for (const p of openPositions) {
+    const sl = effectiveSlDollar(p);
+    if (sl != null) {
+      sum += sl;
+      any = true;
+    }
+  }
+  return any ? sum : null;
+}
+
 /**
  * Total notional exposure across all open positions, in USD.
  */

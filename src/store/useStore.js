@@ -12,6 +12,7 @@ import {
 } from './migrations';
 import { applyAction } from './reducer';
 import { DEBOUNCE } from '../constants/timing';
+import { sanitizeTier, DEFAULT_TIER } from '../utils/sniperMeta';
 
 // ─── Storage Keys ────────────────────────────────────────────
 
@@ -70,6 +71,9 @@ function loadInitialState() {
     if (typeof s.ic === 'number' && Number.isFinite(s.ic) && s.ic > 0) {
       settings.initialCapitalChf = s.ic;
     }
+    // Brique 13 — tier Sniper actif (coordonnée matrice E×C, clé `tier`).
+    // sanitizeTier rejette silencieusement un payload corrompu → E0×C1.
+    if (s.tier) settings.activeSniperTier = sanitizeTier(s.tier);
   }
 
   // Walk the migration chain from the stored version up to CURRENT_SCHEMA_VERSION.
@@ -151,6 +155,12 @@ function persistSettings(settings) {
       settings.initialCapitalChf > 0
     ) {
       toSave.ic = settings.initialCapitalChf;
+    }
+    // Brique 13 — tier Sniper actif (clé courte `tier`). Persisté
+    // seulement hors défaut E0×C1 ; l'absence au load = défaut.
+    if (settings.activeSniperTier) {
+      const t = sanitizeTier(settings.activeSniperTier);
+      if (t.e !== DEFAULT_TIER.e || t.c !== DEFAULT_TIER.c) toSave.tier = t;
     }
     localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(toSave));
   } catch {

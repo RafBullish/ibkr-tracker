@@ -70,6 +70,10 @@
 //  su              | string      | yes      | legacy, '' default          | ""
 //                    (strategy tag placeholder — unused)
 //  lots            | Array<Lot>  | no       | parser / v1 backfill        | [{ct,pi,fi,di,fxi}]
+//  slDollar        | string|null | yes      | saisie manuelle (v7)        | "180.50"
+//                    (surcharge du risque max  null = dérivé : pi×ct×mu×0.35
+//                     USD par position)        (gate SL35, cf. utils/risk.js
+//                                              effectiveSlDollar)
 //  _ibkrConid      | string      | yes      | parser, stripped on merge   | "12345"
 //  _ibkrSymbol     | string      | yes      | parser, stripped on merge   | "NVDA 240119C00500000"
 //  _ibkrUnrealized | number      | yes      | parser, stripped on merge   | 120.50
@@ -112,6 +116,14 @@
 //  historical quote source is branched, these three stay null on BOTH
 //  backfilled and newly imported trades. A later lot will add the fetch
 //  + re-migration so old flagged trades get enriched retroactively.
+//
+//  SETTINGS (clé localStorage ibkr_u_s, clés courtes)
+//  ──────────────────────────────────────────────────
+//  tier            | {e, c}      | yes      | sélecteur Settings (v7)     | {e:"E0", c:"C1"}
+//                    (state: settings.activeSniperTier — coordonnée de la
+//                     matrice Sniper E0-E4 × C1-C5. Label / cashFloorPct /
+//                     notionalMaxPct dérivés via utils/sniperMeta tierParams().
+//                     Absent du payload quand égal au défaut E0×C1.)
 // ═══════════════════════════════════════════════════════════════
 
 import { todayDateString, dteAtEntry } from '../utils/dates';
@@ -119,7 +131,7 @@ import { detectExitReason } from '../utils/trades/detectExitReason';
 import { generateId } from '../utils/math';
 
 export const SCHEMA_VERSION_KEY = 'ibkr_schema_v';
-export const CURRENT_SCHEMA_VERSION = 6;
+export const CURRENT_SCHEMA_VERSION = 7;
 
 // ─── Individual migration steps ───────────────────────────────
 
@@ -307,6 +319,31 @@ function migrateV5toV6(state) {
   return { ...state, settings };
 }
 
+/**
+ * v6 → v7 (Brique 13) : tier Sniper actif + slDollar.
+ *
+ *   - settings.activeSniperTier = {e:'E0', c:'C1'} quand absent —
+ *     le défaut reproduit exactement le comportement antérieur
+ *     (label 'A · E0×C1', cashFloor 30, notionalMax 70 hardcodés).
+ *     `=== undefined` seulement : un tier déjà posé passe intact.
+ *   - openPositions[i].slDollar = null quand absent — null signifie
+ *     "risque dérivé" (pi×ct×mu×0.35, gate SL35) ; une valeur string
+ *     posée par l'utilisateur est une surcharge et passe intacte.
+ *
+ * Idempotent et pur — copies superficielles, aucune mutation.
+ */
+function migrateV6toV7(state) {
+  const settings = { ...state.settings };
+  if (settings.activeSniperTier === undefined) {
+    settings.activeSniperTier = { e: 'E0', c: 'C1' };
+  }
+  const openPositions = (state.openPositions || []).map((p) => {
+    if (p.slDollar !== undefined) return p;
+    return { ...p, slDollar: null };
+  });
+  return { ...state, settings, openPositions };
+}
+
 // ─── Migration chain ─────────────────────────────────────────
 // Index N contains the migration from version N → N+1.
 
@@ -317,6 +354,7 @@ const MIGRATIONS = [
   migrateV3toV4, // 3 → 4
   migrateV4toV5, // 4 → 5
   migrateV5toV6, // 5 → 6
+  migrateV6toV7, // 6 → 7
 ];
 
 // ─── Entry points ────────────────────────────────────────────

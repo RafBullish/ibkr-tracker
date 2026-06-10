@@ -108,3 +108,57 @@ export function readAllSniperMeta() {
 }
 
 export const SNIPER_META_KEY_PREFIX = KEY_PREFIX;
+
+// ─── Brique 13 — matrice tier actif (portfolio-level) ───────────
+//
+// Le tier actif du portefeuille est une coordonnée E×C persistée dans
+// settings.activeSniperTier ({e, c}, clé courte `tier` dans ibkr_u_s).
+// Cette section est LA source de vérité pour tout ce qui se dérive
+// d'un tier : label affiché, plancher de cash, plafond notionnel.
+//
+// Stage letter : dérivée du capital tier (C1→A … C5→E) — cohérente
+// avec le libellé historique 'A · E0×C1'.
+//
+// cashFloorPct / notionalMaxPct : règles portfolio Sniper OTM v1.0
+// Finale (30 / 70). Le document de stratégie ne définit pas (encore)
+// de variation par tier — PORTFOLIO_RULES est le point unique à
+// éclater en table par-coordonnée le jour où il le fera. Ne pas
+// re-hardcoder 30/70 ailleurs.
+
+const STAGE_BY_CAPITAL = { C1: 'A', C2: 'B', C3: 'C', C4: 'D', C5: 'E' };
+
+const PORTFOLIO_RULES = {
+  cashFloorPct: 30,
+  notionalMaxPct: 70,
+};
+
+export const DEFAULT_TIER = Object.freeze({ e: 'E0', c: 'C1' });
+
+/**
+ * Sanitize a tier coordinate. Returns DEFAULT_TIER (E0×C1) when the
+ * input is absent or malformed — never throws, never returns null.
+ */
+export function sanitizeTier(raw) {
+  const e = VALID_EDGE.has(raw?.e) ? raw.e : DEFAULT_TIER.e;
+  const c = VALID_CAP.has(raw?.c) ? raw.c : DEFAULT_TIER.c;
+  return { e, c };
+}
+
+/**
+ * Derive every tier-dependent display/risk parameter from a tier
+ * coordinate. Single source of truth — consumers (Dashboard cards,
+ * RiskMatrix badge, gauges) must read these fields, never literals.
+ *
+ * @param {{e?: string, c?: string}|null|undefined} raw  settings.activeSniperTier
+ * @returns {{e, c, label: string, cashFloorPct: number, notionalMaxPct: number}}
+ */
+export function tierParams(raw) {
+  const { e, c } = sanitizeTier(raw);
+  return {
+    e,
+    c,
+    label: `${STAGE_BY_CAPITAL[c]} · ${e}×${c}`,
+    cashFloorPct: PORTFOLIO_RULES.cashFloorPct,
+    notionalMaxPct: PORTFOLIO_RULES.notionalMaxPct,
+  };
+}

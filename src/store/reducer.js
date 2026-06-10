@@ -5,6 +5,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { toFloat, ensurePositive, generateId, roundTo2, roundTo5, roundTo6 } from '../utils/math';
+import { sanitizeTier } from '../utils/sniperMeta';
 
 const normalizeStrike = (s) => String(parseFloat(s) || 0);
 
@@ -27,6 +28,15 @@ export function applyAction(state, action) {
       // prochain effect run, true le relance. Persisté automatiquement par
       // le subscribe localStorage (persistSettings lit settings.gwAutoConnect).
       return { ...state, settings: { ...state.settings, gwAutoConnect: Boolean(action.payload) } };
+
+    case 'SET_ACTIVE_SNIPER_TIER': {
+      // Brique 13 — coordonnée matrice E×C du tier Sniper actif.
+      // Payload {e, c} ; toute valeur hors matrice retombe sur le
+      // défaut E0×C1 via sanitizeTier. Persisté automatiquement par
+      // persistSettings (clé courte `tier`, omise quand défaut).
+      const tier = sanitizeTier(action.payload);
+      return { ...state, settings: { ...state.settings, activeSniperTier: tier } };
+    }
 
     case 'SET_INITIAL_CAPITAL': {
       // B4 — capital de référence manuel en CHF. Payload null/0/NaN
