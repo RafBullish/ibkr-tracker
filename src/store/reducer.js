@@ -31,10 +31,14 @@ export function applyAction(state, action) {
 
     case 'SET_ACTIVE_SNIPER_TIER': {
       // Brique 13 — coordonnée matrice E×C du tier Sniper actif.
-      // Payload {e, c} ; toute valeur hors matrice retombe sur le
-      // défaut E0×C1 via sanitizeTier. Persisté automatiquement par
-      // persistSettings (clé courte `tier`, omise quand défaut).
-      const tier = sanitizeTier(action.payload);
+      // Payload partiel accepté ({e} ou {c} seul) : le merge se fait
+      // ICI contre l'état courant — pas dans le composant — pour
+      // éviter toute stale closure côté UI. Toute valeur hors matrice
+      // retombe sur le défaut E0×C1 via sanitizeTier. Persisté
+      // automatiquement par persistSettings (clé courte `tier`,
+      // omise quand défaut).
+      const current = sanitizeTier(state.settings.activeSniperTier);
+      const tier = sanitizeTier({ ...current, ...(action.payload || {}) });
       return { ...state, settings: { ...state.settings, activeSniperTier: tier } };
     }
 
@@ -308,9 +312,10 @@ export function applyAction(state, action) {
 
     case 'RESET_ALL':
       // Preserve the user's FX preferences (rate + mode + last-update +
-      // source). cashReport, lastSync, ibkrLiveData, etc. — broker
-      // snapshots — are still wiped because RESET_ALL is meant to remove
-      // accounting data, not user-chosen FX preferences.
+      // source) and the active Sniper tier — user-chosen strategy
+      // config, same nature as the FX prefs. cashReport, lastSync,
+      // ibkrLiveData, etc. — broker snapshots — are still wiped because
+      // RESET_ALL is meant to remove accounting data, not preferences.
       return {
         openPositions: [],
         closedTrades: [],
@@ -321,6 +326,7 @@ export function applyAction(state, action) {
           fxMode: state.settings.fxMode,
           fxLastUpdated: state.settings.fxLastUpdated,
           fxSource: state.settings.fxSource,
+          activeSniperTier: state.settings.activeSniperTier,
         },
       };
 

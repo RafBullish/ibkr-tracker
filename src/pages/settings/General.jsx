@@ -314,15 +314,14 @@ export default function SettingsGeneral() {
   };
 
   // Brique 13 — tier Sniper actif. Pas de draft : un <select> commit
-  // immédiatement via SET_ACTIVE_SNIPER_TIER (payload {e, c} complet
-  // pour rester atomique). Label/params dérivés via tierParams().
+  // immédiatement via SET_ACTIVE_SNIPER_TIER. Le payload est le patch
+  // SEUL ({e} ou {c}) — le merge contre l'état courant vit dans le
+  // reducer, pour qu'un double changement rapide ne repasse pas par
+  // une closure périmée. Label/params dérivés via tierParams().
   const activeTier = sanitizeTier(settings?.activeSniperTier);
   const activeTierInfo = tierParams(activeTier);
   const commitTier = (patch) => {
-    dispatch({
-      type: 'SET_ACTIVE_SNIPER_TIER',
-      payload: { ...activeTier, ...patch },
-    });
+    dispatch({ type: 'SET_ACTIVE_SNIPER_TIER', payload: patch });
   };
 
   // B4 — capital de référence manuel (CHF). Stocké brut, converti en USD

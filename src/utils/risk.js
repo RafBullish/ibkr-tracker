@@ -217,6 +217,11 @@ const SL_DERIVED_FRACTION = 0.35;
  * absents/invalides) ET qu'aucune surcharge valide n'existe — le
  * caller affiche '—', il n'invente pas un 0.
  *
+ * Positions Short (premium vendu) : la formule 35 % de la prime ne
+ * décrit PAS leur risque (potentiellement illimité / dépend de la
+ * couverture). Sans surcharge slDollar explicite → null, jamais un
+ * chiffre faux. La stratégie Sniper OTM v1.0 est long-premium only.
+ *
  * @param {object} pos  open position (formes du store, numbers-as-strings)
  * @returns {number|null} ≥ 0
  */
@@ -224,6 +229,7 @@ export function effectiveSlDollar(pos) {
   if (!pos) return null;
   const manual = toFloat(pos.slDollar);
   if (manual > 0) return manual;
+  if (pos.dir === 'Short') return null;
   const pi = toFloat(pos.pi);
   const qty = toFloat(pos.ct);
   const mul = pos.as === 'Action' ? 1 : toFloat(pos.mu) || 100;
