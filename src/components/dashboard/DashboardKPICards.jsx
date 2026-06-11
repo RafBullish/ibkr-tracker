@@ -1398,12 +1398,9 @@ function renderHeroChart(chart, extraProps = {}) {
 function KpiCardHero({
   label = 'NLV · NET LIQUIDITY VALUE',
   liveBadge = 'LIVE',
-  // Brique 14 — bande de stats entre le bloc texte héro et le bloc
-  // densité (variante Dense: 6 cellules, Statement: 4). Null = absent.
+  // Brique 14 — bande de stats (6 cellules) entre le bloc texte héro
+  // et le bloc densité. Null = absent (carte REALIZED).
   statsBand = null,
-  // TEMP Brique 14 — 'dense' force le nombre héro à 56px (la variante
-  // Statement garde les 64px actuels). Retiré après choix de Rafael.
-  sizeVariant = 'statement',
   range,
   setRange,
   topRight,
@@ -1583,10 +1580,7 @@ function KpiCardHero({
   }
 
   return (
-    <section
-      className={`dash-kpi-card dash-kpi-card--hero${sizeVariant === 'dense' ? ' dash-kpi-card--hero-dense' : ''}`}
-      data-tone={valueTone}
-    >
+    <section className="dash-kpi-card dash-kpi-card--hero" data-tone={valueTone}>
       <div className="dash-kpi-card__top">
         <span className="dash-kpi-card__top-left">
           <span className="dash-kpi-card__label">{label}</span>
@@ -1804,20 +1798,6 @@ export default function DashboardKPICards() {
     [settings?.activeSniperTier]
   );
 
-  // TEMP Brique 14 — toggle de variante de composition héro, piloté par
-  // l'URL (?b14=2 → « Statement » : 4 cellules + héros 64px ; défaut
-  // « Dense » : 6 cellules + héros 56px). À RETIRER une fois la variante
-  // choisie par Rafael — aucune n'est retenue par défaut ici.
-  const b14Variant = useMemo(() => {
-    try {
-      return new URLSearchParams(window.location.search).get('b14') === '2'
-        ? 'statement'
-        : 'dense';
-    } catch {
-      return 'dense';
-    }
-  }, []);
-
   const [range, setRange] = useState('30J');
   const rangeConf = RANGES.find((r) => r.key === range) || RANGES[2];
 
@@ -2001,15 +1981,62 @@ export default function DashboardKPICards() {
       .reduce((sum, d) => sum + d.dailyPnl, 0);
   }, [dailyPnL]);
 
-  // ─── Brique 14 (A) — bande de stats héro NLV ────────────────
-  // Densifie la zone morte entre les deltas et EXPOSITION. Uniquement
-  // des valeurs DÉJÀ calculées (metrics / hooks existants) — aucun
-  // calcul nouveau. Dense = 6 cellules, Statement = les 4 premières.
+  // ─── Brique 14 (B, option b) — deltas NLV depuis dailySnapshots ──
+  // JOUR / SEMAINE / MOIS = variation mark-to-market de la NLV :
+  // NLV courante − snapshot de référence (le dernier snapshot AVANT le
+  // début de la période : aujourd'hui / lundi / le 1er du mois).
+  // Pas de snapshot de référence → « — », JAMAIS $0 : un zéro serait
+  // un mensonge quand la donnée n'existe simplement pas.
+  // Guard nlv > 0 : les snapshots écrits sur un store vide (nlv: 0)
+  // ne sont pas des références de portefeuille valides.
+  const nlvDeltas = useMemo(() => {
+    const snaps = Array.isArray(settings?.dailySnapshots)
+      ? settings.dailySnapshots
+          .filter((s) => s && typeof s.date === 'string' && Number.isFinite(s.nlv) && s.nlv > 0)
+          .sort((a, b) => a.date.localeCompare(b.date))
+      : [];
+    const refBefore = (limitISO) => {
+      for (let i = snaps.length - 1; i >= 0; i--) {
+        if (snaps[i].date < limitISO) return snaps[i];
+      }
+      return null;
+    };
+    const mk = (limitISO) => {
+      const ref = refBefore(limitISO);
+      if (!ref || !Number.isFinite(nlvUsd)) return { value: null, refDate: null };
+      return { value: nlvUsd - ref.nlv, refDate: ref.date };
+    };
+    const now = new Date();
+    const todayISO = now.toISOString().slice(0, 10);
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    const mondayISO = monday.toISOString().slice(0, 10);
+    const monthStartISO = `${todayISO.slice(0, 7)}-01`;
+    return {
+      day: mk(todayISO),
+      week: mk(mondayISO),
+      month: mk(monthStartISO),
+    };
+  }, [settings?.dailySnapshots, nlvUsd]);
+
+  const fmtNlvDeltaCell = (label, d, periodLabel) => ({
+    label,
+    value: d.value != null ? fmtUsdSigned(d.value) : '—',
+    tone: d.value != null ? toneSign(d.value) : 'mute',
+    title: d.refDate
+      ? `Variation NLV ${periodLabel} — vs snapshot du ${fmtDateDeCH(d.refDate)}`
+      : `Variation NLV ${periodLabel} — aucun snapshot de référence disponible`,
+  });
+
+  // ─── Brique 14 (A) — bande de stats héro NLV (V1 Dense figée) ──
+  // Densifie la zone entre les deltas et EXPOSITION. Uniquement des
+  // valeurs DÉJÀ calculées (metrics / hooks existants) — aucun calcul
+  // nouveau. 6 cellules.
   const volAnnPct = metrics?.volAnnPct;
   const yearsActive = metrics?.yearsActive;
   const initialCapitalUsd = metrics?.initialCapital;
   const nlvStatsBand = useMemo(() => {
-    const cells = [
+    return [
       {
         label: 'DÉPLOYÉ',
         value: Number.isFinite(exposureUsd) ? fmtUsdCompact(exposureUsd) : '——',
@@ -2036,27 +2063,22 @@ export default function DashboardKPICards() {
         tone: 'mute',
         title: 'Capital de référence (cascade manuel → cashReport → dépôts)',
       },
+      {
+        label: 'VOL ANN.',
+        value: Number.isFinite(volAnnPct) ? `${volAnnPct.toFixed(1)}%` : '—',
+        tone: 'mute',
+        title: 'Volatilité annualisée des returns (même valeur que le cockpit)',
+      },
+      {
+        label: 'JOURS ACTIFS',
+        value: Number.isFinite(yearsActive)
+          ? `${Math.round(yearsActive * 365.25)} J`
+          : '—',
+        tone: 'mute',
+        title: 'Jours calendaires entre le premier et le dernier trade clôturé',
+      },
     ];
-    if (b14Variant === 'dense') {
-      cells.push(
-        {
-          label: 'VOL ANN.',
-          value: Number.isFinite(volAnnPct) ? `${volAnnPct.toFixed(1)}%` : '—',
-          tone: 'mute',
-          title: 'Volatilité annualisée des returns (même valeur que le cockpit)',
-        },
-        {
-          label: 'JOURS ACTIFS',
-          value: Number.isFinite(yearsActive)
-            ? `${Math.round(yearsActive * 365.25)} J`
-            : '—',
-          tone: 'mute',
-          title: 'Jours calendaires entre le premier et le dernier trade clôturé',
-        }
-      );
-    }
-    return cells;
-  }, [exposureUsd, availableUsd, ytdPnlUsd, initialCapitalUsd, volAnnPct, yearsActive, b14Variant]);
+  }, [exposureUsd, availableUsd, ytdPnlUsd, initialCapitalUsd, volAnnPct, yearsActive]);
 
   // ─── Day P&L + flat-market detection ───────────────────────
   const dayPnl = todayPnlUsd(dailyPnL);
@@ -2113,7 +2135,6 @@ export default function DashboardKPICards() {
         {/* HERO 1. NLV */}
         <KpiCardHero
           statsBand={nlvStatsBand}
-          sizeVariant={b14Variant}
           range={range}
           setRange={setRange}
           topRight={
@@ -2133,23 +2154,12 @@ export default function DashboardKPICards() {
           deltaUsd={rangeDeltaUsd}
           deltaPct={rangeDeltaPct}
           microStats={[
-            {
-              label: 'JOUR',
-              value: dayPnl != null ? fmtUsdSigned(dayPnl) : '—',
-              tone: toneSign(dayPnl),
-            },
-            {
-              label: 'SEMAINE',
-              value: Number.isFinite(weekPnlUsd) ? fmtUsdSigned(weekPnlUsd) : '—',
-              tone: toneSign(weekPnlUsd),
-              title: 'P&L cumulé depuis lundi 00h',
-            },
-            {
-              label: 'MOIS',
-              value: Number.isFinite(monthlyPnlUsd) ? fmtUsdSigned(monthlyPnlUsd) : '—',
-              tone: toneSign(monthlyPnlUsd),
-              title: 'P&L cumulé du mois en cours',
-            },
+            // Brique 14 (B) — deltas NLV mark-to-market depuis les
+            // dailySnapshots, plus le P&L réalisé par close-date qui
+            // affichait des $0 trompeurs les jours sans clôture.
+            fmtNlvDeltaCell('JOUR', nlvDeltas.day, 'du jour'),
+            fmtNlvDeltaCell('SEMAINE', nlvDeltas.week, 'depuis lundi'),
+            fmtNlvDeltaCell('MOIS', nlvDeltas.month, 'du mois en cours'),
           ]}
           densityBlock={
             <HeroExposureGauge
@@ -2226,7 +2236,6 @@ export default function DashboardKPICards() {
         {/* HERO 2. REALIZED (B2 — promu de secondary à hero) */}
         <KpiCardHero
           label="REALIZED · P&L CUMULÉ"
-          sizeVariant={b14Variant}
           liveBadge={null}
           topRight={
             <span className="dash-kpi-card__top-tools">

@@ -3361,17 +3361,11 @@
   text-overflow: ellipsis;
 }
 
+/* Brique 14 (E) — V1 Dense retenue : héros 56px. */
 .dash-kpi-card--hero .dash-kpi-card__value {
-  font-size: 64px;
+  font-size: 56px;
   line-height: 0.95;
   letter-spacing: -0.018em;
-}
-
-/* TEMP Brique 14 (E) — variante « Dense » : héros 56px (la variante
-   « Statement » garde 64px ci-dessus). Une des deux règles sera
-   retirée après le choix de Rafael. */
-.dash-kpi-card--hero-dense .dash-kpi-card__value {
-  font-size: 56px;
 }
 
 .dash-kpi-card__chf {
