@@ -141,7 +141,7 @@ export default function MasterChart({ data, dailyPnL, mode = 'real', area = 'mas
                           yAxisId="equity"
                           orientation="left"
                           stroke={T.text.tertiary}
-                          tick={{ fontFamily: T.fonts.mono, fontSize: 9, fill: T.text.tertiary }}
+                          tick={{ fontFamily: T.fonts.mono, fontSize: 12, fill: T.text.tertiary }}
                           axisLine={false}
                           tickLine={false}
                           width={42}
@@ -182,7 +182,7 @@ export default function MasterChart({ data, dailyPnL, mode = 'real', area = 'mas
                         <R.XAxis
                           dataKey="date"
                           stroke={T.text.tertiary}
-                          tick={{ fontFamily: T.fonts.mono, fontSize: 9, fill: T.text.tertiary }}
+                          tick={{ fontFamily: T.fonts.mono, fontSize: 12, fill: T.text.tertiary }}
                           axisLine={false}
                           tickLine={false}
                           tickFormatter={fmtAxisDate}
@@ -191,7 +191,7 @@ export default function MasterChart({ data, dailyPnL, mode = 'real', area = 'mas
                         />
                         <R.YAxis
                           stroke={T.text.tertiary}
-                          tick={{ fontFamily: T.fonts.mono, fontSize: 9, fill: T.text.tertiary }}
+                          tick={{ fontFamily: T.fonts.mono, fontSize: 12, fill: T.text.tertiary }}
                           axisLine={false}
                           tickLine={false}
                           width={42}

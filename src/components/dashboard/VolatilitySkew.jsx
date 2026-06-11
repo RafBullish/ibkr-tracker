@@ -107,7 +107,7 @@ export default function VolatilitySkew({ data, area = 'skew' }) {
                         <R.XAxis
                           dataKey="dte"
                           stroke={T.text.tertiary}
-                          tick={{ fontFamily: T.fonts.mono, fontSize: 9, fill: T.text.tertiary }}
+                          tick={{ fontFamily: T.fonts.mono, fontSize: 12, fill: T.text.tertiary }}
                           axisLine={false}
                           tickLine={false}
                           height={14}
@@ -115,7 +115,7 @@ export default function VolatilitySkew({ data, area = 'skew' }) {
                         />
                         <R.YAxis
                           stroke={T.text.tertiary}
-                          tick={{ fontFamily: T.fonts.mono, fontSize: 9, fill: T.text.tertiary }}
+                          tick={{ fontFamily: T.fonts.mono, fontSize: 12, fill: T.text.tertiary }}
                           axisLine={false}
                           tickLine={false}
                           width={32}

@@ -361,7 +361,7 @@ export default function DailyPnLChart({
                     <R.XAxis
                       dataKey="date"
                       stroke={T.text.tertiary}
-                      tick={{ fontFamily: T.fonts.mono, fontSize: 10, fill: T.text.tertiary }}
+                      tick={{ fontFamily: T.fonts.mono, fontSize: 12, fill: T.text.tertiary }}
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={fmtAxisDate}
@@ -370,7 +370,7 @@ export default function DailyPnLChart({
                     />
                     <R.YAxis
                       stroke={T.text.tertiary}
-                      tick={{ fontFamily: T.fonts.mono, fontSize: 10, fill: T.text.tertiary }}
+                      tick={{ fontFamily: T.fonts.mono, fontSize: 12, fill: T.text.tertiary }}
                       axisLine={false}
                       tickLine={false}
                       width={64}
@@ -394,7 +394,7 @@ export default function DailyPnLChart({
                           value: `PEAK +$${Math.round(peakCumul)}`,
                           position: 'insideTopRight',
                           fill: T.text.tertiary,
-                          fontSize: 10,
+                          fontSize: 12,
                           fontFamily: T.fonts.mono,
                         }}
                       />

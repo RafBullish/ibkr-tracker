@@ -130,7 +130,7 @@
 
 .module-placeholder__label {
   font-family: var(--qc-font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--qc-text-secondary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -138,7 +138,7 @@
 
 .module-placeholder__sub {
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.04em;
   opacity: 0.7;
@@ -190,7 +190,7 @@
   align-items: center;
   justify-content: center;
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -236,7 +236,7 @@
   height: 18px;
   padding: 0 6px;
   font-family: var(--qc-font-mono);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -305,7 +305,7 @@
   justify-content: center;
   flex: 1;
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--qc-text-tertiary);
@@ -319,7 +319,7 @@
   border: 1px solid var(--qc-border-strong);
   padding: 6px 8px;
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.4;
   font-variant-numeric: tabular-nums slashed-zero;
   color: var(--qc-text-secondary);
@@ -332,7 +332,7 @@
   color: var(--qc-text-primary);
   margin-bottom: 4px;
   letter-spacing: 0.04em;
-  font-size: 10px;
+  font-size: 12px;
   border-bottom: 1px solid var(--qc-border-subtle);
   padding-bottom: 3px;
 }
@@ -346,7 +346,7 @@
 
 .master-chart__tooltip-row > span:first-child {
   color: var(--qc-text-tertiary);
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -427,7 +427,7 @@
 }
 
 .trading-chart__sub {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.06em;
   white-space: nowrap;
@@ -448,7 +448,7 @@
 .trading-chart__range-btn {
   padding: 3px 8px;
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   background: transparent;
   border: none;
@@ -501,7 +501,7 @@
 }
 
 .trading-chart__kpi-label {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -545,7 +545,7 @@
    Utilisée par DailyPnLChart pour afficher la conversion CHF
    du P&L unrealized live. Padded au layout column existant. */
 .trading-chart__kpi-sub {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums slashed-zero;
@@ -593,7 +593,7 @@
 }
 
 .trading-chart__footer-label {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -634,7 +634,7 @@
   border-radius: 3px;
   padding: 6px 10px;
   font-family: var(--qc-font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--qc-text-secondary);
   box-shadow: 0 4px 12px color-mix(in srgb, var(--qc-bg-base) 70%, transparent);
 }
@@ -643,7 +643,7 @@
   color: var(--qc-text-primary);
   font-weight: 500;
   margin-bottom: 4px;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.04em;
 }
 
@@ -651,14 +651,14 @@
   display: flex;
   justify-content: space-between;
   gap: 14px;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .trading-chart__tooltip-row > span:first-child {
   color: var(--qc-text-tertiary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .trading-chart__tooltip-val {
@@ -691,7 +691,7 @@
   gap: 5px;
   padding: 2px 8px;
   border-radius: 2px;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.1em;
   font-weight: 500;
   margin-left: 6px;
@@ -981,7 +981,7 @@
 }
 
 .risk-matrix__section-head-info {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 400;
   letter-spacing: 0.06em;
   color: var(--qc-text-tertiary);
@@ -1036,7 +1036,7 @@
   padding: 4px 18px;
   background: color-mix(in srgb, var(--qc-text-primary) 2%, transparent);
   color: var(--qc-text-tertiary);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   border-bottom: 1px solid var(--qc-border-subtle);
@@ -1100,7 +1100,7 @@
   align-items: center;
   justify-content: center;
   color: var(--qc-text-tertiary);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.04em;
 }
 
@@ -1134,7 +1134,7 @@
   display: flex;
   justify-content: space-between;
   padding: 0 12px 6px;
-  font-size: 9px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.04em;
   flex-shrink: 0;
@@ -1199,7 +1199,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.08em;
   margin-bottom: 7px;
@@ -1278,7 +1278,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.04em;
 }
@@ -1313,7 +1313,7 @@
 .risk-matrix__winrate-donut-label {
   fill: var(--qc-text-tertiary);
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.1em;
 }
 
@@ -1367,7 +1367,7 @@
 }
 
 .risk-matrix__winrate-pf {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.04em;
   margin-top: 2px;
@@ -1423,7 +1423,7 @@
   justify-content: space-between;
   padding-top: 5px;
   gap: 5px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   font-family: var(--qc-font-mono);
   letter-spacing: 0.04em;
@@ -1487,7 +1487,7 @@
 
 .risk-matrix__greek-label {
   font-family: var(--qc-font-sans);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.1em;
   color: var(--qc-text-tertiary);
@@ -1514,7 +1514,7 @@
 
 .risk-matrix__greek-sub {
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -1571,7 +1571,7 @@
 }
 
 .greeks-agg__kpi-label {
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1597,7 +1597,7 @@
 }
 
 .greeks-agg__kpi-sub {
-  font-size: 9px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -1615,7 +1615,7 @@
   width: 100%;
   border-collapse: collapse;
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums slashed-zero;
 }
 
@@ -1628,7 +1628,7 @@
 .greeks-agg__table thead th {
   height: 22px;
   padding: 0 6px;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1681,7 +1681,7 @@
   align-items: center;
   height: 11px;
   padding: 0 4px;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
   border: 1px solid var(--qc-border-subtle);
@@ -1720,7 +1720,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1750,7 +1750,7 @@
   justify-content: center;
   height: 100%;
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1763,7 +1763,7 @@
   border-collapse: collapse;
   table-layout: fixed;
   font-family: var(--qc-font-mono);
-  font-size: 13px;
+  font-size: var(--qc-fs-body, 14px);
   font-variant-numeric: tabular-nums slashed-zero;
 }
 
@@ -1805,7 +1805,7 @@
 .live-pos__table thead th {
   height: 30px;
   padding: 0 10px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1893,7 +1893,7 @@
 }
 
 .live-pos__sub {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   margin-left: 1px;
   letter-spacing: 0.02em;
@@ -1919,7 +1919,7 @@
   align-items: center;
   height: 11px;
   padding: 0 4px;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
   border: 1px solid var(--qc-border-subtle);
@@ -1952,7 +1952,7 @@
 
 .live-pos__ivr-num {
   color: var(--qc-text-primary);
-  font-size: 10px;
+  font-size: 12px;
   min-width: 16px;
   text-align: right;
 }
@@ -1988,7 +1988,7 @@
   align-items: center;
   height: 11px;
   padding: 0 4px;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--qc-text-primary);
@@ -2003,7 +2003,7 @@
   gap: 2px;
   height: 11px;
   padding: 0 4px;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--qc-warning);
@@ -2058,7 +2058,7 @@
   align-items: center;
   height: 11px;
   padding: 0 4px;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--qc-text-primary);
@@ -2072,7 +2072,7 @@
   align-items: center;
   height: 11px;
   padding: 0 4px;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
   border: 1px solid var(--qc-border-subtle);
@@ -2111,7 +2111,7 @@
 
 .position-sparkline__empty {
   color: var(--qc-text-tertiary);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -2140,7 +2140,7 @@
   height: 100%;
   padding: 0 16px;
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.06em;
   text-align: center;
@@ -2154,7 +2154,7 @@
   border: 1px solid var(--qc-border-subtle);
   border-radius: 0;
   font-family: var(--qc-font-mono);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2175,7 +2175,7 @@
   width: 100%;
   border-collapse: collapse;
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums slashed-zero;
 }
 
@@ -2192,7 +2192,7 @@
 .iv-movers__table thead th {
   height: 22px;
   padding: 0 6px;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2280,7 +2280,7 @@
   align-items: center;
   height: 11px;
   padding: 0 4px;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--qc-text-secondary);
@@ -2314,7 +2314,7 @@
 }
 
 .heat-cell__code {
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--qc-text-primary);
@@ -2322,7 +2322,7 @@
 }
 
 .heat-cell__pct {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   font-variant-numeric: tabular-nums slashed-zero;
 }
@@ -2360,7 +2360,7 @@
   height: 100%;
   padding: 0 16px;
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.06em;
   text-align: center;
@@ -2370,14 +2370,14 @@
   width: 100%;
   border-collapse: collapse;
   font-family: var(--qc-font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums slashed-zero;
 }
 
 .market-internals__table thead th {
   height: 22px;
   padding: 0 8px;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2410,7 +2410,7 @@
 
 .market-internals__label {
   text-align: left !important;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2438,7 +2438,7 @@
   align-items: center;
   gap: 4px;
   font-family: var(--qc-font-mono);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2471,7 +2471,7 @@
   border: 1px solid var(--qc-border-subtle);
   border-radius: 0;
   font-family: var(--qc-font-mono);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2496,7 +2496,7 @@
   margin: 0;
   padding: 0;
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums slashed-zero;
 }
 
@@ -2521,7 +2521,7 @@
 }
 
 .alerts-feed__time {
-  font-size: 9px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   flex-shrink: 0;
   letter-spacing: 0.02em;
@@ -2530,7 +2530,7 @@
 .alerts-feed__sep {
   color: var(--qc-text-tertiary);
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .alerts-feed__level {
@@ -2538,7 +2538,7 @@
   align-items: center;
   height: 11px;
   padding: 0 4px;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
   border: 1px solid var(--qc-border-subtle);
@@ -2629,7 +2629,7 @@
   justify-content: center;
   height: 100%;
   color: var(--qc-text-tertiary);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.04em;
 }
 
@@ -2649,7 +2649,7 @@
   padding: 0 10px;
   background: var(--bg-elev-1);
   border-bottom: var(--hairline);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2686,7 +2686,7 @@
 }
 
 .sniper-gates__type {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.06em;
   color: var(--accent-amber, #ffa028);
@@ -2702,7 +2702,7 @@
 .sniper-gates__sub {
   margin-left: 2px;
   color: var(--qc-text-tertiary);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .sniper-gates__unreal--profit {
@@ -2720,7 +2720,7 @@
   align-items: center;
   height: 14px;
   padding: 0 6px;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
   color: var(--qc-loss);
@@ -2758,7 +2758,7 @@
   width: 100%;
   height: 14px;
   font-family: var(--qc-font-mono);
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -2846,7 +2846,7 @@
   height: 11px;
   padding: 0 6px;
   font-family: var(--qc-font-mono);
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2899,7 +2899,7 @@
 }
 
 .sniper-meta-editor__hint {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--qc-text-secondary);
   letter-spacing: 0.02em;
   padding-bottom: 10px;
@@ -2923,7 +2923,7 @@
 }
 
 .sniper-meta-editor__label {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2953,7 +2953,7 @@
 }
 
 .sniper-meta-editor__hint-sub {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.02em;
   font-family: var(--qc-font-sans);
@@ -2961,7 +2961,7 @@
 
 .sniper-meta-editor__error {
   padding: 6px 8px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--qc-loss);
   background: color-mix(in srgb, var(--qc-loss) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--qc-loss) 30%, transparent);
@@ -2980,7 +2980,7 @@
   height: 28px;
   padding: 0 14px;
   font-family: var(--qc-font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -3171,9 +3171,10 @@
    navigation primaire, pas une caption). */
 .dash-kpi-card__label {
   font-family: var(--qc-font-sans);
-  font-size: var(--qc-fs-body, 13px);
-  font-weight: 500;
-  letter-spacing: 0.08em;
+  font-size: var(--type-title, 14px);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: var(--type-lh-label, 1.3);
   text-transform: uppercase;
   color: var(--ink-pure);
   white-space: nowrap;
@@ -3185,7 +3186,7 @@
    matcher visuellement les pills colorées en top-right. */
 .dash-kpi-card__hint {
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -3215,7 +3216,7 @@
 .dash-kpi-card__live-text {
   color: var(--qc-profit);
   font-weight: 600;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -3229,7 +3230,7 @@
   padding: 3px 8px;
   border-radius: 2px;
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.06em;
   white-space: nowrap;
@@ -3298,7 +3299,7 @@
 
 .dash-kpi-card__range-btn {
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.06em;
   color: var(--qc-text-tertiary);
@@ -3350,10 +3351,11 @@
 
 .dash-kpi-card__value {
   font-family: var(--qc-font-mono);
-  font-size: var(--qc-fs-xl, 20px);
-  font-weight: 500;
+  /* Brique 15 (P2/P4) — display 28/700 : la valeur EST l'information. */
+  font-size: var(--type-display, 28px);
+  font-weight: 700;
   font-variant-numeric: tabular-nums slashed-zero;
-  line-height: 1;
+  line-height: var(--type-lh-value, 1.15);
   letter-spacing: -0.01em;
   color: var(--qc-text-primary);
   white-space: nowrap;
@@ -3431,7 +3433,7 @@
   justify-content: space-between;
   align-items: baseline;
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.04em;
   color: var(--qc-text-secondary);
 }
@@ -3502,7 +3504,7 @@
   position: absolute;
   top: -15px;
   font-family: var(--qc-font-mono);
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 0.06em;
   color: var(--qc-loss);
   font-weight: 500;
@@ -3574,10 +3576,11 @@
 
 .dash-kpi-card__cell-label {
   font-family: var(--qc-font-sans);
-  font-size: var(--qc-fs-micro, 10px);
+  font-size: var(--type-caption, 12px);
   font-weight: 500;
-  color: var(--qc-text-tertiary);
-  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  line-height: var(--type-lh-label, 1.3);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
@@ -3586,8 +3589,9 @@
 
 .dash-kpi-card__cell-value {
   font-family: var(--qc-font-mono);
-  font-size: 13px;
+  font-size: var(--type-cell-value, 16px);
   font-weight: 500;
+  line-height: var(--type-lh-value, 1.15);
   color: var(--qc-text-secondary);
   font-variant-numeric: tabular-nums slashed-zero;
   letter-spacing: 0.02em;
@@ -3670,9 +3674,10 @@
 
 .dash-kpi-card__stats-band-label {
   font-family: var(--qc-font-sans);
-  font-size: 12px;
+  font-size: var(--type-caption, 12px);
   font-weight: 500;
-  color: var(--ink-mute);
+  color: var(--ink-soft);
+  line-height: var(--type-lh-label, 1.3);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -3682,8 +3687,9 @@
 
 .dash-kpi-card__stats-band-value {
   font-family: var(--qc-font-mono);
-  font-size: 16px;
-  font-weight: 600;
+  font-size: var(--type-cell-value, 16px);
+  font-weight: 500;
+  line-height: var(--type-lh-value, 1.15);
   font-variant-numeric: tabular-nums slashed-zero;
   letter-spacing: -0.01em;
   white-space: nowrap;
@@ -3743,7 +3749,7 @@
   color: var(--ink-mute);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .dash-kpi-card__hero-density-sep {
@@ -3788,7 +3794,7 @@
   position: absolute;
   top: 13px;
   font-family: var(--qc-font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--accent);
   transform: translateX(-50%);
@@ -3868,7 +3874,7 @@
   color: var(--ink-mute);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .dash-kpi-card__hero-readout-delta {
@@ -3980,8 +3986,9 @@
 }
 
 .dash-kpi-card__micro-stat-value {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: var(--type-cell-value, 16px);
+  font-weight: 500;
+  line-height: var(--type-lh-value, 1.15);
   font-variant-numeric: tabular-nums slashed-zero;
   letter-spacing: -0.01em;
   white-space: nowrap;
@@ -4038,28 +4045,30 @@
   margin-top: 2px;
   border-top: 1px solid var(--qc-border-subtle);
 }
+/* Brique 15 (P2) — héro aligné sur l'échelle cellule commune :
+   labels 12 (caption), valeurs 16/500 (cell-value). */
 .dash-kpi-card--hero .dash-kpi-card__micro-stat-label {
-  font-size: 14px;
+  font-size: var(--type-caption, 12px);
 }
 .dash-kpi-card--hero .dash-kpi-card__micro-stat-value {
-  font-size: 20px;
+  font-size: var(--type-cell-value, 16px);
 }
 
-/* Zone densité : base 14, détail EXPOSITION 15 (cohérent avec CHF). */
+/* Zone densité — Brique 15 (P2) : titre/labels caption 12, valeurs 16. */
 .dash-kpi-card--hero .dash-kpi-card__hero-density {
   padding-top: 10px;
   border-top: 1px solid var(--qc-border-subtle);
-  font-size: 14px;
+  font-size: var(--qc-fs-body, 14px);
 }
 .dash-kpi-card--hero .dash-kpi-card__hero-density-title {
-  font-size: 14px;
+  font-size: var(--type-caption, 12px);
 }
 .dash-kpi-card--hero .dash-kpi-card__hero-density-detail,
 .dash-kpi-card--hero .dash-kpi-card__hero-density-value {
-  font-size: 15px;
+  font-size: var(--type-cell-value, 16px);
 }
 .dash-kpi-card--hero .dash-kpi-card__hero-density-label {
-  font-size: 14px;
+  font-size: var(--type-caption, 12px);
 }
 
 /* Chart hero : filet supérieur. */
@@ -4078,10 +4087,10 @@
    -0.01em sur les valeurs, pour absorber 5 cas de 7-char (ex. −15.87%,
    −$3'890) qui débordaient à 23 px. */
 .dash-kpi-card--hero .dash-kpi-card__cell-label {
-  font-size: 14px;
+  font-size: var(--type-caption, 12px);
 }
 .dash-kpi-card--hero .dash-kpi-card__cell-value {
-  font-size: 23px;
+  font-size: var(--type-cell-value, 16px);
   letter-spacing: -0.01em;
 }
 .dash-kpi-card--hero .dash-kpi-card__footer--6 .dash-kpi-card__cell:not(:last-child) {
@@ -4163,7 +4172,7 @@
 .dash-kpi-donut__label {
   fill: var(--qc-text-secondary);
   font-family: var(--qc-font-mono);
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.1em;
 }
 
@@ -4233,7 +4242,7 @@
   position: absolute;
   right: 4px;
   font-family: var(--qc-font-mono);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 500;
   font-variant-numeric: tabular-nums slashed-zero;
   color: var(--qc-text-secondary);
@@ -4306,7 +4315,7 @@
 
 .dash-kpi-card__info-label {
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-secondary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -4315,7 +4324,7 @@
 
 .dash-kpi-card__info-value {
   font-family: var(--qc-font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums slashed-zero;
@@ -4364,7 +4373,7 @@
   top: 2px;
   right: 2px;
   font-family: var(--qc-font-mono);
-  font-size: 9px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   background: color-mix(in srgb, var(--bg-elev-1) 85%, transparent);
   padding: 1px 5px;
@@ -4549,7 +4558,7 @@
 .live-pos__ctx-badge {
   padding: 4px 12px;
   border-radius: 2px;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   font-weight: 500;
   white-space: nowrap;
@@ -4716,7 +4725,7 @@
 .live-pos__table thead th {
   padding: 10px 14px;
   height: 36px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -4797,7 +4806,7 @@
 }
 
 .live-pos__footer-label {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -4848,7 +4857,7 @@
 }
 
 .module-empty__title {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -4857,7 +4866,7 @@
 
 .module-empty__sub {
   /* Phase C.2.8 — opacity 0.7 pour discrétion. */
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.02em;
   color: var(--qc-text-tertiary);
   max-width: 320px;
@@ -5088,7 +5097,7 @@
 .trade-history__table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: var(--qc-fs-body, 14px);
   /* Phase C.2.7 — fixed layout pour widths déterministes (sans ça
      le navigateur recalcule selon le contenu : cols Type = "—"
      partout se rétrécissent → cells décalées vs headers). */
@@ -5129,7 +5138,7 @@
 .trade-history__table thead th,
 .trade-history__th {
   padding: 10px 14px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -5315,7 +5324,7 @@
   background: color-mix(in srgb, var(--accent-amber) 6%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent-amber) 12%, transparent);
   color: var(--accent-amber);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   font-family: var(--qc-font-mono);
   text-transform: lowercase;
@@ -5385,7 +5394,7 @@
 }
 
 .trade-history__empty-sub {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
 }
 
@@ -5425,7 +5434,7 @@
 }
 
 .trade-history__footer-label {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--qc-text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;

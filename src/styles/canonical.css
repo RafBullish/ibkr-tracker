@@ -31,10 +31,17 @@
      brique 11) — non touché. */
   --qc-font-mono:      'Iosevka QC', 'Geist Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
   --type-mono:         var(--qc-font-mono);
-  --type-caption:      11px;
-  --type-body:         13px;
-  --type-display:      24px;
-  --type-hero:         44px;
+
+  /* Brique 15 (P2) — échelle Terminal Pass. PLANCHER ABSOLU 12px
+     (lisibilité zoom 90%) : aucun token ni valeur ne descend dessous. */
+  --type-caption:      12px;  /* labels de cellules, captions (était 11) */
+  --type-body:         14px;  /* données de tables, valeurs (était 13) */
+  --type-title:        14px;  /* titres de cartes, weight 700, tracking 0.1em */
+  --type-cell-value:   16px;  /* valeurs de cellules rails/bandes, weight 500 */
+  --type-display:      28px;  /* KPI cards du milieu, weight 700 (était 24) */
+  --type-hero:         56px;  /* héros NLV/REALIZED (brique 14) */
+  --type-lh-value:     1.15;
+  --type-lh-label:     1.3;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
@@ -66,6 +73,20 @@
      --card-bg → --qc-bg-surface → --depth-raised
      --glass-bg / --glass-bg-strong → --qc-bg-*
      --chip-bg/-hover → --qc-bg-* */
+
+  /* ── Échelle typo legacy → échelle canonique (Brique 15 P2) ─── */
+  /* canonical.css charge en dernier : ces alias PRENNENT LE PAS sur
+     tokens.css. Plancher 12px : tout token < 12px est remonté. */
+  --qc-fs-caption:     var(--type-caption);   /* 11 → 12 */
+  --qc-fs-label:       var(--type-caption);   /* 11 → 12 */
+  --qc-fs-body:        var(--type-body);      /* 13 → 14 */
+  --qc-fs-micro:       12px;                  /* 10 → 12 (plancher) */
+  --fs-xs:             12px;                  /* 10 → 12 (plancher) */
+  --fs-sm:             12px;                  /* 11 → 12 (plancher) */
+  --text-2xs:          12px;                  /* 10 → 12 (plancher) */
+  --text-xs:           12px;                  /* 11 → 12 (plancher) */
+  --kpi-label-size:    12px;                  /* 11 → 12 (plancher) */
+  --chip-font-size:    12px;                  /* 11 → 12 (plancher) */
 
   /* ── Textes legacy → palette canonique ──────────────────────── */
   --qc-text-primary:   var(--ink-pure);

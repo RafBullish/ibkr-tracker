@@ -934,7 +934,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
               <span
                 style={{
                   marginLeft: 10,
-                  fontSize: 10,
+                  fontSize: 12,
                   letterSpacing: '0.04em',
                   fontStyle: 'italic',
                   opacity: 0.7,
