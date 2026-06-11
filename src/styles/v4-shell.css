@@ -106,7 +106,7 @@
 }
 
 .cmdbar__crumb {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -137,7 +137,9 @@
   height: 100%;
   padding: 0 18px;
   font-family: var(--qc-font-mono);
-  font-size: 15px;
+  /* Brique 15 (P4) — 15 → 14 (le brief partait de 13 ; l'existant
+     était à 15 : cible 14 appliquée). */
+  font-size: 14px;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: none;
@@ -261,7 +263,7 @@
   justify-content: center;
   padding: 2px 7px;
   font-family: var(--qc-font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--qc-text-tertiary);
   background: var(--qc-bg-base);
@@ -279,7 +281,7 @@
   padding: 0 12px;
   border-radius: 5px;
   font-family: var(--qc-font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -399,7 +401,7 @@
 
 .statusbar__label {
   /* Phase C.2.8 — bumpé 10→11 pour 4K. */
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--qc-text-tertiary);
@@ -465,7 +467,7 @@
 }
 
 .statusbar__feed-label {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   font-weight: 500;
   color: var(--qc-text-secondary);
@@ -487,7 +489,7 @@
 }
 
 .statusbar__clock-code {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -495,13 +497,13 @@
 }
 
 .statusbar__clock-time {
-  font-size: 11px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums slashed-zero;
   color: var(--qc-text-primary);
 }
 
 .statusbar__clock-badge {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -561,7 +563,7 @@
 .theme-switcher__trigger.statusbar__theme-switcher {
   height: 28px;
   padding: 0 6px;
-  font-size: 11px;
+  font-size: 12px;
   font-family: var(--qc-font-mono);
   letter-spacing: 0.04em;
   border-radius: 0;
@@ -690,7 +692,8 @@
 /* Symbole = label discret qui recule devant le prix héro. */
 .ticker-cell__symbol {
   font-family: var(--qc-font-mono);
-  font-size: 13px;
+  /* Brique 15 (P4) — 13 → 12, le ticker recule devant la valeur. */
+  font-size: var(--type-caption, 12px);
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -724,7 +727,7 @@
 }
 
 .ticker-cell__arrow {
-  font-size: 11px;
+  font-size: 12px;
   margin-right: 4px;
   display: inline-block;
 }
@@ -750,7 +753,9 @@
 .ticker-cell__value {
   font-family: var(--qc-font-mono);
   font-variant-numeric: tabular-nums;
-  font-size: 24px;
+  /* Brique 15 (P4) — 24 → 16/700 : la bande de marché est du contexte,
+     pas un héros ; elle cède la dominance aux cartes du Dashboard. */
+  font-size: var(--type-cell-value, 16px);
   font-weight: 700;
   color: var(--ink-pure);
   letter-spacing: -0.01em;
