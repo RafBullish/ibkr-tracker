@@ -969,7 +969,8 @@
 }
 
 .risk-matrix__section-head {
-  padding: 5px 16px;
+  /* Brique 15 (P3) — 7px → échelle canonique (4px / 16px). */
+  padding: var(--space-2, 4px) var(--space-5, 16px);
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -5310,7 +5311,8 @@
      Brique 15 (P3) — padding vertical 4→2 : le badge plafonnait la
      ligne à 33px, incompatible avec les rows 28px. */
   display: inline-block;
-  padding: 2px 10px;
+  /* Vertical tokenisé ; le 10px horizontal est préexistant (C.2.8). */
+  padding: var(--space-1, 2px) 10px;
   border-radius: 2px;
   font-size: 12px;
   line-height: var(--type-lh-value, 1.15);
@@ -5331,8 +5333,11 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 1px 12px;
-  line-height: var(--type-lh-value, 1.15);
+  /* Brique 15 (P3) — vertical sur l'échelle (2px), lh 1 (chip
+     mono-ligne) : la pill fait 12+4+2 = 18px et tient exactement
+     dans les rows 28px. */
+  padding: var(--space-1, 2px) var(--space-4, 12px);
+  line-height: 1;
   border-radius: 14px;
   background: color-mix(in srgb, var(--accent-amber) 6%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent-amber) 12%, transparent);
