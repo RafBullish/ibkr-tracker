@@ -210,11 +210,11 @@
 /* Header layout : title left + actions right (timeframe pills) */
 .module-header__title {
   flex: 1;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--qc-text-primary);
-  font-family: var(--qc-font-mono);
-  font-size: 12px;
-  letter-spacing: 0.1em;
+  font-family: var(--qc-font-sans);
+  font-size: 14px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
@@ -418,11 +418,12 @@
 }
 
 .trading-chart__title {
-  font-size: 12px;
-  color: var(--qc-text-secondary);
-  letter-spacing: 0.16em;
+  font-family: var(--qc-font-sans);
+  font-size: 15px;
+  color: var(--qc-text-primary);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  font-weight: 500;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -858,9 +859,10 @@
   justify-content: flex-end;
   padding: 0 22px;
   color: var(--qc-text-primary);
+  font-family: var(--qc-font-sans);
   font-size: 15px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -4961,11 +4963,12 @@
 }
 
 .trade-history__title {
+  font-family: var(--qc-font-sans);
   font-size: 15px;
-  color: var(--qc-text-secondary);
-  letter-spacing: 0.16em;
+  color: var(--qc-text-primary);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .trade-history__sub {
@@ -5475,4 +5478,206 @@
 
 .trade-history__footer-value--mute {
   color: var(--qc-text-tertiary);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   HERO CARD SPLIT GRID LAYOUT & REAL CHART STYLING
+   ════════════════════════════════════════════════════════════════ */
+
+/* Desktop Grid layout */
+@media (min-width: 1024px) {
+  .dash-kpi-cards__row--hero .dash-kpi-card {
+    min-height: 420px;
+    padding: 24px;
+  }
+  
+  .dash-kpi-card--hero .dash-kpi-card__label {
+    font-size: 15px;
+    letter-spacing: 0.12em;
+    border-left: 3px solid var(--accent);
+    padding-left: 8px;
+    line-height: 1.2;
+  }
+  
+  .dash-kpi-card--hero[data-tone="profit"] .dash-kpi-card__label {
+    border-left-color: var(--qc-profit);
+  }
+  
+  .dash-kpi-card--hero[data-tone="loss"] .dash-kpi-card__label {
+    border-left-color: var(--qc-loss);
+  }
+  
+  .dash-kpi-card--hero[data-tone="neutral"] .dash-kpi-card__label {
+    border-left-color: var(--qc-neutral);
+  }
+  
+  .dash-kpi-card--hero[data-tone="accent"] .dash-kpi-card__label {
+    border-left-color: var(--accent);
+  }
+
+  .dash-kpi-card__hero-body {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    flex: 1;
+    align-items: stretch;
+    margin-top: 16px;
+    min-height: 0;
+  }
+
+  .dash-kpi-card__hero-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .dash-kpi-card__hero-right {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0; /* Anti-overflow Recharts */
+  }
+
+  .dash-kpi-card__hero-chart {
+    height: 280px !important; /* Force tall chart height */
+  }
+}
+
+/* Stats grid on the left side */
+.dash-kpi-card__stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--qc-border-subtle);
+  border: 1px solid var(--qc-border-subtle);
+  border-radius: var(--qc-radius-sm, 2px);
+  overflow: hidden;
+  margin: 6px 0;
+}
+
+.dash-kpi-card__stats-grid-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  background: var(--qc-bg-surface);
+}
+
+.dash-kpi-card__stats-grid-label {
+  font-family: var(--qc-font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--qc-text-tertiary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dash-kpi-card__stats-grid-value {
+  font-family: var(--qc-font-mono);
+  font-size: 14px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums slashed-zero;
+  color: var(--qc-text-primary);
+}
+
+.dash-kpi-card__stats-grid-value--profit {
+  color: var(--qc-profit);
+}
+
+.dash-kpi-card__stats-grid-value--loss {
+  color: var(--qc-loss);
+}
+
+.dash-kpi-card__stats-grid-value--accent {
+  color: var(--accent);
+}
+
+.dash-kpi-card__stats-grid-value--mute {
+  color: var(--qc-text-secondary);
+}
+
+/* Hero primary numbers value tweaks */
+.dash-kpi-card--hero .dash-kpi-card__value {
+  font-size: 64px !important;
+  line-height: 0.9;
+  letter-spacing: -0.025em;
+  text-shadow: 0 0 30px rgba(255, 255, 255, 0.03);
+}
+
+.dash-kpi-card--hero[data-tone="profit"] .dash-kpi-card__value {
+  text-shadow: 0 0 30px color-mix(in srgb, var(--qc-profit) 10%, transparent);
+}
+
+.dash-kpi-card--hero[data-tone="loss"] .dash-kpi-card__value {
+  text-shadow: 0 0 30px color-mix(in srgb, var(--qc-loss) 10%, transparent);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 1023px) {
+  .dash-kpi-card__hero-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .dash-kpi-card__stats-grid {
+    margin: 4px 0;
+  }
+  
+  .dash-kpi-card--hero .dash-kpi-card__value {
+    font-size: 44px !important;
+  }
+}
+
+/* Custom chart tooltip */
+.qc-chart-tooltip {
+  background: var(--qc-bg-overlay, rgba(20, 25, 38, 0.95));
+  border: 1px solid var(--qc-border-strong);
+  border-radius: var(--qc-radius-sm, 2px);
+  padding: 8px 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 10px rgba(6, 182, 212, 0.05);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--qc-font-mono);
+  font-size: 12px;
+}
+
+.qc-chart-tooltip__date {
+  font-family: var(--qc-font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--qc-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--qc-border-subtle);
+  padding-bottom: 4px;
+  margin-bottom: 2px;
+}
+
+.qc-chart-tooltip__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.qc-chart-tooltip__label {
+  color: var(--qc-text-secondary);
+}
+
+.qc-chart-tooltip__value {
+  font-weight: 600;
+  color: var(--qc-text-primary);
+}
+
+.qc-chart-tooltip__value--profit {
+  color: var(--qc-profit);
+}
+
+.qc-chart-tooltip__value--loss {
+  color: var(--qc-loss);
 }

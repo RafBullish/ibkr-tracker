@@ -25,21 +25,20 @@
   --accent-soft:       color-mix(in srgb, #FFA028 18%, transparent);
 
   /* — Typographie — */
-  /* Brique 15 (P1) — Iosevka devient la mono de toute l'app. canonical.css
+  /* Brique 15 (P1) — Geist Mono devient la mono de toute l'app. canonical.css
      est chargé en dernier : cette déclaration PREND LE PAS sur la chaîne
-     legacy de tokens.css. Le héros garde --qc-font-hero (Iosevka Extended,
-     brique 11) — non touché. */
-  --qc-font-mono:      'Iosevka QC', 'Geist Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+     legacy de tokens.css. Le héros garde --qc-font-hero (brique 11) — non touché. */
+  --qc-font-mono:      'Geist Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
   --type-mono:         var(--qc-font-mono);
 
   /* Brique 15 (P2) — échelle Terminal Pass. PLANCHER ABSOLU 12px
      (lisibilité zoom 90%) : aucun token ni valeur ne descend dessous. */
   --type-caption:      12px;  /* labels de cellules, captions (était 11) */
   --type-body:         14px;  /* données de tables, valeurs (était 13) */
-  --type-title:        14px;  /* titres de cartes, weight 700, tracking 0.1em */
+  --type-title:        16px;  /* titres de cartes, weight 700, tracking 0.1em */
   --type-cell-value:   16px;  /* valeurs de cellules rails/bandes, weight 500 */
   --type-display:      28px;  /* KPI cards du milieu, weight 700 (était 24) */
-  --type-hero:         56px;  /* héros NLV/REALIZED (brique 14) */
+  --type-hero:         64px;  /* héros NLV/REALIZED (brique 14) */
   --type-lh-value:     1.15;
   --type-lh-label:     1.3;
 

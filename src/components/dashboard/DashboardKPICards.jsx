@@ -992,6 +992,52 @@ function renderRealizedReadout(point, all) {
 //   - Couleurs via var(--*) du theme : le SVG inline hérite des
 //     CSS custom properties, donc le theme switch est instantané.
 
+function CustomChartTooltip({ active, payload, label, yFormatter }) {
+  if (!active || !payload || !payload.length) return null;
+  const data = payload[0].payload;
+  const value = payload[0].value;
+  const tone = value >= 0 ? 'profit' : 'loss';
+  return (
+    <div className="qc-chart-tooltip">
+      <span className="qc-chart-tooltip__date">{data.date ? fmtDateDeCH(data.date) : label}</span>
+      <div className="qc-chart-tooltip__row">
+        <span className="qc-chart-tooltip__label">Valeur</span>
+        <span className={`qc-chart-tooltip__value qc-chart-tooltip__value--${tone}`}>
+          {yFormatter ? yFormatter(value) : value}
+        </span>
+      </div>
+      {data.cumulative !== undefined && (
+        <div className="qc-chart-tooltip__row">
+          <span className="qc-chart-tooltip__label">Cumulé</span>
+          <span className={`qc-chart-tooltip__value qc-chart-tooltip__value--${data.cumulative >= 0 ? 'profit' : 'loss'}`}>
+            {fmtUsdSigned(data.cumulative)}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HistogramTooltip({ active, payload }) {
+  if (!active || !payload || !payload.length) return null;
+  const data = payload[0].payload;
+  const count = data.count;
+  const rangeStr = `${fmtUsdSigned(data.lo)} à ${fmtUsdSigned(data.hi)}`;
+  return (
+    <div className="qc-chart-tooltip">
+      <span className="qc-chart-tooltip__date">Distribution</span>
+      <div className="qc-chart-tooltip__row">
+        <span className="qc-chart-tooltip__label">Tranche</span>
+        <span className="qc-chart-tooltip__value" style={{ fontSize: '11px' }}>{rangeStr}</span>
+      </div>
+      <div className="qc-chart-tooltip__row">
+        <span className="qc-chart-tooltip__label">Nombre</span>
+        <span className="qc-chart-tooltip__value">{count} {count > 1 ? 'trades' : 'trade'}</span>
+      </div>
+    </div>
+  );
+}
+
 function HeroAreaChart({
   data,
   withZeroBaseline,
@@ -1034,20 +1080,20 @@ function HeroAreaChart({
             <R.ComposedChart data={data} margin={HERO_CHART_MARGINS}>
               <defs>
                 <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={lineColor} stopOpacity={0.28} />
-                  <stop offset="100%" stopColor={lineColor} stopOpacity={0} />
+                  <stop offset="0%" stopColor={lineColor} stopOpacity={0.22} />
+                  <stop offset="100%" stopColor={lineColor} stopOpacity={0.0} />
                 </linearGradient>
               </defs>
               <R.CartesianGrid
                 stroke="var(--line-hairline)"
-                strokeDasharray="0"
-                vertical={false}
-                horizontal
+                strokeDasharray="3 3"
+                vertical={true}
+                horizontal={true}
               />
               <R.XAxis
                 dataKey="date"
                 stroke="var(--ink-mute)"
-                tick={{ fontFamily: T.fonts.mono, fontSize: 15, fill: 'var(--ink-mute)' }}
+                tick={{ fontFamily: T.fonts.mono, fontSize: 11, fill: 'var(--qc-text-secondary)' }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={fmtAxisDateDeCH}
@@ -1058,7 +1104,7 @@ function HeroAreaChart({
               <R.YAxis
                 orientation="right"
                 stroke="var(--ink-mute)"
-                tick={{ fontFamily: T.fonts.mono, fontSize: 15, fill: 'var(--ink-mute)' }}
+                tick={{ fontFamily: T.fonts.mono, fontSize: 11, fill: 'var(--qc-text-secondary)' }}
                 axisLine={false}
                 tickLine={false}
                 width={HERO_CHART_YAXIS_WIDTH}
@@ -1082,13 +1128,25 @@ function HeroAreaChart({
                   label={{
                     value: `PIC ${yFormatter(peak)}`,
                     position: 'insideTopLeft',
-                    fill: 'var(--ink-mute)',
+                    fill: 'var(--qc-text-secondary)',
                     fontFamily: T.fonts.mono,
-                    fontSize: 15,
+                    fontSize: 11,
                     offset: 4,
                   }}
                 />
               ) : null}
+              {/* GLOW EFFECT LINE (Thicker, translucent outline behind the main line) */}
+              <R.Area
+                dataKey="value"
+                type="monotone"
+                fill="none"
+                stroke={lineColor}
+                strokeWidth={6}
+                strokeOpacity={0.15}
+                isAnimationActive={false}
+                activeDot={false}
+              />
+              {/* PRIMARY SHARP LINE */}
               <R.Area
                 dataKey="value"
                 type="monotone"
@@ -1132,7 +1190,7 @@ function HeroAreaChart({
                 />
               ) : null}
               <R.Tooltip
-                content={() => null}
+                content={<CustomChartTooltip yFormatter={yFormatter} />}
                 cursor={{ stroke: 'var(--line-emphasis)', strokeDasharray: '2 3' }}
                 isAnimationActive={false}
               />
@@ -1143,12 +1201,6 @@ function HeroAreaChart({
     </Suspense>
   );
 }
-
-// ─── HeroBarChart — vue Quotidien Realized (brique 4) ──────────
-//
-// Barres P&L par jour, couleur par signe. Réutilise le même style
-// d'axes / gridlines / cursor que HeroAreaChart pour rester cohérent
-// visuellement entre les vues du toggle.
 
 function HeroBarChart({
   data,
@@ -1182,14 +1234,14 @@ function HeroBarChart({
             >
               <R.CartesianGrid
                 stroke="var(--line-hairline)"
-                strokeDasharray="0"
-                vertical={false}
-                horizontal
+                strokeDasharray="3 3"
+                vertical={true}
+                horizontal={true}
               />
               <R.XAxis
                 dataKey={xDataKey}
                 stroke="var(--ink-mute)"
-                tick={{ fontFamily: T.fonts.mono, fontSize: 15, fill: 'var(--ink-mute)' }}
+                tick={{ fontFamily: T.fonts.mono, fontSize: 11, fill: 'var(--qc-text-secondary)' }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={xFormatter}
@@ -1199,7 +1251,7 @@ function HeroBarChart({
               <R.YAxis
                 orientation="right"
                 stroke="var(--ink-mute)"
-                tick={{ fontFamily: T.fonts.mono, fontSize: 15, fill: 'var(--ink-mute)' }}
+                tick={{ fontFamily: T.fonts.mono, fontSize: 11, fill: 'var(--qc-text-secondary)' }}
                 axisLine={false}
                 tickLine={false}
                 width={HERO_CHART_YAXIS_WIDTH}
@@ -1247,8 +1299,8 @@ function HeroBarChart({
                 />
               ) : null}
               <R.Tooltip
-                content={() => null}
-                cursor={{ fill: 'var(--line-hairline)' }}
+                content={<CustomChartTooltip yFormatter={yFormatter} />}
+                cursor={{ fill: 'var(--line-hairline)', opacity: 0.15 }}
                 isAnimationActive={false}
               />
             </R.BarChart>
@@ -1258,12 +1310,6 @@ function HeroBarChart({
     </Suspense>
   );
 }
-
-// ─── HeroHistogram — vue Distribution Realized (brique 4) ──────
-//
-// Axe X numérique (montants $), axe Y entiers (count), bins de largeur
-// fixe alignés sur 0. Marqueurs verticaux : break-even (0) + expectancy
-// (amber pointillés). Le hover renvoie le bin survolé (lo/hi/count/sign).
 
 function HeroHistogram({
   data,
@@ -1305,15 +1351,15 @@ function HeroHistogram({
             >
               <R.CartesianGrid
                 stroke="var(--line-hairline)"
-                strokeDasharray="0"
-                vertical={false}
-                horizontal
+                strokeDasharray="3 3"
+                vertical={true}
+                horizontal={true}
               />
               <R.XAxis
                 type="number"
                 dataKey="mid"
                 stroke="var(--ink-mute)"
-                tick={{ fontFamily: T.fonts.mono, fontSize: 15, fill: 'var(--ink-mute)' }}
+                tick={{ fontFamily: T.fonts.mono, fontSize: 11, fill: 'var(--qc-text-secondary)' }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={fmtUsdDeCH}
@@ -1325,7 +1371,7 @@ function HeroHistogram({
               <R.YAxis
                 orientation="right"
                 stroke="var(--ink-mute)"
-                tick={{ fontFamily: T.fonts.mono, fontSize: 15, fill: 'var(--ink-mute)' }}
+                tick={{ fontFamily: T.fonts.mono, fontSize: 11, fill: 'var(--qc-text-secondary)' }}
                 axisLine={false}
                 tickLine={false}
                 width={64}
@@ -1348,7 +1394,7 @@ function HeroHistogram({
                     position: 'insideTopRight',
                     fill: 'var(--accent-amber)',
                     fontFamily: T.fonts.mono,
-                    fontSize: 15,
+                    fontSize: 11,
                     offset: 4,
                   }}
                 />
@@ -1362,7 +1408,7 @@ function HeroHistogram({
                 ))}
               </R.Bar>
               <R.Tooltip
-                content={() => null}
+                content={<HistogramTooltip />}
                 cursor={{ fill: 'var(--line-hairline)' }}
                 isAnimationActive={false}
               />
@@ -1581,6 +1627,7 @@ function KpiCardHero({
 
   return (
     <section className="dash-kpi-card dash-kpi-card--hero" data-tone={valueTone}>
+      {/* Header section */}
       <div className="dash-kpi-card__top">
         <span className="dash-kpi-card__top-left">
           <span className="dash-kpi-card__label">{label}</span>
@@ -1593,23 +1640,31 @@ function KpiCardHero({
         </span>
         {topRight ?? (showRange ? <RangeSelector value={range} onChange={setRange} /> : null)}
       </div>
-      <div className="dash-kpi-card__hero-mid">
-        <div className="dash-kpi-card__hero-text">
-          <div className="dash-kpi-card__value">{value}</div>
-          {chfLine ? <div className="dash-kpi-card__chf">{chfLine}</div> : null}
-          {Number.isFinite(deltaUsd) ? (
-            <span
-              className={`dash-kpi-card__pill dash-kpi-card__pill--${deltaTone} dash-kpi-card__pill--hero`}
-            >
-              <span aria-hidden="true">{arrow(deltaUsd)}</span>
-              <span>{fmtUsdSigned(deltaUsd)}</span>
-              {Number.isFinite(deltaPct) ? (
-                <span className="dash-kpi-card__pill-sub">{fmtPctSigned(deltaPct, 1)}</span>
-              ) : null}
-            </span>
-          ) : null}
+
+      {/* Main Body Split Grid */}
+      <div className="dash-kpi-card__hero-body">
+        {/* Left Side: Values and Dense Stats Grid */}
+        <div className="dash-kpi-card__hero-left">
+          <div className="dash-kpi-card__hero-main-metrics">
+            <div className="dash-kpi-card__value">{value}</div>
+            {chfLine ? <div className="dash-kpi-card__chf">{chfLine}</div> : null}
+            {Number.isFinite(deltaUsd) ? (
+              <span
+                className={`dash-kpi-card__pill dash-kpi-card__pill--${deltaTone} dash-kpi-card__pill--hero`}
+                style={{ marginTop: 4 }}
+              >
+                <span aria-hidden="true">{arrow(deltaUsd)}</span>
+                <span>{fmtUsdSigned(deltaUsd)}</span>
+                {Number.isFinite(deltaPct) ? (
+                  <span className="dash-kpi-card__pill-sub">{fmtPctSigned(deltaPct, 1)}</span>
+                ) : null}
+              </span>
+            ) : null}
+          </div>
+
+          {/* Micro Stats (JOUR / SEMAINE / MOIS for NLV, WIN RATE / PF / STREAK for Realized) */}
           {Array.isArray(microStats) && microStats.length > 0 ? (
-            <div className="dash-kpi-card__micro-stats">
+            <div className="dash-kpi-card__micro-stats" style={{ borderTop: 'none', paddingTop: 0, marginTop: 4 }}>
               {microStats.map((s, i) => (
                 <span key={s.label || i} className="dash-kpi-card__micro-stat">
                   <span className="dash-kpi-card__micro-stat-label">{s.label}</span>
@@ -1623,67 +1678,79 @@ function KpiCardHero({
               ))}
             </div>
           ) : null}
+
+          {/* 3x2 Grid for primary parameters (statsBand) */}
+          {Array.isArray(statsBand) && statsBand.length > 0 ? (
+            <div className="dash-kpi-card__stats-grid" role="list">
+              {statsBand.map((s, idx) => (
+                <div
+                  key={s.label || idx}
+                  className="dash-kpi-card__stats-grid-cell"
+                  role="listitem"
+                  title={s.title || undefined}
+                >
+                  <span className="dash-kpi-card__stats-grid-label">{s.label}</span>
+                  <span
+                    className={`dash-kpi-card__stats-grid-value dash-kpi-card__stats-grid-value--${s.tone || 'neutral'}`}
+                  >
+                    {s.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          {/* Density visual block (Exposure gauge / recent trades form band) */}
+          {densityBlock && <div style={{ marginTop: 4 }}>{densityBlock}</div>}
         </div>
-        {Array.isArray(statsBand) && statsBand.length > 0 ? (
-          <div className="dash-kpi-card__stats-band" role="list">
-            {statsBand.map((s) => (
-              <span
-                key={s.label}
-                className="dash-kpi-card__stats-band-cell"
-                role="listitem"
-                title={s.title || undefined}
+
+        {/* Right Side: Graph */}
+        <div className="dash-kpi-card__hero-right">
+          {chart ? (
+            <>
+              {/* Tooltip Readout */}
+              <div
+                className="dash-kpi-card__hero-readout"
+                role="status"
+                aria-live="polite"
+                data-hover={isHovering ? 'true' : undefined}
+                data-measure={measureMode ? 'true' : undefined}
               >
-                <span className="dash-kpi-card__stats-band-label">{s.label}</span>
-                <span
-                  className={`dash-kpi-card__stats-band-value dash-kpi-card__stats-band-value--${s.tone || 'neutral'}`}
-                >
-                  {s.value}
-                </span>
-              </span>
-            ))}
-          </div>
-        ) : null}
-        {densityBlock}
-        {chart ? (
-          <>
-            <div
-              className="dash-kpi-card__hero-readout"
-              role="status"
-              aria-live="polite"
-              data-hover={isHovering ? 'true' : undefined}
-              data-measure={measureMode ? 'true' : undefined}
-            >
-              {canMeasure ? (
-                <button
-                  type="button"
-                  className={`dash-kpi-card__measure-btn${measureMode ? ' is-active' : ''}`}
-                  onClick={() => setMeasureMode((m) => !m)}
-                  aria-pressed={measureMode}
-                  title={measureMode ? 'Désactiver la mesure' : 'Outil mesure A → B'}
-                >
-                  <Ruler size={13} aria-hidden="true" />
-                </button>
-              ) : null}
-              <span className="dash-kpi-card__hero-readout-content">{readoutContent}</span>
-            </div>
-            <div
-              ref={chartBoxRef}
-              className="dash-kpi-card__hero-chart"
-              data-measure={measureMode ? 'true' : undefined}
-              onClick={handleChartContainerClick}
-              onMouseMove={handleBoxMove}
-              onMouseLeave={handleBoxLeave}
-            >
-              {renderHeroChart(chart, {
-                onActiveChange: handleActiveChange,
-                measureADate,
-                measureBDate,
-                measureLocked: locked,
-              })}
-            </div>
-          </>
-        ) : null}
+                {canMeasure ? (
+                  <button
+                    type="button"
+                    className={`dash-kpi-card__measure-btn${measureMode ? ' is-active' : ''}`}
+                    onClick={() => setMeasureMode((m) => !m)}
+                    aria-pressed={measureMode}
+                    title={measureMode ? 'Désactiver la mesure' : 'Outil mesure A → B'}
+                  >
+                    <Ruler size={13} aria-hidden="true" />
+                  </button>
+                ) : null}
+                <span className="dash-kpi-card__hero-readout-content">{readoutContent}</span>
+              </div>
+              
+              {/* Interactive graph container */}
+              <div
+                ref={chartBoxRef}
+                className="dash-kpi-card__hero-chart"
+                data-measure={measureMode ? 'true' : undefined}
+                onClick={handleChartContainerClick}
+                onMouseMove={handleBoxMove}
+                onMouseLeave={handleBoxLeave}
+              >
+                {renderHeroChart(chart, {
+                  onActiveChange: handleActiveChange,
+                  measureADate,
+                  measureBDate,
+                  measureLocked: locked,
+                })}
+              </div>
+            </>
+          ) : null}
+        </div>
       </div>
+
       <KpiFooter cells={footerCells} />
     </section>
   );
@@ -2080,6 +2147,57 @@ export default function DashboardKPICards() {
     ];
   }, [exposureUsd, availableUsd, ytdPnlUsd, initialCapitalUsd, volAnnPct, yearsActive]);
 
+  const realizedStatsBand = useMemo(() => {
+    return [
+      {
+        label: 'TRADES',
+        value: tradeCount > 0 ? tradeCount.toString() : '—',
+        tone: 'neutral',
+        title: 'Nombre total de trades fermés (clôturés)',
+      },
+      {
+        label: 'WIN RATE',
+        value: Number.isFinite(winRate) ? fmtPctPlain(winRate, 1) : '—',
+        tone: 'accent',
+        title: 'Taux de réussite des trades fermés',
+      },
+      {
+        label: 'PF',
+        value:
+          profitFactor === Infinity
+            ? '∞'
+            : Number.isFinite(profitFactor)
+              ? profitFactor.toFixed(2)
+              : '—',
+        tone:
+          profitFactor === Infinity || (Number.isFinite(profitFactor) && profitFactor > 1)
+            ? 'profit'
+            : Number.isFinite(profitFactor) && profitFactor < 1
+              ? 'loss'
+              : 'mute',
+        title: 'Profit Factor = gains bruts / pertes brutes',
+      },
+      {
+        label: 'EXPECT',
+        value: tradeCount > 0 && Number.isFinite(expectancy) ? fmtUsdSigned(expectancy) : '—',
+        tone: toneSign(expectancy),
+        title: 'Expectancy par trade (winRate × avgWin − lossRate × avgLoss)',
+      },
+      {
+        label: 'AVG WIN',
+        value: winCount > 0 && Number.isFinite(averageWin) ? fmtUsdSigned(averageWin) : '—',
+        tone: winCount > 0 ? 'profit' : 'mute',
+        title: 'Gain moyen par trade gagnant',
+      },
+      {
+        label: 'AVG LOSS',
+        value: lossCount > 0 && Number.isFinite(averageLoss) ? fmtUsdSigned(-Math.abs(averageLoss)) : '—',
+        tone: lossCount > 0 ? 'loss' : 'mute',
+        title: 'Perte moyenne par trade perdant',
+      },
+    ];
+  }, [tradeCount, winRate, profitFactor, expectancy, winCount, averageWin, lossCount, averageLoss]);
+
   // ─── Day P&L + flat-market detection ───────────────────────
   const dayPnl = todayPnlUsd(dailyPnL);
   const dayTone = toneSign(dayPnl);
@@ -2237,6 +2355,7 @@ export default function DashboardKPICards() {
         <KpiCardHero
           label="REALIZED · P&L CUMULÉ"
           liveBadge={null}
+          statsBand={realizedStatsBand}
           topRight={
             <span className="dash-kpi-card__top-tools">
               <ViewToggle
@@ -2259,27 +2378,6 @@ export default function DashboardKPICards() {
           chfLine={realizedChfLine}
           microStats={[
             {
-              label: 'WIN RATE',
-              value: Number.isFinite(winRate) ? fmtPctPlain(winRate, 1) : '—',
-              tone: 'accent',
-            },
-            {
-              label: 'PF',
-              value:
-                profitFactor === Infinity
-                  ? '∞'
-                  : Number.isFinite(profitFactor)
-                    ? profitFactor.toFixed(2)
-                    : '—',
-              tone:
-                profitFactor === Infinity || (Number.isFinite(profitFactor) && profitFactor > 1)
-                  ? 'profit'
-                  : Number.isFinite(profitFactor) && profitFactor < 1
-                    ? 'loss'
-                    : 'mute',
-              title: 'Profit Factor = gains bruts / pertes brutes',
-            },
-            {
               label: 'STREAK',
               value:
                 Number.isFinite(currentStreak) && currentStreak !== 0
@@ -2293,6 +2391,19 @@ export default function DashboardKPICards() {
                   : Number.isFinite(currentStreak) && currentStreak < 0
                     ? 'loss'
                     : 'mute',
+              title: 'Série courante de gains (W) ou pertes (L) consécutifs',
+            },
+            {
+              label: 'KELLY',
+              value: Number.isFinite(kellyPct) ? `${kellyPct.toFixed(1)}%` : '—',
+              tone: 'neutral',
+              title: 'Fraction optimale du capital à risquer selon la formule de Kelly',
+            },
+            {
+              label: 'MTD PNL',
+              value: Number.isFinite(monthlyPnlUsd) ? fmtUsdSigned(monthlyPnlUsd) : '—',
+              tone: toneSign(monthlyPnlUsd),
+              title: 'P&L cumulé pour le mois en cours',
             },
           ]}
           densityBlock={
@@ -2345,33 +2456,29 @@ export default function DashboardKPICards() {
               tone: closedExtremes.worst && closedExtremes.worst.pnl < 0 ? 'loss' : 'mute',
             },
             {
+              label: 'HOLD MOY',
+              value: kpis?.avgHoldingDays != null ? `${kpis.avgHoldingDays} J` : '—',
+              tone: 'neutral',
+              title: 'Durée moyenne de rétention des positions closes (jours)',
+            },
+            {
               label: 'EXPECT',
               value:
                 tradeCount > 0 && Number.isFinite(expectancy) ? fmtUsdSigned(expectancy) : '—',
               tone: toneSign(expectancy),
-              title: 'Expectancy par trade (winRate × avgWin − lossRate × avgLoss)',
-            },
-            {
-              label: 'AVG W',
-              value:
-                winCount > 0 && Number.isFinite(averageWin) ? fmtUsdSigned(averageWin) : '—',
-              tone: Number.isFinite(averageWin) && averageWin > 0 ? 'profit' : 'mute',
-              title: 'Gain moyen par trade gagnant',
-            },
-            {
-              label: 'AVG L',
-              value:
-                lossCount > 0 && Number.isFinite(averageLoss)
-                  ? fmtUsdSigned(-Math.abs(averageLoss))
-                  : '—',
-              tone: Number.isFinite(averageLoss) && averageLoss > 0 ? 'loss' : 'mute',
-              title: 'Perte moyenne par trade perdant',
+              title: 'Espérance de gain par trade (expectancy)',
             },
             {
               label: 'KELLY',
               value: Number.isFinite(kellyPct) ? `${kellyPct.toFixed(1)}%` : '—',
               tone: 'neutral',
-              title: 'Kelly Optimal — fraction du capital à risquer (même valeur que le cockpit)',
+              title: 'Kelly Optimal (même valeur que le cockpit)',
+            },
+            {
+              label: 'ALL-TIME',
+              value: Number.isFinite(allTimePnlUsd) ? fmtUsdSigned(allTimePnlUsd) : '——',
+              tone: toneSign(allTimePnlUsd),
+              title: 'P&L cumulé total',
             },
           ]}
         />
