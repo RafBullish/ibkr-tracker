@@ -5,6 +5,33 @@
 @import "@fontsource/jetbrains-mono/500.css";
 @import "@fontsource/jetbrains-mono/600.css";
 
+/* Brique 15 — Iosevka (largeur normale) : fonte mono de TOUTE l'app.
+   Iosevka 34.6.1 (be5invis/Iosevka, OFL-1.1), subsets ~29 Ko/graisse
+   via scripts/subset_iosevka_ui.py (latin-1 + grec + ponctuation +
+   flèches/opérateurs, feature zero, sans ligatures de code).
+   Consommée via --qc-font-mono (basculé dans canonical.css). */
+@font-face {
+  font-family: 'Iosevka QC';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/iosevka/IosevkaQC-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Iosevka QC';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/iosevka/IosevkaQC-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Iosevka QC';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/iosevka/IosevkaQC-Bold.woff2') format('woff2');
+}
+
 /* Brique 11 — Iosevka Extended pour le gros chiffre héro.
    Iosevka 34.6.1 (be5invis/Iosevka, OFL-1.1), subset strict ~3.3 Ko
    via scripts/subset_iosevka_hero.py (pyftsubset + brotli).

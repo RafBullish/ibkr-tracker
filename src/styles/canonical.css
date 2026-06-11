@@ -25,6 +25,11 @@
   --accent-soft:       color-mix(in srgb, #FFA028 18%, transparent);
 
   /* — Typographie — */
+  /* Brique 15 (P1) — Iosevka devient la mono de toute l'app. canonical.css
+     est chargé en dernier : cette déclaration PREND LE PAS sur la chaîne
+     legacy de tokens.css. Le héros garde --qc-font-hero (Iosevka Extended,
+     brique 11) — non touché. */
+  --qc-font-mono:      'Iosevka QC', 'Geist Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
   --type-mono:         var(--qc-font-mono);
   --type-caption:      11px;
   --type-body:         13px;
