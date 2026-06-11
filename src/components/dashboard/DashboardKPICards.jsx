@@ -1019,6 +1019,11 @@ function HeroAreaChart({
   const lineColor = tone === 'down' ? 'var(--pnl-down)' : 'var(--pnl-up)';
   const gradId = `heroGrad-${chartId || 'x'}-${tone}`;
 
+  // Brique 14 (C) — la timeline peut porter plusieurs points le même
+  // jour (trade + cash flow) ⇒ l'axe catégoriel dupliquait les ticks
+  // (« 30.03 30.03 »). Ticks explicites dédupliqués par date.
+  const xTicks = [...new Set(data.map((p) => p.date))];
+
   return (
     <Suspense
       fallback={<div className="dash-kpi-card__hero-chart-empty" aria-hidden="true" />}
@@ -1046,6 +1051,7 @@ function HeroAreaChart({
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={fmtAxisDateDeCH}
+                ticks={xTicks}
                 minTickGap={42}
                 height={28}
               />
@@ -1057,7 +1063,7 @@ function HeroAreaChart({
                 tickLine={false}
                 width={HERO_CHART_YAXIS_WIDTH}
                 tickFormatter={yFormatter}
-                tickCount={4}
+                tickCount={5}
                 domain={yDomain}
               />
               {withZeroBaseline ? (
@@ -1198,7 +1204,7 @@ function HeroBarChart({
                 tickLine={false}
                 width={HERO_CHART_YAXIS_WIDTH}
                 tickFormatter={yFormatter}
-                tickCount={4}
+                tickCount={5}
               />
               <R.ReferenceLine
                 y={0}
@@ -1392,6 +1398,12 @@ function renderHeroChart(chart, extraProps = {}) {
 function KpiCardHero({
   label = 'NLV · NET LIQUIDITY VALUE',
   liveBadge = 'LIVE',
+  // Brique 14 — bande de stats entre le bloc texte héro et le bloc
+  // densité (variante Dense: 6 cellules, Statement: 4). Null = absent.
+  statsBand = null,
+  // TEMP Brique 14 — 'dense' force le nombre héro à 56px (la variante
+  // Statement garde les 64px actuels). Retiré après choix de Rafael.
+  sizeVariant = 'statement',
   range,
   setRange,
   topRight,
@@ -1571,7 +1583,10 @@ function KpiCardHero({
   }
 
   return (
-    <section className="dash-kpi-card dash-kpi-card--hero" data-tone={valueTone}>
+    <section
+      className={`dash-kpi-card dash-kpi-card--hero${sizeVariant === 'dense' ? ' dash-kpi-card--hero-dense' : ''}`}
+      data-tone={valueTone}
+    >
       <div className="dash-kpi-card__top">
         <span className="dash-kpi-card__top-left">
           <span className="dash-kpi-card__label">{label}</span>
@@ -1615,6 +1630,25 @@ function KpiCardHero({
             </div>
           ) : null}
         </div>
+        {Array.isArray(statsBand) && statsBand.length > 0 ? (
+          <div className="dash-kpi-card__stats-band" role="list">
+            {statsBand.map((s) => (
+              <span
+                key={s.label}
+                className="dash-kpi-card__stats-band-cell"
+                role="listitem"
+                title={s.title || undefined}
+              >
+                <span className="dash-kpi-card__stats-band-label">{s.label}</span>
+                <span
+                  className={`dash-kpi-card__stats-band-value dash-kpi-card__stats-band-value--${s.tone || 'neutral'}`}
+                >
+                  {s.value}
+                </span>
+              </span>
+            ))}
+          </div>
+        ) : null}
         {densityBlock}
         {chart ? (
           <>
@@ -1769,6 +1803,20 @@ export default function DashboardKPICards() {
     () => tierParams(settings?.activeSniperTier),
     [settings?.activeSniperTier]
   );
+
+  // TEMP Brique 14 — toggle de variante de composition héro, piloté par
+  // l'URL (?b14=2 → « Statement » : 4 cellules + héros 64px ; défaut
+  // « Dense » : 6 cellules + héros 56px). À RETIRER une fois la variante
+  // choisie par Rafael — aucune n'est retenue par défaut ici.
+  const b14Variant = useMemo(() => {
+    try {
+      return new URLSearchParams(window.location.search).get('b14') === '2'
+        ? 'statement'
+        : 'dense';
+    } catch {
+      return 'dense';
+    }
+  }, []);
 
   const [range, setRange] = useState('30J');
   const rangeConf = RANGES.find((r) => r.key === range) || RANGES[2];
@@ -1953,6 +2001,63 @@ export default function DashboardKPICards() {
       .reduce((sum, d) => sum + d.dailyPnl, 0);
   }, [dailyPnL]);
 
+  // ─── Brique 14 (A) — bande de stats héro NLV ────────────────
+  // Densifie la zone morte entre les deltas et EXPOSITION. Uniquement
+  // des valeurs DÉJÀ calculées (metrics / hooks existants) — aucun
+  // calcul nouveau. Dense = 6 cellules, Statement = les 4 premières.
+  const volAnnPct = metrics?.volAnnPct;
+  const yearsActive = metrics?.yearsActive;
+  const initialCapitalUsd = metrics?.initialCapital;
+  const nlvStatsBand = useMemo(() => {
+    const cells = [
+      {
+        label: 'DÉPLOYÉ',
+        value: Number.isFinite(exposureUsd) ? fmtUsdCompact(exposureUsd) : '——',
+        tone: 'neutral',
+        title: 'Notionnel déployé (même valeur que la barre EXPOSITION)',
+      },
+      {
+        label: 'DISPONIBLE',
+        value: Number.isFinite(availableUsd) ? fmtUsdCompact(availableUsd) : '——',
+        tone: 'neutral',
+        title: 'Capital déployable (même valeur que la card AVAIL. CAPITAL)',
+      },
+      {
+        label: 'YTD',
+        value: Number.isFinite(ytdPnlUsd) ? fmtUsdSigned(ytdPnlUsd) : '—',
+        tone: toneSign(ytdPnlUsd),
+        title: 'P&L réalisé cumulé depuis le 1er janvier',
+      },
+      {
+        label: 'CAP. INITIAL',
+        value: Number.isFinite(initialCapitalUsd)
+          ? fmtUsdCompact(initialCapitalUsd)
+          : '——',
+        tone: 'mute',
+        title: 'Capital de référence (cascade manuel → cashReport → dépôts)',
+      },
+    ];
+    if (b14Variant === 'dense') {
+      cells.push(
+        {
+          label: 'VOL ANN.',
+          value: Number.isFinite(volAnnPct) ? `${volAnnPct.toFixed(1)}%` : '—',
+          tone: 'mute',
+          title: 'Volatilité annualisée des returns (même valeur que le cockpit)',
+        },
+        {
+          label: 'JOURS ACTIFS',
+          value: Number.isFinite(yearsActive)
+            ? `${Math.round(yearsActive * 365.25)} J`
+            : '—',
+          tone: 'mute',
+          title: 'Jours calendaires entre le premier et le dernier trade clôturé',
+        }
+      );
+    }
+    return cells;
+  }, [exposureUsd, availableUsd, ytdPnlUsd, initialCapitalUsd, volAnnPct, yearsActive, b14Variant]);
+
   // ─── Day P&L + flat-market detection ───────────────────────
   const dayPnl = todayPnlUsd(dailyPnL);
   const dayTone = toneSign(dayPnl);
@@ -2007,6 +2112,8 @@ export default function DashboardKPICards() {
       <div className="dash-kpi-cards__row dash-kpi-cards__row--hero">
         {/* HERO 1. NLV */}
         <KpiCardHero
+          statsBand={nlvStatsBand}
+          sizeVariant={b14Variant}
           range={range}
           setRange={setRange}
           topRight={
@@ -2119,6 +2226,7 @@ export default function DashboardKPICards() {
         {/* HERO 2. REALIZED (B2 — promu de secondary à hero) */}
         <KpiCardHero
           label="REALIZED · P&L CUMULÉ"
+          sizeVariant={b14Variant}
           liveBadge={null}
           topRight={
             <span className="dash-kpi-card__top-tools">

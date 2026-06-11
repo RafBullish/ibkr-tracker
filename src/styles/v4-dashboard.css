@@ -3166,22 +3166,19 @@
   min-width: 0;
 }
 
+/* Brique 14 (D) — titres de cartes : 11→13px, tracking élargi, et
+   contraste remonté vers ink-pure (le titre est un repère de
+   navigation primaire, pas une caption). */
 .dash-kpi-card__label {
   font-family: var(--qc-font-sans);
-  font-size: var(--qc-fs-label, 11px);
+  font-size: var(--qc-fs-body, 13px);
   font-weight: 500;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--qc-text-secondary);
+  color: var(--ink-pure);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* Brique 1 — hero only : titres NLV / REALIZED un cran au-dessus. */
-.dash-kpi-card--hero .dash-kpi-card__label {
-  font-size: 12px;
-  letter-spacing: 0.08em;
 }
 
 /* Hint "neutral" (sans Pill component) — version pillée subtile pour
@@ -3368,6 +3365,13 @@
   font-size: 64px;
   line-height: 0.95;
   letter-spacing: -0.018em;
+}
+
+/* TEMP Brique 14 (E) — variante « Dense » : héros 56px (la variante
+   « Statement » garde 64px ci-dessus). Une des deux règles sera
+   retirée après le choix de Rafael. */
+.dash-kpi-card--hero-dense .dash-kpi-card__value {
+  font-size: 56px;
 }
 
 .dash-kpi-card__chf {
@@ -3647,6 +3651,54 @@
    Empilé pleine largeur dans __hero-mid entre le bloc texte et le
    readout. Mono, fin, statique (pas de hover). Sources réutilisées
    depuis les cartes EXPOSURE / AVAIL CAPITAL et closedTrades. */
+
+/* ── Brique 14 (A) — bande de stats héro NLV ──────────────────────
+   Densifie la zone entre le bloc texte (deltas) et EXPOSITION.
+   Grille fluide : N cellules égales (6 en Dense, 4 en Statement),
+   filets hairline haut/bas comme la rail footer. */
+.dash-kpi-card__stats-band {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 0;
+  border-top: 1px solid var(--line-hairline);
+  border-bottom: 1px solid var(--line-hairline);
+}
+
+.dash-kpi-card__stats-band-cell {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dash-kpi-card__stats-band-label {
+  font-family: var(--qc-font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-mute);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-kpi-card__stats-band-value {
+  font-family: var(--qc-font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums slashed-zero;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: var(--ink-pure);
+}
+
+.dash-kpi-card__stats-band-value--profit { color: var(--pnl-up); }
+.dash-kpi-card__stats-band-value--loss { color: var(--pnl-down); }
+.dash-kpi-card__stats-band-value--mute { color: var(--ink-soft); }
 
 .dash-kpi-card__hero-density {
   display: flex;
