@@ -55,3 +55,6 @@ contexte_pour_gemini.md
 
 # Iosevka source pack (non-subsetté, 1.6 MB chaque) — gardé hors public/ pour ne pas shipper
 scripts/iosevka-source/
+
+# Artefacts de verification brique-par-brique (screenshots, scripts jetables)
+/.checkpoints/
