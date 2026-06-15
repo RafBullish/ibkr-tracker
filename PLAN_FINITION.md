@@ -205,8 +205,15 @@ Source : `Chain.jsx` (lazy). Yahoo Finance + BSM client-side. Globalement foncti
 #### 🟡 Factice / placeholder
 - **Stat cell IVR** (l.527) : `value="——"` + sub « Sprint 6 — IV history ». **Toujours un stub assumé** (sous-titre = label de roadmap visible en prod).
 
-#### ⚠️ À vérifier (flag basse confiance, pas tranché)
-- `handleSavePreset` (l.431-433) dispatche **`ADD_CLOSED_TRADE`** quand on enregistre un trade depuis une ligne de la chaîne. Le preset ne contient que des champs d'entrée (`tk/ty/st/ex/pi/ct`, pas de `po/do`). Or un trade saisi depuis la chaîne *live* ressemble à une **position ouverte** qu'on vient d'entrer — l'enregistrer comme trade clôturé sans données de sortie paraît incohérent. À confronter au comportement réel de `AddTradeModal` (peut-être qu'il complète la sortie). **Ne pas corriger sans valider l'intention produit.**
+#### ✅ VERDICT INTÉGRITÉ — PAS UN BUG (tracé le 2026-06-15, Étape 0 session d'exécution)
+- Flag initial : `handleSavePreset` (Chain.jsx l.431-433) dispatche `ADD_CLOSED_TRADE` ; le preset n'a que des champs d'entrée → risque supposé d'enregistrer une position ouverte comme trade clôturé sans données de sortie.
+- **Chemin réel tracé** :
+  - `handleRowClick` (clic ligne chaîne) → `setPreset({tk,as,ty,dir,st,ex,pi,ct,tag})` + `setPresetOpen(true)`. Le preset **pré-remplit uniquement l'entrée** (convenance).
+  - `<AddTradeModal onSave={handleSavePreset} preset={preset}>` est rendu. **C'est le même composant partagé que History** utilise pour logguer un trade clôturé manuel.
+  - `AddTradeModal.handleSave` (AddTradeModal.jsx l.79-80) a un **garde dur** : `if (!tk.trim() || !pi || !po) return;` → **refuse d'enregistrer sans prix de SORTIE (`po`)**. Le formulaire a des champs explicites « Prix Exit » + « Date Exit » (défaut today) et construit une forme closed-trade complète (`po, do, fo, fxo`).
+  - `ADD_CLOSED_TRADE` (reducer l.192-196) ajoute bien le trade aux `closedTrades` (compté dans le P&L réalisé) — **mais avec des données de sortie réelles saisies par l'utilisateur.**
+- **Conclusion** : aucune corruption possible. On ne peut PAS enregistrer un trade ouvert/incomplet via ce chemin — le garde `!po` bloque. Le dispatch `ADD_CLOSED_TRADE` est correct : le preset sème l'entrée, l'utilisateur complète la sortie, le résultat est un trade clôturé légitime.
+- **Nuance UX mineure (non bloquante, non corrigée)** : le titre « Preset trade depuis la chaîne » pourrait laisser croire qu'on logge une position ouverte ; en pratique le formulaire impose la sortie. Simple libellé, pas un risque d'intégrité.
 
 #### ❌ Manque
 - IV Rank (nécessite historique IV 52 semaines).
