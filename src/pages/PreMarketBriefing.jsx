@@ -280,12 +280,10 @@ export default function PreMarketBriefing() {
           <span className="premarket-page__regime-value">
             {fxRate > 0 ? formatFxRate(fxRate) : '——'}
           </span>
-          <span className="premarket-page__regime-sub">via FX hook</span>
         </div>
         <div className="premarket-page__regime-cell">
           <span className="premarket-page__regime-label">DXY</span>
           <span className="premarket-page__regime-value">——</span>
-          <span className="premarket-page__regime-sub">overnight feed</span>
         </div>
       </div>
 

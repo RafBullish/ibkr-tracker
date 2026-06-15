@@ -248,6 +248,16 @@ export default function SettingsGeneral() {
   const [resetOpen, setResetOpen] = useState(false);
   const [resetConfirmed, setResetConfirmed] = useState(false);
 
+  // Nom du profil — lu UNE fois au mount depuis localStorage (écrit au blur
+  // plus bas). Fallback chaîne vide, jamais une valeur en dur.
+  const [initialProfileName] = useState(() => {
+    try {
+      return window.localStorage.getItem('ibkr_profile_name') || '';
+    } catch {
+      return '';
+    }
+  });
+
   const { refresh: refreshFx, isLoading: refreshing, error: fxError } = useFx();
 
   // Surface refresh failures as a toast — without this the user sees
@@ -387,7 +397,7 @@ export default function SettingsGeneral() {
               type="text"
               aria-label="Nom du profil"
               className="settings-page__input"
-              defaultValue="Rafael"
+              defaultValue={initialProfileName}
               placeholder="Ton nom"
               onBlur={(e) => {
                 try {
@@ -396,15 +406,6 @@ export default function SettingsGeneral() {
                   /* quota */
                 }
               }}
-            />
-          </Row>
-          <Row label="Email" description="Email de contact pour exports et rapports.">
-            <input
-              type="email"
-              aria-label="Adresse email"
-              className="settings-page__input"
-              defaultValue=""
-              placeholder="email@example.com"
             />
           </Row>
         </Section>

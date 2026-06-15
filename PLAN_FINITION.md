@@ -503,12 +503,13 @@ Chaque **U** = un commit autonome. Ordre = priorité décroissante. Principe : d
 
 ### Vague 1 — Honnêteté du site (trivial, zéro data externe, zéro risque)
 
-- **U1 · Calendar : afficher EPS/Revenue estimates** — ✅ **FAIT**. Popup earnings + liste « Prochains événements » affichent maintenant `est. EPS $X.XX · CA $X.XXB` quand dispo. Null-guard strict (rien rendu si absent). Unité vérifiée : Finnhub `revenueEstimate` = USD absolu (pass-through `api/finnhub/earnings.js`), formaté en T/B/M/k ; `epsEstimate` = USD/action. Build OK.
-- **U2 · Corrections d'honnêteté UI** (peut être 1 commit groupé) :
-  - API : « Sept services » → « Huit services » (header + sous-titre).
-  - Premarket : retirer/renommer les sous-titres dev-leak « via FX hook » et « overnight feed ».
-  - General : input **Email** (câbler `onChange`+persist **ou** retirer, selon D-b) + faire **relire le Nom** depuis `localStorage` au mount (corrige la persistance write-only).
-  - Dashboard : neutraliser le fallback QueryID `1443387` en dur (RiskMatrix) — valeur générique ou masquée si absente.
+- **U1 · Calendar : afficher EPS/Revenue estimates** — ✅ **FAIT (1713bf8)**. Popup earnings + liste « Prochains événements » affichent maintenant `est. EPS $X.XX · CA $X.XXB` quand dispo. Null-guard strict (rien rendu si absent). Unité vérifiée : Finnhub `revenueEstimate` = USD absolu (pass-through `api/finnhub/earnings.js`), formaté en T/B/M/k ; `epsEstimate` = USD/action. Build OK.
+- **U2 · Corrections d'honnêteté UI** — ✅ **FAIT** (commit groupé, ce commit) :
+  - API : « Sept services » → « Huit services » (sous-titre `Api.jsx` + JSDoc). ✅
+  - Premarket : sous-titres dev-leak « via FX hook » et « overnight feed » **supprimés** (cellules USD/CHF et DXY ; valeur DXY intacte, hors-scope U12). ✅
+  - General : input **Email supprimé** (décision actée : suppression, pas câblage) + **Nom relu depuis `localStorage`** au mount via `initialProfileName` (lazy `useState`, fallback `''`, plus de « Rafael » en dur). ✅
+  - Dashboard : fallback QueryID `1443387` (n° de compte réel) **neutralisé** → placeholder `——` quand non configuré (`RiskMatrix.jsx`), chemin de lecture localStorage intact. ✅
+  - Build OK. Vérif visuelle Playwright optionnelle non effectuée (changements bas-risque, sans logique).
 
 ### Vague 2 — Quick wins fonctionnels (applicatif, pas de data externe)
 

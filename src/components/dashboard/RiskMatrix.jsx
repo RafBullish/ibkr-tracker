@@ -749,13 +749,14 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
   const tierLabel = tierParams(settings?.activeSniperTier).label;
 
   // (E) QueryID Flex — lu depuis la config Flex de Settings → API
-  // (clé localStorage ibkr_flex_queryid, hors store zustand). Fallback
-  // sur l'ID historique tant que rien n'est configuré.
+  // (clé localStorage ibkr_flex_queryid, hors store zustand). AUCUN
+  // fallback en dur : tant que rien n'est configuré on affiche un
+  // placeholder générique, jamais un numéro de compte réel.
   const flexQueryId = useMemo(() => {
     try {
-      return window.localStorage.getItem('ibkr_flex_queryid') || '1443387';
+      return window.localStorage.getItem('ibkr_flex_queryid') || '——';
     } catch {
-      return '1443387';
+      return '——';
     }
   }, []);
 

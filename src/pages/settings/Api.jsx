@@ -2,7 +2,7 @@
 //  SETTINGS · API v3.0 « Midnight Terminal »
 //  /settings/api
 //
-//  Detail view of the seven services the project integrates with,
+//  Detail view of the eight services the project integrates with,
 //  backed by useApiStatus (§13.4 fix — same hook consumed by
 //  /settings/general's summary, so both pages cannot disagree).
 // ═══════════════════════════════════════════════════════════════
@@ -117,7 +117,7 @@ export default function SettingsApi() {
             Connexions API
           </h1>
           <p className="page-subtitle">
-            Sept services intégrés · statut live probé toutes les 2 minutes.
+            Huit services intégrés · statut live probé toutes les 2 minutes.
           </p>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
