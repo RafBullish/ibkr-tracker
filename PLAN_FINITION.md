@@ -513,7 +513,7 @@ Chaque **U** = un commit autonome. Ordre = priorité décroissante. Principe : d
 
 ### Vague 2 — Quick wins fonctionnels (applicatif, pas de data externe)
 
-- **U3 · Dashboard : 3 boutons header RiskMatrix** (`Detail`/`Export`/`History`) → leur donner un `onClick` réel **ou** les retirer (décision). Export CSV de la matrice = candidat naturel pour `Export`.
+- **U3 · Dashboard : header RiskMatrix** — ✅ **FAIT** (ce commit). Boutons morts **`Detail` et `History` supprimés** (markup ; aucun handler/état JS n'y était attaché). Bouton **`Export CSV` câblé** → `handleExport` sérialise les métriques affichées du cockpit (Contexte / Performance / Drawdown / Streak / Win-Loss) via `downloadRiskMatrixCsv` (Blob `text/csv` horodaté `ibkr-risk-matrix-<date>.csv`, **même convention que `History.exportCsv`**). Valeurs = mêmes champs `m.*` + mêmes formatters que le rendu (aucune donnée inventée), null-guardées (`—`). Bouton **désactivé si `tradeCount === 0`** (tout serait `—`). Style `:disabled` ajouté. Build OK. (CSS `.risk-matrix__action--active` désormais inutilisée → laissée pour l'audit purgecss dédié.)
 - **U4 · Positions : deep-link `?focus={id}` + detail panel** → lire le param `useSearchParams`, surligner/scroller la ligne ciblée (corrige le no-op depuis Premarket), puis implémenter le panneau détail au clic (intention déjà commentée). Débloque aussi l'UX Premarket→Positions.
 - **U5 · Nettoyage dead-code** (selon D-c) : supprimer `VolatilitySkew.jsx`, `MarketInternals.jsx`, `TradeHistoryPlaceholder.jsx`, `SniperGateMonitor.jsx` + hooks `useVolSkew`/`useMarketInternals` (après confirmation qu'ils ne sont rendus nulle part). Commit isolé, facilement revert.
 

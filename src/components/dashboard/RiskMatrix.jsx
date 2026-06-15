@@ -74,6 +74,28 @@ function deltaVsBench(value, bench, profitIfAbove = true) {
   return { text: `${sign}${d.toFixed(2)}`, tone };
 }
 
+// ─── Export CSV de la matrice ───────────────────────────────────
+// Même convention que History.exportCsv : Blob text/csv horodaté,
+// téléchargement via <a download> au format ibkr-<nom>-<date>.csv.
+// `rows` = Array<[Section, Métrique, Valeur, Détail]> déjà formatées —
+// on sérialise exactement ce qui est rendu, aucune donnée inventée.
+function csvCell(v) {
+  const s = v == null ? '' : String(v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function downloadRiskMatrixCsv(rows) {
+  const header = ['Section', 'Métrique', 'Valeur', 'Détail'];
+  const lines = [header, ...rows].map((r) => r.map(csvCell).join(','));
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ibkr-risk-matrix-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 // ─── Histogram R-Multiples : range fixe [-3R, +3R], 12 buckets ──
 
 const HISTOGRAM_BUCKETS = 12;
@@ -874,19 +896,130 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
         ? { text: 'edge+', tone: 'profit' }
         : { text: 'edge−', tone: 'loss' };
 
+  // U3 — Export CSV : sérialise les métriques affichées du cockpit
+  // (mêmes champs m.* et mêmes formatters que le rendu). Désactivé
+  // quand 0 trade fermé (tout serait '—').
+  const handleExport = () => {
+    const rows = [
+      ['Contexte', 'Capital initial', fmtUsd(initialCapital), ''],
+      ['Contexte', 'Live FX USD/CHF', fmtNum(liveRate, 4), ''],
+      ['Contexte', 'Trades (N)', String(tradeCount), ''],
+      ['Contexte', 'YTD actif (jours)', ytdDaysActive != null ? String(ytdDaysActive) : '—', ''],
+      ['Contexte', 'Tier Sniper', tierLabel, ''],
+
+      ['Performance', 'Sharpe (YTD)', fmtNum(m.sharpeRatio), 'bench 1.00'],
+      ['Performance', 'Sortino', fmtNum(m.sortinoRatio), 'bench 1.50'],
+      ['Performance', 'Calmar', fmtNum(m.calmarRatio), 'bench 3.00'],
+      ['Performance', 'SQN', fmtNum(m.sqn), 'bench 1.60'],
+      ['Performance', m.twrMode === 'cumulative' ? 'TWR Cumulé' : 'TWR (ann.)', fmtPct(m.twr), 'bench 15.0%'],
+      ['Performance', m.cagrMode === 'cumulative' ? 'Cumulé' : 'CAGR', fmtPct(cagr), 'bench 15.0%'],
+      ['Performance', 'Vol (ann.)', fmtPct(m.volAnnPct), 'bench 20.0%'],
+      [
+        'Performance',
+        'Recovery Factor',
+        m.recoveryFactor == null || !Number.isFinite(m.recoveryFactor)
+          ? '—'
+          : `${fmtNum(m.recoveryFactor)}×`,
+        'bench 3.0×',
+      ],
+      ['Performance', 'Expectancy', fmtUsdSigned(m.expectancy), ''],
+      ['Performance', 'Kelly Optimal', fmtPct(m.kellyPercent), ''],
+      [
+        'Performance',
+        'R Avg',
+        m.rAverage == null ? '—' : `${m.rAverage >= 0 ? '+' : ''}${fmtNum(m.rAverage)}`,
+        `σ ${fmtNum(m.rStdDev)}`,
+      ],
+
+      [
+        'Drawdown',
+        'Current DD',
+        ddInfo.ddUsd != null && ddInfo.ddUsd > 0 ? `−${fmtUsd(ddInfo.ddUsd).replace(/^-/, '')}` : '—',
+        fmtPctSigned(m.currentDDPct, 2),
+      ],
+      [
+        'Drawdown',
+        'Max DD YTD',
+        maxDDYtdUsd != null ? `−${fmtUsd(maxDDYtdUsd)}` : '—',
+        m.maxDDYtdPct > 0 ? `−${fmtPct(m.maxDDYtdPct, 2)}` : '—',
+      ],
+      [
+        'Drawdown',
+        'Max DD All-Time',
+        m.maxDrawdown != null && Number.isFinite(m.maxDrawdown) && m.maxDrawdown > 0
+          ? `−${fmtUsd(m.maxDrawdown)}`
+          : '—',
+        m.maxDrawdownPct > 0 ? `−${fmtPct(m.maxDrawdownPct, 2)}` : '—',
+      ],
+      [
+        'Drawdown',
+        'Days Since Peak',
+        ddInfo.daysSincePeak != null ? String(ddInfo.daysSincePeak) : '—',
+        ddInfo.peakDate || '—',
+      ],
+      ['Drawdown', 'Recovery to Peak', fmtPct(ddInfo.recoveryPct), ''],
+
+      [
+        'Streak',
+        'Streak Current',
+        m.currentStreak > 0
+          ? `${m.currentStreak}W`
+          : m.currentStreak < 0
+            ? `${Math.abs(m.currentStreak)}L`
+            : '—',
+        streakPnlSum != null ? fmtUsdSigned(streakPnlSum) : '—',
+      ],
+      ['Streak', 'Max Win Streak', `${m.maxWinStreak ?? 0}W`, ''],
+      ['Streak', 'Max Loss Streak', `${m.maxLossStreak ?? 0}L`, ''],
+
+      ['Win/Loss', 'Wins', `${m.winCount ?? 0}`, fmtUsdSigned(m.averageWin)],
+      [
+        'Win/Loss',
+        'Losses',
+        `${m.lossCount ?? 0}`,
+        m.averageLoss != null && Number.isFinite(m.averageLoss)
+          ? fmtUsdSigned(-Math.abs(m.averageLoss))
+          : '—',
+      ],
+      ['Win/Loss', 'Break-Even', `${m.breakEvenCount ?? 0}`, ''],
+      ['Win/Loss', 'Win Rate', fmtPct(m.winRate), ''],
+      [
+        'Win/Loss',
+        'Profit Factor',
+        m.profitFactor === Infinity
+          ? '∞'
+          : m.profitFactor != null && Number.isFinite(m.profitFactor)
+            ? fmtNum(m.profitFactor)
+            : '—',
+        '',
+      ],
+      ['Win/Loss', 'Total Fees', fmtUsd(m.totalAllFees), ''],
+      [
+        'Win/Loss',
+        'FX Impact',
+        m.totalFxImpact != null && Number.isFinite(m.totalFxImpact)
+          ? `CHF ${m.totalFxImpact >= 0 ? '+' : ''}${Math.round(m.totalFxImpact)}`
+          : '—',
+        '',
+      ],
+      ['Win/Loss', 'YTD P&L', fmtUsdSigned(ytdAmount), ''],
+    ];
+    downloadRiskMatrixCsv(rows);
+  };
+
   // ─── Render ──────────────────────────────────────────────────
 
   return (
     <section className="risk-matrix" style={{ gridArea: area }}>
       <header className="risk-matrix__header">
-        <button type="button" className="risk-matrix__action risk-matrix__action--active">
-          98) Detail
-        </button>
-        <button type="button" className="risk-matrix__action">
-          99) Export
-        </button>
-        <button type="button" className="risk-matrix__action">
-          97) History
+        <button
+          type="button"
+          className="risk-matrix__action"
+          onClick={handleExport}
+          disabled={tradeCount === 0}
+          title="Exporter la matrice de risque (CSV)"
+        >
+          Export CSV
         </button>
         <span className="risk-matrix__title">Performance · Risk · Behavior Cockpit</span>
       </header>

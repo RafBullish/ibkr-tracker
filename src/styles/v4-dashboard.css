@@ -852,6 +852,11 @@
   outline-offset: -2px;
 }
 
+.risk-matrix__action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .risk-matrix__title {
   flex: 1;
   display: flex;
