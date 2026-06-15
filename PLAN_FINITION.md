@@ -503,7 +503,7 @@ Chaque **U** = un commit autonome. Ordre = priorité décroissante. Principe : d
 
 ### Vague 1 — Honnêteté du site (trivial, zéro data externe, zéro risque)
 
-- **U1 · Calendar : afficher EPS/Revenue estimates** dans la popup earnings + liste upcoming. Data déjà fetchée (`ev.epsEst`/`ev.revEst`), ~3-6 lignes JSX. **Plus rentable / risque nul.**
+- **U1 · Calendar : afficher EPS/Revenue estimates** — ✅ **FAIT**. Popup earnings + liste « Prochains événements » affichent maintenant `est. EPS $X.XX · CA $X.XXB` quand dispo. Null-guard strict (rien rendu si absent). Unité vérifiée : Finnhub `revenueEstimate` = USD absolu (pass-through `api/finnhub/earnings.js`), formaté en T/B/M/k ; `epsEstimate` = USD/action. Build OK.
 - **U2 · Corrections d'honnêteté UI** (peut être 1 commit groupé) :
   - API : « Sept services » → « Huit services » (header + sous-titre).
   - Premarket : retirer/renommer les sous-titres dev-leak « via FX hook » et « overnight feed ».

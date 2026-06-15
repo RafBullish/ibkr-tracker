@@ -77,6 +77,41 @@ function earningsHourBadge(hour) {
   return null;
 }
 
+// ─── Earnings estimate formatters ──────────────────────────
+// Source : Finnhub /calendar/earnings, proxifié tel quel (pass-through,
+// cf. api/finnhub/earnings.js — aucune transformation serveur).
+//   epsEstimate     = USD par action (ex. 4.5474)
+//   revenueEstimate = USD absolu (ex. 88_496_400_810 ≈ $88.5B), PAS en millions
+// Les deux sont fréquemment absents (null) → null-guard strict obligatoire,
+// jamais de "null"/"undefined"/libellé vide rendu.
+function fmtEpsEstimate(v) {
+  if (v == null || !Number.isFinite(v)) return null;
+  const sign = v < 0 ? '−' : '';
+  return `${sign}$${Math.abs(v).toFixed(2)}`;
+}
+
+function fmtRevenueEstimate(v) {
+  if (v == null || !Number.isFinite(v) || v === 0) return null;
+  const abs = Math.abs(v);
+  const sign = v < 0 ? '−' : '';
+  if (abs >= 1e12) return `${sign}$${(abs / 1e12).toFixed(2)}T`;
+  if (abs >= 1e9) return `${sign}$${(abs / 1e9).toFixed(2)}B`;
+  if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(1)}M`;
+  if (abs >= 1e3) return `${sign}$${(abs / 1e3).toFixed(0)}k`;
+  return `${sign}$${abs.toFixed(0)}`;
+}
+
+// Combine EPS + Revenue estimates into a single readable string, or null
+// when neither is available (the common case for many tickers).
+function earnEstimateLabel(ev) {
+  const eps = fmtEpsEstimate(ev?.epsEst);
+  const rev = fmtRevenueEstimate(ev?.revEst);
+  const parts = [];
+  if (eps != null) parts.push(`est. EPS ${eps}`);
+  if (rev != null) parts.push(`CA ${rev}`);
+  return parts.length ? parts.join(' · ') : null;
+}
+
 function getMonthDays(year, month) {
   const first = new Date(year, month, 1);
   const startDay = (first.getDay() + 6) % 7;
@@ -254,9 +289,13 @@ function AnnouncementsView({ viewYear, viewMonth, todayStr, prevMonth, nextMonth
                           : ev.type === 'exp'
                             ? 'calendar-page__ann-popup-row calendar-page__ann-popup-row--expiration'
                             : 'calendar-page__ann-popup-row calendar-page__ann-popup-row--macro';
+                      const est = ev.type === 'earn' ? earnEstimateLabel(ev) : null;
                       return (
                         <div key={j} className={rowCls}>
                           {ev.label}
+                          {est && (
+                            <span className="calendar-page__ann-popup-est"> · {est}</span>
+                          )}
                         </div>
                       );
                     })}
@@ -274,6 +313,7 @@ function AnnouncementsView({ viewYear, viewMonth, todayStr, prevMonth, nextMonth
           {upcomingEvents.map((ev, i) => {
             const variant = ev.type === 'earn' ? 'earnings' : ev.type === 'exp' ? 'expiration' : 'macro';
             const label = ev.type === 'earn' ? 'EARN' : ev.type === 'exp' ? 'EXP' : 'MACRO';
+            const est = ev.type === 'earn' ? earnEstimateLabel(ev) : null;
             return (
               <section
                 key={`${ev.date}-${i}`}
@@ -296,6 +336,7 @@ function AnnouncementsView({ viewYear, viewMonth, todayStr, prevMonth, nextMonth
                       </span>
                     )}
                     <span className="calendar-page__upcoming-label">{ev.label}</span>
+                    {est && <span className="calendar-page__upcoming-est">{est}</span>}
                     <span className="calendar-page__upcoming-eta">
                       dans{' '}
                       {Math.max(

@@ -305,6 +305,11 @@
 .calendar-page__ann-popup-row--expiration {
   color: var(--accent);
 }
+/* Estimations earnings (EPS / CA) dans la popup — teinte sourdine pour ne
+   pas écraser le vert du libellé earnings parent. */
+.calendar-page__ann-popup-est {
+  color: var(--ink-mute);
+}
 
 /* ════════════════════════════════════════════════════════════════
    UPCOMING EVENTS LIST
@@ -404,6 +409,13 @@
   font-family: var(--qc-font-sans);
   font-size: 13px;
   color: var(--ink-pure);
+}
+
+.calendar-page__upcoming-est {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: 11px;
+  color: var(--ink-soft);
 }
 
 .calendar-page__upcoming-eta {
