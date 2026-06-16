@@ -2222,6 +2222,50 @@
   background: var(--qc-border-subtle);
 }
 
+/* U8 — Calendar mini : liste 7 jours condensée (réutilise .earnings-cal__*) */
+.calmini__table td {
+  padding: 0 6px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.calmini__date {
+  color: var(--qc-text-secondary);
+  font-size: 11px;
+  width: 96px;
+}
+.calmini__label {
+  color: var(--qc-text-primary);
+  font-size: 12px;
+  max-width: 0;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.calmini__type {
+  text-align: right;
+  width: 88px;
+}
+.calmini__tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--qc-border-subtle);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--qc-text-tertiary);
+}
+.calmini__tag--earn {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.calmini__tag--exp {
+  color: var(--qc-text-primary);
+}
+.calmini__tag--macro {
+  color: var(--qc-text-secondary);
+}
+
 .watchlist__table,
 .earnings-cal__table,
 .iv-movers__table {

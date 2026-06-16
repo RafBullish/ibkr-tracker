@@ -6,7 +6,7 @@
 //    Row 1 (520px) : Equity col 1-3 | Cumul P&L col 4-6 | RiskMatrix col 7-12
 //    Row 2 (auto)  : LivePositions col 1-12 (19 cols Phase C.1 originale)
 //    Row 3 (480px) : TradeHistory col 1-12 (14 cols Phase C.2)
-//    Row 4 (180px) : Watchlist col 1-6 | CalendarMiniPlaceholder col 7-12
+//    Row 4 (180px) : Watchlist col 1-6 | CalendarMini col 7-12
 //    Row 5 (160px) : IVRankMovers col 1-4 | SectorHeatmap col 5-8 | AlertsFeed col 9-12
 //
 //  Phase C.1 retire 4 modules du dashboard (leurs fichiers restent
@@ -35,7 +35,7 @@ import SectorHeatmap from '../components/dashboard/SectorHeatmap';
 import IVRankMovers from '../components/dashboard/IVRankMovers';
 import AlertsFeed from '../components/dashboard/AlertsFeed';
 import TradeHistory from '../components/dashboard/TradeHistory';
-import CalendarMiniPlaceholder from '../components/dashboard/CalendarMiniPlaceholder';
+import CalendarMini from '../components/dashboard/CalendarMini';
 import useEquityHistory from '../hooks/useEquityHistory';
 import useDailyPnL from '../hooks/useDailyPnL';
 import useGreeksAggregate from '../hooks/useGreeksAggregate';
@@ -161,7 +161,7 @@ export default function Dashboard() {
         <LivePositions data={positions} area="positions" />
         <TradeHistory data={closedTrades} liveRate={portfolioMetrics?.liveRate ?? 1} area="history" />
         <Watchlist data={watchlist} area="watch" />
-        <CalendarMiniPlaceholder area="calendar" />
+        <CalendarMini area="calendar" />
         <IVRankMovers data={ivMovers} area="ivr" />
         <SectorHeatmap data={sectors} area="heat" />
         <AlertsFeed data={alerts} area="alert" />
