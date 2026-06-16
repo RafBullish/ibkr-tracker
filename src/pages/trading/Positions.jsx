@@ -16,7 +16,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   Briefcase,
@@ -44,12 +44,14 @@ import { daysToExpiration, holdingDays } from '../../utils/dates';
 import { toFloat, ensurePositive } from '../../utils/math';
 import { getGreeksForAllPositions } from '../../utils/greeksApi';
 import { generateAlerts, getPositionAlerts } from '../../utils/alerts';
+import { effectiveSlDollar } from '../../utils/risk';
 // useMediaQuery no longer needed at page level — DataTable handles mobile cards internally
 
 import StatusBadge from '../../components/ui/StatusBadge';
 import InfoTooltip from '../../components/ui/InfoTooltip';
 import EmptyState from '../../components/ui/EmptyState';
 import DataTable from '../../components/ui/DataTable';
+import Modal from '../../components/ui/Modal';
 import { POLLING } from '../../constants/timing';
 import { CONTAINER_VARIANTS, TILE_VARIANTS } from '../../theme/animationVariants';
 
@@ -443,6 +445,168 @@ function FlatState({ closedTrades, lr, navigate }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  DETAIL PANEL (read-only) — ouvert au clic d'une ligne, rendu dans
+//  Modal v3. U4 : AUCUNE action de mutation. Réutilise strictement les
+//  données déjà calculées pour la ligne (greeksMap, alerts,
+//  effectiveSlDollar) — n'invente ni ne recalcule rien.
+// ═══════════════════════════════════════════════════════════════
+function DetailItem({ label, children }) {
+  return (
+    <div className="position-detail__item">
+      <span className="position-detail__label">{label}</span>
+      <span className="position-detail__value mono">{children}</span>
+    </div>
+  );
+}
+
+// Greek read-only avec le même marquage ~ (IV estimée) que le tableau.
+function PanelGreek({ label, value, ivEstimated, digits = 2 }) {
+  let node;
+  if (value == null || !Number.isFinite(value)) {
+    node = <span className="text-tertiary">—</span>;
+  } else if (ivEstimated) {
+    node = (
+      <span
+        style={{ opacity: 0.65, fontStyle: 'italic' }}
+        title="IV estimée (mark hors plage no-arbitrage, défaut σ=30%)"
+      >
+        ~{value.toFixed(digits)}
+      </span>
+    );
+  } else {
+    node = value.toFixed(digits);
+  }
+  return (
+    <div className="position-detail__item">
+      <span className="position-detail__label">{label}</span>
+      <span className="position-detail__value mono">{node}</span>
+    </div>
+  );
+}
+
+function PositionDetailBody({ row, greeks, posAlerts, navigate }) {
+  const { pos, r, pctChg, isOpt, dte, costBasis, maxLoss } = row;
+  const pnl = r.unrealizedPnlUsd;
+  const pnlTone = pnl > 0 ? 'profit' : pnl < 0 ? 'loss' : 'neutral';
+  const sl = effectiveSlDollar(pos);
+  const dir = pos.dir || (isOpt ? 'Long' : '—');
+  const alertTone = (sev) => (sev === 'red' ? 'loss' : sev === 'orange' ? 'warn' : 'profit');
+  return (
+    <div className="position-detail">
+      <div className="position-detail__head">
+        <span className="mono" style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)' }}>
+          {pos.tk}
+        </span>
+        <TypeBadge as={pos.as} ty={pos.ty} />
+        <StatusBadge variant="neutral" label={dir} size="xs" />
+        {isOpt && <DteBadge dte={dte} />}
+      </div>
+
+      <div className="position-detail__section">
+        <span className="position-detail__section-title">Contrat</span>
+        <div className="position-detail__grid">
+          {isOpt && <DetailItem label="Strike">${toFloat(pos.st).toFixed(0)}</DetailItem>}
+          {isOpt && <DetailItem label="Expiration">{pos.ex || '—'}</DetailItem>}
+          <DetailItem label="Quantité">{toFloat(pos.ct)}</DetailItem>
+          <DetailItem label="Multiplicateur">{isOpt ? toFloat(pos.mu) || 100 : 1}</DetailItem>
+        </div>
+      </div>
+
+      <div className="position-detail__section">
+        <span className="position-detail__section-title">Prix &amp; P&amp;L</span>
+        <div className="position-detail__grid">
+          <DetailItem label="Prix d'entrée">${toFloat(pos.pi).toFixed(2)}</DetailItem>
+          <DetailItem label="Mark">${toFloat(pos.pc).toFixed(2)}</DetailItem>
+          <DetailItem label="P&L unrealized">
+            <span className={`text-${pnlTone}`}>
+              {pnl >= 0 ? '+' : ''}
+              {formatUsd(pnl)}
+            </span>
+          </DetailItem>
+          <DetailItem label="Variation">
+            <span className={`text-${pnlTone}`}>
+              {pctChg >= 0 ? '+' : ''}
+              {pctChg.toFixed(2)}%
+            </span>
+          </DetailItem>
+        </div>
+      </div>
+
+      <div className="position-detail__section">
+        <span className="position-detail__section-title">Risque &amp; capital</span>
+        <div className="position-detail__grid">
+          <DetailItem label="Capital engagé">{formatUsd(costBasis)}</DetailItem>
+          <DetailItem label="Max loss théorique">{formatUsd(maxLoss)}</DetailItem>
+          <DetailItem label="Risque max (SL 35%)">{sl == null ? '—' : formatUsd(sl)}</DetailItem>
+        </div>
+      </div>
+
+      {isOpt && (
+        <div className="position-detail__section">
+          <span className="position-detail__section-title">Greeks · par contrat</span>
+          <div className="position-detail__grid">
+            <PanelGreek
+              label="Δ Delta"
+              value={greeks?.delta}
+              ivEstimated={greeks?.ivEstimated}
+              digits={2}
+            />
+            <PanelGreek
+              label="Γ Gamma"
+              value={greeks?.gamma}
+              ivEstimated={greeks?.ivEstimated}
+              digits={4}
+            />
+            <PanelGreek
+              label="Θ Theta · /j"
+              value={greeks?.theta}
+              ivEstimated={greeks?.ivEstimated}
+              digits={2}
+            />
+            <PanelGreek
+              label="ν Vega · /1%"
+              value={greeks?.vega}
+              ivEstimated={greeks?.ivEstimated}
+              digits={2}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="position-detail__section">
+        <span className="position-detail__section-title">Alertes</span>
+        {posAlerts.length === 0 ? (
+          <span className="text-tertiary mono" style={{ fontSize: 12 }}>
+            Aucune alerte active
+          </span>
+        ) : (
+          <div className="position-detail__alerts">
+            {posAlerts.map((a, i) => (
+              <div
+                key={`${a.type}-${i}`}
+                className="position-detail__alert"
+                data-tone={alertTone(a.severity)}
+              >
+                {a.message}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Lien de navigation pure (aucune mutation d'état). */}
+      <button
+        type="button"
+        className="position-detail__nav"
+        onClick={() => navigate('/trading/chain')}
+      >
+        Ouvrir la chaîne options <ArrowUpRight size={12} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  MAIN
 // ═══════════════════════════════════════════════════════════════
 export default function Positions() {
@@ -453,6 +617,11 @@ export default function Positions() {
   const lr = toFloat(settings.liveRate) || 1;
   const reducedMotion = useReducedMotion();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const focusId = searchParams.get('focus');
+  // Panneau détail (read-only) : on stocke l'id, la ligne live est
+  // re-dérivée depuis `positions` (auto-close si la position disparaît).
+  const [detailId, setDetailId] = useState(null);
   const [greeksMap, setGreeksMap] = useState(new Map());
   const [lastGreeksUpdate, setLastGreeksUpdate] = useState(null);
   // `now` lives in state so the relative age label can be computed during
@@ -589,6 +758,9 @@ export default function Positions() {
   }
 
   // ─── Branch C : open positions → KPI + DataTable ──────────
+  const detailRow =
+    detailId != null ? positions.find((p) => p.pos.id === detailId) || null : null;
+
   const columns = [
     {
       key: 'tk',
@@ -928,11 +1100,28 @@ export default function Positions() {
           defaultSort={{ key: 'pnlUsd', dir: 'desc' }}
           enableSearch
           mobileCardRender={mobileCardRender}
-          onRowClick={undefined /* future: open detail panel */}
+          onRowClick={(row) => setDetailId(row.pos.id)}
+          getRowId={(row) => row.pos.id}
+          focusedRowId={focusId}
           emptyTitle="Aucune position"
           emptyMessage="Importe des données Flex ou ajoute un trade manuel."
         />
       </motion.div>
+
+      <Modal
+        open={!!detailRow}
+        onClose={() => setDetailId(null)}
+        title={detailRow ? `Détail — ${detailRow.pos.tk}` : ''}
+      >
+        {detailRow && (
+          <PositionDetailBody
+            row={detailRow}
+            greeks={greeksMap.get(detailRow.pos.id)}
+            posAlerts={getPositionAlerts(detailRow.pos.id, alerts)}
+            navigate={navigate}
+          />
+        )}
+      </Modal>
     </motion.div>
   );
 }

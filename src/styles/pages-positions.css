@@ -148,6 +148,101 @@
 .positions-v3 .v3-table__row:hover {
   background: var(--depth-focus);
 }
+/* U4 — ligne ciblée par ?focus= (deep-link Premarket → Positions).
+   Surlignage non destructif, prioritaire sur hover/tone : fond amber doux
+   + filet accent à gauche. Tokens canoniques uniquement. */
+.positions-v3 .v3-table__row--focus,
+.positions-v3 .v3-table__row--focus:hover {
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.v3-table-card--focus {
+  box-shadow:
+    inset 3px 0 0 var(--accent),
+    0 0 0 1px var(--accent-soft);
+}
+
+/* U4 — panneau détail position (read-only), rendu dans Modal v3 */
+.position-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.position-detail__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  color: var(--ink-soft);
+}
+.position-detail__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.position-detail__section-title {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  font-weight: var(--fw-semibold);
+}
+.position-detail__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-5);
+}
+.position-detail__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.position-detail__label {
+  font-size: 11px;
+  color: var(--ink-mute);
+}
+.position-detail__value {
+  font-size: 14px;
+  color: var(--ink-pure);
+}
+.position-detail__alerts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.position-detail__alert {
+  font-size: 12px;
+  color: var(--ink-soft);
+  padding: var(--space-2) var(--space-3);
+  border-left: 2px solid var(--line-emphasis);
+  background: var(--depth-base);
+  border-radius: var(--qc-radius-sm);
+}
+.position-detail__alert[data-tone='loss'] {
+  border-left-color: var(--pnl-down);
+}
+.position-detail__alert[data-tone='warn'] {
+  border-left-color: var(--accent);
+}
+.position-detail__alert[data-tone='profit'] {
+  border-left-color: var(--pnl-up);
+}
+.position-detail__nav {
+  margin-top: var(--space-2);
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.position-detail__nav:hover {
+  text-decoration: underline;
+}
 .positions-v3 .v3-table-toolbar__search {
   background: var(--depth-raised);
   border: 1px solid var(--line-hairline);

@@ -3,7 +3,7 @@
 // Virtualization is enabled automatically when data.length > 50.
 // mobileCardRender: below 768px rows render as stacked cards.
 
-import { useState, useMemo, useRef, useId } from 'react';
+import { useState, useMemo, useRef, useEffect, useId } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -45,6 +45,8 @@ export default function DataTable({
   enableExport, // (rows: T[]) => void
   mobileCardRender, // (row: T) => ReactNode
   containerClassName,
+  getRowId, // (row: T) => string|number — id stable pour cibler une ligne (focus/scroll)
+  focusedRowId, // quand défini, la ligne correspondante reçoit .--focus + scrollIntoView
 }) {
   const isMobile = useMediaQuery('(max-width: 767px)');
   const id = useId();
@@ -98,6 +100,23 @@ export default function DataTable({
     overscan: 12,
     enabled: useVirtual,
   });
+
+  // ── Focus row : scroll la ligne ciblée (deep-link ?focus=) dans la vue.
+  // Recherche par [data-row-id] dans le wrap monté ; no-op silencieux si la
+  // ligne n'existe pas / est virtualisée hors du DOM (aucun throw).
+  const wrapRef = useRef(null);
+  useEffect(() => {
+    if (focusedRowId == null || focusedRowId === '') return;
+    const root = wrapRef.current;
+    if (!root) return;
+    const nodes = root.querySelectorAll('[data-row-id]');
+    for (const n of nodes) {
+      if (n.getAttribute('data-row-id') === String(focusedRowId)) {
+        n.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        break;
+      }
+    }
+  }, [focusedRowId, data]);
 
   // ── Toolbar ─────────────────────────────────────────────────
   const toolbar = (enableSearch || enableExport) && (
@@ -167,7 +186,7 @@ export default function DataTable({
   if (isMobile && mobileCardRender) {
     const filteredRows = rows.map((r) => r.original);
     return (
-      <div className={['v3-table-wrap', containerClassName].filter(Boolean).join(' ')}>
+      <div ref={wrapRef} className={['v3-table-wrap', containerClassName].filter(Boolean).join(' ')}>
         {toolbar}
         <div className="v3-table-cards">
           {filteredRows.length === 0 ? (
@@ -178,17 +197,23 @@ export default function DataTable({
               description={emptyMessage}
             />
           ) : (
-            filteredRows.map((row, i) => (
-              <GlassCard
-                key={row.id || `${id}-${i}`}
-                variant="subtle"
-                hover={!!onRowClick}
-                onClick={onRowClick ? () => onRowClick(row) : undefined}
-                className="v3-table-card"
-              >
-                {mobileCardRender(row)}
-              </GlassCard>
-            ))
+            filteredRows.map((row, i) => {
+              const rid = getRowId ? getRowId(row) : undefined;
+              const isFocused =
+                rid != null && focusedRowId != null && String(rid) === String(focusedRowId);
+              return (
+                <GlassCard
+                  key={row.id || `${id}-${i}`}
+                  variant="subtle"
+                  hover={!!onRowClick}
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  className={isFocused ? 'v3-table-card v3-table-card--focus' : 'v3-table-card'}
+                  data-row-id={rid != null ? String(rid) : undefined}
+                >
+                  {mobileCardRender(row)}
+                </GlassCard>
+              );
+            })
           )}
         </div>
       </div>
@@ -245,9 +270,13 @@ export default function DataTable({
     const rowData = row.original;
     const pnl = rowData.pnlUsd ?? rowData.pnl ?? 0;
     const tone = pnl > 0 ? 'profit' : pnl < 0 ? 'loss' : 'neutral';
+    const rid = getRowId ? getRowId(rowData) : undefined;
+    const isFocused =
+      rid != null && focusedRowId != null && String(rid) === String(focusedRowId);
     return (
       <tr
         key={row.id}
+        data-row-id={rid != null ? String(rid) : undefined}
         onClick={onRowClick ? () => onRowClick(rowData) : undefined}
         onKeyDown={
           onRowClick
@@ -262,7 +291,7 @@ export default function DataTable({
         tabIndex={onRowClick ? 0 : undefined}
         data-tone={tone}
         data-clickable={onRowClick ? 'true' : undefined}
-        className="v3-table__row"
+        className={isFocused ? 'v3-table__row v3-table__row--focus' : 'v3-table__row'}
         style={{ height: rowHeight, lineHeight: `${rowHeight}px` }}
       >
         {row.getVisibleCells().map((cell) => {
@@ -285,7 +314,7 @@ export default function DataTable({
   if (useVirtual) {
     const virtualRows = virtualizer.getVirtualItems();
     return (
-      <div className={['v3-table-wrap', containerClassName].filter(Boolean).join(' ')}>
+      <div ref={wrapRef} className={['v3-table-wrap', containerClassName].filter(Boolean).join(' ')}>
         {toolbar}
         <div
           ref={parentRef}
@@ -322,7 +351,7 @@ export default function DataTable({
   }
 
   return (
-    <div className={['v3-table-wrap', containerClassName].filter(Boolean).join(' ')}>
+    <div ref={wrapRef} className={['v3-table-wrap', containerClassName].filter(Boolean).join(' ')}>
       {toolbar}
       <div className="v3-table-scroller" style={{ maxHeight, overflowY: 'auto' }}>
         <table className="v3-table">
