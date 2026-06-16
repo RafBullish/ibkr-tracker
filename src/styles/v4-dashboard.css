@@ -2178,6 +2178,50 @@
   border-color: var(--qc-border-strong);
 }
 
+/* U6 — input d'ajout inline (header) + bouton suppression par ligne */
+.watchlist__add {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.watchlist__add-input {
+  width: 64px;
+  height: 16px;
+  padding: 0 6px;
+  background: transparent;
+  border: 1px solid var(--qc-border-subtle);
+  border-radius: 3px;
+  color: var(--qc-text-primary);
+  font-family: var(--qc-font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.watchlist__add-input::placeholder {
+  color: var(--qc-text-tertiary);
+  text-transform: none;
+}
+.watchlist__add-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.watchlist__remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: var(--qc-text-tertiary);
+  cursor: pointer;
+}
+.watchlist__remove-btn:hover {
+  color: var(--qc-loss);
+  background: var(--qc-border-subtle);
+}
+
 .watchlist__table,
 .earnings-cal__table,
 .iv-movers__table {

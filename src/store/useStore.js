@@ -21,6 +21,7 @@ const STORAGE_KEYS = {
   closedTrades: 'ibkr_u_c',
   cashFlows: 'ibkr_u_f',
   journalEntries: 'ibkr_u_j',
+  watchlist: 'ibkr_u_w',
   settings: 'ibkr_u_s',
 };
 
@@ -42,6 +43,10 @@ function loadInitialState() {
   const closedTrades = safeParse(STORAGE_KEYS.closedTrades, []);
   const cashFlows = safeParse(STORAGE_KEYS.cashFlows, []);
   const journalEntries = safeParse(STORAGE_KEYS.journalEntries, []);
+  // U6 — Watchlist : simple liste de tickers de suivi (PAS des positions).
+  // Lecture défensive → [] par défaut ; absente des anciens stores sans rien
+  // casser, donc aucun bump de schéma nécessaire (slice additive isolée).
+  const watchlist = safeParse(STORAGE_KEYS.watchlist, []);
 
   const settings = {
     liveRate: 0.88,
@@ -84,7 +89,9 @@ function loadInitialState() {
   );
   if (fromVersion < CURRENT_SCHEMA_VERSION) setStoredVersion(CURRENT_SCHEMA_VERSION);
 
-  return migrated;
+  // watchlist attachée hors-migration : la chaîne de migrations ne connaît
+  // que les 5 slices canoniques ; on l'ajoute au retour (défaut []).
+  return { ...migrated, watchlist };
 }
 
 // ─── Zustand Store ──────────────────────────────────────────
@@ -97,6 +104,7 @@ const useZustandStore = create((set) => ({
   closedTrades: initial.closedTrades,
   cashFlows: initial.cashFlows,
   journalEntries: initial.journalEntries,
+  watchlist: initial.watchlist,
   settings: initial.settings,
 
   // Dispatch — backward-compatible with useReducer pattern
@@ -107,6 +115,7 @@ const useZustandStore = create((set) => ({
         closedTrades: zuState.closedTrades,
         cashFlows: zuState.cashFlows,
         journalEntries: zuState.journalEntries,
+        watchlist: zuState.watchlist,
         settings: zuState.settings,
       };
       const nextState = applyAction(currentState, action);
@@ -127,6 +136,7 @@ let prevSnapshot = {
   c: initial.closedTrades,
   f: initial.cashFlows,
   j: initial.journalEntries,
+  w: initial.watchlist,
   s: initial.settings,
 };
 
@@ -174,6 +184,7 @@ function persistData(zuState) {
     localStorage.setItem(STORAGE_KEYS.closedTrades, JSON.stringify(zuState.closedTrades));
     localStorage.setItem(STORAGE_KEYS.cashFlows, JSON.stringify(zuState.cashFlows));
     localStorage.setItem(STORAGE_KEYS.journalEntries, JSON.stringify(zuState.journalEntries));
+    localStorage.setItem(STORAGE_KEYS.watchlist, JSON.stringify(zuState.watchlist));
   } catch {
     console.warn('Storage full — data not persisted');
   }
@@ -196,12 +207,14 @@ useZustandStore.subscribe((zuState) => {
     prevSnapshot.o !== zuState.openPositions ||
     prevSnapshot.c !== zuState.closedTrades ||
     prevSnapshot.f !== zuState.cashFlows ||
-    prevSnapshot.j !== zuState.journalEntries;
+    prevSnapshot.j !== zuState.journalEntries ||
+    prevSnapshot.w !== zuState.watchlist;
   if (!dataChanged) return;
   prevSnapshot.o = zuState.openPositions;
   prevSnapshot.c = zuState.closedTrades;
   prevSnapshot.f = zuState.cashFlows;
   prevSnapshot.j = zuState.journalEntries;
+  prevSnapshot.w = zuState.watchlist;
 
   clearTimeout(dataTimer);
   dataTimer = setTimeout(() => persistData(zuState), DEBOUNCE.DATA_PERSIST_MS);
@@ -214,4 +227,5 @@ export const useOpenPositions = () => useZustandStore((s) => s.openPositions);
 export const useClosedTrades = () => useZustandStore((s) => s.closedTrades);
 export const useCashFlows = () => useZustandStore((s) => s.cashFlows);
 export const useJournalEntries = () => useZustandStore((s) => s.journalEntries);
+export const useWatchlistTickers = () => useZustandStore((s) => s.watchlist);
 export const useDispatch = () => useZustandStore((s) => s.dispatch);

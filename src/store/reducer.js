@@ -248,6 +248,23 @@ export function applyAction(state, action) {
         journalEntries: state.journalEntries.filter((j) => j.id !== action.payload),
       };
 
+    case 'ADD_TICKER': {
+      // U6 — Watchlist : ajoute un ticker de suivi. Normalisé majuscules,
+      // trim, dédup, vide ignoré. Ce n'est PAS une position de portefeuille.
+      const raw = typeof action.payload === 'string' ? action.payload : '';
+      const tk = raw.trim().toUpperCase();
+      if (!tk) return state;
+      const list = Array.isArray(state.watchlist) ? state.watchlist : [];
+      if (list.includes(tk)) return state;
+      return { ...state, watchlist: [...list, tk] };
+    }
+
+    case 'REMOVE_TICKER': {
+      const tk = typeof action.payload === 'string' ? action.payload.trim().toUpperCase() : '';
+      const list = Array.isArray(state.watchlist) ? state.watchlist : [];
+      return { ...state, watchlist: list.filter((t) => t !== tk) };
+    }
+
     case 'IMPORT_DATA': {
       const data = action.payload;
       if (!data || typeof data !== 'object') return state;
@@ -321,6 +338,9 @@ export function applyAction(state, action) {
         closedTrades: [],
         cashFlows: [],
         journalEntries: [],
+        // Watchlist = liste de suivi (préférence), pas de la donnée
+        // comptable → préservée comme les prefs FX / le tier Sniper.
+        watchlist: state.watchlist,
         settings: {
           liveRate: state.settings.liveRate,
           fxMode: state.settings.fxMode,
