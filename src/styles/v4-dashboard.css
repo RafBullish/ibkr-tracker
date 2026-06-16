@@ -2617,6 +2617,15 @@
   background: var(--row-hover);
 }
 
+/* U7 — feed dérivé : lignes cliquables (navigation vers la cible) */
+.alerts-feed__row--clickable {
+  cursor: pointer;
+}
+.alerts-feed__row--clickable:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
 .alerts-feed__time {
   font-size: 12px;
   color: var(--qc-text-tertiary);

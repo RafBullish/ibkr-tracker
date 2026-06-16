@@ -1,74 +1,71 @@
 // ═══════════════════════════════════════════════════════════════
-//  ALERTS FEED v4 brick 8 — module col 7-12 row 4 (200 px)
+//  ALERTS FEED — module Dashboard (row 5, col 9-12)
 //
-//  Log stream chronologique style IDE. Format ligne :
-//    HH:MM:SS │ LEVEL │ MESSAGE
-//
-//  Convention : NEWEST AT TOP (Linux/IDE convention, lecture
-//  recent-first). Pas de auto-scroll mécanisé — la fixture est
-//  statique. Live stream sera traité en brick alerts engine.
-//
-//  Pause toggle dans le header : preview console.log uniquement.
-//  Hovering pause sera ré-activé quand le stream live arrive.
+//  U7 : vue agrégée des signaux d'attention dérivés de l'état courant
+//  (cf. useAlertsFeed). Chaque entrée = { id, severity, message,
+//  ticker?, target } ; clic → navigation pure vers la cible (les
+//  alertes de position pointent vers /trading/positions?focus={id} →
+//  surlignage U4). Pas d'horodatage : ces signaux sont dérivés de
+//  l'état présent, pas d'événements datés. Empty state POSITIF.
 // ═══════════════════════════════════════════════════════════════
 
-import { useState } from 'react';
-import { formatTimestamp, classifyLevel } from '../../utils/alertsFeed';
+import { useNavigate } from 'react-router-dom';
+
+const SEV_LABEL = { critical: 'URGENT', warning: 'ALERTE' };
+const SEV_TONE = { critical: 'loss', warning: 'warn' };
 
 export default function AlertsFeed({ data, area = 'alert' }) {
-  const [paused, setPaused] = useState(false);
+  const navigate = useNavigate();
   const entries = Array.isArray(data) ? data : [];
   const isEmpty = entries.length === 0;
-
-  const togglePause = () => {
-    const next = !paused;
-    setPaused(next);
-    console.log('[AlertsFeed] pause toggle (preview):', next);
-  };
 
   return (
     <section className="module alerts-feed" style={{ gridArea: area }}>
       <header className="module-header">
-        <span className="module-header__title">Alerts Feed · Live</span>
-        <button
-          type="button"
-          className="alerts-feed__pause-btn"
-          onClick={togglePause}
-          aria-pressed={paused}
-          title={paused ? 'Reprendre le stream' : 'Mettre en pause'}
-        >
-          {paused ? '▶ Resume' : '⏸ Pause'}
-        </button>
+        <span className="module-header__title">Alerts Feed</span>
+        {!isEmpty && (
+          <span className="module-header__hint">
+            {entries.length} active{entries.length > 1 ? 's' : ''}
+          </span>
+        )}
       </header>
       <div className="module-body alerts-feed__body">
         {isEmpty ? (
           <div className="alerts-feed__empty module-empty">
-            <span className="module-empty__title">Aucune alerte</span>
+            <span className="module-empty__title">Aucune alerte active</span>
             <span className="module-empty__sub">
-              Les gates Sniper (DTE / SL / EARN) et conditions IV s&apos;affichent ici dès
-              qu&apos;elles déclenchent sur tes positions.
+              Tout est sous contrôle — aucune position ne franchit de seuil (DTE / SL / time-stop)
+              et la limite de perte du jour n&apos;est pas atteinte.
             </span>
           </div>
         ) : (
-          <ul className="alerts-feed__list" aria-label="Alerts log">
-            {entries.map((e, i) => {
-              const level = classifyLevel(e.level);
-              return (
-                <li key={`${e.ts}-${i}`} className="alerts-feed__row">
-                  <span className="alerts-feed__time">{formatTimestamp(e.ts)}</span>
-                  <span className="alerts-feed__sep" aria-hidden="true">
-                    │
-                  </span>
-                  <span className={`alerts-feed__level alerts-feed__level--${level.tone}`}>
-                    {level.label}
-                  </span>
-                  <span className="alerts-feed__sep" aria-hidden="true">
-                    │
-                  </span>
-                  <span className="alerts-feed__msg">{e.msg}</span>
-                </li>
-              );
-            })}
+          <ul className="alerts-feed__list" aria-label="Alertes actives">
+            {entries.map((e) => (
+              <li
+                key={e.id}
+                className="alerts-feed__row alerts-feed__row--clickable"
+                onClick={() => navigate(e.target)}
+                onKeyDown={(ev) => {
+                  if (ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault();
+                    navigate(e.target);
+                  }
+                }}
+                tabIndex={0}
+                role="link"
+                title={e.message}
+              >
+                <span
+                  className={`alerts-feed__level alerts-feed__level--${SEV_TONE[e.severity] || 'mute'}`}
+                >
+                  {SEV_LABEL[e.severity] || e.severity}
+                </span>
+                <span className="alerts-feed__sep" aria-hidden="true">
+                  │
+                </span>
+                <span className="alerts-feed__msg">{e.message}</span>
+              </li>
+            ))}
           </ul>
         )}
       </div>
