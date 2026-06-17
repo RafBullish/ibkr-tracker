@@ -19,7 +19,6 @@ import { tradePnlUsd } from '../../utils/calculations';
 import { toFloat } from '../../utils/math';
 import useDailyKillSwitch from '../../hooks/useDailyKillSwitch';
 
-import GlassCard from '../../components/ui/GlassCard';
 import StatusBadge from '../../components/ui/StatusBadge';
 import InfoTooltip from '../../components/ui/InfoTooltip';
 import EmptyState from '../../components/ui/EmptyState';
@@ -293,7 +292,7 @@ function EntryCard({ entry, onDelete }) {
   const moodSpec = MOODS.find((m) => m.key === entry.mood) || MOODS[3];
   const mistakeSpec = MISTAKE_TYPES.find((m) => m.key === entry.mistake);
   return (
-    <GlassCard hover className="journal-v3__entry">
+    <div className="journal-v3__entry">
       <header className="journal-v3__entry-head">
         <div>
           <span className="mono journal-v3__entry-ticker">{entry.ticker || '—'}</span>
@@ -350,7 +349,7 @@ function EntryCard({ entry, onDelete }) {
         </div>
       )}
       {entry.note && <p className="journal-v3__entry-note">{entry.note}</p>}
-    </GlassCard>
+    </div>
   );
 }
 
@@ -426,7 +425,7 @@ export default function Journal() {
       {/* ── Daily Kill Switch warning (P6-26) ── */}
       {killSwitch.active && (
         <motion.div variants={TILE_VARIANTS}>
-          <GlassCard hover={false} className="journal-v3__killswitch" role="alert">
+          <div className="journal-v3__killswitch" role="alert">
             <div className="journal-v3__killswitch-icon" aria-hidden="true">
               <ShieldAlert size={18} />
             </div>
@@ -452,20 +451,20 @@ export default function Journal() {
             >
               Désactiver manuellement
             </button>
-          </GlassCard>
+          </div>
         </motion.div>
       )}
 
       {/* ── Tilt Meter ── */}
       <motion.div variants={TILE_VARIANTS}>
-        <GlassCard hover={false} style={{ padding: 'var(--space-5)' }}>
+        <div className="journal-v3__panel">
           <TiltMeter score={tiltScore} dailyKillSwitchActive={killSwitch.active} />
-        </GlassCard>
+        </div>
       </motion.div>
 
       {entries.length === 0 ? (
         <motion.div variants={TILE_VARIANTS}>
-          <GlassCard variant="subtle" style={{ padding: 'var(--space-8)' }}>
+          <div className="journal-v3__panel journal-v3__panel--subtle">
             <EmptyState
               icon={Brain}
               title="Aucune entrée dans le journal"
@@ -474,7 +473,7 @@ export default function Journal() {
                 { label: 'Première entrée', onClick: () => setAddOpen(true), variant: 'primary' },
               ]}
             />
-          </GlassCard>
+          </div>
         </motion.div>
       ) : (
         <>
@@ -507,13 +506,13 @@ export default function Journal() {
           {/* ── Entries list ── */}
           <motion.div variants={TILE_VARIANTS} className="journal-v3__entries">
             {filtered.length === 0 ? (
-              <GlassCard variant="subtle" style={{ padding: 'var(--space-6)' }}>
+              <div className="journal-v3__panel journal-v3__panel--subtle">
                 <EmptyState
                   size="compact"
                   title="Aucune entrée dans ce filtre"
                   description="Élargis le filtre ou ajoute une entrée."
                 />
-              </GlassCard>
+              </div>
             ) : (
               filtered.map((e) => <EntryCard key={e.id} entry={e} onDelete={handleDelete} />)
             )}
@@ -521,8 +520,8 @@ export default function Journal() {
 
           {/* ── Edge Leak Audit ── */}
           <motion.div variants={TILE_VARIANTS}>
-            <GlassCard hover={false} style={{ padding: 'var(--space-5)' }}>
-              <div className="dashboard-v3__panel-head">
+            <div className="journal-v3__panel">
+              <div className="journal-v3__panel-head">
                 <TrendingDown
                   size={14}
                   aria-hidden="true"
@@ -584,7 +583,7 @@ export default function Journal() {
                   })}
                 </div>
               )}
-            </GlassCard>
+            </div>
           </motion.div>
         </>
       )}

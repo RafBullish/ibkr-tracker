@@ -1,8 +1,9 @@
 // ═══════════════════════════════════════════════════════════════
 //  RISK METRICS ROW v3.0 « Midnight Terminal »
 //
-//  Six compact MetricCards in a row (desktop) / 2×3 grid (mobile),
-//  each with a mandatory InfoTooltip per brief §13.6.
+//  Six compact flat KPI tiles in a row (desktop) / 2×3 grid (mobile),
+//  each with a mandatory InfoTooltip per brief §13.6. Palette canonique
+//  plate (cf. History/Positions/Greeks) — plus de <MetricCard>.
 //
 //  Metrics (left-to-right):
 //    Expectancy · Sortino · Calmar · Sharpe · Profit Factor · Win Rate
@@ -15,8 +16,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { forwardRef } from 'react';
-import { Zap, Shield, BarChart3, TrendingUp, Target, Percent } from 'lucide-react';
-import MetricCard from '../ui/MetricCard';
+import InfoTooltip from '../ui/InfoTooltip';
 
 const TOOLTIPS = {
   expectancy: {
@@ -86,6 +86,47 @@ function displayValue(metric, v) {
   return v;
 }
 
+// profit/loss/neutral (sémantique de seuil métier) → classe de tonalité
+// canonique up/down/neutral.
+const TONE_CLASS = { profit: 'up', loss: 'down', neutral: 'neutral' };
+
+// Formatage Intl identique à celui de l'ancien <MetricCard> (mêmes
+// locales/décimales → valeurs affichées inchangées).
+function fmtMetric(value, format = 'number') {
+  if (value == null || Number.isNaN(value)) return '—';
+  switch (format) {
+    case 'percent':
+      return (
+        new Intl.NumberFormat('de-CH', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(value) + '%'
+      );
+    case 'r-multiple':
+      return (
+        new Intl.NumberFormat('de-CH', {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 2,
+        }).format(value) + 'R'
+      );
+    case 'number':
+    default:
+      return new Intl.NumberFormat('de-CH', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }).format(value);
+  }
+}
+
+const METRIC_ROWS = [
+  { key: 'expectancy', label: 'Expectancy', format: 'r-multiple' },
+  { key: 'sortino', label: 'Sortino', format: 'number' },
+  { key: 'calmar', label: 'Calmar', format: 'number' },
+  { key: 'sharpe', label: 'Sharpe', format: 'number' },
+  { key: 'profitFactor', label: 'Profit Factor', format: 'number' },
+  { key: 'winRate', label: 'Win Rate', format: 'percent' },
+];
+
 /**
  * @param {object} props
  * @param {object} props.metrics
@@ -98,67 +139,28 @@ function displayValue(metric, v) {
  * @param {string} [props.className]
  */
 const RiskMetricsRow = forwardRef(function RiskMetricsRow({ metrics = {}, className }, ref) {
-  const { expectancy, sortino, calmar, sharpe, profitFactor, winRate } = metrics;
-
+  // A2b — `profitFactor` peut être null au stockage (grossLoss=0 ou
+  // lossCount<3). Le cast legacy 999.99 est retiré. displayValue gère
+  // null → "—".
   return (
     <div ref={ref} className={['risk-metrics-row', className].filter(Boolean).join(' ')}>
-      <MetricCard
-        label="Expectancy"
-        value={displayValue('expectancy', expectancy)}
-        format="r-multiple"
-        size="compact"
-        semantic={toneFor('expectancy', expectancy)}
-        icon={Zap}
-        tooltip={TOOLTIPS.expectancy}
-      />
-      <MetricCard
-        label="Sortino"
-        value={displayValue('sortino', sortino)}
-        format="number"
-        size="compact"
-        semantic={toneFor('sortino', sortino)}
-        icon={Shield}
-        tooltip={TOOLTIPS.sortino}
-      />
-      <MetricCard
-        label="Calmar"
-        value={displayValue('calmar', calmar)}
-        format="number"
-        size="compact"
-        semantic={toneFor('calmar', calmar)}
-        icon={BarChart3}
-        tooltip={TOOLTIPS.calmar}
-      />
-      <MetricCard
-        label="Sharpe"
-        value={displayValue('sharpe', sharpe)}
-        format="number"
-        size="compact"
-        semantic={toneFor('sharpe', sharpe)}
-        icon={TrendingUp}
-        tooltip={TOOLTIPS.sharpe}
-      />
-      {/* A2b — `profitFactor` is now null at storage when grossLoss=0 or
-          lossCount<3. The legacy 999.99 cast is retired. displayValue
-          handles null → "—". */}
-      <MetricCard
-        label="Profit Factor"
-        value={displayValue('profitFactor', profitFactor)}
-        format="number"
-        size="compact"
-        semantic={toneFor('profitFactor', profitFactor)}
-        icon={Target}
-        tooltip={TOOLTIPS.profitFactor}
-      />
-      <MetricCard
-        label="Win Rate"
-        value={displayValue('winRate', winRate)}
-        format="percent"
-        size="compact"
-        semantic={toneFor('winRate', winRate)}
-        icon={Percent}
-        tooltip={TOOLTIPS.winRate}
-      />
+      {METRIC_ROWS.map(({ key, label, format }) => {
+        const raw = metrics[key];
+        const tone = TONE_CLASS[toneFor(key, raw)];
+        return (
+          <div key={key} className="risk-metrics-row__tile">
+            <span className="risk-metrics-row__tile-label">
+              {label}
+              <InfoTooltip content={TOOLTIPS[key]} size={12} />
+            </span>
+            <span
+              className={`risk-metrics-row__tile-value risk-metrics-row__tile-value--${tone}`}
+            >
+              {fmtMetric(displayValue(key, raw), format)}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 });

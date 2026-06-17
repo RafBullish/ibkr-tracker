@@ -10,16 +10,7 @@
 import { lazy, Suspense, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
-import {
-  BarChart3,
-  Target,
-  Shield,
-  TrendingUp,
-  Zap,
-  Percent,
-  Clock,
-  CalendarDays,
-} from 'lucide-react';
+import { BarChart3, Shield, Percent, CalendarDays } from 'lucide-react';
 import { useClosedTrades, useSettings } from '../../store/useStore';
 import { tradePnlUsd } from '../../utils/calculations';
 import { useTradingMetrics } from '../../hooks/useTradingMetrics';
@@ -30,8 +21,6 @@ import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
 import { holdingDays } from '../../utils/dates';
 import { toFloat } from '../../utils/math';
 
-import GlassCard from '../../components/ui/GlassCard';
-import MetricCard from '../../components/ui/MetricCard';
 import StatusBadge from '../../components/ui/StatusBadge';
 import InfoTooltip from '../../components/ui/InfoTooltip';
 import EmptyState from '../../components/ui/EmptyState';
@@ -88,6 +77,69 @@ function buildDayPnlMap(closedTrades, lr) {
     map[t.do] = (map[t.do] || 0) + pnl;
   }
   return map;
+}
+
+// ── Flat KPI tile (palette canonique — cf. History/Positions/Greeks) ──
+//  Remplace <MetricCard size="compact"> : surface plate, label uppercase
+//  ink-soft, valeur tabular-nums + tonalité sémantique --up/--down/--neutral.
+//  La règle métier (seuils) est passée par `tone` ; aucune sémantique
+//  inventée ici. fmtMetric reproduit à l'identique le formatage Intl de
+//  MetricCard (mêmes locales/décimales → valeurs inchangées).
+const TONE_CLASS = { profit: 'up', loss: 'down', neutral: 'neutral' };
+
+function fmtMetric(value, format = 'number', currency = 'USD') {
+  if (value == null || Number.isNaN(value)) return '—';
+  switch (format) {
+    case 'currency':
+      if ((currency || 'USD') === 'USD') {
+        const f = new Intl.NumberFormat('de-CH', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+        return (value < 0 ? '-' : '') + '$' + f.format(Math.abs(value));
+      }
+      return new Intl.NumberFormat('de-CH', {
+        style: 'currency',
+        currency,
+        currencyDisplay: 'code',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value);
+    case 'percent':
+      return (
+        new Intl.NumberFormat('de-CH', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(value) + '%'
+      );
+    case 'r-multiple':
+      return (
+        new Intl.NumberFormat('de-CH', {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 2,
+        }).format(value) + 'R'
+      );
+    case 'number':
+    default:
+      return new Intl.NumberFormat('de-CH', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }).format(value);
+  }
+}
+
+function KpiTile({ label, tooltip, value, tone = 'neutral' }) {
+  return (
+    <div className="analytics-v3__kpi-tile">
+      <span className="analytics-v3__kpi-tile-label">
+        {label}
+        {tooltip && <InfoTooltip content={tooltip} size={12} />}
+      </span>
+      <span className={`analytics-v3__kpi-tile-value analytics-v3__kpi-tile-value--${tone}`}>
+        {value}
+      </span>
+    </div>
+  );
 }
 
 function HourChart({ data }) {
@@ -239,7 +291,10 @@ export default function Analytics() {
   if (closedTrades.length === 0) {
     return (
       <div className="page-container">
-        <GlassCard variant="subtle" style={{ maxWidth: 640, margin: '60px auto' }}>
+        <div
+          className="analytics-v3__panel analytics-v3__panel--subtle"
+          style={{ maxWidth: 640, margin: '60px auto' }}
+        >
           <EmptyState
             icon={BarChart3}
             title="Aucune analyse disponible"
@@ -257,7 +312,7 @@ export default function Analytics() {
               },
             ]}
           />
-        </GlassCard>
+        </div>
       </div>
     );
   }
@@ -284,8 +339,8 @@ export default function Analytics() {
 
       {/* ── Row 1 : Risk-Adjusted Performance (6 compact KPIs) ── */}
       <motion.div variants={TILE_VARIANTS}>
-        <GlassCard hover={false} style={{ padding: 'var(--space-5)' }}>
-          <div className="dashboard-v3__panel-head">
+        <div className="analytics-v3__panel">
+          <div className="analytics-v3__panel-head">
             <Shield size={14} aria-hidden="true" style={{ color: 'var(--text-tertiary)' }} />
             <span className="uppercase-label">Performance risque-ajustée</span>
             <InfoTooltip
@@ -310,67 +365,61 @@ export default function Analytics() {
               winRate: metrics?.winRate ?? 0,
             }}
           />
-        </GlassCard>
+        </div>
       </motion.div>
 
       {/* ── Row 2 : Secondary KPIs (Omega, Kelly, Avg Hold, Max DD) ── */}
       <motion.div variants={TILE_VARIANTS} className="analytics-v3__kpi-row">
-        <MetricCard
+        <KpiTile
           label="Omega"
-          value={metrics?.omega === Infinity ? 999 : metrics?.omega}
-          format="number"
-          size="compact"
-          icon={TrendingUp}
+          value={fmtMetric(metrics?.omega === Infinity ? 999 : metrics?.omega, 'number')}
           tooltip={{
             title: 'Omega Ratio',
             body: 'Σ gains / Σ |pertes|. >1 = rentable brut. 2 = chaque dollar perdu rapporte 2 dollars en gain.',
             formula: 'Σ gains / Σ |pertes|',
           }}
-          semantic={metrics?.omega > 1.5 ? 'profit' : metrics?.omega < 1 ? 'loss' : 'neutral'}
+          tone={
+            TONE_CLASS[metrics?.omega > 1.5 ? 'profit' : metrics?.omega < 1 ? 'loss' : 'neutral']
+          }
         />
-        <MetricCard
+        <KpiTile
           label="Kelly %"
-          value={metrics?.kellyPct}
-          format="percent"
-          size="compact"
-          icon={Zap}
+          value={fmtMetric(metrics?.kellyPct, 'percent')}
           tooltip={{
             title: 'Kelly Criterion',
             body: 'Part optimale du capital à risquer par trade pour maximiser le taux de croissance log. >20% = agressif, >50% = imprudent.',
             formula: 'winRate − (1-winRate) × (avgLoss/avgWin)',
           }}
-          semantic={metrics?.kellyPct > 25 ? 'profit' : metrics?.kellyPct < 0 ? 'loss' : 'neutral'}
+          tone={
+            TONE_CLASS[
+              metrics?.kellyPct > 25 ? 'profit' : metrics?.kellyPct < 0 ? 'loss' : 'neutral'
+            ]
+          }
         />
-        <MetricCard
+        <KpiTile
           label="Avg Hold"
-          value={avgHold}
-          format="number"
-          size="compact"
-          icon={Clock}
+          value={fmtMetric(avgHold, 'number')}
           tooltip={{
             title: 'Durée moyenne de détention',
             body: 'Nombre de jours moyen entre open et close. Indicateur de style (swing, position, day-trading).',
           }}
+          tone="neutral"
         />
-        <MetricCard
+        <KpiTile
           label="Max Drawdown"
-          value={metrics?.maxDrawdown}
-          format="currency"
-          currency="USD"
-          size="compact"
-          icon={Target}
-          semantic="loss"
+          value={fmtMetric(metrics?.maxDrawdown, 'currency', 'USD')}
           tooltip={{
             title: 'Max Drawdown',
             body: "Pire perte cumulative historique depuis un pic d'équité.",
           }}
+          tone="down"
         />
       </motion.div>
 
       {/* ── Row 3 : Hour-of-Day + Day-of-Week ── */}
       <motion.div variants={TILE_VARIANTS} className="analytics-v3__dual-row">
-        <GlassCard hover={false} style={{ padding: 'var(--space-5)' }}>
-          <div className="dashboard-v3__panel-head">
+        <div className="analytics-v3__panel">
+          <div className="analytics-v3__panel-head">
             <span className="uppercase-label">P&amp;L par heure</span>
             <InfoTooltip
               content={{
@@ -381,9 +430,9 @@ export default function Analytics() {
             />
           </div>
           <HourChart data={hourData} />
-        </GlassCard>
-        <GlassCard hover={false} style={{ padding: 'var(--space-5)' }}>
-          <div className="dashboard-v3__panel-head">
+        </div>
+        <div className="analytics-v3__panel">
+          <div className="analytics-v3__panel-head">
             <span className="uppercase-label">P&amp;L par jour de la semaine</span>
             <InfoTooltip
               content={{
@@ -394,20 +443,20 @@ export default function Analytics() {
             />
           </div>
           <DayChart data={dayData} />
-        </GlassCard>
+        </div>
       </motion.div>
 
       {/* ── Row 4 : Win/Loss breakdown + Strategy ── */}
       <motion.div variants={TILE_VARIANTS} className="analytics-v3__dual-row">
-        <GlassCard hover={false} style={{ padding: 'var(--space-5)' }}>
-          <div className="dashboard-v3__panel-head">
+        <div className="analytics-v3__panel">
+          <div className="analytics-v3__panel-head">
             <Percent size={14} aria-hidden="true" style={{ color: 'var(--text-tertiary)' }} />
             <span className="uppercase-label">Répartition gagnants / perdants</span>
           </div>
           <WinRateDonut winRate={metrics?.winRate ?? null} />
-        </GlassCard>
-        <GlassCard hover={false} style={{ padding: 'var(--space-5)' }}>
-          <div className="dashboard-v3__panel-head">
+        </div>
+        <div className="analytics-v3__panel">
+          <div className="analytics-v3__panel-head">
             <span className="uppercase-label">Breakdown par stratégie</span>
             <InfoTooltip
               content={{
@@ -420,13 +469,13 @@ export default function Analytics() {
           <Suspense fallback={<div style={{ height: 240 }} />}>
             <LazyStrategyBreakdown closedTrades={closedTrades} liveRate={lr} />
           </Suspense>
-        </GlassCard>
+        </div>
       </motion.div>
 
       {/* ── Row 5 : Year P&L heatmap via PnLCalendarHeatmap (retire @uiw) ── */}
       <motion.div variants={TILE_VARIANTS}>
-        <GlassCard hover={false} style={{ padding: 'var(--space-5)' }}>
-          <div className="dashboard-v3__panel-head">
+        <div className="analytics-v3__panel">
+          <div className="analytics-v3__panel-head">
             <CalendarDays size={14} aria-hidden="true" style={{ color: 'var(--text-tertiary)' }} />
             <span className="uppercase-label">Heatmap P&amp;L annuelle</span>
             <InfoTooltip
@@ -438,7 +487,7 @@ export default function Analytics() {
             />
           </div>
           <PnLCalendarHeatmap dayPnlMap={dayMap} mode="year" currency="USD" />
-        </GlassCard>
+        </div>
       </motion.div>
     </motion.div>
   );

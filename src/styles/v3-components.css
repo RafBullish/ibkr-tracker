@@ -3821,6 +3821,107 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   FLAT CHROME (U9) — palette canonique plate, namespacée par page.
+   Copie locale du recipe canonique (cf. .history-page__panel /
+   .history-page__kpi-tile) : surface --depth-raised, filet
+   --line-hairline, radius 2px, ni ombre ni backdrop-filter. Remplace
+   <GlassCard> / <MetricCard> / .dashboard-v3__panel-head sur Analytics,
+   Journal et RiskMetricsRow. Aucun couplage CSS inter-pages.
+   ═══════════════════════════════════════════════════════════════ */
+.analytics-v3__panel,
+.journal-v3__panel {
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  padding: var(--qc-space-5);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Variante empty branch : surface plus discrète (depth-base) + padding
+   généreux, comme .history-page__panel--subtle (recipe canonique). */
+.analytics-v3__panel--subtle,
+.journal-v3__panel--subtle {
+  background: var(--depth-base);
+  padding: var(--qc-space-6);
+}
+
+.analytics-v3__panel-head,
+.journal-v3__panel-head {
+  display: flex;
+  align-items: center;
+  gap: var(--qc-space-2);
+  margin-bottom: var(--qc-space-3);
+  padding-bottom: var(--qc-space-3);
+  border-bottom: 1px solid var(--line-hairline);
+}
+
+.analytics-v3__panel-head .uppercase-label,
+.journal-v3__panel-head .uppercase-label {
+  color: var(--ink-soft);
+}
+
+/* Tuile KPI compacte plate (remplace <MetricCard size="compact">). */
+.analytics-v3__kpi-tile,
+.risk-metrics-row__tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--qc-space-1);
+  padding: var(--qc-space-3) var(--qc-space-4);
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  min-width: 0;
+}
+
+.analytics-v3__kpi-tile-label,
+.risk-metrics-row__tile-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-soft);
+  font-family: var(--type-mono);
+  font-size: var(--type-caption);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.analytics-v3__kpi-tile-value,
+.risk-metrics-row__tile-value {
+  color: var(--ink-pure);
+  font-family: var(--type-mono);
+  font-size: var(--type-display);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums slashed-zero;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.analytics-v3__kpi-tile-value--up,
+.risk-metrics-row__tile-value--up {
+  color: var(--pnl-up);
+}
+.analytics-v3__kpi-tile-value--down,
+.risk-metrics-row__tile-value--down {
+  color: var(--pnl-down);
+}
+.analytics-v3__kpi-tile-value--neutral,
+.risk-metrics-row__tile-value--neutral {
+  color: var(--ink-pure);
+}
+
+/* ═══════════════════════════════════════════════════════════════
    TILT METER
    ═══════════════════════════════════════════════════════════════ */
 .tilt-meter {
@@ -3994,6 +4095,8 @@
   align-items: center;
   gap: var(--qc-space-3);
   padding: var(--qc-space-4) var(--qc-space-5);
+  /* U9 : radius restauré (l'alerte le recevait avant de .glass-card). */
+  border-radius: var(--qc-radius-md);
   border: 1px solid var(--qc-loss);
   background: linear-gradient(135deg, color-mix(in srgb, var(--qc-loss) 10%, var(--glass-bg)) 0%, var(--glass-bg) 70%);
   box-shadow:
@@ -4052,6 +4155,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--qc-space-2);
+  /* U9 : surface plate canonique (l'entrée s'appuyait avant sur .glass-card). */
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
 }
 
 .journal-v3__entry-head {
