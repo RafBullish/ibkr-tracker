@@ -178,6 +178,30 @@ export function applyAction(state, action) {
         openPositions: state.openPositions.filter((p) => p.id !== action.payload),
       };
 
+    case 'UPDATE_POSITION': {
+      // U4-bis — Édition manuelle d'une position OUVERTE. Merge par id,
+      // restreint à une liste blanche de champs éditables sûrs (jamais
+      // `id`, le mark `pc`, ni aucun dérivé). Si `pi` ou `ct` change, on
+      // retire `lots` (provenance d'agrégation ADD_POSITION) : la saisie
+      // manuelle devient la vérité (un seul lot autoritaire), ce qui évite
+      // tout désync entre ct/pi top-level et les lots agrégés.
+      const { id, ...incoming } = action.payload || {};
+      if (!id) return state;
+      const EDITABLE = ['tk', 'ty', 'dir', 'st', 'ex', 'pi', 'ct', 'di'];
+      const patch = {};
+      for (const k of EDITABLE) {
+        if (incoming[k] !== undefined) patch[k] = incoming[k];
+      }
+      const stripLots = 'pi' in patch || 'ct' in patch;
+      const updated = state.openPositions.map((p) => {
+        if (p.id !== id) return p;
+        const next = { ...p, ...patch };
+        if (stripLots) delete next.lots;
+        return next;
+      });
+      return { ...state, openPositions: updated };
+    }
+
     case 'CLOSE_POSITION': {
       const { positionId, remainingPosition, closedTrade } = action.payload;
       let newOpen = state.openPositions.filter((p) => p.id !== positionId);

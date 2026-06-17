@@ -243,6 +243,40 @@
 .position-detail__nav:hover {
   text-decoration: underline;
 }
+
+/* U4-bis — actions de mutation (Éditer / Clôturer) + formulaires */
+.position-detail__actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+.position-detail__actions .pg-mock-btn {
+  flex: 1;
+}
+.position-detail__form-hint {
+  font-size: 11px;
+  color: var(--ink-mute);
+  margin: 0 0 var(--space-2);
+}
+.position-detail__form-error {
+  font-size: 12px;
+  color: var(--pnl-down);
+  margin: 0;
+}
+.position-detail__close-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--qc-radius-sm);
+  background: var(--depth-base);
+}
+.add-trade-form .pg-mock-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .positions-v3 .v3-table-toolbar__search {
   background: var(--depth-raised);
   border: 1px solid var(--line-hairline);

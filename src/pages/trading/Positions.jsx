@@ -40,8 +40,8 @@ import { calculateOpenPositionPnl, tradePnlUsd } from '../../utils/calculations'
 // Theta is now positive (decay encaissé) and Vega negative (short vol).
 import { aggregateGreeks } from '../../utils/greeks';
 import { formatUsd, formatPnlUsd } from '../../utils/format';
-import { daysToExpiration, holdingDays } from '../../utils/dates';
-import { toFloat, ensurePositive } from '../../utils/math';
+import { daysToExpiration, holdingDays, todayDateString } from '../../utils/dates';
+import { toFloat, ensurePositive, generateId } from '../../utils/math';
 import { getGreeksForAllPositions } from '../../utils/greeksApi';
 import { generateAlerts, getPositionAlerts } from '../../utils/alerts';
 import { effectiveSlDollar } from '../../utils/risk';
@@ -484,7 +484,7 @@ function PanelGreek({ label, value, ivEstimated, digits = 2 }) {
   );
 }
 
-function PositionDetailBody({ row, greeks, posAlerts, navigate }) {
+function PositionDetailBody({ row, greeks, posAlerts, navigate, onEdit, onCloseMode }) {
   const { pos, r, pctChg, isOpt, dte, costBasis, maxLoss } = row;
   const pnl = r.unrealizedPnlUsd;
   const pnlTone = pnl > 0 ? 'profit' : pnl < 0 ? 'loss' : 'neutral';
@@ -594,6 +594,17 @@ function PositionDetailBody({ row, greeks, posAlerts, navigate }) {
         )}
       </div>
 
+      {/* U4-bis — actions de mutation (via les formulaires Éditer /
+          Clôturer ; le dispatch passe par les actions reducer canoniques). */}
+      <div className="position-detail__actions">
+        <button type="button" className="pg-mock-btn" onClick={onEdit}>
+          Éditer
+        </button>
+        <button type="button" className="pg-mock-btn pg-mock-btn--primary" onClick={onCloseMode}>
+          Clôturer
+        </button>
+      </div>
+
       {/* Lien de navigation pure (aucune mutation d'état). */}
       <button
         type="button"
@@ -603,6 +614,241 @@ function PositionDetailBody({ row, greeks, posAlerts, navigate }) {
         Ouvrir la chaîne options <ArrowUpRight size={12} aria-hidden="true" />
       </button>
     </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ÉDITION (U4-bis) — corrige une position OUVERTE via UPDATE_POSITION.
+//  Champs sûrs uniquement ; validation pi/ct > 0, ticker requis. Aucune
+//  écriture directe dans le store — uniquement l'action reducer canonique.
+// ═══════════════════════════════════════════════════════════════
+function PositionEditForm({ row, onSave, onCancel }) {
+  const { pos } = row;
+  const isOpt = pos.as === 'Option';
+  const [tk, setTk] = useState(pos.tk || '');
+  const [ty, setTy] = useState(pos.ty || 'CALL');
+  const [dir, setDir] = useState(pos.dir || 'Long');
+  const [st, setSt] = useState(pos.st != null ? String(pos.st) : '');
+  const [ex, setEx] = useState(pos.ex || '');
+  const [pi, setPi] = useState(pos.pi != null ? String(pos.pi) : '');
+  const [ct, setCt] = useState(pos.ct != null ? String(pos.ct) : '');
+  const [di, setDi] = useState(pos.di || '');
+
+  const valid =
+    !!tk.trim() && toFloat(pi) > 0 && toFloat(ct) > 0 && (!isOpt || (toFloat(st) > 0 && !!ex));
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!valid) return;
+    const patch = { id: pos.id, tk: tk.trim().toUpperCase(), dir, pi, ct, di };
+    if (isOpt) {
+      patch.ty = ty;
+      patch.st = st;
+      patch.ex = ex;
+    }
+    onSave(patch);
+  };
+
+  return (
+    <form className="add-trade-form" onSubmit={handleSubmit}>
+      <p className="position-detail__form-hint">
+        Correction manuelle de la position ouverte (Greeks et mark se recalculent).
+      </p>
+      <div className="add-trade-form__row">
+        <label>
+          <span className="uppercase-label">Ticker</span>
+          <input value={tk} onChange={(e) => setTk(e.target.value)} />
+        </label>
+        <label>
+          <span className="uppercase-label">Direction</span>
+          <div className="add-trade-form__toggle">
+            <button
+              type="button"
+              data-active={dir === 'Long' || undefined}
+              onClick={() => setDir('Long')}
+            >
+              Long
+            </button>
+            <button
+              type="button"
+              data-active={dir === 'Short' || undefined}
+              onClick={() => setDir('Short')}
+            >
+              Short
+            </button>
+          </div>
+        </label>
+        {isOpt && (
+          <label>
+            <span className="uppercase-label">Type</span>
+            <div className="add-trade-form__toggle">
+              <button
+                type="button"
+                data-active={ty === 'CALL' || undefined}
+                onClick={() => setTy('CALL')}
+              >
+                CALL
+              </button>
+              <button
+                type="button"
+                data-active={ty === 'PUT' || undefined}
+                onClick={() => setTy('PUT')}
+              >
+                PUT
+              </button>
+            </div>
+          </label>
+        )}
+      </div>
+      <div className="add-trade-form__row">
+        <label>
+          <span className="uppercase-label">Prix d'entrée</span>
+          <input value={pi} onChange={(e) => setPi(e.target.value)} inputMode="decimal" />
+        </label>
+        <label>
+          <span className="uppercase-label">Qty</span>
+          <input value={ct} onChange={(e) => setCt(e.target.value)} inputMode="decimal" />
+        </label>
+        <label>
+          <span className="uppercase-label">Date d'entrée</span>
+          <input type="date" value={di} onChange={(e) => setDi(e.target.value)} />
+        </label>
+      </div>
+      {isOpt && (
+        <div className="add-trade-form__row">
+          <label>
+            <span className="uppercase-label">Strike</span>
+            <input value={st} onChange={(e) => setSt(e.target.value)} inputMode="decimal" />
+          </label>
+          <label>
+            <span className="uppercase-label">Expiration</span>
+            <input type="date" value={ex} onChange={(e) => setEx(e.target.value)} />
+          </label>
+        </div>
+      )}
+      <div className="add-trade-form__footer">
+        <button type="button" className="pg-mock-btn" onClick={onCancel}>
+          Annuler
+        </button>
+        <button type="submit" className="pg-mock-btn pg-mock-btn--primary" disabled={!valid}>
+          Enregistrer
+        </button>
+      </div>
+    </form>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CLÔTURE (U4-bis) — construit un closed trade canonique (forme
+//  AddTradeModal) et dispatch CLOSE_POSITION. GARDE DUR : prix de sortie
+//  > 0 et date de sortie ≥ date d'entrée. Résumé + P&L avant confirmation.
+// ═══════════════════════════════════════════════════════════════
+function PositionCloseForm({ row, lr, onConfirm, onCancel }) {
+  const { pos } = row;
+  const isOpt = pos.as === 'Option';
+  const [po, setPo] = useState('');
+  const [doDate, setDoDate] = useState(todayDateString());
+  const [fo, setFo] = useState('0');
+
+  const poValid = toFloat(po) > 0;
+  const dateValid = !!doDate && (!pos.di || doDate >= pos.di);
+  const valid = poValid && dateValid;
+
+  const closedTradeBase = useMemo(
+    () => ({
+      tk: pos.tk,
+      as: pos.as,
+      ty: pos.ty ?? null,
+      dir: pos.dir,
+      st: pos.st ?? null,
+      ex: pos.ex ?? null,
+      ct: String(pos.ct),
+      mu: String(pos.mu ?? (isOpt ? 100 : 1)),
+      pi: String(pos.pi),
+      po: String(toFloat(po)),
+      di: pos.di,
+      do: doDate,
+      fi: String(pos.fi ?? '0'),
+      fo: String(toFloat(fo) || 0),
+      fxi: String(pos.fxi ?? '0.88'),
+      fxo: String(pos.fxi ?? '0.88'),
+      tag: pos.tag ?? null,
+      note: null,
+      src: 'manual',
+    }),
+    [pos, po, doDate, fo, isOpt]
+  );
+
+  const pnlPreview = valid ? tradePnlUsd(closedTradeBase, lr) : null;
+  const pnlTone =
+    pnlPreview == null ? 'neutral' : pnlPreview > 0 ? 'profit' : pnlPreview < 0 ? 'loss' : 'neutral';
+
+  const handleConfirm = (e) => {
+    e.preventDefault();
+    if (!valid) return;
+    onConfirm({ ...closedTradeBase, id: generateId() });
+  };
+
+  return (
+    <form className="add-trade-form" onSubmit={handleConfirm}>
+      <div className="add-trade-form__row">
+        <label>
+          <span className="uppercase-label">Prix de sortie</span>
+          <input
+            value={po}
+            onChange={(e) => setPo(e.target.value)}
+            inputMode="decimal"
+            placeholder="ex 11.20"
+            autoFocus
+          />
+        </label>
+        <label>
+          <span className="uppercase-label">Date de sortie</span>
+          <input type="date" value={doDate} onChange={(e) => setDoDate(e.target.value)} />
+        </label>
+        <label>
+          <span className="uppercase-label">Frais sortie</span>
+          <input value={fo} onChange={(e) => setFo(e.target.value)} inputMode="decimal" />
+        </label>
+      </div>
+
+      {!poValid && (
+        <p className="position-detail__form-error">Prix de sortie requis (&gt; 0) pour clôturer.</p>
+      )}
+      {poValid && !dateValid && (
+        <p className="position-detail__form-error">
+          La date de sortie ne peut pas précéder la date d'entrée ({pos.di}).
+        </p>
+      )}
+
+      <div className="position-detail__close-summary">
+        <span className="position-detail__section-title">Confirmation</span>
+        <div className="position-detail__grid">
+          <DetailItem label="Position">
+            {pos.tk}
+            {isOpt ? ` ${pos.ty} $${toFloat(pos.st).toFixed(0)}` : ''}
+          </DetailItem>
+          <DetailItem label="Quantité">{toFloat(pos.ct)}</DetailItem>
+          <DetailItem label="Prix sortie">{poValid ? `$${toFloat(po).toFixed(2)}` : '—'}</DetailItem>
+          <DetailItem label="P&L résultant">
+            <span className={`text-${pnlTone}`}>
+              {pnlPreview == null
+                ? '—'
+                : `${pnlPreview >= 0 ? '+' : ''}${formatUsd(pnlPreview)}`}
+            </span>
+          </DetailItem>
+        </div>
+      </div>
+
+      <div className="add-trade-form__footer">
+        <button type="button" className="pg-mock-btn" onClick={onCancel}>
+          Annuler
+        </button>
+        <button type="submit" className="pg-mock-btn pg-mock-btn--primary" disabled={!valid}>
+          Confirmer la clôture
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -622,6 +868,8 @@ export default function Positions() {
   // Panneau détail (read-only) : on stocke l'id, la ligne live est
   // re-dérivée depuis `positions` (auto-close si la position disparaît).
   const [detailId, setDetailId] = useState(null);
+  // U4-bis — mode du panneau détail : 'view' (read-only) | 'edit' | 'close'.
+  const [detailMode, setDetailMode] = useState('view');
   const [greeksMap, setGreeksMap] = useState(new Map());
   const [lastGreeksUpdate, setLastGreeksUpdate] = useState(null);
   // `now` lives in state so the relative age label can be computed during
@@ -1100,7 +1348,10 @@ export default function Positions() {
           defaultSort={{ key: 'pnlUsd', dir: 'desc' }}
           enableSearch
           mobileCardRender={mobileCardRender}
-          onRowClick={(row) => setDetailId(row.pos.id)}
+          onRowClick={(row) => {
+            setDetailId(row.pos.id);
+            setDetailMode('view');
+          }}
           getRowId={(row) => row.pos.id}
           focusedRowId={focusId}
           emptyTitle="Aucune position"
@@ -1110,15 +1361,52 @@ export default function Positions() {
 
       <Modal
         open={!!detailRow}
-        onClose={() => setDetailId(null)}
-        title={detailRow ? `Détail — ${detailRow.pos.tk}` : ''}
+        onClose={() => {
+          setDetailId(null);
+          setDetailMode('view');
+        }}
+        title={
+          detailRow
+            ? `${detailMode === 'edit' ? 'Éditer' : detailMode === 'close' ? 'Clôturer' : 'Détail'} — ${detailRow.pos.tk}`
+            : ''
+        }
       >
-        {detailRow && (
+        {detailRow && detailMode === 'view' && (
           <PositionDetailBody
             row={detailRow}
             greeks={greeksMap.get(detailRow.pos.id)}
             posAlerts={getPositionAlerts(detailRow.pos.id, alerts)}
             navigate={navigate}
+            onEdit={() => setDetailMode('edit')}
+            onCloseMode={() => setDetailMode('close')}
+          />
+        )}
+        {detailRow && detailMode === 'edit' && (
+          <PositionEditForm
+            row={detailRow}
+            onCancel={() => setDetailMode('view')}
+            onSave={(patch) => {
+              dispatch({ type: 'UPDATE_POSITION', payload: patch });
+              setDetailMode('view');
+            }}
+          />
+        )}
+        {detailRow && detailMode === 'close' && (
+          <PositionCloseForm
+            row={detailRow}
+            lr={lr}
+            onCancel={() => setDetailMode('view')}
+            onConfirm={(closedTrade) => {
+              // Dispatch via l'action canonique CLOSE_POSITION uniquement.
+              dispatch({
+                type: 'CLOSE_POSITION',
+                payload: { positionId: detailRow.pos.id, remainingPosition: null, closedTrade },
+              });
+              // La position quitte openPositions → detailRow devient null →
+              // la Modal se ferme. On nettoie l'état explicitement.
+              setDetailId(null);
+              setDetailMode('view');
+            }}
           />
         )}
       </Modal>
