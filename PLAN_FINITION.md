@@ -562,7 +562,7 @@ Chaque **U** = un commit autonome. Ordre = priorité décroissante. Principe : d
   - **Vérif** : `vite build` OK ; Playwright **isolé** → DXY `100.12 +0.59 %` (vert), ES `7'539 −0.63 %` / NQ `30'274 −0.13 %` / YM `52'334 −0.26 %` (rouge), regime/positions/macro/earnings/checklist intacts, capture lue, **0 erreur console issue d'U12** (les 4 symboles renvoient 200 ; seules les 502 préexistantes de `VIX`/`SPX` et 500/502 d'autres feeds en dev).
   - **Observation hors-scope (→ corrigée en U12-bis)** : le regime row appelait encore `'VIX'`/`'SPX'` qui **ne sont pas servis** (502 → « —— ») ; `'^VIX'`/`'^GSPC'` fonctionnent (cf. `^GSPC` 200 en Étape 0).
 
-- **U12-bis · Premarket : corriger les symboles VIX/SPX du regime row** — ✅ **FAIT (ce commit)**. Les 2 cellules `VIX` et `SPX` affichaient « —— » en permanence car `'VIX'`/`'SPX'` nus ne sont pas servis par `/api/quote`. Remplacés par les symboles Yahoo corrects.
+- **U12-bis · Premarket : corriger les symboles VIX/SPX du regime row** — ✅ **FAIT (8ac4673)**. Les 2 cellules `VIX` et `SPX` affichaient « —— » en permanence car `'VIX'`/`'SPX'` nus ne sont pas servis par `/api/quote`. Remplacés par les symboles Yahoo corrects.
   - **Étape 0 — verdict** (test réel de l'endpoint) :
 
     | Symbole | `/api/quote` | Verdict |
@@ -577,7 +577,11 @@ Chaque **U** = un commit autonome. Ordre = priorité décroissante. Principe : d
   - **Reste lié** : le **header global** consomme aussi des symboles potentiellement non servis (`^NDX`, etc.) — même racine, composant distinct, hors U12-bis.
 - **U13 · IV historique 52w** (gros) — débloque simultanément Chain IVR, History backfill Δ/IVR, `useIVMovers`, Greeks IV rank. Source externe ou stockage cumulé local de `qc:chainIv`.
 - **U14 · SectorHeatmap** — feed externe ou agrégation GICS locale.
-- **U15 · Analytics HourChart** — retirer (pas d'horodatage intraday) ou repenser.
+- **U15 · Analytics HourChart** — ✅ **FAIT (ce commit)**. Le graphe « P&L par heure » est **retiré** (décision : retirer, pas neutraliser). Cause : `aggregateHourOfDay` faisait `new Date(t.do + 'T12:00:00').getHours()` alors que `t.do` est une **date sans horodatage** (Flex ne fournit pas l'heure de clôture) → `getHours()` renvoyait toujours 12 → tout le P&L empilé dans un seul bucket sur un axe 24 h (trompeur). La donnée intraday n'existe pas via Flex.
+  - **Retiré** (chaîne complète, dans `Analytics.jsx` uniquement) : le bloc de rendu HourChart + son panneau/titre, le composant `HourChart`, la fonction `aggregateHourOfDay`, le memo `hourData`. Grep repo entier après retrait : **zéro référence vivante** restante (`HourChart`/`aggregateHourOfDay`/`hourData`).
+  - **Conservé strictement intact** : `DayChart` (« P&L par jour de la semaine », composant DISTINCT, `dataKey="day"`) + `aggregateDayOfWeek`/`dayData`, RiskMetricsRow, KPIs Row 2, WinRateDonut, StrategyBreakdown, PnLCalendarHeatmap.
+  - **Reflow layout** : la Row 3 était une `.analytics-v3__dual-row` (HourChart | DayChart). Après retrait, le DayChart passe en **pleine largeur** (wrapper `dual-row` retiré pour CETTE rangée → motion.div simple, comme Row 1 / Row 5) — pas de cellule vide béante. `.analytics-v3__dual-row` reste utilisée par la Row 4 (donut + breakdown) → classe non orpheline, conservée. Aucun CSS spécifique au HourChart (styles inline + recharts) → rien à purger.
+  - **Vérif** : `vite build` OK ; Playwright **isolé** + démo (6 closed trades) → HourChart absent (aucun « P&L par heure »/« Hour-of-Day »), 5 panneaux (au lieu de 6), DayChart pleine largeur fonctionnel, RiskMetrics/KPIs/donut/breakdown/heatmap intacts, **0 erreur console** (aucune référence morte), capture lue. Layout propre.
 - **U16 · News flow Premarket** — nécessite une source (Finnhub news / RSS). Le plus lourd, le moins prioritaire.
 
 ---

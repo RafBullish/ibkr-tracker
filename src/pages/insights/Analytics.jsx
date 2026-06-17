@@ -34,23 +34,6 @@ const LazyRecharts = lazy(() =>
   import('recharts').then((mod) => ({ default: ({ children }) => children(mod) }))
 );
 
-// ── Hour-of-day aggregation
-function aggregateHourOfDay(closedTrades, lr) {
-  const buckets = Array.from({ length: 24 }, (_, h) => ({ hour: h, count: 0, pnl: 0 }));
-  for (const t of closedTrades) {
-    if (!t.do) continue;
-    try {
-      const d = new Date(t.do + 'T12:00:00');
-      const hour = d.getHours();
-      buckets[hour].count++;
-      buckets[hour].pnl += tradePnlUsd(t, lr);
-    } catch {
-      /* ignore malformed date */
-    }
-  }
-  return buckets;
-}
-
 function aggregateDayOfWeek(closedTrades, lr) {
   const days = ['Di', 'Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa'];
   const buckets = Array.from({ length: 7 }, (_, d) => ({ day: days[d], count: 0, pnl: 0 }));
@@ -142,68 +125,6 @@ function KpiTile({ label, tooltip, value, tone = 'neutral' }) {
   );
 }
 
-function HourChart({ data }) {
-  return (
-    <Suspense fallback={<div style={{ height: 240 }} />}>
-      <LazyRecharts>
-        {(mod) => (
-          <div style={{ height: 240 }}>
-            <mod.ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-              <mod.BarChart data={data} margin={{ top: 10, right: 16, left: 4, bottom: 4 }}>
-                <mod.CartesianGrid
-                  vertical={false}
-                  stroke="var(--border-subtle)"
-                  strokeDasharray="3 3"
-                />
-                <mod.XAxis
-                  dataKey="hour"
-                  tickFormatter={(h) => `${h}h`}
-                  tick={{
-                    fill: 'var(--text-tertiary)',
-                    fontSize: 10,
-                    fontFamily: 'var(--font-mono)',
-                  }}
-                  axisLine={false}
-                  tickLine={false}
-                  interval={3}
-                />
-                <mod.YAxis
-                  tick={{
-                    fill: 'var(--text-tertiary)',
-                    fontSize: 10,
-                    fontFamily: 'var(--font-mono)',
-                  }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={40}
-                  tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v)}
-                />
-                <mod.Tooltip
-                  contentStyle={{
-                    background: 'var(--chart-tooltip-bg)',
-                    border: '1px solid var(--border-default)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--text-primary)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 11,
-                  }}
-                  formatter={(v, k) => (k === 'pnl' ? [`$${v.toFixed(0)}`, 'P&L'] : [v, 'Trades'])}
-                  labelFormatter={(v) => `${v}h00`}
-                />
-                <mod.Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
-                  {data.map((d, i) => (
-                    <mod.Cell key={i} fill={d.pnl >= 0 ? 'var(--profit)' : 'var(--loss)'} />
-                  ))}
-                </mod.Bar>
-              </mod.BarChart>
-            </mod.ResponsiveContainer>
-          </div>
-        )}
-      </LazyRecharts>
-    </Suspense>
-  );
-}
-
 function DayChart({ data }) {
   return (
     <Suspense fallback={<div style={{ height: 240 }} />}>
@@ -278,7 +199,6 @@ export default function Analytics() {
   const metrics = useTradingMetrics(closedTrades, lr);
   // A1 — Calmar source : portfolio-level metrics (needs initialCapital).
   const portfolioMetrics = usePortfolioMetrics();
-  const hourData = useMemo(() => aggregateHourOfDay(closedTrades, lr), [closedTrades, lr]);
   const dayData = useMemo(() => aggregateDayOfWeek(closedTrades, lr), [closedTrades, lr]);
   const dayMap = useMemo(() => buildDayPnlMap(closedTrades, lr), [closedTrades, lr]);
   const avgHold = useMemo(() => {
@@ -416,21 +336,11 @@ export default function Analytics() {
         />
       </motion.div>
 
-      {/* ── Row 3 : Hour-of-Day + Day-of-Week ── */}
-      <motion.div variants={TILE_VARIANTS} className="analytics-v3__dual-row">
-        <div className="analytics-v3__panel">
-          <div className="analytics-v3__panel-head">
-            <span className="uppercase-label">P&amp;L par heure</span>
-            <InfoTooltip
-              content={{
-                title: 'Hour-of-Day P&L',
-                body: 'P&L agrégé par heure de clôture. Révèle tes meilleures et pires fenêtres horaires.',
-              }}
-              size={12}
-            />
-          </div>
-          <HourChart data={hourData} />
-        </div>
+      {/* ── Row 3 : Day-of-Week P&L (Hour-of-Day retiré en U15 : t.do est une
+          date sans horodatage intraday → getHours() renvoie toujours 12, le
+          graphe empilait tout dans un seul bucket — trompeur. Flex ne fournit
+          pas l'heure de clôture.) ── */}
+      <motion.div variants={TILE_VARIANTS}>
         <div className="analytics-v3__panel">
           <div className="analytics-v3__panel-head">
             <span className="uppercase-label">P&amp;L par jour de la semaine</span>
