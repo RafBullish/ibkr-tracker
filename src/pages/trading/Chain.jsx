@@ -27,6 +27,7 @@ import OptionsChainTable from '../../components/charts/OptionsChainTable';
 import AddTradeModal from '../../components/trades/AddTradeModal';
 import { bsGreeks, RISK_FREE_RATE } from '../../utils/options/blackScholes';
 import { invalidateGreeksMemo } from '../../utils/greeksApi';
+import { appendIvHistory } from '../../utils/ivHistory';
 import {
   computeMaxPain,
   computeRR25,
@@ -407,6 +408,12 @@ export default function Chain() {
     } catch {
       /* quota / disabled — silent */
     }
+
+    // U13-collecte : accumule l'ATM IV du jour dans la série historique
+    // locale (qc:ivHistory:{ticker}) — graine pour l'IV rank futur. Idempotent
+    // par jour, rétention FIFO 400 j, écriture sûre (try/catch interne).
+    // N'AFFICHE RIEN ; le cache qc:chainIv ci-dessus est inchangé.
+    appendIvHistory(yahooData.ticker, stats.atmIv);
   }, [yahooData, rows, stats?.atmIv]);
 
   const handleRowClick = (side, strike, contract) => {
