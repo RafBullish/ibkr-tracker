@@ -44,8 +44,8 @@ import './styles/pages-import.css';
 import './styles/pages-settings.css';
 // pages-history.css — page-vitrine /trading/history, cinquième consommatrice
 // de la palette canonique. KPI strip pattern Greeks + panels pattern Positions
-// + COPIE LOCALE .history-page__panel-head qui rend History indépendante de
-// .dashboard-v3__panel-head (toujours consommé par Analytics + Journal).
+// + COPIE LOCALE .history-page__panel-head (pattern panel-head local par page ;
+// .dashboard-v3__panel-head retiré après la migration U9 d'Analytics/Journal).
 // .history-v3__delete-btn reste partagé dans v3-components.css.
 import './styles/pages-history.css';
 // pages-premarket.css — page-vitrine /premarket, sixième consommatrice de la

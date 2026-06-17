@@ -5,10 +5,9 @@
    Toutes les règles sont SCOPÉES à .history-page pour ne contaminer
    aucune autre page. Chargée APRÈS pages-settings.css dans main.jsx.
 
-   POINT CRITIQUE : .history-page__panel-head est une COPIE LOCALE
-   indépendante de .dashboard-v3__panel-head (toujours consommé par
-   Analytics + Journal). History ne dépend plus du CSS de Dashboard —
-   quand Dashboard migrera, History ne cassera pas par effet domino.
+   POINT CRITIQUE : .history-page__panel-head est une COPIE LOCALE (pattern
+   panel-head local par page). .dashboard-v3__panel-head a été retiré après la
+   migration U9 d'Analytics/Journal ; History ne dépend pas du CSS de Dashboard.
 
    La classe .history-v3__delete-btn reste dans v3-components.css car
    PARTAGÉE avec Positions, Journal et Settings General.

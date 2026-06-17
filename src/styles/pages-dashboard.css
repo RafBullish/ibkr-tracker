@@ -54,10 +54,10 @@
   background: var(--depth-base);
 }
 
-/* Copie locale indépendante de .dashboard-v3__panel-head (qui reste
-   consommé par Analytics + Journal). Quand un sous-composant Dashboard
-   sera migré, il consommera cette classe locale plutôt que la classe
-   v3 partagée — geste d'indépendance équivalent à celui appliqué sur
+/* Copie locale du pattern panel-head (local par page). La classe partagée
+   .dashboard-v3__panel-head a été retirée après la migration U9 d'Analytics/
+   Journal. Quand un sous-composant Dashboard sera migré, il consommera cette
+   classe locale — geste d'indépendance équivalent à celui appliqué sur
    History (CANONICAL-6). */
 .dashboard-page__panel-head {
   display: flex;

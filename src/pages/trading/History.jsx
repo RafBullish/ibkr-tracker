@@ -13,9 +13,9 @@
 //     Positions — surface plate sur var(--depth-raised) via
 //     .history-page__panel. Plus de <GlassCard>.
 //
-//  POINT CRITIQUE : .history-page__panel-head est une COPIE LOCALE
-//  indépendante de .dashboard-v3__panel-head (toujours consommé par
-//  Analytics + Journal). History ne dépend plus du CSS de Dashboard.
+//  POINT CRITIQUE : .history-page__panel-head est une COPIE LOCALE (pattern
+//  panel-head local par page). .dashboard-v3__panel-head a été retiré après
+//  la migration U9 d'Analytics/Journal ; History ne dépend pas du Dashboard.
 //
 //  Sémantique des tuiles KPI (rappel des règles métier appliquées) :
 //   - Total   : neutral (compteur, pas de l'argent)

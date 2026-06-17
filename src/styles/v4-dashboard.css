@@ -834,17 +834,8 @@
   transition: color 120ms ease-out;
 }
 
-.risk-matrix__action--active {
-  background: color-mix(in srgb, var(--qc-accent) 6%, transparent);
-  color: var(--qc-accent);
-}
-
 .risk-matrix__action:hover {
   color: var(--qc-text-secondary);
-}
-
-.risk-matrix__action--active:hover {
-  color: var(--qc-accent);
 }
 
 .risk-matrix__action:focus-visible {

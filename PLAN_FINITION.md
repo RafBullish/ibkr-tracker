@@ -576,7 +576,7 @@ Chaque **U** = un commit autonome. Ordre = priorité décroissante. Principe : d
   - **Vérif** : `vite build` OK ; Playwright **isolé** → VIX `18.73` + badge **NORMAL** (cohérent : 18.73 ∈ [15,20[ → NORMAL ; le regime de volatilité reflète bien le vrai VIX), SPX `7'418 −1.24 %`, QQQ/DXY/futures/Positions/macro/earnings/checklist intacts, capture lue, **0 erreur console pour `^VIX`/`^GSPC`** (les 502 `VIX`/`SPX` du premarket ont disparu ; reste un `^NDX` 502 du **header global**, hors-scope).
   - **Reste lié** : le **header global** consomme aussi des symboles potentiellement non servis (`^NDX`, etc.) — même racine, composant distinct, hors U12-bis.
 - **U13 · IV historique 52w** (gros) — débloque simultanément Chain IVR, History backfill Δ/IVR, `useIVMovers`, Greeks IV rank. Source externe ou stockage cumulé local de `qc:chainIv`.
-  - **U13-collecte · poser la collecte d'IV historique locale** — ✅ **FAIT (ce commit)**. Version légère : on **plante la graine** (accumulation locale d'IV) sans **AUCUN affichage** d'IV rank. Les affichages (Chain IVR, History backfill, useIVMovers, histogramme Greeks) attendent que l'historique soit mûr (plusieurs semaines/mois).
+  - **U13-collecte · poser la collecte d'IV historique locale** — ✅ **FAIT (dc5f88a)**. Version légère : on **plante la graine** (accumulation locale d'IV) sans **AUCUN affichage** d'IV rank. Les affichages (Chain IVR, History backfill, useIVMovers, histogramme Greeks) attendent que l'historique soit mûr (plusieurs semaines/mois).
     - **Étape 0 — verdict** : `qc:chainIv:{ticker}` (écrit par `Chain.jsx` au load) **ÉCRASE** — un seul snapshot latest par ticker `{ timestamp, atm, byStrike }`, TTL 24 h, consommé par `positionGreeks` (fallback σ b). Il **n'accumule pas** d'historique daté. → Collecte = clé **séparée** `qc:ivHistory:{ticker}`, **HORS du store** (comme `qc:chainIv` ; ce n'est pas de la donnée comptable, ne doit pas alourdir le store ni toucher `ibkr_u_*`). Le cache `qc:chainIv` existant est **laissé intact** (son consumer greeks continue).
     - **Design retenu** : `src/utils/ivHistory.js` — `appendIvHistory(ticker, iv, now?)` + `readIvHistory(ticker)`. Forme `[{ date:'YYYY-MM-DD', iv:number }]` triée asc. **Idempotent par (ticker, date)** (findIndex→update sinon push, calque `UPDATE_DAILY_SNAPSHOT`). **Rétention FIFO 400 jours** (≈52 sem + marge). Écriture localStorage **try/catch** (échec silencieux, aucune dégradation de Chain). Point d'écriture : le `useEffect` existant du « Chain IV cache writer » de `Chain.jsx` (où `stats.atmIv` est déjà calculé et validé > 0) — `appendIvHistory(ticker, stats.atmIv)` ajouté **à côté** de l'écriture `qc:chainIv` (non modifiée). Consumer futur prêt : `ivRank(readIvHistory(tk).map(e=>e.iv), currentIv)` (`blackScholes.ivRank` existe déjà).
     - **ZÉRO affichage** : aucun élément visuel ajouté, page Chain identique pour l'utilisateur.
@@ -593,3 +593,27 @@ Chaque **U** = un commit autonome. Ordre = priorité décroissante. Principe : d
 ---
 
 **Reco de démarrage** : **U1 → U2 → U4** donnent le meilleur ratio honnêteté-perçue / effort. **U6 + U8** suppriment le plus gros « trou visuel » (rows 4-5 Dashboard) sans toucher à de la data externe. Tout le hors-scope (U11-U16) attend ta validation de la ligne.
+
+---
+
+## § E — Nettoyage de dette ciblé (pré-merge) — ✅ **FAIT (ce commit)**
+
+Nettoyage **conservateur** de la dette EXPLICITEMENT documentée pendant les sessions de finition. Règle d'or : dans le doute, on ne touche pas. Pour chaque candidat, grep repo entier AVANT retrait → retiré uniquement si **zéro consommateur vivant** (usage réel `className`/JSX, pas une mention en commentaire). Aucune logique, aucun comportement, aucun rendu touché.
+
+### Retiré (zéro usage vivant confirmé)
+- **`.metric-card*`** (v3-components.css, ~192 l. sur 2 régions : core + delta/sizes/media) — `MetricCard.jsx` supprimé en U9 ; grep `.jsx`/`.js` = **0 usage** de la classe `metric-card`. Styles orphelins → retirés.
+- **`.dashboard-v3__panel-head`** (v3-components.css, la règle) — après U9, Analytics/Journal utilisent `.analytics-v3__/.journal-v3__panel-head` ; grep = seulement 2 **commentaires** (corrigés), 0 JSX vivant. Règle retirée.
+- **`.risk-matrix__action--active`** + **`.risk-matrix__action--active:hover`** (v4-dashboard.css) — le bouton à état actif a disparu en U3 ; grep = 0 usage du modifieur `--active`. Retirés.
+
+### Conservé (raison explicite — dans le doute, on garde)
+- **`.risk-matrix__action`** (base) + `:hover` + `:focus-visible` — **vivant** (RiskMatrix.jsx `Export CSV`, l.1017). Conservé.
+- **`.dashboard-v3__row--hero > * > .nlv-hero, … > .metric-card`** (sélecteur groupé hero) — la partie `.metric-card` est inerte mais le sélecteur est **partagé avec `.nlv-hero`** (HORS périmètre documenté, pas confirmé mort). **Non touché** (retirer une ligne d'un sélecteur groupé Dashboard hors-scope = trop risqué).
+- **`GlassCard.jsx`** + `.glass-card*` — vivant (App / Api / DataTable). Intact.
+- **`.history-page__panel-head`** (copie locale History) — vivante (History l'utilise). Intacte.
+- Commentaire `v3-components.css:~3646` (`<GlassCard>/<MetricCard>/.dashboard-v3__panel-head` dans le bloc U9) — note **historique exacte** (décrit ce que le chrome flat a remplacé), pas une fausse affirmation. Conservé.
+
+### Commentaires faux corrigés (caducs depuis U9)
+4 commentaires affirmaient « `.dashboard-v3__panel-head` toujours consommé par Analytics + Journal » (faux depuis U9, + classe retirée) : `main.jsx`, `History.jsx`, `pages-history.css`, `pages-dashboard.css` → reformulés (« retiré après la migration U9 d'Analytics/Journal »).
+
+### Vérif
+`vite build` OK ; **suite 233/233 verte** (aucune régression) ; grep post-retrait : `.risk-matrix__action--active` **GONE**, aucune règle `.dashboard-v3__panel-head`, aucune règle standalone `.metric-card` (seuls le sélecteur groupé hero + le commentaire historique subsistent, conservés à dessein). Playwright **isolé** + démo (positions + closed trades + journal) sur **Dashboard / Analytics / Journal / Positions / History** : (a) rendu correct partout (surfaces flat, panel-heads, KPI tiles intacts — vérifié via computed styles), (b) **0 élément résiduel** `.metric-card`/`.dashboard-v3__panel-head` (le CSS retiré ne stylait plus rien), zéro régression, (c) 0 erreur console issue du nettoyage (seules les 502/500 environnementales Finnhub/quote en dev). Captures Analytics + Journal lues.
