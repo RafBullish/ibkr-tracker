@@ -27,6 +27,11 @@ import { useNavigate } from 'react-router-dom';
 import useMarketQuotes from '../hooks/useMarketQuotes';
 import useSniperGates from '../hooks/useSniperGates';
 import { useFx } from '../hooks/useFx';
+import useCalendarFeeds from '../hooks/useCalendarFeeds';
+import useApiStatus from '../hooks/useApiStatus';
+import { useOpenPositions } from '../store/useStore';
+import { macroEventsInRange } from '../data/macroEvents2026';
+import { MAJOR_US_TICKERS } from '../utils/majorTickers';
 
 const ROUTINE_ITEMS = [
   { id: 'macro', label: 'Calendrier macro' },
@@ -140,6 +145,65 @@ function vixRegime(vix) {
   return { label: 'STRESSED', tone: 'loss' };
 }
 
+// ── U11 : date de la séance US ciblée pour le briefing ─────────────
+//  En séance (pre/open) → aujourd'hui (date NY). Hors séance
+//  (after/closed/weekend) → prochain jour ouvré. Filtre macro + earnings
+//  sur la bonne journée.
+function sessionDateStr(now, phase) {
+  const ymd = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now);
+  let d = new Date(ymd + 'T12:00:00Z');
+  const inSession = phase === 'pre' || phase === 'open';
+  if (!inSession) d = new Date(d.getTime() + 86400000);
+  let guard = 0;
+  while ((d.getUTCDay() === 0 || d.getUTCDay() === 6) && guard < 7) {
+    d = new Date(d.getTime() + 86400000);
+    guard += 1;
+  }
+  return d.toISOString().slice(0, 10);
+}
+
+// Plage month±1 (mêmes bornes que useCalendarFeeds) pour le fallback
+// macro offline (FOMC/CPI/NFP 2026) quand Finnhub est absent/HS.
+function monthRangeIso(year, month) {
+  const pad = (n) => String(n).padStart(2, '0');
+  const from = new Date(Date.UTC(year, month - 1, 1));
+  const to = new Date(Date.UTC(year, month + 2, 0));
+  const iso = (d) => `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+  return { from: iso(from), to: iso(to) };
+}
+
+// Badge horaire earnings (Finnhub `hour` : 'bmo'|'amc'|'dmh'|'').
+function earningsWhen(hour) {
+  if (hour === 'bmo') return { label: 'BMO', tone: 'bmo' };
+  if (hour === 'amc') return { label: 'AMC', tone: 'amc' };
+  if (hour === 'dmh') return { label: 'SÉANCE', tone: 'dmh' };
+  return null;
+}
+
+// Formatters estimés earnings — mêmes règles que Calendar (null-guard
+// strict, jamais "null"/"undefined" rendu ; revenueEstimate = USD absolu).
+function fmtEpsEstimate(v) {
+  if (v == null || !Number.isFinite(v)) return null;
+  const sign = v < 0 ? '−' : '';
+  return `${sign}$${Math.abs(v).toFixed(2)}`;
+}
+
+function fmtRevenueEstimate(v) {
+  if (v == null || !Number.isFinite(v) || v === 0) return null;
+  const abs = Math.abs(v);
+  const sign = v < 0 ? '−' : '';
+  if (abs >= 1e12) return `${sign}$${(abs / 1e12).toFixed(2)}T`;
+  if (abs >= 1e9) return `${sign}$${(abs / 1e9).toFixed(2)}B`;
+  if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(1)}M`;
+  if (abs >= 1e3) return `${sign}$${(abs / 1e3).toFixed(0)}k`;
+  return `${sign}$${abs.toFixed(0)}`;
+}
+
 export default function PreMarketBriefing() {
   const navigate = useNavigate();
   const [now, setNow] = useState(() => new Date());
@@ -178,6 +242,78 @@ export default function PreMarketBriefing() {
   }, [sniperGates]);
 
   const allOpenOptions = useMemo(() => sniperGates?.rows || [], [sniperGates]);
+
+  // ── U11 : macro + earnings du jour (réutilise les feeds Finnhub déjà
+  //    câblés sur Calendar — useCalendarFeeds — aucun nouvel endpoint). ──
+  const openPositions = useOpenPositions();
+  const apiStatus = useApiStatus();
+
+  const heldTickers = useMemo(
+    () =>
+      Array.from(
+        new Set((openPositions || []).map((p) => String(p.tk || '').toUpperCase()).filter(Boolean))
+      ),
+    [openPositions]
+  );
+
+  // Union tickers majeurs + positions tenues : les earnings des majeurs
+  // sont surfacés, ceux de tes positions ne sont jamais filtrés out.
+  const calTickers = useMemo(
+    () => Array.from(new Set([...MAJOR_US_TICKERS, ...heldTickers])),
+    [heldTickers]
+  );
+
+  const calYear = now.getFullYear();
+  const calMonth = now.getMonth();
+  const { earnings, macro } = useCalendarFeeds({
+    viewYear: calYear,
+    viewMonth: calMonth,
+    myTickers: calTickers,
+    minImpact: 'medium',
+    enabled: true,
+  });
+
+  const sessionDate = useMemo(() => sessionDateStr(now, phaseInfo.phase), [now, phaseInfo.phase]);
+  const sessionLabel = useMemo(() => {
+    const [, mm, dd] = sessionDate.split('-');
+    return `${dd}/${mm}`;
+  }, [sessionDate]);
+
+  const finnhubDown = apiStatus?.finnhub?.status === 'inactive';
+  const macroToday = useMemo(() => {
+    const { from, to } = monthRangeIso(calYear, calMonth);
+    // Fallback offline (FOMC/CPI/NFP 2026) quand Finnhub HS OU feed vide,
+    // exactement comme la bannière contextuelle de Calendar.
+    const fallback = finnhubDown || macro.length === 0 ? macroEventsInRange(from, to) : [];
+    const eff = fallback.length > 0 ? fallback : macro;
+    return eff.filter((ev) => ev?.time && String(ev.time).slice(0, 10) === sessionDate);
+  }, [macro, finnhubDown, sessionDate, calYear, calMonth]);
+
+  const earningsToday = useMemo(() => {
+    const held = new Set(heldTickers);
+    const order = { bmo: 0, dmh: 1, amc: 2 };
+    return (earnings || [])
+      .filter((e) => e?.symbol && e?.date === sessionDate)
+      .map((e) => {
+        const sym = String(e.symbol).toUpperCase();
+        return {
+          symbol: sym,
+          when: earningsWhen(e.hour),
+          eps: fmtEpsEstimate(e.epsEstimate),
+          rev: fmtRevenueEstimate(e.revenueEstimate),
+          held: held.has(sym),
+        };
+      })
+      .sort((a, b) => {
+        if (a.held !== b.held) return a.held ? -1 : 1;
+        const ao = order[a.when?.tone] ?? 3;
+        const bo = order[b.when?.tone] ?? 3;
+        if (ao !== bo) return ao - bo;
+        return a.symbol.localeCompare(b.symbol);
+      });
+  }, [earnings, sessionDate, heldTickers]);
+
+  const heldEarnCount = useMemo(() => earningsToday.filter((e) => e.held).length, [earningsToday]);
 
   const checkedCount = Object.values(checks).filter(Boolean).length;
   const allReady = checkedCount === ROUTINE_ITEMS.length;
@@ -380,6 +516,115 @@ export default function PreMarketBriefing() {
                     </tr>
                   );
                 })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </section>
+
+      {/* 3b. Calendrier macro du jour (feeds Finnhub + fallback offline) */}
+      <section className="premarket-page__section">
+        <header className="premarket-page__section-head">
+          <span className="premarket-page__section-title">Calendrier macro · {sessionLabel}</span>
+          <span className="premarket-page__section-hint">
+            {macroToday.length > 0
+              ? `${macroToday.length} événement${macroToday.length > 1 ? 's' : ''} médium+/fort`
+              : 'Finnhub + fallback FOMC / CPI / NFP'}
+          </span>
+        </header>
+        <div className="premarket-page__section-body">
+          {macroToday.length === 0 ? (
+            <div className="module-empty">
+              <span className="module-empty__title">Aucune annonce macro aujourd&apos;hui</span>
+              <span className="module-empty__sub">
+                Aucun événement macro médium ou fort sur la séance.
+              </span>
+            </div>
+          ) : (
+            <table className="premarket-page__table" aria-label="Calendrier macro du jour">
+              <thead>
+                <tr>
+                  <th>Pays</th>
+                  <th>Événement</th>
+                  <th>Impact</th>
+                </tr>
+              </thead>
+              <tbody>
+                {macroToday.map((ev, i) => (
+                  <tr key={i} className="premarket-page__row premarket-page__row--static">
+                    <td>{ev.country || '—'}</td>
+                    <td>{ev.event}</td>
+                    <td>
+                      {ev.impact ? (
+                        <span className="premarket-page__pill" data-impact={ev.impact}>
+                          {ev.impact === 'high' ? 'FORT' : ev.impact === 'medium' ? 'MOYEN' : ev.impact}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </section>
+
+      {/* 3c. Earnings du jour — BMO / AMC, positions tenues en évidence */}
+      <section className="premarket-page__section">
+        <header className="premarket-page__section-head">
+          <span className="premarket-page__section-title">Earnings · {sessionLabel}</span>
+          <span className="premarket-page__section-hint">
+            {earningsToday.length > 0
+              ? `${earningsToday.length} résultat${earningsToday.length > 1 ? 's' : ''}${
+                  heldEarnCount > 0 ? ` · ${heldEarnCount} sur tes positions` : ''
+                }`
+              : 'BMO / AMC · tickers majeurs + tes positions'}
+          </span>
+        </header>
+        <div className="premarket-page__section-body">
+          {earningsToday.length === 0 ? (
+            <div className="module-empty">
+              <span className="module-empty__title">Aucun résultat publié aujourd&apos;hui</span>
+              <span className="module-empty__sub">
+                Aucun earning sur les tickers majeurs ou tes positions pour la séance.
+              </span>
+            </div>
+          ) : (
+            <table className="premarket-page__table" aria-label="Earnings du jour">
+              <thead>
+                <tr>
+                  <th>Ticker</th>
+                  <th>Timing</th>
+                  <th>Est. EPS</th>
+                  <th>Est. CA</th>
+                </tr>
+              </thead>
+              <tbody>
+                {earningsToday.map((e, i) => (
+                  <tr
+                    key={i}
+                    className="premarket-page__row premarket-page__row--static"
+                    data-held={e.held || undefined}
+                  >
+                    <td>
+                      {e.symbol}
+                      {e.held && <span className="premarket-page__held-tag">position</span>}
+                    </td>
+                    <td>
+                      {e.when ? (
+                        <span className="premarket-page__pill" data-when={e.when.tone}>
+                          {e.when.label}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td>{e.eps || '—'}</td>
+                    <td>{e.rev || '—'}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           )}

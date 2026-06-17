@@ -485,3 +485,48 @@
   outline: 1px solid var(--accent);
   outline-offset: 1px;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   U11 — MACRO + EARNINGS DU JOUR
+   Réutilise .premarket-page__table. Lignes non-cliquables (--static),
+   pills impact/timing (catégories neutres ; amber = signal décisionnel
+   fort, cf. sémantique Calendar), surlignage des earnings sur positions.
+   ════════════════════════════════════════════════════════════════ */
+.premarket-page__row--static {
+  cursor: default;
+}
+.premarket-page__row--static:hover {
+  background: transparent;
+}
+.premarket-page__row--static[data-held],
+.premarket-page__row--static[data-held]:hover {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.premarket-page__pill {
+  display: inline-flex;
+  align-items: center;
+  height: 14px;
+  padding: 0 6px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  color: var(--ink-soft);
+}
+
+/* Impact macro fort = signal décisionnel (amber). Médium = neutre. */
+.premarket-page__pill[data-impact="high"] {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.premarket-page__held-tag {
+  margin-left: 6px;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
