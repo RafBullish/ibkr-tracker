@@ -42,7 +42,10 @@ const ROUTINE_ITEMS = [
   { id: 'watchlist', label: 'Setups watchlist' },
 ];
 
-const PREMARKET_INDICES = ['VIX', 'SPX', 'QQQ'];
+// U12-bis — symboles indices servis par /api/quote (testé) : '^VIX' (~18.7)
+// et '^GSPC' (~7400) renvoient 200 via Yahoo ; 'VIX'/'SPX' nus → 502. Les
+// cellules lisent donc quotes['^VIX'] / quotes['^GSPC'] (clé = symbole exact).
+const PREMARKET_INDICES = ['^VIX', '^GSPC', 'QQQ'];
 
 // U12 — DXY + futures overnight servis par /api/quote (cascade
 // Finnhub→Yahoo→CBOE). Symboles VALIDÉS en Étape 0 contre l'endpoint réel :
@@ -241,7 +244,7 @@ export default function PreMarketBriefing() {
   const { rate: fxRate, formatRate: formatFxRate } = useFx();
 
   const phaseInfo = useMemo(() => nextPhase(now), [now]);
-  const vixInfo = useMemo(() => vixRegime(quotes?.VIX), [quotes]);
+  const vixInfo = useMemo(() => vixRegime(quotes?.['^VIX']), [quotes]);
 
   const armedPositions = useMemo(() => {
     if (!sniperGates?.rows) return [];
@@ -411,13 +414,13 @@ export default function PreMarketBriefing() {
       <div className="premarket-page__regime">
         <div className="premarket-page__regime-cell" data-tone={vixInfo.tone}>
           <span className="premarket-page__regime-label">VIX</span>
-          <span className="premarket-page__regime-value">{fmtIndex(quotes?.VIX)}</span>
+          <span className="premarket-page__regime-value">{fmtIndex(quotes?.['^VIX'])}</span>
           <span className="premarket-page__regime-sub">{vixInfo.label}</span>
         </div>
         <div className="premarket-page__regime-cell">
           <span className="premarket-page__regime-label">SPX</span>
-          <span className="premarket-page__regime-value">{fmtIndex(quotes?.SPX)}</span>
-          <span className="premarket-page__regime-sub">{fmtIndexChg(quotes?.SPX) || '——'}</span>
+          <span className="premarket-page__regime-value">{fmtIndex(quotes?.['^GSPC'])}</span>
+          <span className="premarket-page__regime-sub">{fmtIndexChg(quotes?.['^GSPC']) || '——'}</span>
         </div>
         <div className="premarket-page__regime-cell">
           <span className="premarket-page__regime-label">QQQ</span>

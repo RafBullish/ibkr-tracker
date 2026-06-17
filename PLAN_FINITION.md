@@ -546,7 +546,7 @@ Chaque **U** = un commit autonome. Ordre = priorité décroissante. Principe : d
   - **Checklist** : conservée telle quelle (workflow de confirmation) ; ses items « Calendrier macro » / « Earnings BMO/AMC » ont désormais les vraies sections de données à réviser au-dessus.
   - **Vérif** : `vite build` OK ; Playwright **isolé** + démo (2 positions NVDA/AAPL + cache earnings seedé) → macro = FOMC 17/06 (FORT), earnings = 4 lignes triées (AAPL/NVDA en évidence « position », BMO/AMC, COST sans estimés → « — »), Positions Review/horloges/regime/checklist intacts, capture lue, 0 erreur console issue d'U11 (seules 500/502 d'API externes en dev).
   - **Gates EARN-J2 / EARN+J30 (NON implémenté, hors-scope)** : **trivialement faisable** — le feed earnings expose `{symbol, date}` et le matching sur les tickers tenus est déjà fait (surlignage) ; un day-delta position↔prochain earning activerait ces 2 gates dans `useSniperGates`. À valider séparément.
-- **U12 · Premarket : DXY + futures overnight** — ✅ **FAIT (ce commit)**. DXY + futures ES/NQ/YM affichés dans le PreMarketBriefing via le **même `/api/quote`** (cascade Finnhub→Yahoo→CBOE) et le **même hook `useMarketQuotes`** que VIX/SPX/QQQ. Aucun nouvel endpoint, aucune nouvelle source.
+- **U12 · Premarket : DXY + futures overnight** — ✅ **FAIT (a3283cb)**. DXY + futures ES/NQ/YM affichés dans le PreMarketBriefing via le **même `/api/quote`** (cascade Finnhub→Yahoo→CBOE) et le **même hook `useMarketQuotes`** que VIX/SPX/QQQ. Aucun nouvel endpoint, aucune nouvelle source.
   - **Étape 0 — verdict de faisabilité des symboles** (test réel contre l'endpoint en dev, dev exécute les handlers sans clé Finnhub → exerce la voie Yahoo/CBOE, valide pour la prod) :
 
     | Symbole | /api/quote | Verdict |
@@ -560,7 +560,21 @@ Chaque **U** = un commit autonome. Ordre = priorité décroissante. Principe : d
     Au moins DXY **et** les 3 futures servent de vraies valeurs (2 runs stables, prix + variation réels) → affichage implémenté **uniquement pour ces 4 symboles validés**. Aucun bloc « —— » permanent.
   - **Implémentation** : symboles ajoutés à `useMarketQuotes` (un seul fetch, pas de duplication). **DXY** garnit la cellule existante du regime row (plus de « —— » en dur ; sous-titre dev-leak « overnight feed » déjà retiré en U2). **Futures** = nouveau strip 3 cellules (ES/NQ/YM) sous le regime row, réutilisant `.premarket-page__regime` (pas de redesign). Variation colorée vert/rouge **sur le sub uniquement** (`--regime-sub--up/--down`), signe nul → neutre (aucun rouge parasite ; la valeur reste en ink neutre). `——` temporaire pendant le fetch, jamais permanent (symboles validés).
   - **Vérif** : `vite build` OK ; Playwright **isolé** → DXY `100.12 +0.59 %` (vert), ES `7'539 −0.63 %` / NQ `30'274 −0.13 %` / YM `52'334 −0.26 %` (rouge), regime/positions/macro/earnings/checklist intacts, capture lue, **0 erreur console issue d'U12** (les 4 symboles renvoient 200 ; seules les 502 préexistantes de `VIX`/`SPX` et 500/502 d'autres feeds en dev).
-  - **Observation hors-scope (non corrigée)** : le regime row appelle encore `'VIX'`/`'SPX'` qui **ne sont pas servis** (502 → « —— ») ; `'^VIX'`/`'^GSPC'` fonctionneraient (cf. `^GSPC` 200 en Étape 0). Correctif trivial mais hors périmètre U12.
+  - **Observation hors-scope (→ corrigée en U12-bis)** : le regime row appelait encore `'VIX'`/`'SPX'` qui **ne sont pas servis** (502 → « —— ») ; `'^VIX'`/`'^GSPC'` fonctionnent (cf. `^GSPC` 200 en Étape 0).
+
+- **U12-bis · Premarket : corriger les symboles VIX/SPX du regime row** — ✅ **FAIT (ce commit)**. Les 2 cellules `VIX` et `SPX` affichaient « —— » en permanence car `'VIX'`/`'SPX'` nus ne sont pas servis par `/api/quote`. Remplacés par les symboles Yahoo corrects.
+  - **Étape 0 — verdict** (test réel de l'endpoint) :
+
+    | Symbole | `/api/quote` | Verdict |
+    |---|---|---|
+    | `^VIX` | ✅ 200 (~18.7, yahoo) | **retenu (VIX)** |
+    | `^GSPC` | ✅ 200 (~7'418, yahoo) | **retenu (SPX)** |
+    | `VIX` (nu) | ❌ 502 | confirmé cassé |
+    | `SPX` (nu) | ❌ 502 | confirmé cassé |
+
+  - **Implémentation** : `PREMARKET_INDICES` = `['^VIX', '^GSPC', 'QQQ']` ; **fetch ET lecture synchronisés** — les cellules lisent `quotes['^VIX']` / `quotes['^GSPC']` (clé = symbole exact, notation crochets), et `vixRegime(quotes['^VIX'])` pilote le badge de volatilité. Labels d'affichage « VIX » / « SPX » inchangés. QQQ/DXY/futures (U12) intacts. Aucun « —— » permanent (symboles validés).
+  - **Vérif** : `vite build` OK ; Playwright **isolé** → VIX `18.73` + badge **NORMAL** (cohérent : 18.73 ∈ [15,20[ → NORMAL ; le regime de volatilité reflète bien le vrai VIX), SPX `7'418 −1.24 %`, QQQ/DXY/futures/Positions/macro/earnings/checklist intacts, capture lue, **0 erreur console pour `^VIX`/`^GSPC`** (les 502 `VIX`/`SPX` du premarket ont disparu ; reste un `^NDX` 502 du **header global**, hors-scope).
+  - **Reste lié** : le **header global** consomme aussi des symboles potentiellement non servis (`^NDX`, etc.) — même racine, composant distinct, hors U12-bis.
 - **U13 · IV historique 52w** (gros) — débloque simultanément Chain IVR, History backfill Δ/IVR, `useIVMovers`, Greeks IV rank. Source externe ou stockage cumulé local de `qc:chainIv`.
 - **U14 · SectorHeatmap** — feed externe ou agrégation GICS locale.
 - **U15 · Analytics HourChart** — retirer (pas d'horodatage intraday) ou repenser.
