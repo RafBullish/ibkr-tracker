@@ -44,6 +44,18 @@ const ROUTINE_ITEMS = [
 
 const PREMARKET_INDICES = ['VIX', 'SPX', 'QQQ'];
 
+// U12 — DXY + futures overnight servis par /api/quote (cascade
+// Finnhub→Yahoo→CBOE). Symboles VALIDÉS en Étape 0 contre l'endpoint réel :
+// DX-Y.NYB sert le DXY (~100.x via Yahoo) ; DXY/^DXY/DX=F NE sont PAS servis
+// (502) → seul DX-Y.NYB retenu. ES=F/NQ=F/YM=F servent les futures (Yahoo).
+const DXY_SYMBOL = 'DX-Y.NYB';
+const FUTURES = [
+  { sym: 'ES=F', label: 'ES' },
+  { sym: 'NQ=F', label: 'NQ' },
+  { sym: 'YM=F', label: 'YM' },
+];
+const QUOTE_SYMBOLS = [...PREMARKET_INDICES, DXY_SYMBOL, ...FUTURES.map((f) => f.sym)];
+
 const todayKey = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -137,6 +149,15 @@ function fmtIndexChg(q) {
   return `${sign}${Math.abs(q.changePercent).toFixed(2)}%`;
 }
 
+// U12 — tonalité de la variation (sur le sub uniquement). Signe nul/absent
+// → neutre (aucun rouge parasite).
+function chgToneClass(q) {
+  if (!q || !Number.isFinite(q.changePercent) || q.changePercent === 0) return '';
+  return q.changePercent > 0
+    ? 'premarket-page__regime-sub--up'
+    : 'premarket-page__regime-sub--down';
+}
+
 function vixRegime(vix) {
   if (!vix || !Number.isFinite(vix.price)) return { label: '——', tone: 'mute' };
   if (vix.price < 15) return { label: 'LOW VOL', tone: 'profit' };
@@ -215,7 +236,7 @@ export default function PreMarketBriefing() {
     return () => clearInterval(id);
   }, []);
 
-  const { quotes } = useMarketQuotes(PREMARKET_INDICES);
+  const { quotes } = useMarketQuotes(QUOTE_SYMBOLS);
   const sniperGates = useSniperGates();
   const { rate: fxRate, formatRate: formatFxRate } = useFx();
 
@@ -419,8 +440,27 @@ export default function PreMarketBriefing() {
         </div>
         <div className="premarket-page__regime-cell">
           <span className="premarket-page__regime-label">DXY</span>
-          <span className="premarket-page__regime-value">——</span>
+          <span className="premarket-page__regime-value">{fmtIndex(quotes?.[DXY_SYMBOL])}</span>
+          <span className={`premarket-page__regime-sub ${chgToneClass(quotes?.[DXY_SYMBOL])}`}>
+            {fmtIndexChg(quotes?.[DXY_SYMBOL]) || '——'}
+          </span>
         </div>
+      </div>
+
+      {/* 2b. Futures overnight — ES/NQ/YM via /api/quote (validés Yahoo) */}
+      <div className="premarket-page__regime">
+        {FUTURES.map((f) => {
+          const q = quotes?.[f.sym];
+          return (
+            <div className="premarket-page__regime-cell" key={f.sym}>
+              <span className="premarket-page__regime-label">{f.label}</span>
+              <span className="premarket-page__regime-value">{fmtIndex(q)}</span>
+              <span className={`premarket-page__regime-sub ${chgToneClass(q)}`}>
+                {fmtIndexChg(q) || '——'}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       {/* 3. Positions review — gates table */}

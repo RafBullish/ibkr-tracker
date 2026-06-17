@@ -223,6 +223,15 @@
   background: var(--accent);
 }
 
+/* U12 — variation overnight (DXY + futures) colorée sur le sub uniquement
+   (la valeur reste neutre ; signe nul → pas de couleur, aucun rouge parasite). */
+.premarket-page__regime-sub--up {
+  color: var(--pnl-up);
+}
+.premarket-page__regime-sub--down {
+  color: var(--pnl-down);
+}
+
 /* ════════════════════════════════════════════════════════════════
    SECTION — positions review + routine checklist (panel container)
    ════════════════════════════════════════════════════════════════ */
