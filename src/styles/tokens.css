@@ -40,7 +40,7 @@
   /* ===== TYPOGRAPHY ===== */
   --qc-font-sans: 'Geist Variable', 'Inter', system-ui, sans-serif;
   --qc-font-mono: 'Geist Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
-  --qc-font-hero: 'Geist Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+  --qc-font-hero: 'Iosevka QC Hero', 'Geist Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
 
   --qc-fs-caption: 11px;
   --qc-fs-label: 11px;
@@ -70,7 +70,7 @@
   /* ===== RADIUS ===== */
   --qc-radius-sm: 2px;
   --qc-radius: 4px;
-  --qc-radius-md: 4px;
+  --qc-radius-md: 5px;
   --qc-radius-lg: 6px;
 
   /* ===== LAYOUT CHROME ===== */

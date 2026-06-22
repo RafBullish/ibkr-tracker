@@ -142,7 +142,7 @@
      Dashboard via le hook --qc-accent et toutes ses dérivées (border-accent,
      accent-text, accent-gradient, chip-text-active, etc.). */
   --qc-accent:         var(--accent);
-  --qc-accent-hover:   var(--accent);
+  --qc-accent-hover:   #FFB454;
   --qc-accent-dim:     color-mix(in srgb, var(--accent) 12%, transparent);
   --qc-accent-glow:    color-mix(in srgb, var(--accent) 28%, transparent);
   --qc-accent-line:    color-mix(in srgb, var(--accent) 35%, transparent);

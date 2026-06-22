@@ -267,18 +267,10 @@ export default function CommandPalette({ open, onClose }) {
                         fontWeight: 700,
                         padding: '2px 6px',
                         borderRadius: 4,
-                        background:
-                          item.type === 'CALL'
-                            ? `${T.profit}33`
-                            : item.type === 'PUT'
-                              ? `${T.loss}33`
-                              : `${T.accent.main}33`,
-                        color:
-                          item.type === 'CALL'
-                            ? T.profit
-                            : item.type === 'PUT'
-                              ? T.loss
-                              : T.accent.main,
+                        // Colour law: CALL/PUT/STK are neutral instrument
+                        // categories, never money tones — ink-soft only.
+                        background: `${T.text.secondary}1F`,
+                        color: T.text.secondary,
                       }}
                     >
                       {item.type}

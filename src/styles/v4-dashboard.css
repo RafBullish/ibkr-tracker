@@ -1622,6 +1622,10 @@
   position: sticky;
   top: 0;
   z-index: 1;
+  background: color-mix(in srgb, var(--qc-bg-base) 80%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 1px 0 0 var(--qc-border-subtle);
 }
 
 .greeks-agg__table thead th {
@@ -1633,7 +1637,7 @@
   text-transform: uppercase;
   color: var(--qc-text-tertiary);
   border-bottom: 1px solid var(--qc-border-subtle);
-  background: var(--bg-elev-1);
+  background: transparent;
   text-align: right;
   white-space: nowrap;
 }
@@ -2273,6 +2277,10 @@
   position: sticky;
   top: 0;
   z-index: 1;
+  background: color-mix(in srgb, var(--qc-bg-base) 80%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 1px 0 0 var(--qc-border-subtle);
 }
 
 .watchlist__table thead th,
@@ -2285,7 +2293,7 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--qc-text-tertiary);
-  background: var(--bg-elev-1);
+  background: transparent;
   border-bottom: 1px solid var(--qc-border-subtle);
   text-align: right;
   white-space: nowrap;
@@ -5474,14 +5482,12 @@
    .trade-history__spark-mute) retirés. La sparkline 7J reste utile sur
    LivePositions (trades vivants = données qui bougent réellement). */
 
-.trade-history__badge--call {
-  background: color-mix(in srgb, var(--qc-profit) 10%, transparent);
-  color: var(--qc-profit);
-}
-
+/* Colour law: CALL/PUT are neutral instrument categories, not money —
+   ink-soft on a faint neutral tint (red/green reserved for real P&L). */
+.trade-history__badge--call,
 .trade-history__badge--put {
-  background: color-mix(in srgb, var(--qc-loss) 10%, transparent);
-  color: var(--qc-loss);
+  background: color-mix(in srgb, var(--qc-text-primary) 6%, transparent);
+  color: var(--qc-text-secondary);
 }
 
 .trade-history__badge--stock {

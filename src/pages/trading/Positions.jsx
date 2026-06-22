@@ -227,8 +227,8 @@ function DteBadge({ dte }) {
 // ── Type badge (CALL / PUT / STK) ───────────────────────────
 function TypeBadge({ as, ty }) {
   if (as === 'Option' && ty === 'CALL')
-    return <StatusBadge variant="accent" label="CALL" size="xs" />;
-  if (as === 'Option' && ty === 'PUT') return <StatusBadge variant="loss" label="PUT" size="xs" />;
+    return <StatusBadge variant="neutral" label="CALL" size="xs" />;
+  if (as === 'Option' && ty === 'PUT') return <StatusBadge variant="neutral" label="PUT" size="xs" />;
   return <StatusBadge variant="neutral" label="STK" size="xs" />;
 }
 

@@ -124,7 +124,7 @@ function ModePill({ variant }) {
     >
       <span
         className={`cmdbar__mode-dot${
-          variant === 'live' || variant === 'real' ? ' cmdbar__live-dot' : ''
+          variant === 'live' ? ' cmdbar__live-dot' : ''
         }`}
         aria-hidden="true"
       />

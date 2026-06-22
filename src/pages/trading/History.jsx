@@ -97,8 +97,8 @@ function computeTradePnl(t, lr) {
 function TypeBadge({ as, ty }) {
   if (as === 'Action' || (!ty && as !== 'Option'))
     return <StatusBadge variant="neutral" label="STK" size="xs" />;
-  if (ty === 'CALL') return <StatusBadge variant="accent" label="CALL" size="xs" />;
-  return <StatusBadge variant="loss" label={ty || 'PUT'} size="xs" />;
+  if (ty === 'CALL') return <StatusBadge variant="neutral" label="CALL" size="xs" />;
+  return <StatusBadge variant="neutral" label={ty || 'PUT'} size="xs" />;
 }
 
 const EXIT_REASON_LABELS = {

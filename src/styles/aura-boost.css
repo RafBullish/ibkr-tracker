@@ -672,8 +672,8 @@ input[type="search"].aura-input,
 }
 .search-input:focus,
 .aura-input:focus {
-  border-color: rgba(129, 140, 248, 0.55);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--qc-accent-dim);
 }
 .search-input::placeholder,
 .aura-input::placeholder {

@@ -73,7 +73,7 @@ export default function PerPositionGreeksTable({ rows = [], className }) {
           <span className="mono" style={{ fontWeight: 'var(--fw-semibold)' }}>
             {r.ticker}
           </span>
-          <StatusBadge variant={r.type === 'PUT' ? 'loss' : 'accent'} label={r.type} size="xs" />
+          <StatusBadge variant="neutral" label={r.type} size="xs" />
           <span className="mono" style={{ textAlign: 'right' }}>
             {fmtNum(r.delta)}
           </span>

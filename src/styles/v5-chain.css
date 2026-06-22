@@ -337,13 +337,13 @@
   height: 18px;
   padding: 0 8px;
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
   color: var(--qc-text-secondary);
   background: transparent;
   border: 1px solid var(--qc-border-subtle);
-  border-radius: 0;
+  border-radius: var(--qc-radius-sm);
   cursor: pointer;
   transition: all 80ms ease-out;
 }
@@ -354,9 +354,9 @@
 }
 
 .chain-v5__chip[data-active] {
-  color: var(--qc-text-primary);
+  color: var(--accent-amber, #ffa028);
   border-color: var(--accent-amber, #ffa028);
-  background: color-mix(in srgb, var(--accent-amber, #ffa028) 8%, transparent);
+  background: color-mix(in srgb, var(--accent-amber, #ffa028) 12%, transparent);
 }
 
 .chain-v5__sniper-toggle {
@@ -366,14 +366,14 @@
   height: 18px;
   padding: 0 10px;
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--qc-text-secondary);
   background: transparent;
   border: 1px solid var(--qc-border-subtle);
-  border-radius: 0;
+  border-radius: var(--qc-radius-sm);
   cursor: pointer;
   transition: all 80ms ease-out;
 }

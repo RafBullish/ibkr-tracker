@@ -100,8 +100,8 @@
   align-items: center;
   gap: var(--qc-space-1);
   padding: 3px 8px;
-  border-radius: var(--radius-full);
-  font-family: var(--qc-font-sans);
+  border-radius: var(--qc-radius-sm);
+  font-family: var(--qc-font-mono);
   font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
   letter-spacing: var(--ls-wider);
@@ -136,7 +136,7 @@
   color: var(--loss-text);
 }
 .status-badge--accent {
-  background: var(--qc-info-bg);
+  background: var(--qc-accent-dim);
   border-color: var(--accent-border);
   color: var(--accent-text);
 }
