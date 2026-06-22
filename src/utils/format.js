@@ -19,30 +19,10 @@ export function formatChf(amount) {
   return (n < 0 ? '-' : '') + 'CHF ' + NUM_FMT_DE_CH_2D.format(Math.abs(n));
 }
 
-export function formatPercent(value) {
-  return (value || 0).toFixed(2) + '%';
-}
-
 export function formatPnlUsd(amount) {
   const n = toFloat(amount);
   if (n === 0) return '$0.00';
   return (n > 0 ? '+' : '') + formatUsd(n);
-}
-
-export function formatPnlChf(amount) {
-  const n = toFloat(amount);
-  if (n === 0) return 'CHF 0.00';
-  return (n > 0 ? '+' : '') + formatChf(n);
-}
-
-export function formatPnlPct(value) {
-  const n = toFloat(value);
-  if (n === 0) return '0.00%';
-  return (n > 0 ? '+' : '') + n.toFixed(2) + '%';
-}
-
-export function formatRMultiple(value) {
-  return (value >= 0 ? '+' : '') + value.toFixed(2) + 'R';
 }
 
 export function profitColor(value) {
@@ -59,10 +39,4 @@ export function escapeHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
-}
-
-export function calculateNotionalVolume(quantity, price, multiplier) {
-  return Math.abs(
-    toFloat(quantity) * toFloat(price) * (toFloat(multiplier) > 0 ? toFloat(multiplier) : 1)
-  );
 }

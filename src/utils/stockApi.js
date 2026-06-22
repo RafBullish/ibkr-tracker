@@ -65,11 +65,3 @@ export async function fetchMultipleQuotes(tickers) {
 
   return { results, errors };
 }
-
-/**
- * Stock API is always reachable via the serverless proxy.
- * The proxy returns 500 if FINNHUB_KEY is missing server-side.
- */
-export function isStockApiConfigured() {
-  return true;
-}
