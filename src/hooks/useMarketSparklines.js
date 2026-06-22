@@ -201,9 +201,3 @@ export function useMarketSparklines(symbols) {
 
   return { sparklines, errors };
 }
-
-// ─── Test seam ────────────────────────────────────────────────────
-// Reset dedup map between tests (only used by vitest).
-export function __resetSparklineDedupForTests() {
-  inflightBySymbol.clear();
-}

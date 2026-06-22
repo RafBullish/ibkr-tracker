@@ -16,30 +16,6 @@ export function extractMonthKey(dateStr) {
   return dateStr ? dateStr.slice(0, 7) : '';
 }
 
-export function extractYearKey(dateStr) {
-  return dateStr ? dateStr.slice(0, 4) : '';
-}
-
-export function formatMonthLabel(monthKey) {
-  if (!monthKey) return '';
-  const parts = monthKey.split('-');
-  const monthNames = [
-    'Jan',
-    'Fév',
-    'Mar',
-    'Avr',
-    'Mai',
-    'Jun',
-    'Jul',
-    'Aoû',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Déc',
-  ];
-  return monthNames[parseInt(parts[1], 10) - 1] + ' ' + parts[0];
-}
-
 export function daysToExpiration(expirationDate) {
   if (!expirationDate) return '-';
   const now = new Date();

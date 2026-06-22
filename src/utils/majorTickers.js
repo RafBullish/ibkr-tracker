@@ -185,6 +185,3 @@ export const MAJOR_US_TICKERS = [
   'JD',
   'NIO',
 ];
-
-// Set for O(1) membership checks.
-export const MAJOR_US_TICKER_SET = new Set(MAJOR_US_TICKERS);

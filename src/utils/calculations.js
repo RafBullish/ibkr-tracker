@@ -770,40 +770,6 @@ export function calculatePortfolioMetrics(state) {
 
 // ─── Equity Curve with Drawdown ────────────────────────────
 
-export function computeStreaks(closedTrades, liveRate = 1) {
-  if (!closedTrades.length) return { current: null, bestWin: 0, worstLoss: 0 };
-
-  const sorted = closedTrades.slice().sort((a, b) => (a.do || '').localeCompare(b.do || ''));
-  let bestWin = 0,
-    worstLoss = 0,
-    curWin = 0,
-    curLoss = 0;
-
-  sorted.forEach((t) => {
-    const pnl = tradePnlUsd(t, liveRate);
-    if (pnl > 0) {
-      curWin++;
-      curLoss = 0;
-      if (curWin > bestWin) bestWin = curWin;
-    } else if (pnl < 0) {
-      curLoss++;
-      curWin = 0;
-      if (curLoss > worstLoss) worstLoss = curLoss;
-    }
-  });
-
-  const current =
-    curWin > 0
-      ? { type: 'win', count: curWin }
-      : curLoss > 0
-        ? { type: 'loss', count: curLoss }
-        : null;
-
-  return { current, bestWin, worstLoss };
-}
-
-// ─── Equity Curve with Drawdown ────────────────────────────
-
 export function computeEquityCurve(closedTrades, liveRate = 1) {
   if (!closedTrades.length) return [];
 

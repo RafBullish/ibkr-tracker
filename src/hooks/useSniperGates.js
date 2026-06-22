@@ -154,22 +154,3 @@ export default function useSniperGates(options = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [positionsKey, ref]);
 }
-
-// Export pure builder for tests + future /__playground (none in v5).
-export function buildSniperGatesRows(positions, options = {}) {
-  const ref = options.now;
-  const rows = (positions || [])
-    .filter((p) => p.as !== 'Action')
-    .map((p) => ({
-      id: p.id,
-      ticker: p.tk,
-      type: p.ty || '—',
-      dir: p.dir,
-      strike: p.st || null,
-      dte: dteFromExp(p.ex, ref),
-      daysIn: daysHeld(p.di, ref),
-      unrealPct: unrealizedPnlPct(p),
-      gates: buildGates(p, ref),
-    }));
-  return { rows, count: rows.length };
-}

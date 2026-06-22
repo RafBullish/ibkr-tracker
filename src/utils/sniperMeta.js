@@ -74,19 +74,6 @@ export function writeSniperMeta(positionId, patch) {
 }
 
 /**
- * Remove the sidecar entry for a position. No-op when absent.
- */
-export function removeSniperMeta(positionId) {
-  if (!positionId) return;
-  if (!isBrowser()) return;
-  try {
-    window.localStorage.removeItem(KEY_PREFIX + positionId);
-  } catch {
-    /* quota / disabled — silent */
-  }
-}
-
-/**
  * Read every sniper meta entry as a map { [positionId]: meta }. Used
  * by future bulk views (Sprint 7 attribution heatmap, Sprint 2 tagger).
  */
@@ -106,8 +93,6 @@ export function readAllSniperMeta() {
   }
   return out;
 }
-
-export const SNIPER_META_KEY_PREFIX = KEY_PREFIX;
 
 // ─── Brique 13 — matrice tier actif (portfolio-level) ───────────
 //

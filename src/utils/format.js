@@ -25,14 +25,6 @@ export function formatPnlUsd(amount) {
   return (n > 0 ? '+' : '') + formatUsd(n);
 }
 
-export function profitColor(value) {
-  return value >= 0 ? 'var(--profit)' : 'var(--loss)';
-}
-
-export function profitColorClass(value) {
-  return value >= 0 ? 'color-green' : 'color-red';
-}
-
 export function escapeHtml(str) {
   return String(str == null ? '' : str)
     .replace(/&/g, '&amp;')

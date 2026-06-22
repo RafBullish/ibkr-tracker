@@ -201,18 +201,6 @@ export function findGammaFlip(rows, spot) {
   return gammaFlipFromLadder(computeGEX(rows, spot));
 }
 
-// Single-pass batch helper for callers that need every GEX-derived
-// metric at once — builds the ladder once instead of four times.
-export function computeChainGEXAnalytics(rows, spot) {
-  const ladder = computeGEX(rows, spot);
-  return {
-    netGex: netGexFromLadder(ladder),
-    callWall: callWallFromLadder(ladder, spot),
-    putWall: putWallFromLadder(ladder, spot),
-    gammaFlip: gammaFlipFromLadder(ladder),
-  };
-}
-
 // Median IV across the 5 strikes nearest spot — quick proxy for ATM IV
 // when no surface metric is exposed. Returns null on insufficient data.
 // Expressed as fraction (0..1), matching Yahoo's iv units.
