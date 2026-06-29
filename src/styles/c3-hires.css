@@ -1,0 +1,34 @@
+/* ============================================================
+   c3-hires.css — PALIER HAUTE RÉSOLUTION · Phase C.3.0
+   « Zoom 4K @ 90 % » — cible réelle : usage FENÊTRÉ ~1591 px CSS
+   sur panneau hi-DPI (dpr 1.35). La 4K-ité vit dans la NETTETÉ,
+   pas dans la largeur → densification fine, JAMAIS de scale-up.
+
+   Importé EN DERNIER (après tous les pages-*.css, cf. main.jsx)
+   → ce fichier gagne par ORDRE DE SOURCE à spécificité égale.
+   Plus aucune règle hi-res ne dépend de l'ordre d'import ailleurs.
+
+   Seuil 1440 px : s'arme à 1591 (usage quotidien) ; aucun
+   breakpoint concurrent entre 1440 et 1591. Reste actif si la
+   fenêtre est maximisée (~2844) — les bumps doivent donc TENIR à
+   1591 ET au-delà (aucune optimisation dédiée au cas maximisé).
+
+   Convention de spécificité (B3+) : toute règle de grille passe
+   sous `.dash-shell .dash-grid` (0,2,0) pour battre v4-dashboard
+   `.dash-grid` (0,1,0) indépendamment de l'ordre d'import.
+   Ancêtre DOM confirmé : .dash-grid < .dash-shell < .dashboard-page.
+   ============================================================ */
+
+@media (min-width: 1440px) {
+  :root {
+    /* Sentinelle de vérification — prouve que le palier est armé
+       (getComputedStyle(root).getPropertyValue('--c3-tier') ===
+       'active' à ≥1440px, '' en dessous). Custom prop inutilisée
+       → strictement no-op visuel. */
+    --c3-tier: active;
+
+    /* — Surcharges de tokens : commit (c) —
+       Plancher 12→13 + bas-de-gamme typo (tuer le sub-12px).
+       Spacing : TENU, jamais inflaté (priorité = MOINS de vide). */
+  }
+}

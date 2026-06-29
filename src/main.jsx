@@ -66,6 +66,10 @@ import './styles/pages-dashboard.css';
 // scopées. theme/tokens.js reste intact (ErrorBoundary, CommandPalette,
 // WinRateDonut, ThemeSwitcher en dépendent) — purge dans CANONICAL-PURGE.
 import './styles/pages-calendar.css';
+// c3-hires.css — PALIER HAUTE RÉSOLUTION C.3.0 (≥1440px). Importé EN
+// DERNIER pour gagner par ordre de source. Densifie l'usage fenêtré
+// ~1591 px / dpr 1.35 ; n'affecte pas le mobile (<1440).
+import './styles/c3-hires.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
