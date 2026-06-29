@@ -83,4 +83,59 @@
   .live-pos__empty {
     font-size: var(--type-caption);
   }
+
+  /* ── B3 ext (décision Rafael : TOUT à 13) — étend le plancher à
+     TOUS les sous-13 restants du dashboard : labels ET cellules-
+     valeur risk-matrix, badges/pills, headers de table, spans/
+     buttons descendants. Cohérence du plancher > +1px de densité
+     (c'est 1px sur les chiffres). NB : les ticks d'axe SVG Recharts
+     (<tspan>/<text> 11/12px) sont pilotés par des props JSX inline
+     → NON couverts par CSS, traités avec le travail charts. */
+  .trade-history__badge,
+  .trade-history__th,
+  .trade-history__table thead th,
+  .trade-history__footer-label,
+  .trade-history__ctx-badge,
+  .trade-history__sub,
+  .trade-history__sniper-placeholder span,
+  .trade-history__range-selector button,
+  .trading-chart__range-btn,
+  .trading-chart__kpi-label,
+  .trading-chart__kpi-sub,
+  .trading-chart__footer-label,
+  .trading-chart__sub,
+  .trading-chart__empty,
+  .live-pos__tag-btn,
+  .live-pos__type-pill,
+  .live-pos__gate-pill-sub,
+  .live-pos__ctx-badge,
+  .alerts-feed__level,
+  .alerts-feed__sep,
+  .alerts-feed__msg,
+  .risk-matrix__cell--right,
+  .risk-matrix__cell--loss,
+  .risk-matrix__cell--profit,
+  .risk-matrix__cell--mute,
+  .risk-matrix__cell--accent,
+  .risk-matrix__monthly-label,
+  .risk-matrix__greek-label,
+  .risk-matrix__greek-sub,
+  .risk-matrix__winrate-label,
+  .risk-matrix__winrate-pf-val,
+  .risk-matrix__tier-badge,
+  .risk-matrix__section-head-info,
+  .risk-matrix__footer-cmd-label,
+  .risk-matrix__footer-cmd,
+  .risk-matrix__section-head span,
+  .risk-matrix__histogram-axis span,
+  .risk-matrix__subzone-head span,
+  .risk-matrix__row span,
+  .risk-matrix__footer span,
+  .module-header__hint,
+  .module-empty__title,
+  .module-empty__sub,
+  .position-sparkline__empty,
+  .watchlist__add-btn {
+    font-size: var(--type-caption);
+  }
 }
