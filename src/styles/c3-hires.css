@@ -48,4 +48,39 @@
        priorité = MOINS de vide). Aucune surcharge --space-* /
        --qc-space-* : on resserre par page (B3+), pas globalement. */
   }
+
+  /* ══ B3 · DASHBOARD — tier label/caption au plancher ════════════
+     Les sous-composants /components/dashboard hardcodent 10/11/12px
+     en court-circuitant les tokens. On remonte le tier LABEL/CAPTION
+     à var(--type-caption)=13 — DANS LE PALIER uniquement (mobile
+     <1440 garde l'original). Labels courts → coût densité ~nul.
+     EXCLUS : valeurs/données (≥14, déjà denses) et titres (≥16).
+     Périmètre = scope nommé (KPI cards 11/12 + CalendarMini +
+     résidus LivePositions). Extensions risk-matrix/trading-chart/
+     trade-history = en attente de validation Rafael. */
+  .dash-kpi-card__stats-grid-label,
+  .dash-kpi-card__range-btn,
+  .dash-kpi-card__pill,
+  .dash-kpi-card__live-text,
+  .dash-kpi-card__chf,
+  .dash-kpi-card__bar-pct,
+  .dash-kpi-card__bar-denom,
+  .dash-kpi-card__bar-cap-label,
+  .dash-kpi-card__info-label,
+  .dash-kpi-card__info-value,
+  .dash-kpi-card__hero-gauge-cap,
+  .dash-kpi-card__spark-overlay,
+  .dash-kpi-card__wr-w,
+  .dash-kpi-card__wr-sep,
+  .dash-kpi-card__wr-l,
+  .calmini__date,
+  .calmini__label,
+  .calmini__tag,
+  .live-pos__th,
+  .live-pos__table thead th,
+  .live-pos__sub,
+  .live-pos__footer-label,
+  .live-pos__empty {
+    font-size: var(--type-caption);
+  }
 }
