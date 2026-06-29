@@ -27,8 +27,25 @@
        → strictement no-op visuel. */
     --c3-tier: active;
 
-    /* — Surcharges de tokens : commit (c) —
-       Plancher 12→13 + bas-de-gamme typo (tuer le sub-12px).
-       Spacing : TENU, jamais inflaté (priorité = MOINS de vide). */
+    /* ── PLANCHER TYPO 12 → 13 (commit c) ───────────────────────
+       Densification fine : on REMONTE la bande basse (tue le
+       sub-12px au niveau token) ; on NE gonfle PAS les gros titres
+       (16/28/40/48/64 intacts). Après ceci, aucun TOKEN < 13px à
+       ≥1440. Les valeurs sub-12px HARDCODÉES en px brut dans les
+       pages-*.css ne sont PAS des tokens → remontées par page (B3+). */
+    --type-caption:   13px;   /* cascade → --qc-fs-caption / --qc-fs-label */
+    --qc-fs-micro:    13px;
+    --fs-xs:          13px;
+    --fs-sm:          13px;
+    --fs-base:        13px;
+    --text-2xs:       13px;
+    --text-xs:        13px;
+    --text-sm:        13px;
+    --kpi-label-size: 13px;
+    --chip-font-size: 13px;
+
+    /* SPACING : TENU, jamais inflaté (correction void Rafael —
+       priorité = MOINS de vide). Aucune surcharge --space-* /
+       --qc-space-* : on resserre par page (B3+), pas globalement. */
   }
 }
