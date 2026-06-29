@@ -22,9 +22,11 @@
      Row 5 : watch col 1-6 | calendar col 7-12 (Phase C.3)
      Row 6 : ivr col 1-4 | heat col 5-8 | alert col 9-12
 
-   Phase C.1.6 — `max-width: none` et `margin: 0` explicites pour
-   surcharger le legacy `.dash-grid { max-width: 1920px; margin: 0
-   auto; }` défini dans src/styles/dashboard.css:128.
+   Phase C.3.0(a) — `.dash-grid` est full-bleed PAR INTENTION. Le
+   legacy `max-width:1920px; margin:0 auto` (jadis dans dashboard.css)
+   a été retiré À LA SOURCE ; `max-width:none`/`margin:0` ci-dessous
+   sont la déclaration explicite — plus aucune dépendance d'ordre
+   d'import (landmine neutralisée proprement).
 
    Heights gérées par les sélecteurs attribute ci-dessous (pattern
    inline `style={{ gridArea: 'xxx' }}` déjà émis par les modules). */
@@ -44,8 +46,8 @@
   gap: 8px;
   padding: 0 4px 4px;
   width: 100%;
-  max-width: none; /* override legacy dashboard.css:128 (1920px) */
-  margin: 0;       /* override legacy dashboard.css:129 (auto) */
+  max-width: none; /* full-bleed explicite — C.3.0(a) */
+  margin: 0;       /* full-bleed explicite — C.3.0(a) */
   background: transparent;
   font-family: var(--qc-font-mono);
 }

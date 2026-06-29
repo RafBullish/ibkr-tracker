@@ -125,8 +125,6 @@
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: var(--qc-space-4);
   padding: var(--qc-space-5) var(--qc-space-6);
-  max-width: 1920px;
-  margin: 0 auto;
   position: relative;
   z-index: 1;
 }
@@ -1146,13 +1144,9 @@
 }
 
 /* ── RESPONSIVE ────────────────────────────────────────────── */
-@media (min-width: 1920px) {
-  .dash-grid {
-    gap: var(--qc-space-5);
-    padding: var(--qc-space-6) var(--qc-space-8);
-  }
-}
-
+/* C.3.0(a) — palier mort @media(min-width:1920px) retiré (jamais
+   atteint en usage fenêtré ~1591 ; était écrasé par v4-dashboard
+   de toute façon). Le vrai palier vit dans c3-hires.css (≥1440). */
 @media (max-width: 1400px) {
   .dash-grid {
     grid-template-columns: repeat(8, minmax(0, 1fr));
