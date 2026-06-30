@@ -224,4 +224,33 @@
   .positions-v3 .positions-v3__row-alerts {
     flex-wrap: nowrap;
   }
+
+  /* ══ HISTORY (densif) — plancher 13 sur les résidus sous-13 PROPRES à
+     la page. Le patron table est déjà acquis : hauteur de ligne 34px via le
+     rowHeight palier de DataTable (brique précédente → cohérence Positions),
+     et .v3-table__th-sort déjà à 13 (hérité du palier Positions). Restent
+     les hardcodes page :
+       · pages-history.css : .history-page__view-btn (11), .history-page__cell-meta (10)
+       · PerformanceAttribution (.perf-attr*, composant rendu UNIQUEMENT par
+         History → flooré ici = page-effectif) : title/hint/empty/chips/grid/
+         cells/legend, de 9-12px → 13.
+     EXCLUS (B-final) : .history-page__cell-mobile-date (mobile <768, jamais
+     au palier) + span P&L% inline JSX de la carte mobile (History.jsx:566).
+     Heatmap perf-attr : heights 24px (thead) / 48px (cells) absorbent 13px ;
+     vérifié 0 wrap chips + grille tenue + 0 overflow. */
+  .history-page__view-btn,
+  .history-page__cell-meta,
+  .perf-attr__title,
+  .perf-attr__hint,
+  .perf-attr__empty-title,
+  .perf-attr__empty-sub,
+  .perf-attr__chip-label,
+  .perf-attr__chip-sub,
+  .perf-attr__grid thead th,
+  .perf-attr__grid tbody th,
+  .perf-attr__cell-val,
+  .perf-attr__cell-n,
+  .perf-attr__legend {
+    font-size: var(--type-caption);
+  }
 }
