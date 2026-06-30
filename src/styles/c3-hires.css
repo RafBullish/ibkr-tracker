@@ -165,4 +165,23 @@
        hauteur. 360 à vérifier (ajuster si overflow vertical). */
     height: 360px;
   }
+
+  /* ══ B4 · TICKS D'AXE RECHARTS — dernier trou du plancher 13 ════
+     Les ticks XAxis/YAxis des 3 graphes héros (equity/dailypnl/3e)
+     sont rendus par `tick={{fontSize:11}}` en JSX. Recharts 3.8 passe
+     `fontSize` comme PROP SVG → React l'émet en ATTRIBUT de présentation
+     `font-size="11"` (vérifié dans recharts/es6 : svgPropertiesNoEvents
+     autorise fontSize ; Text.js spread via svgPropertiesAndEvents). Les
+     attributs de présentation ont la priorité la plus BASSE du cascade
+     → cette règle de classe les bat SANS !important. Le commentaire B3
+     (« non couvert par CSS ») présumait à tort un style inline.
+     CSS-ONLY volontaire : on NE touche PAS le JSX → mobile <1440 garde
+     11px, et surtout les constantes HERO_CHART_* (géométrie x→index du
+     hover, note CRITIQUE DashboardKPICards.jsx:51) restent intactes.
+     Pas de clip : YAxis width=88 >> ~55px@13px ; XAxis minTickGap=42
+     auto-drop. Scopé .dash-shell → n'affecte QUE le dashboard (autres
+     pages recharts hors palier). */
+  .dash-shell .recharts-cartesian-axis-tick-value {
+    font-size: var(--type-caption);
+  }
 }
