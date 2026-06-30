@@ -208,4 +208,20 @@
   .positions-dte {
     font-size: var(--type-caption);
   }
+
+  /* ══ POSITIONS (hauteur de ligne) — accompagne le rowHeight palier 34px
+     pose par DataTable (densité 'default' → 34 à ≥1440, cf. DataTable.jsx).
+     DataTable applique lineHeight=rowHeight INLINE sur le <tr> (34px ici) ;
+     le badge DTE omet sa propre line-height et héritait donc 34 + padding
+     3+3 = 40 → la ligne se serait étirée à 40 au lieu de 34. line-height:1
+     le rend compact (~19px) → ligne nette à 34, badge aéré (padding/min-width
+     36 intacts). nowrap sur la cellule Alerts : empêche un wrap multi-badges
+     de rendre les lignes inégales (table remplit déjà juste le scroller).
+     Tout au palier → <1440 garde 40px (rowHeight) + badge 46 d'origine. */
+  .positions-v3 .positions-dte {
+    line-height: 1;
+  }
+  .positions-v3 .positions-v3__row-alerts {
+    flex-wrap: nowrap;
+  }
 }
