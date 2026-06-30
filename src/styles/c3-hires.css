@@ -184,4 +184,28 @@
   .dash-shell .recharts-cartesian-axis-tick-value {
     font-size: var(--type-caption);
   }
+
+  /* ════════════════════════════════════════════════════════════════
+     PHASE C.3 · PAGES (séquence par page, 1 brique/page). Le palier
+     dashboard (B2/B3/B4 ci-dessus) reste figé ; ci-dessous = pages.
+     ════════════════════════════════════════════════════════════════ */
+
+  /* ══ POSITIONS (densif) — plancher 13 sur les résidus sous-13 de la
+     table .v3-table + badges de la page. th/td utilisent déjà des
+     tokens (--fs-xs/--fs-sm → 13 au palier) ; restaient 3 hardcodes :
+       · .v3-table__th-sort 10px (caret de tri)
+       · .positions-v3__greeks-freshness 11px (timestamp Greeks)
+       · .positions-dte 11px (badge DTE)
+     Colonnes : @1591 la table remplit exactement le scroller (0 overflow,
+     0 relâche) → AUCUNE touche aux largeurs/paddings de colonne, on TIENT.
+     ⚠ .v3-table__th-sort est PARTAGÉ par tous les DataTable → History
+     (page suivante) HÉRITERA ce plancher 13 du caret, voulu. DTE +
+     freshness sont des classes propres à Positions. */
+  .v3-table__th-sort {
+    font-size: var(--type-caption);
+  }
+  .positions-v3__greeks-freshness,
+  .positions-dte {
+    font-size: var(--type-caption);
+  }
 }
