@@ -140,8 +140,8 @@ function LegendRow({ color, label, value }) {
 // ── Local KPI tile for the open-positions strip ──────────────
 // Remplace MetricCard sur cette page : surface plate canonique, valeur
 // neutre par défaut, focus amber sur les zones décisives (Positions,
-// Delta net, Capital engagé). Le rouge n'apparaît QUE pour les coûts /
-// pertes réels (Theta négatif, Max Loss).
+// Delta net, Capital engagé). Le rouge n'apparaît QUE pour les pertes $
+// RÉELLES (Max Loss). Θ signé est neutre (révision loi de couleur).
 const POS_NUM_FMT_2D = new Intl.NumberFormat('de-CH', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -1132,10 +1132,11 @@ export default function Positions() {
         const g = greeksMap.get(row.pos.id);
         const t = g?.theta;
         if (t == null) return '—';
+        // Θ NEUTRE (loi de couleur) : un Greek signé ≠ perte $ → neutre comme Δ,
+        // plus de text-loss. Le marquage IV-estimée (~ + opacité) reste.
         if (g.ivEstimated) {
           return (
             <span
-              className="text-loss"
               style={{ opacity: 0.65, fontStyle: 'italic' }}
               title="IV estimée (mark hors plage no-arbitrage, défaut σ=30%)"
             >
@@ -1143,7 +1144,7 @@ export default function Positions() {
             </span>
           );
         }
-        return <span className="text-loss">{t.toFixed(2)}</span>;
+        return t.toFixed(2);
       },
     },
     {
@@ -1264,7 +1265,8 @@ export default function Positions() {
       {/* KPI strip — 5 tuiles plates canoniques.
           Focus (depth-focus + filet amber) = zones décisives de la page :
           Positions (le sujet), Delta net (Σ Greeks), Capital engagé (capital).
-          Rouge sémantique = coût/perte réels : Theta négatif, Max Loss. */}
+          Rouge sémantique = pertes $ RÉELLES uniquement (Max Loss). Θ signé
+          est neutre (révision loi de couleur cross-page). */}
       <motion.div variants={TILE_VARIANTS} className="positions-v3__kpi-strip">
         <KpiTile
           icon={Layers}
@@ -1286,8 +1288,10 @@ export default function Positions() {
           focus
         />
         {/* Theta reads greeks.thetaDaily (sign-aware via aggregateGreeks,
-            BSM-theta / 365 → per-day units). Rouge UNIQUEMENT si négatif
-            (coût réel) ; positif = decay encaissé, affiché neutre. */}
+            BSM-theta / 365 → per-day units). Θ NEUTRE (loi de couleur cross-page,
+            révision) : un Greek signé n'est PAS une perte $ → toujours neutre,
+            plus de rouge sur le signe. Le rouge reste réservé aux pertes réalisées
+            (Max Loss). */}
         <KpiTile
           icon={Clock}
           label="Theta total"
@@ -1298,7 +1302,7 @@ export default function Positions() {
           value={greeks.thetaDaily}
           format="currency"
           currency="USD"
-          tone={greeks.thetaDaily < 0 ? 'loss' : 'neutral'}
+          tone="neutral"
         />
         <KpiTile
           icon={DollarSign}

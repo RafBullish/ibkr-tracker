@@ -4,11 +4,14 @@ Direction du code après le palier `2.0.0`. Vivant : se met à jour au fil des p
 
 ---
 
-## En cours — V2 (branche `dashboard-4k-refonte`)
+## En cours — V2
 
-- **Refonte densité / 4K** : phases B → C.2 livrées ; **phase C.3.0 (zoom 4K)** à venir.
-  Objectif : lisibilité et densité d'information sur écrans haute résolution sans casser
-  le rendu à zoom ~90 %.
+- **Refonte densité / 4K** : phases B → C.2 **et C.3.0 (« zoom 4K @ 90 % » /
+  densification 1591) livrées**. Plancher typo 13 homogène sur les 12 pages, résidus
+  « vide » tués (Import, Settings, StrategyBreakdown, PreMarket), thead sticky sur la
+  chaîne d'options, loi de couleur theta neutralisée cross-page. Lisibilité et densité
+  sur écran haute résolution fenêtré (~1591 px CSS) sans scale-up ni migration rem/clamp,
+  mobile <1440 strictement intact.
 
 ## Court terme
 

@@ -3,42 +3,10 @@
    v7.0 — Bento-aware dashboard breakpoints
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── Ultrawide: ≥ 1920px ── */
-@media (min-width: 1920px) {
-  .bento-grid {
-    gap: var(--bento-gap-wide);
-  }
-  .dashboard-wrapper {
-    gap: var(--bento-gap-wide);
-  }
-  .v2-kpi-card--hero .v2-kpi-value {
-    font-size: 48px;
-  }
-  .page-container {
-    padding: var(--qc-space-8);
-  }
-  .dashboard-hero-row {
-    gap: var(--bento-gap-wide);
-  }
-  .dashboard-equity-metrics-row {
-    gap: var(--bento-gap-wide);
-  }
-  .dashboard-context-row {
-    gap: var(--bento-gap-wide);
-  }
-  .dashboard-investigation-row {
-    gap: var(--bento-gap-wide);
-  }
-  .dashboard-triple-row {
-    gap: var(--bento-gap-wide);
-  }
-  .dashboard-dual-row {
-    gap: var(--bento-gap-wide);
-  }
-  .kpi-strip {
-    gap: var(--bento-gap-wide);
-  }
-}
+/* C.3.0(a) — bloc @media(min-width:1920px) retiré : 100% mort
+   (classes .bento-grid/.dashboard-*-row/.kpi-strip/.v2-kpi-card
+   absentes du DOM vivant ; .page-container{padding} écrasé par
+   v3-components.css). Palier réel = c3-hires.css (≥1440). */
 
 /* ── Desktop: ≤ 1400px ── */
 @media (max-width: 1400px) {

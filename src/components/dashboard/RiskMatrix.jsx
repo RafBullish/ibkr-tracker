@@ -548,11 +548,13 @@ function GreeksStrip({ greeks }) {
         sub="per $1↑"
         tone="mute"
       />
+      {/* Θ NEUTRE (loi de couleur, cross-page) : un Greek signé n'est pas une
+          perte $ → tone mute (neutre), plus rouge sur le signe. */}
       <GreeksStripCell
         label="Σ THETA"
         value={fmtUsdSigned2(g.thetaDaily)}
         sub="/jour"
-        tone={toneFromSign(g.thetaDaily)}
+        tone="mute"
       />
       <GreeksStripCell
         label="Σ VEGA"

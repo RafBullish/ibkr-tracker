@@ -1,0 +1,527 @@
+/* ============================================================
+   c3-hires.css — PALIER HAUTE RÉSOLUTION · Phase C.3.0
+   « Zoom 4K @ 90 % » — cible réelle : usage FENÊTRÉ ~1591 px CSS
+   sur panneau hi-DPI (dpr 1.35). La 4K-ité vit dans la NETTETÉ,
+   pas dans la largeur → densification fine, JAMAIS de scale-up.
+
+   Importé EN DERNIER (après tous les pages-*.css, cf. main.jsx)
+   → ce fichier gagne par ORDRE DE SOURCE à spécificité égale.
+   Plus aucune règle hi-res ne dépend de l'ordre d'import ailleurs.
+
+   Seuil 1440 px : s'arme à 1591 (usage quotidien) ; aucun
+   breakpoint concurrent entre 1440 et 1591. Reste actif si la
+   fenêtre est maximisée (~2844) — les bumps doivent donc TENIR à
+   1591 ET au-delà (aucune optimisation dédiée au cas maximisé).
+
+   Convention de spécificité (B3+) : toute règle de grille passe
+   sous `.dash-shell .dash-grid` (0,2,0) pour battre v4-dashboard
+   `.dash-grid` (0,1,0) indépendamment de l'ordre d'import.
+   Ancêtre DOM confirmé : .dash-grid < .dash-shell < .dashboard-page.
+   ============================================================ */
+
+@media (min-width: 1440px) {
+  :root {
+    /* Sentinelle de vérification — prouve que le palier est armé
+       (getComputedStyle(root).getPropertyValue('--c3-tier') ===
+       'active' à ≥1440px, '' en dessous). Custom prop inutilisée
+       → strictement no-op visuel. */
+    --c3-tier: active;
+
+    /* ── PLANCHER TYPO 12 → 13 (commit c) ───────────────────────
+       Densification fine : on REMONTE la bande basse (tue le
+       sub-12px au niveau token) ; on NE gonfle PAS les gros titres
+       (16/28/40/48/64 intacts). Après ceci, aucun TOKEN < 13px à
+       ≥1440. Les valeurs sub-12px HARDCODÉES en px brut dans les
+       pages-*.css ne sont PAS des tokens → remontées par page (B3+). */
+    --type-caption:   13px;   /* cascade → --qc-fs-caption / --qc-fs-label */
+    --qc-fs-micro:    13px;
+    --fs-xs:          13px;
+    --fs-sm:          13px;
+    --fs-base:        13px;
+    --text-2xs:       13px;
+    --text-xs:        13px;
+    --text-sm:        13px;
+    --kpi-label-size: 13px;
+    --chip-font-size: 13px;
+
+    /* SPACING : TENU, jamais inflaté (correction void Rafael —
+       priorité = MOINS de vide). Aucune surcharge --space-* /
+       --qc-space-* : on resserre par page (B3+), pas globalement. */
+  }
+
+  /* ══ B3 · DASHBOARD — tier label/caption au plancher ════════════
+     Les sous-composants /components/dashboard hardcodent 10/11/12px
+     en court-circuitant les tokens. On remonte le tier LABEL/CAPTION
+     à var(--type-caption)=13 — DANS LE PALIER uniquement (mobile
+     <1440 garde l'original). Labels courts → coût densité ~nul.
+     EXCLUS : valeurs/données (≥14, déjà denses) et titres (≥16).
+     Périmètre = scope nommé (KPI cards 11/12 + CalendarMini +
+     résidus LivePositions). Extensions risk-matrix/trading-chart/
+     trade-history = en attente de validation Rafael. */
+  .dash-kpi-card__stats-grid-label,
+  .dash-kpi-card__range-btn,
+  .dash-kpi-card__pill,
+  .dash-kpi-card__live-text,
+  .dash-kpi-card__chf,
+  .dash-kpi-card__bar-pct,
+  .dash-kpi-card__bar-denom,
+  .dash-kpi-card__bar-cap-label,
+  .dash-kpi-card__info-label,
+  .dash-kpi-card__info-value,
+  .dash-kpi-card__hero-gauge-cap,
+  .dash-kpi-card__spark-overlay,
+  .dash-kpi-card__wr-w,
+  .dash-kpi-card__wr-sep,
+  .dash-kpi-card__wr-l,
+  .calmini__date,
+  .calmini__label,
+  .calmini__tag,
+  .live-pos__th,
+  .live-pos__table thead th,
+  .live-pos__sub,
+  .live-pos__footer-label,
+  .live-pos__empty {
+    font-size: var(--type-caption);
+  }
+
+  /* ── B3 ext (décision Rafael : TOUT à 13) — étend le plancher à
+     TOUS les sous-13 restants du dashboard : labels ET cellules-
+     valeur risk-matrix, badges/pills, headers de table, spans/
+     buttons descendants. Cohérence du plancher > +1px de densité
+     (c'est 1px sur les chiffres). NB : les ticks d'axe SVG Recharts
+     (<tspan>/<text> 11/12px) sont pilotés par des props JSX inline
+     → NON couverts par CSS, traités avec le travail charts. */
+  .trade-history__badge,
+  .trade-history__th,
+  .trade-history__table thead th,
+  .trade-history__footer-label,
+  .trade-history__ctx-badge,
+  .trade-history__sub,
+  .trade-history__sniper-placeholder span,
+  .trade-history__range-selector button,
+  .trading-chart__range-btn,
+  .trading-chart__kpi-label,
+  .trading-chart__kpi-sub,
+  .trading-chart__footer-label,
+  .trading-chart__sub,
+  .trading-chart__empty,
+  .live-pos__tag-btn,
+  .live-pos__type-pill,
+  .live-pos__gate-pill-sub,
+  .live-pos__ctx-badge,
+  .alerts-feed__level,
+  .alerts-feed__sep,
+  .alerts-feed__msg,
+  .risk-matrix__cell--right,
+  .risk-matrix__cell--loss,
+  .risk-matrix__cell--profit,
+  .risk-matrix__cell--mute,
+  .risk-matrix__cell--accent,
+  .risk-matrix__monthly-label,
+  .risk-matrix__greek-label,
+  .risk-matrix__greek-sub,
+  .risk-matrix__winrate-label,
+  .risk-matrix__winrate-pf-val,
+  .risk-matrix__tier-badge,
+  .risk-matrix__section-head-info,
+  .risk-matrix__footer-cmd-label,
+  .risk-matrix__footer-cmd,
+  .risk-matrix__section-head span,
+  .risk-matrix__histogram-axis span,
+  .risk-matrix__subzone-head span,
+  .risk-matrix__row span,
+  .risk-matrix__footer span,
+  .module-header__hint,
+  .module-empty__title,
+  .module-empty__sub,
+  .position-sparkline__empty,
+  .watchlist__add-btn {
+    font-size: var(--type-caption);
+  }
+
+  /* ══ B3 · HÉROS equity/dailypnl — sortie du portrait 3/3/6 ══════
+     Décision Rafael (option B) : format paysage LARGE. Row 1 =
+     equity(6)/dailypnl(6) à ~783px → courbes bien larges. risk
+     repassé en PLEINE LARGEUR (12 col) sur sa propre rangée dessous
+     → 0 clip risk, confort max. Coût accepté : +1 rangée de scroll.
+     Spécificité .dash-shell .dash-grid (0,2,0) > v4 .dash-grid
+     (0,1,0). */
+  .dash-shell .dash-grid {
+    grid-template-areas:
+      "equity equity equity equity equity equity dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl"
+      "risk risk risk risk risk risk risk risk risk risk risk risk"
+      "positions positions positions positions positions positions positions positions positions positions positions positions"
+      "history history history history history history history history history history history history"
+      "watch watch watch watch watch watch calendar calendar calendar calendar calendar calendar"
+      "ivr ivr ivr ivr heat heat heat heat alert alert alert alert";
+  }
+  .dash-shell .dash-grid > [style*="grid-area: equity"],
+  .dash-shell .dash-grid > [style*="grid-area: dailypnl"] {
+    /* paysage : 783×440, courbe ~165px après header/kpi/footer */
+    height: 440px;
+  }
+  .dash-shell .dash-grid > [style*="grid-area: risk"] {
+    /* pleine largeur (1573) → contenu reflow horizontal, moins de
+       hauteur. 360 à vérifier (ajuster si overflow vertical). */
+    height: 360px;
+  }
+
+  /* ══ B4 · TICKS D'AXE RECHARTS — dernier trou du plancher 13 ════
+     Les ticks XAxis/YAxis des 3 graphes héros (equity/dailypnl/3e)
+     sont rendus par `tick={{fontSize:11}}` en JSX. Recharts 3.8 passe
+     `fontSize` comme PROP SVG → React l'émet en ATTRIBUT de présentation
+     `font-size="11"` (vérifié dans recharts/es6 : svgPropertiesNoEvents
+     autorise fontSize ; Text.js spread via svgPropertiesAndEvents). Les
+     attributs de présentation ont la priorité la plus BASSE du cascade
+     → cette règle de classe les bat SANS !important. Le commentaire B3
+     (« non couvert par CSS ») présumait à tort un style inline.
+     CSS-ONLY volontaire : on NE touche PAS le JSX → mobile <1440 garde
+     11px, et surtout les constantes HERO_CHART_* (géométrie x→index du
+     hover, note CRITIQUE DashboardKPICards.jsx:51) restent intactes.
+     Pas de clip : YAxis width=88 >> ~55px@13px ; XAxis minTickGap=42
+     auto-drop. Scopé .dash-shell → n'affecte QUE le dashboard (autres
+     pages recharts hors palier). */
+  .dash-shell .recharts-cartesian-axis-tick-value {
+    font-size: var(--type-caption);
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     PHASE C.3 · PAGES (séquence par page, 1 brique/page). Le palier
+     dashboard (B2/B3/B4 ci-dessus) reste figé ; ci-dessous = pages.
+     ════════════════════════════════════════════════════════════════ */
+
+  /* ══ POSITIONS (densif) — plancher 13 sur les résidus sous-13 de la
+     table .v3-table + badges de la page. th/td utilisent déjà des
+     tokens (--fs-xs/--fs-sm → 13 au palier) ; restaient 3 hardcodes :
+       · .v3-table__th-sort 10px (caret de tri)
+       · .positions-v3__greeks-freshness 11px (timestamp Greeks)
+       · .positions-dte 11px (badge DTE)
+     Colonnes : @1591 la table remplit exactement le scroller (0 overflow,
+     0 relâche) → AUCUNE touche aux largeurs/paddings de colonne, on TIENT.
+     ⚠ .v3-table__th-sort est PARTAGÉ par tous les DataTable → History
+     (page suivante) HÉRITERA ce plancher 13 du caret, voulu. DTE +
+     freshness sont des classes propres à Positions. */
+  .v3-table__th-sort {
+    font-size: var(--type-caption);
+  }
+  .positions-v3__greeks-freshness,
+  .positions-dte {
+    font-size: var(--type-caption);
+  }
+
+  /* ══ POSITIONS (hauteur de ligne) — accompagne le rowHeight palier 34px
+     pose par DataTable (densité 'default' → 34 à ≥1440, cf. DataTable.jsx).
+     DataTable applique lineHeight=rowHeight INLINE sur le <tr> (34px ici) ;
+     le badge DTE omet sa propre line-height et héritait donc 34 + padding
+     3+3 = 40 → la ligne se serait étirée à 40 au lieu de 34. line-height:1
+     le rend compact (~19px) → ligne nette à 34, badge aéré (padding/min-width
+     36 intacts). nowrap sur la cellule Alerts : empêche un wrap multi-badges
+     de rendre les lignes inégales (table remplit déjà juste le scroller).
+     Tout au palier → <1440 garde 40px (rowHeight) + badge 46 d'origine. */
+  .positions-v3 .positions-dte {
+    line-height: 1;
+  }
+  .positions-v3 .positions-v3__row-alerts {
+    flex-wrap: nowrap;
+  }
+
+  /* ══ HISTORY (densif) — plancher 13 sur les résidus sous-13 PROPRES à
+     la page. Le patron table est déjà acquis : hauteur de ligne 34px via le
+     rowHeight palier de DataTable (brique précédente → cohérence Positions),
+     et .v3-table__th-sort déjà à 13 (hérité du palier Positions). Restent
+     les hardcodes page :
+       · pages-history.css : .history-page__view-btn (11), .history-page__cell-meta (10)
+       · PerformanceAttribution (.perf-attr*, composant rendu UNIQUEMENT par
+         History → flooré ici = page-effectif) : title/hint/empty/chips/grid/
+         cells/legend, de 9-12px → 13.
+     EXCLUS (B-final) : .history-page__cell-mobile-date (mobile <768, jamais
+     au palier) + span P&L% inline JSX de la carte mobile (History.jsx:566).
+     Heatmap perf-attr : heights 24px (thead) / 48px (cells) absorbent 13px ;
+     vérifié 0 wrap chips + grille tenue + 0 overflow. */
+  .history-page__view-btn,
+  .history-page__cell-meta,
+  .perf-attr__title,
+  .perf-attr__hint,
+  .perf-attr__empty-title,
+  .perf-attr__empty-sub,
+  .perf-attr__chip-label,
+  .perf-attr__chip-sub,
+  .perf-attr__grid thead th,
+  .perf-attr__grid tbody th,
+  .perf-attr__cell-val,
+  .perf-attr__cell-n,
+  .perf-attr__legend {
+    font-size: var(--type-caption);
+  }
+
+  /* ══ HISTORY · TICKS RECHARTS (addendum B11) — HistoryDistribution (histogramme
+     P&L, XAxis/YAxis fontSize:10 en JSX) est lazy-loaded sur /trading/history et
+     échappe au palier .dash-shell + au brick History précédent (classes only).
+     Équivalent scope-page du B4, comme Greeks/Analytics. */
+  .history-page .recharts-cartesian-axis-tick-value {
+    font-size: var(--type-caption);
+  }
+
+  /* ══ GREEKS (densif) — plancher 13 sur les résidus sous-13 PROPRES à
+     /trading/greeks. Les composants greek-evo / theta-decay / iv-rank /
+     pos-greeks-table sont EXCLUSIFS à cette page ; on les scope quand même
+     .greeks-page (convention pages-greeks.css) pour un plancher page-local.
+     DÉJÀ >=13 (aucune touche) : .uppercase-label (--fs-xs=13), table
+     .pos-greeks-table (--fs-sm=13 → colonnes IV/Rank héritent), KPI second-
+     ordre (label --type-caption=13, valeur --type-body=14), empty-states
+     (title --fs-md=13, desc --fs-sm=13 → « Pas d'IV Rank disponible » OK).
+     Restent les hardcodes sous-13 :
+       · greek-evo__chip 11 (chips Δ/Γ/Θ/ν)
+       · theta-decay__summary-label 10 · theta-decay__day-label 9 (axe J+)
+       · iv-rank__scale 9 · iv-rank__value 10 · iv-rank__ticker 10
+       · status-badge--xs 10 (badge « N options » header + colonne Type) —
+         classe PARTAGÉE, scopée .greeks-page pour ne toucher qu'ici
+       · légende donut recharts 11 (fontSize wrapperStyle inline → on floore
+         l'enfant .recharts-legend-item-text, non-inline, qui bat l'héritage)
+     Colonnes/gaps TENUS : histogramme minmax(28) + scroller table remplis,
+     0 relâche (vérifié @1591). */
+  .greeks-page .greek-evo__chip,
+  .greeks-page .theta-decay__summary-label,
+  .greeks-page .theta-decay__day-label,
+  .greeks-page .iv-rank__scale,
+  .greeks-page .iv-rank__value,
+  .greeks-page .iv-rank__ticker,
+  .greeks-page .status-badge--xs,
+  .greeks-page .recharts-legend-item-text {
+    font-size: var(--type-caption);
+  }
+
+  /* ══ GREEKS · TICKS D'AXE RECHARTS — équivalent scope-greeks du B4.
+     La règle B4 est scopée .dash-shell → n'atteint PAS /trading/greeks.
+     Ici : Évolution 30j (LineChart XAxis/YAxis, ticks fontSize:11 en JSX →
+     attribut de présentation SVG, battu sans !important comme au B4).
+     ⚠ « Projection Theta » n'utilise PAS Recharts (barres CSS custom) — ses
+     labels d'axe J+ sont .theta-decay__day-label, déjà floorés ci-dessus. */
+  .greeks-page .recharts-cartesian-axis-tick-value {
+    font-size: var(--type-caption);
+  }
+
+  /* ══ CALENDAR (densif) — plancher 13 sur les résidus sous-13 PROPRES à
+     /insights/calendar (classes BEM .calendar-page__* auto-scopées).
+     Vues Annonces + P&L Jour. Colonnes/gaps de la grille TENUS (repeat(7,1fr),
+     cells min-height 52px absorbent 13px). Couleurs P&L (pnl-value/week-total/
+     summary --up/--down = $ réel) INTACTES — on ne touche que la taille.
+     DÉJÀ >=13 (aucune touche) : month-label 15, upcoming-label 13, trade-ticker
+     13, trade-pnl 13, day-detail-title 13, summary-value 18.
+     ⚠ DIFFÉRÉ B-final : heatmap vue « Année » (.pnl-calendar__year-months /
+     -weekdays, 10px) = contribution-graph à cellules 12px ; 13px déborderait
+     la grille → laissé natif (data-viz), à revoir séparément. */
+  .calendar-page__tab,
+  .calendar-page__impact-tab,
+  .calendar-page__refresh-btn,
+  .calendar-page__day-headers > div,
+  .calendar-page__ann-cell-day,
+  .calendar-page__ann-popup-row,
+  .calendar-page__upcoming-head,
+  .calendar-page__upcoming-date,
+  .calendar-page__upcoming-pill,
+  .calendar-page__impact-pill,
+  .calendar-page__upcoming-est,
+  .calendar-page__upcoming-eta,
+  .calendar-page__pnl-day-number,
+  .calendar-page__pnl-value,
+  .calendar-page__pnl-count-badge,
+  .calendar-page__pnl-week-total,
+  .calendar-page__day-detail-cta,
+  .calendar-page__trade-type-badge,
+  .calendar-page__summary-label,
+  .calendar-page__summary-day,
+  .calendar-page__api-banner,
+  .calendar-page__legend-label {
+    font-size: var(--type-caption);
+  }
+
+  /* ══ PREMARKET (densif) — page la plus dense (0 @media, feuille pensée
+     1080p). Plancher 13 sur TOUS les résidus sous-13 PROPRES à /premarket
+     (classes BEM .premarket-page__* auto-scopées). DÉJÀ >=13 : clock-value
+     18/20, regime-value 16, check-input caché. */
+  .premarket-page__clock-label,
+  .premarket-page__regime-label,
+  .premarket-page__regime-sub,
+  .premarket-page__section-title,
+  .premarket-page__section-hint,
+  .premarket-page__table,
+  .premarket-page__table thead th,
+  .premarket-page__gate-cell,
+  .premarket-page__status-pill,
+  .premarket-page__check-box,
+  .premarket-page__check-label,
+  .premarket-page__btn,
+  .premarket-page__pill,
+  .premarket-page__held-tag {
+    font-size: var(--type-caption);
+  }
+
+  /* Pills à hauteur fixe 14px : un texte 13px les cliperait verticalement
+     → bump 18px (tient dans les rows 26px, aligné). Accommode le plancher,
+     ne relâche aucun gap. */
+  .premarket-page__status-pill,
+  .premarket-page__pill {
+    height: 18px;
+  }
+
+  /* Strip FUTURES (ES/NQ/YM) : 3 cellules qui s'étiraient à ~530px = cellules
+     géantes (void interne massif). C'est le 2e bandeau regime CONSÉCUTIF →
+     ciblé seul via `.premarket-page__regime + .premarket-page__regime`. On
+     CAPE ses cellules (contenu + marge de lecture) et on stoppe l'étirement
+     → 3 cellules denses packées à gauche. Header (5) et Regime (6) restent
+     flex:1 : 265-318px sont des cellules data normales (pas géantes) et
+     remplissent la bande sans void. Palier seul → mobile <1440 garde flex:1. */
+  .premarket-page__regime + .premarket-page__regime .premarket-page__regime-cell {
+    /* 1/6 de la bande = MÊME largeur qu'une cellule du strip Regime (6 cells)
+       au-dessus → les 3 futures s'alignent sous VIX/SPX/QQQ, grille cohérente,
+       plus de cellule géante. Responsive : tient l'alignement à 1591 et au-delà. */
+    flex: 0 0 calc(100% / 6);
+  }
+
+  /* ══ IMPORT (densif + vide #28) — /settings/import.
+     Typo : ENTIÈREMENT token-based (--fs-* → 13/14 au palier), zéro hardcode
+     sub-13 dans pages-import.css → densif déjà acquise par le plancher token.
+     Seul résidu = StatusBadge xs (10px, badge « Sync {date} », padding-based
+     → pas de clip). */
+  .import-page .status-badge--xs {
+    font-size: var(--type-caption);
+  }
+
+  /* VIDE #28 : le form QueryID/Token en grid 1fr/1fr étirait les 2 inputs à
+     ~550px chacun (void interne massif pour un QueryID 7 chiffres + un token).
+     On CAPE la largeur TOTALE du form → inputs ~330px alignés à gauche (layout
+     form standard). La MQ 600px (1 colonne) reste intacte. Palier seul. */
+  .import-page__form {
+    max-width: 680px;
+  }
+
+  /* ══ SETTINGS (densif + vide #30) — /settings/general (+ /settings/api,
+     /insights/journal qui partagent .settings-page). Typo pages-settings.css
+     ENTIÈREMENT token-based (--fs-* → 13/14 au palier) → densif déjà acquise.
+     Résidus partagés (scan @1591) : status-badge__label 10, api-service-row__time
+     10 → floorés scopés .settings-page (badges padding-based, pas de clip). */
+  .settings-page .status-badge__label,
+  .settings-page .api-service-row__time {
+    font-size: var(--type-caption);
+  }
+
+  /* VIDE #30 : les rows en flex space-between + label flex:1 poussaient le
+     contrôle au bord droit (row = 1492px), creusant un gouffre label↔contrôle
+     ~1200px sur les labels courts. On bascule en layout 2 colonnes : label =
+     colonne FIXE 420px, contrôle packé juste après (justify-content flex-start)
+     → contrôles alignés verticalement à x~436 sur TOUTES les sections, gouffre
+     supprimé. Descriptions lisibles à 420px ; contrôles larges (Sniper E×C,
+     Capital+preview) tiennent sans overflow (row reste pleine largeur, void à
+     droite). Palier seul → MQ 600px (colonne) + <1440 intacts. */
+  .settings-page__row {
+    justify-content: flex-start;
+  }
+  .settings-page__row-label {
+    flex: 0 0 420px;
+  }
+
+  /* ══ ANALYTICS (densif + vide #37) — /insights/analytics. Typo tuiles KPI
+     token-based (label --type-caption=13, valeur --type-display) → déjà OK.
+     Résidus scopés .analytics-v3 : status-badge__label 10 (badge « N trades »
+     + tags StrategyBreakdown), pnl-calendar__mode-btn 11 (toggle Mois/Année).
+     ⚠ DIFFÉRÉ B-final : .pnl-calendar__year-month-label (10) + weekday spans (9)
+     = contribution-graph cellules 12px, 13px déborderait (même cas que B7). */
+  .analytics-v3 .status-badge__label,
+  .analytics-v3 .pnl-calendar__mode-btn {
+    font-size: var(--type-caption);
+  }
+
+  /* Ticks d'axe Recharts du DayChart (P&L par jour, XAxis/YAxis fontSize:10 JSX)
+     — palier .dash-shell ne les atteint pas, équivalent scope-analytics. */
+  .analytics-v3 .recharts-cartesian-axis-tick-value {
+    font-size: var(--type-caption);
+  }
+
+  /* VIDE #37 : StrategyBreakdown — la colonne Tag en 1.6fr absorbait tout
+     l'espace (numerics en px FIXES) → à 1591 Tag=172px, mais ~830px fenêtre
+     maximisée, chiffres collés à droite. On rééquilibre : numerics passés en fr
+     → l'espace se RÉPARTIT sur toutes les colonnes, Tag reste la plus large sans
+     hoguer, métriques distribuées. Head + data alignés (même règle). */
+  .analytics-v3 .strategy-breakdown__row {
+    grid-template-columns: minmax(120px, 1.4fr) 0.8fr 0.9fr 1.2fr 1fr 1fr;
+  }
+
+  /* ══ JOURNAL (densif) — /insights/journal. TiltMeter, cartes d'entrée
+     (ticker/date/note/stars), table Edge Leak Audit, filtres mood : TOUS
+     token-based → déjà >=13 (scan @1591). Unique résidu : status-badge__label
+     10 (badge « N entrées » + badges mood/mistake/tag des cartes), flooré
+     scopé .journal-v3 (padding-based, pas de clip). */
+  .journal-v3 .status-badge__label {
+    font-size: var(--type-caption);
+  }
+
+  /* ══ OPTIONS CHAIN (densif + thead sticky) — /trading/chain. Page la plus
+     dense (feuille pensée 1080p, 40+ hardcodes sub-13). Plancher 13 sur les
+     strips (topbar/stats/tenors/controls/footer) ET la table OptionsChainTable.
+     Table-layout fixed width:100% → PAS d'overflow horizontal ; colonnes data
+     = 113px @1591 >> ~56px d'un nombre à 13px → 0 chevauchement (vérifié). */
+  .chain-v5__input,
+  .chain-v5__load-btn,
+  .chain-v5__history-label,
+  .chain-v5__history-pill,
+  .chain-v5__error,
+  .chain-v5__stat-label,
+  .chain-v5__stat-sub,
+  .chain-v5__tenor,
+  .chain-v5__control-label,
+  .chain-v5__chip,
+  .chain-v5__sniper-toggle,
+  .chain-v5__sniper-count,
+  .chain-v5__loading-hint,
+  .chain-v5__empty-sub,
+  .chain-v5__footer-label,
+  .chain-v5__footer-sub,
+  .chain-v5__footer-oi-strike,
+  .chain-v5__footer-oi-total,
+  .chain-v5__footer-wall-tag,
+  .chain-v5__footer-wall-strike,
+  .chain-v5 .options-chain__cell,
+  .chain-v5 .options-chain__empty,
+  .chain-v5 .options-chain__vol-head,
+  .chain-v5 .options-chain__strike-head,
+  .chain-v5 .options-chain__col-heads .options-chain__side-row {
+    font-size: var(--type-caption);
+  }
+
+  /* Badge count h12px : un texte 13px le cliperait → bump 16px (accommode le
+     plancher, gaps tenus). Les autres pills (h18/h22) absorbent 13px. */
+  .chain-v5__sniper-count {
+    height: 16px;
+  }
+
+  /* THEAD STICKY (fix audit) — le thead n'était pas sticky ; il défilait hors
+     vue. Les 2 rangs collent en haut du scroller .chain-v5__table-wrap
+     (overflow:auto). Row1 CALLS/STRIKE/PUTS → top:0 ; Row2 col-heads → top:37px
+     (hauteur mesurée de Row1 @13px). Fonds OPAQUES requis (--surface-2) sinon
+     les strikes défilent au travers ; gradients call/put relayés sur base
+     opaque. Palier seul → mobile <1440 (vue .options-chain-mobile) intact. */
+  .chain-v5 .options-chain__side-head,
+  .chain-v5 .options-chain__strike-head,
+  .chain-v5 .options-chain__col-heads th {
+    position: sticky;
+    z-index: 3;
+  }
+  .chain-v5 .options-chain__side-head,
+  .chain-v5 .options-chain__strike-head {
+    top: 0;
+  }
+  .chain-v5 .options-chain__strike-head,
+  .chain-v5 .options-chain__col-heads th {
+    background: var(--surface-2);
+  }
+  .chain-v5 .options-chain__side-head[data-side="call"] {
+    background: linear-gradient(to right, var(--qc-profit-bg), transparent), var(--surface-2);
+  }
+  .chain-v5 .options-chain__side-head[data-side="put"] {
+    background: linear-gradient(to left, var(--qc-loss-bg), transparent), var(--surface-2);
+  }
+  .chain-v5 .options-chain__col-heads th {
+    top: 37px;
+  }
+}

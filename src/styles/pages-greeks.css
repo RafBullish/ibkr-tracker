@@ -9,8 +9,8 @@
    Sémantique des Greeks AGRÉGÉS (rappel ÉTAPE 2 du brief CANONICAL-3) :
      - Δ  → ink-pure TOUJOURS (exposition directionnelle, pas $)
      - Γ  → ink-pure TOUJOURS (dérivée seconde, sans dim. monétaire)
-     - Θ  → pnl-down SI NÉGATIF (coût récurrent réel en $/j),
-            ink-pure sinon
+     - Θ  → ink-pure TOUJOURS (révision : un Greek signé n'est pas une
+            perte — le rouge reste réservé aux pertes RÉALISÉES)
      - ν  → ink-pure TOUJOURS (sensibilité IV, pas $)
    ════════════════════════════════════════════════════════════════ */
 
@@ -76,11 +76,6 @@
   text-overflow: ellipsis;
 }
 
-/* Seule tonalité autorisée sur un KPI agrégé : pnl-down pour Θ négatif. */
-.greeks-v3__kpi-value.is-loss {
-  color: var(--pnl-down);
-}
-
 /* Variante compacte pour Greeks de second ordre (Vanna/Charm/Vomma/GEX). */
 .greeks-v3__kpi--compact {
   padding: var(--qc-space-2) var(--qc-space-3);
@@ -143,7 +138,12 @@
 }
 
 /* ════════════════════════════════════════════════════════════════
-   THETA DECAY PROJECTION — repointer les tokens canoniques
+   THETA DECAY PROJECTION — Θ NEUTRE (révision CANONICAL-3).
+   Le JSX émet encore data-tone loss/profit selon le SIGNE, mais on
+   collapse les DEUX sur l'encre neutre : le signe d'un Greek ne colore
+   plus en rouge (le rouge reste réservé aux pertes RÉALISÉES). Le signe
+   reste lisible dans le texte (« -$99 ») et dans la hauteur des barres —
+   seule la COULEUR devient neutre (summary → ink-pure, barres → ink-soft).
    ════════════════════════════════════════════════════════════════ */
 .greeks-page .theta-decay__head {
   color: var(--ink-soft);
@@ -156,24 +156,15 @@
 .greeks-page .theta-decay__summary-label {
   color: var(--ink-mute);
 }
-.greeks-page .theta-decay__summary-value {
-  color: var(--ink-pure);
-}
-.greeks-page .theta-decay__summary-value[data-tone="loss"] {
-  color: var(--pnl-down);
-}
+.greeks-page .theta-decay__summary-value,
+.greeks-page .theta-decay__summary-value[data-tone="loss"],
 .greeks-page .theta-decay__summary-value[data-tone="profit"] {
-  /* Theta positif est rarissime ; on l'affiche en ink-pure (neutre)
-     plutôt qu'en vert (la valeur est rare, pas euphorique). */
   color: var(--ink-pure);
 }
 .greeks-page .theta-decay__bars {
   border-bottom: 1px solid var(--line-hairline);
 }
-.greeks-page .theta-decay__bar[data-tone="loss"] {
-  background: var(--pnl-down);
-  opacity: 0.8;
-}
+.greeks-page .theta-decay__bar[data-tone="loss"],
 .greeks-page .theta-decay__bar[data-tone="profit"] {
   background: var(--ink-soft);
   opacity: 0.6;
@@ -184,8 +175,8 @@
 
 /* ════════════════════════════════════════════════════════════════
    PER-POSITION GREEKS TABLE — panneau plat, séparateurs murmurés
-   (Coloration JSX déjà conforme : Δ/Γ/ν neutres, Θ rouge si <0 —
-   on retouche uniquement fonds / séparateurs / textes.)
+   (Coloration JSX : Δ/Γ/Θ/ν tous neutres (ink-pure hérité) — Θ n'est
+   plus rougi sur le signe. On retouche fonds / séparateurs / textes.)
    ════════════════════════════════════════════════════════════════ */
 .greeks-page .pos-greeks-table__head > span {
   background: var(--depth-raised);

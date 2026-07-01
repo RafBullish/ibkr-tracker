@@ -2,6 +2,11 @@
 //
 // Virtualization is enabled automatically when data.length > 50.
 // mobileCardRender: below 768px rows render as stacked cards.
+//
+// C.3 (palier 4K) — la densité 'default' descend à 34px à partir de 1440px
+// (pages pleines plus denses : Positions + History, seuls consommateurs de
+// .v3-table) ; <1440 reste à 40px. La hauteur transite par le rowHeight JS,
+// donc le virtualizer (>50 lignes) reste aligné. compact/relaxed inchangés.
 
 import { useState, useMemo, useRef, useEffect, useId } from 'react';
 import {
@@ -49,13 +54,18 @@ export default function DataTable({
   focusedRowId, // quand défini, la ligne correspondante reçoit .--focus + scrollIntoView
 }) {
   const isMobile = useMediaQuery('(max-width: 767px)');
+  // C.3 palier 4K — voir en-tête : densité 'default' = 34px à ≥1440, 40px sinon.
+  const isWide = useMediaQuery('(min-width: 1440px)');
   const id = useId();
   const [sorting, setSorting] = useState(
     defaultSort ? [{ id: defaultSort.key, desc: defaultSort.dir === 'desc' }] : []
   );
   const [globalFilter, setGlobalFilter] = useState('');
   const [density, setDensity] = useState(densityProp || 'default');
-  const rowHeight = DENSITIES[density] || DENSITIES.default;
+  // 'default' suit le palier (34 ≥1440 / 40 sinon) ; compact(32)/relaxed(48)
+  // restent des choix explicites du toggle, non palier-dépendants.
+  const rowHeight =
+    density === 'default' ? (isWide ? 34 : 40) : DENSITIES[density] || DENSITIES.default;
 
   const visibleColumns = useMemo(() => columns.filter((c) => !c.hide), [columns]);
 

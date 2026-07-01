@@ -7,7 +7,9 @@
 //  Sémantique appliquée sur les Greeks AGRÉGÉS :
 //    Δ  → ink-pure TOUJOURS (exposition directionnelle, pas $)
 //    Γ  → ink-pure TOUJOURS (dérivée seconde, sans dim. monétaire)
-//    Θ  → pnl-down SI NÉGATIF (coût récurrent réel en $/j), ink-pure sinon
+//    Θ  → ink-pure TOUJOURS (révision : un Greek naturellement signé
+//         — theta ~toujours négatif — n'est PAS une perte ; le rouge
+//         reste réservé aux pertes RÉALISÉES, pas au signe d'un Greek)
 //    ν  → ink-pure TOUJOURS (sensibilité IV, pas $)
 //
 //  Rows:
@@ -132,17 +134,14 @@ function fmtCurrency(v, currency = 'USD') {
   }).format(v);
 }
 
-// Local KPI tile — markup plat, à plat sur var(--depth-raised). Tone
-// est strictement 'pure' ou 'loss' : la règle CANONICAL-3 interdit
-// 'profit' (vert) sur les Greeks agrégés.
-function KpiTile({ label, tooltip, value, tone = 'pure', compact = false }) {
+// Local KPI tile — markup plat, à plat sur var(--depth-raised). Tous les KPI
+// Greeks agrégés sont en encre neutre (ink-pure) : ni vert (profit interdit sur
+// des Greeks agrégés) ni rouge (un Greek signé n'est pas une perte $, Θ inclus).
+// L'ancienne affordance tone="loss" a été retirée (plus aucun consommateur).
+function KpiTile({ label, tooltip, value, compact = false }) {
   const cls = [
     'greeks-v3__kpi',
     compact && 'greeks-v3__kpi--compact',
-  ].filter(Boolean).join(' ');
-  const valueCls = [
-    'greeks-v3__kpi-value',
-    tone === 'loss' && 'is-loss',
   ].filter(Boolean).join(' ');
   return (
     <div className={cls}>
@@ -150,7 +149,7 @@ function KpiTile({ label, tooltip, value, tone = 'pure', compact = false }) {
         {label}
         {tooltip && <InfoTooltip content={tooltip} size={12} />}
       </span>
-      <span className={valueCls}>{value}</span>
+      <span className="greeks-v3__kpi-value">{value}</span>
     </div>
   );
 }
@@ -263,8 +262,9 @@ export default function Greeks() {
 
   const evolutionSeries = useMemo(() => buildMockEvolution(netGreeks, 30), [netGreeks]);
 
-  // Tones pour les 4 KPI agrégés — règle CANONICAL-3 §ÉTAPE 2.
-  const thetaTone = netGreeks.theta < 0 ? 'loss' : 'pure';
+  // CANONICAL-3 (révisé) : les 4 KPI Greeks sont TOUS en ink-pure. Θ n'est
+  // plus rougi sur son signe — le rouge reste réservé aux pertes réalisées,
+  // pas au signe naturel d'un Greek (theta ~toujours négatif).
 
   // Empty state — no options at all
   if (optionPositions.length === 0) {
@@ -310,33 +310,25 @@ export default function Greeks() {
           <KpiTile
             label="Δ Delta"
             tooltip={GREEK_TOOLTIPS.delta}
-            value={fmtNumber(netGreeks.delta)}
-            tone="pure"
-          />
+            value={fmtNumber(netGreeks.delta)}          />
         </motion.div>
         <motion.div variants={TILE_VARIANTS}>
           <KpiTile
             label="Γ Gamma"
             tooltip={GREEK_TOOLTIPS.gamma}
-            value={fmtNumber(netGreeks.gamma)}
-            tone="pure"
-          />
+            value={fmtNumber(netGreeks.gamma)}          />
         </motion.div>
         <motion.div variants={TILE_VARIANTS}>
           <KpiTile
             label="Θ Theta"
             tooltip={GREEK_TOOLTIPS.theta}
-            value={fmtCurrency(netGreeks.theta)}
-            tone={thetaTone}
-          />
+            value={fmtCurrency(netGreeks.theta)}          />
         </motion.div>
         <motion.div variants={TILE_VARIANTS}>
           <KpiTile
             label="ν Vega"
             tooltip={GREEK_TOOLTIPS.vega}
-            value={fmtCurrency(netGreeks.vega)}
-            tone="pure"
-          />
+            value={fmtCurrency(netGreeks.vega)}          />
         </motion.div>
       </div>
 
@@ -494,16 +486,12 @@ export default function Greeks() {
                   title: 'Vanna',
                   body: 'dDelta/dVol — Sensibilité du Delta à la volatilité.',
                 }}
-                value={fmtNumber(secondOrder.vanna)}
-                tone="pure"
-                compact
+                value={fmtNumber(secondOrder.vanna)}                compact
               />
               <KpiTile
                 label="Charm"
                 tooltip={{ title: 'Charm', body: 'dDelta/dTime — Decay du Delta par jour.' }}
-                value={fmtNumber(secondOrder.charm)}
-                tone="pure"
-                compact
+                value={fmtNumber(secondOrder.charm)}                compact
               />
               <KpiTile
                 label="Vomma"
@@ -511,9 +499,7 @@ export default function Greeks() {
                   title: 'Vomma',
                   body: 'dVega/dVol — Convexité du Vega par rapport à la volatilité.',
                 }}
-                value={fmtNumber(secondOrder.vomma)}
-                tone="pure"
-                compact
+                value={fmtNumber(secondOrder.vomma)}                compact
               />
               <KpiTile
                 label="GEX"
@@ -521,9 +507,7 @@ export default function Greeks() {
                   title: 'GEX (Gamma Exposure)',
                   body: 'Exposition gamma totale du portefeuille multipliée par le prix spot.',
                 }}
-                value={fmtCurrency(secondOrder.gex)}
-                tone="pure"
-                compact
+                value={fmtCurrency(secondOrder.gex)}                compact
               />
             </div>
           )}

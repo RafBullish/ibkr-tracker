@@ -80,10 +80,9 @@ export default function PerPositionGreeksTable({ rows = [], className }) {
           <span className="mono" style={{ textAlign: 'right' }}>
             {fmtNum(r.gamma, 3)}
           </span>
-          <span
-            className="mono"
-            style={{ textAlign: 'right', color: r.theta < 0 ? 'var(--loss-text)' : undefined }}
-          >
+          {/* Θ NEUTRE : plus de rouge sur le signe — un Greek signé n'est
+              pas une perte. Hérite ink-pure comme Δ/Γ/ν. */}
+          <span className="mono" style={{ textAlign: 'right' }}>
             {fmtNum(r.theta)}
           </span>
           <span className="mono" style={{ textAlign: 'right' }}>

@@ -52,6 +52,8 @@ contexte_pour_gemini.md
 /brique*.png
 /nettoyage*.png
 /font-*.png
+/c3-*.png
+/c3-*.zip
 
 # Iosevka source pack (non-subsetté, 1.6 MB chaque) — gardé hors public/ pour ne pas shipper
 scripts/iosevka-source/

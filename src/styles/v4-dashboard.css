@@ -22,9 +22,11 @@
      Row 5 : watch col 1-6 | calendar col 7-12 (Phase C.3)
      Row 6 : ivr col 1-4 | heat col 5-8 | alert col 9-12
 
-   Phase C.1.6 — `max-width: none` et `margin: 0` explicites pour
-   surcharger le legacy `.dash-grid { max-width: 1920px; margin: 0
-   auto; }` défini dans src/styles/dashboard.css:128.
+   Phase C.3.0(a) — `.dash-grid` est full-bleed PAR INTENTION. Le
+   legacy `max-width:1920px; margin:0 auto` (jadis dans dashboard.css)
+   a été retiré À LA SOURCE ; `max-width:none`/`margin:0` ci-dessous
+   sont la déclaration explicite — plus aucune dépendance d'ordre
+   d'import (landmine neutralisée proprement).
 
    Heights gérées par les sélecteurs attribute ci-dessous (pattern
    inline `style={{ gridArea: 'xxx' }}` déjà émis par les modules). */
@@ -44,8 +46,8 @@
   gap: 8px;
   padding: 0 4px 4px;
   width: 100%;
-  max-width: none; /* override legacy dashboard.css:128 (1920px) */
-  margin: 0;       /* override legacy dashboard.css:129 (auto) */
+  max-width: none; /* full-bleed explicite — C.3.0(a) */
+  margin: 0;       /* full-bleed explicite — C.3.0(a) */
   background: transparent;
   font-family: var(--qc-font-mono);
 }
@@ -1795,29 +1797,10 @@
 .live-pos__col-spark { width: 6%; }
 .live-pos__col-alert { width: 4%; }
 
-.live-pos__table thead {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-
-/* Phase C.2.9 — base th : padding/font/sticky cohérents avec
-   TradeHistory pattern. text-align géré par les modifiers
-   --left/--center/--right ci-dessous (chaque th doit en porter un). */
-.live-pos__th,
-.live-pos__table thead th {
-  height: 30px;
-  padding: 0 10px;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--qc-text-tertiary);
-  background: var(--bg-elev-1);
-  border-bottom: 1px solid var(--qc-border-subtle);
-  white-space: nowrap;
-  vertical-align: middle;
-}
+/* C.3 dédup — l'ancien doublon thead/th de cette zone (h30, padding 0 10px,
+   letter-spacing 0.04em, bg --bg-elev-1, + sélecteur mort .live-pos__th) a
+   été supprimé : il était intégralement supplanté par le bloc « Thead sticky
+   blur » plus bas (source unique, voir §Thead LivePositions). */
 
 .live-pos__row {
   /* Phase C.2.6 / C.2.7 — height var(--row-h-15) 22 → 36 override
@@ -4820,8 +4803,10 @@
   border-color: var(--qc-border-strong);
 }
 
-/* Thead sticky blur — miroir de .trade-history__table thead.
-   Surcharge la règle ligne 1653 (background plain → blur+bg-base). */
+/* §Thead LivePositions — SOURCE UNIQUE (C.3 dédup : le doublon h30 plus
+   haut a été supprimé ; ces valeurs h36 / padding 10×14 / ls 0.1em étaient
+   déjà le rendu gagnant → conservées telles quelles, 0 régression visuelle).
+   Sticky + blur, miroir de .trade-history__table thead. */
 .live-pos__table thead {
   position: sticky;
   top: 0;
@@ -4832,7 +4817,8 @@
   box-shadow: 0 1px 0 0 var(--qc-border-subtle);
 }
 
-/* Th paddings + height — surcharge la règle ligne 1663. */
+/* Th paddings + height. font-size 12 → 13 au palier >=1440 (c3-hires.css
+   .live-pos__th, .live-pos__table thead th). */
 .live-pos__table thead th {
   padding: 10px 14px;
   height: 36px;
