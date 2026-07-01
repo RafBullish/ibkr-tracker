@@ -327,4 +327,47 @@
   .calendar-page__legend-label {
     font-size: var(--type-caption);
   }
+
+  /* ══ PREMARKET (densif) — page la plus dense (0 @media, feuille pensée
+     1080p). Plancher 13 sur TOUS les résidus sous-13 PROPRES à /premarket
+     (classes BEM .premarket-page__* auto-scopées). DÉJÀ >=13 : clock-value
+     18/20, regime-value 16, check-input caché. */
+  .premarket-page__clock-label,
+  .premarket-page__regime-label,
+  .premarket-page__regime-sub,
+  .premarket-page__section-title,
+  .premarket-page__section-hint,
+  .premarket-page__table,
+  .premarket-page__table thead th,
+  .premarket-page__gate-cell,
+  .premarket-page__status-pill,
+  .premarket-page__check-box,
+  .premarket-page__check-label,
+  .premarket-page__btn,
+  .premarket-page__pill,
+  .premarket-page__held-tag {
+    font-size: var(--type-caption);
+  }
+
+  /* Pills à hauteur fixe 14px : un texte 13px les cliperait verticalement
+     → bump 18px (tient dans les rows 26px, aligné). Accommode le plancher,
+     ne relâche aucun gap. */
+  .premarket-page__status-pill,
+  .premarket-page__pill {
+    height: 18px;
+  }
+
+  /* Strip FUTURES (ES/NQ/YM) : 3 cellules qui s'étiraient à ~530px = cellules
+     géantes (void interne massif). C'est le 2e bandeau regime CONSÉCUTIF →
+     ciblé seul via `.premarket-page__regime + .premarket-page__regime`. On
+     CAPE ses cellules (contenu + marge de lecture) et on stoppe l'étirement
+     → 3 cellules denses packées à gauche. Header (5) et Regime (6) restent
+     flex:1 : 265-318px sont des cellules data normales (pas géantes) et
+     remplissent la bande sans void. Palier seul → mobile <1440 garde flex:1. */
+  .premarket-page__regime + .premarket-page__regime .premarket-page__regime-cell {
+    /* 1/6 de la bande = MÊME largeur qu'une cellule du strip Regime (6 cells)
+       au-dessus → les 3 futures s'alignent sous VIX/SPX/QQQ, grille cohérente,
+       plus de cellule géante. Responsive : tient l'alignement à 1591 et au-delà. */
+    flex: 0 0 calc(100% / 6);
+  }
 }
