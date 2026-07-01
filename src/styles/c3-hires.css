@@ -387,4 +387,29 @@
   .import-page__form {
     max-width: 680px;
   }
+
+  /* ══ SETTINGS (densif + vide #30) — /settings/general (+ /settings/api,
+     /insights/journal qui partagent .settings-page). Typo pages-settings.css
+     ENTIÈREMENT token-based (--fs-* → 13/14 au palier) → densif déjà acquise.
+     Résidus partagés (scan @1591) : status-badge__label 10, api-service-row__time
+     10 → floorés scopés .settings-page (badges padding-based, pas de clip). */
+  .settings-page .status-badge__label,
+  .settings-page .api-service-row__time {
+    font-size: var(--type-caption);
+  }
+
+  /* VIDE #30 : les rows en flex space-between + label flex:1 poussaient le
+     contrôle au bord droit (row = 1492px), creusant un gouffre label↔contrôle
+     ~1200px sur les labels courts. On bascule en layout 2 colonnes : label =
+     colonne FIXE 420px, contrôle packé juste après (justify-content flex-start)
+     → contrôles alignés verticalement à x~436 sur TOUTES les sections, gouffre
+     supprimé. Descriptions lisibles à 420px ; contrôles larges (Sniper E×C,
+     Capital+preview) tiennent sans overflow (row reste pleine largeur, void à
+     droite). Palier seul → MQ 600px (colonne) + <1440 intacts. */
+  .settings-page__row {
+    justify-content: flex-start;
+  }
+  .settings-page__row-label {
+    flex: 0 0 420px;
+  }
 }
