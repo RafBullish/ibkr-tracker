@@ -370,4 +370,21 @@
        plus de cellule géante. Responsive : tient l'alignement à 1591 et au-delà. */
     flex: 0 0 calc(100% / 6);
   }
+
+  /* ══ IMPORT (densif + vide #28) — /settings/import.
+     Typo : ENTIÈREMENT token-based (--fs-* → 13/14 au palier), zéro hardcode
+     sub-13 dans pages-import.css → densif déjà acquise par le plancher token.
+     Seul résidu = StatusBadge xs (10px, badge « Sync {date} », padding-based
+     → pas de clip). */
+  .import-page .status-badge--xs {
+    font-size: var(--type-caption);
+  }
+
+  /* VIDE #28 : le form QueryID/Token en grid 1fr/1fr étirait les 2 inputs à
+     ~550px chacun (void interne massif pour un QueryID 7 chiffres + un token).
+     On CAPE la largeur TOTALE du form → inputs ~330px alignés à gauche (layout
+     form standard). La MQ 600px (1 colonne) reste intacte. Palier seul. */
+  .import-page__form {
+    max-width: 680px;
+  }
 }
