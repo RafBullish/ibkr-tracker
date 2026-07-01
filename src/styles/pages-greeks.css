@@ -76,13 +76,6 @@
   text-overflow: ellipsis;
 }
 
-/* Affordance de perte du KpiTile (tone="loss"). Depuis la révision
-   CANONICAL-3, AUCUN Greek agrégé ne l'utilise (Θ inclus est en ink-pure) —
-   conservée comme capacité générique du primitif, non déclenchée ici. */
-.greeks-v3__kpi-value.is-loss {
-  color: var(--pnl-down);
-}
-
 /* Variante compacte pour Greeks de second ordre (Vanna/Charm/Vomma/GEX). */
 .greeks-v3__kpi--compact {
   padding: var(--qc-space-2) var(--qc-space-3);
