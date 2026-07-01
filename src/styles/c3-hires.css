@@ -412,4 +412,30 @@
   .settings-page__row-label {
     flex: 0 0 420px;
   }
+
+  /* ══ ANALYTICS (densif + vide #37) — /insights/analytics. Typo tuiles KPI
+     token-based (label --type-caption=13, valeur --type-display) → déjà OK.
+     Résidus scopés .analytics-v3 : status-badge__label 10 (badge « N trades »
+     + tags StrategyBreakdown), pnl-calendar__mode-btn 11 (toggle Mois/Année).
+     ⚠ DIFFÉRÉ B-final : .pnl-calendar__year-month-label (10) + weekday spans (9)
+     = contribution-graph cellules 12px, 13px déborderait (même cas que B7). */
+  .analytics-v3 .status-badge__label,
+  .analytics-v3 .pnl-calendar__mode-btn {
+    font-size: var(--type-caption);
+  }
+
+  /* Ticks d'axe Recharts du DayChart (P&L par jour, XAxis/YAxis fontSize:10 JSX)
+     — palier .dash-shell ne les atteint pas, équivalent scope-analytics. */
+  .analytics-v3 .recharts-cartesian-axis-tick-value {
+    font-size: var(--type-caption);
+  }
+
+  /* VIDE #37 : StrategyBreakdown — la colonne Tag en 1.6fr absorbait tout
+     l'espace (numerics en px FIXES) → à 1591 Tag=172px, mais ~830px fenêtre
+     maximisée, chiffres collés à droite. On rééquilibre : numerics passés en fr
+     → l'espace se RÉPARTIT sur toutes les colonnes, Tag reste la plus large sans
+     hoguer, métriques distribuées. Head + data alignés (même règle). */
+  .analytics-v3 .strategy-breakdown__row {
+    grid-template-columns: minmax(120px, 1.4fr) 0.8fr 0.9fr 1.2fr 1fr 1fr;
+  }
 }
