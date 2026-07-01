@@ -438,4 +438,13 @@
   .analytics-v3 .strategy-breakdown__row {
     grid-template-columns: minmax(120px, 1.4fr) 0.8fr 0.9fr 1.2fr 1fr 1fr;
   }
+
+  /* ══ JOURNAL (densif) — /insights/journal. TiltMeter, cartes d'entrée
+     (ticker/date/note/stars), table Edge Leak Audit, filtres mood : TOUS
+     token-based → déjà >=13 (scan @1591). Unique résidu : status-badge__label
+     10 (badge « N entrées » + badges mood/mistake/tag des cartes), flooré
+     scopé .journal-v3 (padding-based, pas de clip). */
+  .journal-v3 .status-badge__label {
+    font-size: var(--type-caption);
+  }
 }
