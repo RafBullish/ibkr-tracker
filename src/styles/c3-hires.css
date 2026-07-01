@@ -253,4 +253,43 @@
   .perf-attr__legend {
     font-size: var(--type-caption);
   }
+
+  /* ══ GREEKS (densif) — plancher 13 sur les résidus sous-13 PROPRES à
+     /trading/greeks. Les composants greek-evo / theta-decay / iv-rank /
+     pos-greeks-table sont EXCLUSIFS à cette page ; on les scope quand même
+     .greeks-page (convention pages-greeks.css) pour un plancher page-local.
+     DÉJÀ >=13 (aucune touche) : .uppercase-label (--fs-xs=13), table
+     .pos-greeks-table (--fs-sm=13 → colonnes IV/Rank héritent), KPI second-
+     ordre (label --type-caption=13, valeur --type-body=14), empty-states
+     (title --fs-md=13, desc --fs-sm=13 → « Pas d'IV Rank disponible » OK).
+     Restent les hardcodes sous-13 :
+       · greek-evo__chip 11 (chips Δ/Γ/Θ/ν)
+       · theta-decay__summary-label 10 · theta-decay__day-label 9 (axe J+)
+       · iv-rank__scale 9 · iv-rank__value 10 · iv-rank__ticker 10
+       · status-badge--xs 10 (badge « N options » header + colonne Type) —
+         classe PARTAGÉE, scopée .greeks-page pour ne toucher qu'ici
+       · légende donut recharts 11 (fontSize wrapperStyle inline → on floore
+         l'enfant .recharts-legend-item-text, non-inline, qui bat l'héritage)
+     Colonnes/gaps TENUS : histogramme minmax(28) + scroller table remplis,
+     0 relâche (vérifié @1591). */
+  .greeks-page .greek-evo__chip,
+  .greeks-page .theta-decay__summary-label,
+  .greeks-page .theta-decay__day-label,
+  .greeks-page .iv-rank__scale,
+  .greeks-page .iv-rank__value,
+  .greeks-page .iv-rank__ticker,
+  .greeks-page .status-badge--xs,
+  .greeks-page .recharts-legend-item-text {
+    font-size: var(--type-caption);
+  }
+
+  /* ══ GREEKS · TICKS D'AXE RECHARTS — équivalent scope-greeks du B4.
+     La règle B4 est scopée .dash-shell → n'atteint PAS /trading/greeks.
+     Ici : Évolution 30j (LineChart XAxis/YAxis, ticks fontSize:11 en JSX →
+     attribut de présentation SVG, battu sans !important comme au B4).
+     ⚠ « Projection Theta » n'utilise PAS Recharts (barres CSS custom) — ses
+     labels d'axe J+ sont .theta-decay__day-label, déjà floorés ci-dessus. */
+  .greeks-page .recharts-cartesian-axis-tick-value {
+    font-size: var(--type-caption);
+  }
 }
