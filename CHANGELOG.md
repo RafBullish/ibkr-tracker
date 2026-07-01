@@ -6,6 +6,44 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [2.1.0] — 2026-07
+
+Phase **C.3.0 — « Zoom 4K @ 90 % » / densification 1591**. Palier haute-résolution
+(`src/styles/c3-hires.css`, `@media (min-width: 1440px)`) : lisibilité et densité
+d'information sur écran fenêtré ~1591 px CSS (dpr 1.35) sans scale-up ni migration
+rem/clamp. Mobile <1440 **strictement intact**. Séquence page-par-page (Positions →
+History → Greeks → Calendar → PreMarket → Import → Settings → Analytics/Journal → Chain),
+un commit atomique par page, vérification visuelle @1591.
+
+### Modifié
+- **Plancher typo 13 homogène** sur les 12 pages : tous les résidus sous-13 (labels
+  8-12 px, ticks/légendes Recharts, badges, cellules de tables) remontés à
+  `--type-caption` (13 px), scopés par page. Colonnes et gaps tenus ou resserrés,
+  jamais relâchés.
+- **Ticks/légendes Recharts** floorés par page (la règle palier `.dash-shell` ne les
+  atteignait pas) : Greeks, Analytics, HistoryDistribution.
+- **Loi de couleur — theta neutre** : sur Greeks (carte KPI, projection 30 j, colonne Θ,
+  courbe/chip) puis **cross-page** Dashboard (RiskMatrix Σ THETA, LivePositions colonne/
+  sub-header/footer) et Positions (KPI Theta total, colonne Θ). Un Greek signé n'est pas
+  une perte : le rouge reste réservé aux pertes/coûts **réels en $**.
+- **Vides tués** : form QueryID/Token capé (Import), gouffre label↔contrôle résorbé en
+  layout 2 colonnes (Settings, toutes sections), colonne Tag rééquilibrée en `fr`
+  (StrategyBreakdown / Analytics), cellule géante Futures alignée sur la grille regime
+  (PreMarket).
+- **Thead sticky** sur la chaîne d'options (`/trading/chain`) : les 2 rangs d'en-tête
+  (CALLS/STRIKE/PUTS + colonnes greeks) restent visibles au scroll, fonds opaques.
+
+### Retiré
+- Affordance morte `KpiTile tone="loss"` (Greeks) après passage du theta en neutre
+  (param + 8 appelants + règle CSS `.is-loss`).
+
+### Vérification
+- Chaque page vérifiée visuellement @1591 (Playwright isolé, données démo éphémères,
+  portefeuille réel intact) : **0 overflow horizontal, 0 chevauchement, 0 régression
+  console** (500 finnhub + `width(-1)` Recharts pré-existants tolérés).
+
+---
+
 ## [2.0.0] — 2026-06
 
 Palier « V1 finale » du produit : l'app est complète, mergée et en production sur
