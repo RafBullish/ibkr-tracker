@@ -292,4 +292,39 @@
   .greeks-page .recharts-cartesian-axis-tick-value {
     font-size: var(--type-caption);
   }
+
+  /* ══ CALENDAR (densif) — plancher 13 sur les résidus sous-13 PROPRES à
+     /insights/calendar (classes BEM .calendar-page__* auto-scopées).
+     Vues Annonces + P&L Jour. Colonnes/gaps de la grille TENUS (repeat(7,1fr),
+     cells min-height 52px absorbent 13px). Couleurs P&L (pnl-value/week-total/
+     summary --up/--down = $ réel) INTACTES — on ne touche que la taille.
+     DÉJÀ >=13 (aucune touche) : month-label 15, upcoming-label 13, trade-ticker
+     13, trade-pnl 13, day-detail-title 13, summary-value 18.
+     ⚠ DIFFÉRÉ B-final : heatmap vue « Année » (.pnl-calendar__year-months /
+     -weekdays, 10px) = contribution-graph à cellules 12px ; 13px déborderait
+     la grille → laissé natif (data-viz), à revoir séparément. */
+  .calendar-page__tab,
+  .calendar-page__impact-tab,
+  .calendar-page__refresh-btn,
+  .calendar-page__day-headers > div,
+  .calendar-page__ann-cell-day,
+  .calendar-page__ann-popup-row,
+  .calendar-page__upcoming-head,
+  .calendar-page__upcoming-date,
+  .calendar-page__upcoming-pill,
+  .calendar-page__impact-pill,
+  .calendar-page__upcoming-est,
+  .calendar-page__upcoming-eta,
+  .calendar-page__pnl-day-number,
+  .calendar-page__pnl-value,
+  .calendar-page__pnl-count-badge,
+  .calendar-page__pnl-week-total,
+  .calendar-page__day-detail-cta,
+  .calendar-page__trade-type-badge,
+  .calendar-page__summary-label,
+  .calendar-page__summary-day,
+  .calendar-page__api-banner,
+  .calendar-page__legend-label {
+    font-size: var(--type-caption);
+  }
 }
