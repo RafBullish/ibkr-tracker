@@ -7,7 +7,9 @@
 //  Sémantique appliquée sur les Greeks AGRÉGÉS :
 //    Δ  → ink-pure TOUJOURS (exposition directionnelle, pas $)
 //    Γ  → ink-pure TOUJOURS (dérivée seconde, sans dim. monétaire)
-//    Θ  → pnl-down SI NÉGATIF (coût récurrent réel en $/j), ink-pure sinon
+//    Θ  → ink-pure TOUJOURS (révision : un Greek naturellement signé
+//         — theta ~toujours négatif — n'est PAS une perte ; le rouge
+//         reste réservé aux pertes RÉALISÉES, pas au signe d'un Greek)
 //    ν  → ink-pure TOUJOURS (sensibilité IV, pas $)
 //
 //  Rows:
@@ -132,9 +134,10 @@ function fmtCurrency(v, currency = 'USD') {
   }).format(v);
 }
 
-// Local KPI tile — markup plat, à plat sur var(--depth-raised). Tone
-// est strictement 'pure' ou 'loss' : la règle CANONICAL-3 interdit
-// 'profit' (vert) sur les Greeks agrégés.
+// Local KPI tile — markup plat, à plat sur var(--depth-raised). Tous les
+// KPI Greeks agrégés passent 'pure' (Θ inclus depuis la révision CANONICAL-3).
+// 'loss' reste une affordance du primitif mais AUCUN Greek ne la déclenche
+// (le vert 'profit' n'a jamais été autorisé sur des Greeks agrégés).
 function KpiTile({ label, tooltip, value, tone = 'pure', compact = false }) {
   const cls = [
     'greeks-v3__kpi',
@@ -263,8 +266,9 @@ export default function Greeks() {
 
   const evolutionSeries = useMemo(() => buildMockEvolution(netGreeks, 30), [netGreeks]);
 
-  // Tones pour les 4 KPI agrégés — règle CANONICAL-3 §ÉTAPE 2.
-  const thetaTone = netGreeks.theta < 0 ? 'loss' : 'pure';
+  // CANONICAL-3 (révisé) : les 4 KPI Greeks sont TOUS en ink-pure. Θ n'est
+  // plus rougi sur son signe — le rouge reste réservé aux pertes réalisées,
+  // pas au signe naturel d'un Greek (theta ~toujours négatif).
 
   // Empty state — no options at all
   if (optionPositions.length === 0) {
@@ -327,7 +331,7 @@ export default function Greeks() {
             label="Θ Theta"
             tooltip={GREEK_TOOLTIPS.theta}
             value={fmtCurrency(netGreeks.theta)}
-            tone={thetaTone}
+            tone="pure"
           />
         </motion.div>
         <motion.div variants={TILE_VARIANTS}>

@@ -26,12 +26,14 @@ import { Activity } from 'lucide-react';
 // donc sur les tokens canoniques :
 //   Delta → accent (le plus regardé pour Sniper)
 //   Gamma → ink-mute (discret, sert rarement)
-//   Theta → pnl-down (cohérent avec Theta-négatif = coût récurrent)
+//   Theta → ink-pure (NEUTRE — un Greek signé ne se colore pas en rouge ;
+//           le rouge reste réservé aux pertes RÉALISÉES. ink-pure le garde
+//           distinguable de gamma/vega tout en restant neutre)
 //   Vega  → ink-soft (lisible mais secondaire)
 const SERIES = [
   { key: 'delta', label: 'Δ Delta', color: 'var(--accent)' },
   { key: 'gamma', label: 'Γ Gamma', color: 'var(--ink-mute)' },
-  { key: 'theta', label: 'Θ Theta', color: 'var(--pnl-down)' },
+  { key: 'theta', label: 'Θ Theta', color: 'var(--ink-pure)' },
   { key: 'vega', label: 'ν Vega', color: 'var(--ink-soft)' },
 ];
 
