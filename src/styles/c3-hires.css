@@ -254,6 +254,14 @@
     font-size: var(--type-caption);
   }
 
+  /* ══ HISTORY · TICKS RECHARTS (addendum B11) — HistoryDistribution (histogramme
+     P&L, XAxis/YAxis fontSize:10 en JSX) est lazy-loaded sur /trading/history et
+     échappe au palier .dash-shell + au brick History précédent (classes only).
+     Équivalent scope-page du B4, comme Greeks/Analytics. */
+  .history-page .recharts-cartesian-axis-tick-value {
+    font-size: var(--type-caption);
+  }
+
   /* ══ GREEKS (densif) — plancher 13 sur les résidus sous-13 PROPRES à
      /trading/greeks. Les composants greek-evo / theta-decay / iv-rank /
      pos-greeks-table sont EXCLUSIFS à cette page ; on les scope quand même
