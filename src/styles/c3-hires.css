@@ -455,4 +455,73 @@
   .journal-v3 .status-badge__label {
     font-size: var(--type-caption);
   }
+
+  /* ══ OPTIONS CHAIN (densif + thead sticky) — /trading/chain. Page la plus
+     dense (feuille pensée 1080p, 40+ hardcodes sub-13). Plancher 13 sur les
+     strips (topbar/stats/tenors/controls/footer) ET la table OptionsChainTable.
+     Table-layout fixed width:100% → PAS d'overflow horizontal ; colonnes data
+     = 113px @1591 >> ~56px d'un nombre à 13px → 0 chevauchement (vérifié). */
+  .chain-v5__input,
+  .chain-v5__load-btn,
+  .chain-v5__history-label,
+  .chain-v5__history-pill,
+  .chain-v5__error,
+  .chain-v5__stat-label,
+  .chain-v5__stat-sub,
+  .chain-v5__tenor,
+  .chain-v5__control-label,
+  .chain-v5__chip,
+  .chain-v5__sniper-toggle,
+  .chain-v5__sniper-count,
+  .chain-v5__loading-hint,
+  .chain-v5__empty-sub,
+  .chain-v5__footer-label,
+  .chain-v5__footer-sub,
+  .chain-v5__footer-oi-strike,
+  .chain-v5__footer-oi-total,
+  .chain-v5__footer-wall-tag,
+  .chain-v5__footer-wall-strike,
+  .chain-v5 .options-chain__cell,
+  .chain-v5 .options-chain__empty,
+  .chain-v5 .options-chain__vol-head,
+  .chain-v5 .options-chain__strike-head,
+  .chain-v5 .options-chain__col-heads .options-chain__side-row {
+    font-size: var(--type-caption);
+  }
+
+  /* Badge count h12px : un texte 13px le cliperait → bump 16px (accommode le
+     plancher, gaps tenus). Les autres pills (h18/h22) absorbent 13px. */
+  .chain-v5__sniper-count {
+    height: 16px;
+  }
+
+  /* THEAD STICKY (fix audit) — le thead n'était pas sticky ; il défilait hors
+     vue. Les 2 rangs collent en haut du scroller .chain-v5__table-wrap
+     (overflow:auto). Row1 CALLS/STRIKE/PUTS → top:0 ; Row2 col-heads → top:37px
+     (hauteur mesurée de Row1 @13px). Fonds OPAQUES requis (--surface-2) sinon
+     les strikes défilent au travers ; gradients call/put relayés sur base
+     opaque. Palier seul → mobile <1440 (vue .options-chain-mobile) intact. */
+  .chain-v5 .options-chain__side-head,
+  .chain-v5 .options-chain__strike-head,
+  .chain-v5 .options-chain__col-heads th {
+    position: sticky;
+    z-index: 3;
+  }
+  .chain-v5 .options-chain__side-head,
+  .chain-v5 .options-chain__strike-head {
+    top: 0;
+  }
+  .chain-v5 .options-chain__strike-head,
+  .chain-v5 .options-chain__col-heads th {
+    background: var(--surface-2);
+  }
+  .chain-v5 .options-chain__side-head[data-side="call"] {
+    background: linear-gradient(to right, var(--qc-profit-bg), transparent), var(--surface-2);
+  }
+  .chain-v5 .options-chain__side-head[data-side="put"] {
+    background: linear-gradient(to left, var(--qc-loss-bg), transparent), var(--surface-2);
+  }
+  .chain-v5 .options-chain__col-heads th {
+    top: 37px;
+  }
 }
