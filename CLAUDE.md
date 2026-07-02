@@ -1,72 +1,230 @@
-# CLAUDE.md — garde-fou versionné
+# CLAUDE.md — Constitution de QuantumCall
 
-Règles que **tout assistant** doit suivre quand il travaille dans ce repo.
+Document **permanent**, lu à chaque session par tout assistant travaillant dans ce
+repo. Il prime sur toute habitude par défaut. En cas de conflit avec un prompt
+ponctuel, c'est l'assistant qui **signale** la contradiction plutôt que de deviner.
 
 ---
 
-## 1. Vérification visuelle obligatoire avant tout rapport "terminé"
+## 1. Identité produit
 
-Pour toute modification d'un composant du Dashboard (`src/components/dashboard/**`, `src/pages/Dashboard.jsx`, ou les styles `src/styles/v4-dashboard.css`), **ne pas répondre "terminé"** sans vérification visuelle réelle dans le navigateur.
+**QuantumCall** est un tracker d'options **personnel** (mono-utilisateur, pas de SaaS,
+pas de multi-compte). Il sert une seule stratégie : **l'achat de premium** (long
+options, doctrine « Sniper OTM »). Ce n'est ni un broker, ni un screener grand public.
 
-**Pourquoi :** le type-check et les tests vérifient la correctness du code, pas la correctness de la feature. Sans capture lue, on rapporte "fait" alors que le rendu peut être cassé (bande invisible, axe manquant, état non rendu, classe CSS non appliquée).
+Portée fonctionnelle : suivi des positions ouvertes, historique des trades clôturés,
+Greeks par position et agrégés, chaîne d'options, journal psychologique, calendrier
+earnings/macro, briefing pré-marché, analytics post-trade, réglages. Données
+persistées **en local** (localStorage), zéro backend applicatif propriétaire — les
+seuls appels réseau passent par des proxies (quotes, calendriers) via fonctions Vercel.
 
-**Séquence à exécuter avant de rapporter le travail comme terminé :**
+---
+
+## 2. Utilisateur
+
+**Rafael** — product owner, **non-codeur**, francophone. Il détient le **veto visuel
+final** : aucune brique à fort impact visuel ne merge sur `main` sans son GO.
+
+Contraintes de rendu (uniques, non négociables) :
+- Écran **4K**, Chrome à **90 %**, viewport CSS **~1591 px**, **DPR 1.35**.
+- Toute vérification et toute capture se font à cette cible : **1591×900, DPR 1.35**.
+- Le rendu **mobile <1440** est un socle existant à **ne pas casser**, mais ce n'est
+  jamais la cible de design.
+
+Tout écrit destiné à Rafael (rapports, commits, docs) est **en français**.
+
+---
+
+## 3. Rôles & workflow
+
+1. **Architecte** (Fable) — cadre le travail via des prompts de brique : direction
+   visuelle, décisions de design, découpage. Source des specs.
+2. **Implémenteur** (toi, Claude Code) — **exécution autonome** : tu lis le repo, tu
+   codes, tu vérifies visuellement, tu commites, tu pushes, tu merges selon la règle.
+   Tu ne demandes pas de permission pour les opérations git autorisées (§4).
+3. **Retour** — en fin de brique, **rapport complet et structuré à l'architecte** :
+   ce qui a été fait, décisions prises seul, hash + version, chemins des captures.
+
+Si un cas non prévu surgit, applique la règle générale de la brique, **loggue-le**
+pour le rapport final, et **continue** — ne t'arrête pas pour une question mineure.
+Ne t'arrête (et ne demande) que pour une décision **irréversible et ambiguë** qui
+n'appartient qu'à Rafael.
+
+---
+
+## 4. Autonomie git & interdits
+
+Git : **commits, push et merge AUTORISÉS sans demander**. Tu travailles en local,
+tu commites par étape (messages **conventionnels, en français**), tu pushes, tu merges.
+
+**Interdits absolus :**
+- `push --force` (ou `--force-with-lease`) sur quelque branche que ce soit.
+- Réécriture de l'historique de `main` (rebase, reset, amend de commits déjà poussés).
+- Suppression d'une branche **non mergée**.
+- Skip des hooks (`--no-verify`) ou du signing sans demande explicite de Rafael.
+
+**Règle de merge (selon la nature de la brique) :**
+- Brique **technique / docs / outillage** (delta visuel nul ou minime, conforme à la
+  loi de couleur) → **self-merge** sur `main` après contrôles verts (build +
+  `check:color-law` + captures).
+- Brique à **fort impact visuel** → **GO visuel de Rafael AVANT** merge sur `main`.
+  Tu prépares tout sur la branche, tu pushes (preview Vercel), et tu attends le GO.
+
+Convention de branche : `feat/<brique>` depuis `main` (ex. `feat/d0-fondation`).
+Minimum **1 commit par chantier**. Pas de tag sauf demande.
+
+Si VS Code demande une permission (git push…), demande à Rafael de cliquer
+**« Always allow »**.
+
+---
+
+## 5. Stack & conventions
+
+- **React 19 + Vite 7.3**, **JS pur** (pas de TypeScript, pas de `.ts`/`.tsx`).
+- Zustand (store), Recharts (graphes), Radix (primitives), TanStack (table/query),
+  Framer Motion (animation). Déploiement **Vercel** (preview par branche, prod sur `main`).
+- **AUCUNE nouvelle dépendance** sans décision de l'architecte.
+- **Tokens CSS canoniques** (`src/styles/canonical.css` = source unique). Pas de
+  valeurs de couleur en dur ; on cible les `var(--*)` canoniques.
+- Patterns établis à réutiliser (ne pas réinventer) :
+  - `.v3-table` — table dense partagée (Positions ↔ History).
+  - **Palier haute-résolution** `@media (min-width: 1440px)` dans
+    `src/styles/c3-hires.css` — densification 1591, scopée **par page**. Toute règle
+    de densité passe par ce fichier, scopée à la page, jamais en hack local ;
+    mobile <1440 reste intact.
+- Persistance locale (à ne jamais écraser hors session Playwright isolée, cf. §7) :
+
+  | Clé | Contenu |
+  |-----|---------|
+  | `ibkr_u_o` | positions ouvertes |
+  | `ibkr_u_c` | trades clôturés |
+  | `ibkr_u_f` | cash flows |
+  | `ibkr_u_j` | entrées de journal |
+  | `ibkr_u_s` | settings (liveRate, cashReport, ibkrLiveData, gwAutoConnect, snapshots…) |
+
+---
+
+## 6. Design system & LOI DE COULEUR
+
+**« Brutalisme Financier »** : fond **void** (le plan le plus profond), accent
+**ambre `#FFA028`**, **4 plans de profondeur** (void → base → raised → focus),
+chiffres **monospace** (tabular-nums), filets murmurés, zéro glow/blur superflu.
+Thèmes **midnight** (défaut) / **daylight**, tous deux WCAG AA.
+
+### LOI DE COULEUR (constitutionnelle — non négociable)
+
+> **Le ROUGE = perte d'argent réel uniquement.** (De même, le vert = gain d'argent
+> réel.) Les valeurs de **Greeks (delta, gamma, theta, vega)** sont **TOUJOURS
+> neutres**, quel que soit leur signe.
+
+- « Perte d'argent réel » = P&L réalisé négatif, P&L latent (unrealized) négatif,
+  Max Loss. C'est le SEUL rouge autorisé sur une valeur chiffrée.
+- Un Greek est **signé par nature** (theta ~toujours négatif pour du long premium,
+  delta directionnel, etc.). Colorer son signe en rouge/vert **confond signe et
+  perte** → interdit. Neutralité = encre `ink-*` (mute/soft/pure), pas de
+  `--pnl-down/--loss-text/--qc-loss` ni `--pnl-up/--profit-text/--qc-profit`.
+- Ceci vaut pour delta **et** ses dérivés directionnels (delta-dollar, Σ Δ).
+- Theta neutre = **décision actée en C.3** (juin 2026), désormais cross-page.
+- L'**ambre** reste réservé aux signaux **décisionnels** (accent héros, zones
+  d'action, aujourd'hui), jamais une sémantique P&L.
+
+Le respect de cette loi est **contrôlé statiquement** par
+`npm run check:color-law` (cf. §7) : toute application d'un token/classe de perte à
+un champ greek fait échouer le contrôle.
+
+### Phase D en cours
+
+Direction visuelle **« Bloomberg-dense × moderne (TradingView / SaaS pro) »** :
+densité informationnelle maximale, chrome flat, hiérarchie typographique nette. Une
+**refonte typographique arrive en D1** via l'architecte. **D0 ne fait AUCUNE refonte
+design** — uniquement fondation (constitution, sweep loi de couleur, fixes
+sémantiques, outillage).
+
+---
+
+## 7. Doctrine de vérification (VISUELLE)
+
+**Ne JAMAIS citer un compte de tests comme preuve de non-régression.** Les tests
+vérifient la correctness du *code*, pas celle de la *feature*. La preuve est
+**visuelle, page par page, @1591**.
+
+### Séquence obligatoire avant de rapporter « terminé » (tout changement de rendu)
 
 1. Vérifier que le dev server tourne (http://localhost:5173).
-2. Via Playwright MCP, ouvrir http://localhost:5173/dashboard (ou la route concernée).
-3. **Exercer concrètement** la fonctionnalité modifiée — cliquer le toggle, activer Mesure et cliquer A puis B, survoler la courbe, etc. Pas seulement charger la page.
-4. Prendre une capture **et la lire** — confirmer que l'état visuel attendu est rendu (bande visible, axe en %, barres colorées, texte du readout correct).
-5. Lire la console du navigateur ; aucune erreur ne doit apparaître. Les warnings Recharts `width(-1)/height(-1)` au mount initial sont connus et tolérés.
-6. Si le rendu ne correspond pas à la spec : corriger et re-vérifier. Ne jamais rapporter "terminé" tant que la capture ne confirme pas.
-7. Dans le rapport final : énoncer ce qui a été vérifié visuellement + décrire la capture.
+2. Via **Playwright MCP** (isolé, cf. ci-dessous), ouvrir la route concernée à
+   viewport **1591×900, DPR 1.35**, thème midnight.
+3. **Exercer** concrètement la feature (cliquer, survoler, scroller — pas juste
+   charger). Vérifier **0 overflow horizontal, 0 chevauchement, colonnes tenues**.
+4. **Lire** une capture / un snapshot a11y : confirmer que l'état attendu est rendu
+   (encre neutre sur greeks, rouge sur pertes réelles, densité, texte correct).
+5. Lire la console : **aucune erreur nouvelle**. Tolérés (pré-existants) : `500`
+   finnhub sur symboles non servis, warnings Recharts `width(-1)/height(-1)` au mount.
+6. Si le rendu diverge de la spec : corriger et re-vérifier. Ne rapporter « fait »
+   que quand la capture le confirme.
+7. Efficacité tokens : `browser_snapshot` (a11y) pour la structure ;
+   `browser_take_screenshot` réservé à la confirmation finale.
 
-**Efficacité tokens :** utiliser `browser_snapshot` (texte d'accessibilité) pour vérifier la structure ; réserver `browser_take_screenshot` à la confirmation visuelle finale (les captures coûtent cher en tokens).
+### Isolation Playwright OBLIGATOIRE
 
----
-
-## 2. Isolation obligatoire du navigateur Playwright
-
-Le serveur MCP `playwright` **doit** tourner avec l'option `--isolated` :
+Le serveur MCP `playwright` **doit** tourner avec `--isolated` (profil Chromium en
+mémoire, rien écrit sur disque, vierge à chaque session) :
 
 ```jsonc
 // ~/.claude.json — projects."C:/Users/raf77/ibkr-tracker".mcpServers.playwright
-{
-  "type": "stdio",
-  "command": "cmd",
-  "args": ["/c", "npx", "-y", "@playwright/mcp@latest", "--isolated"],
-  "env": {}
-}
+{ "type": "stdio", "command": "cmd",
+  "args": ["/c", "npx", "-y", "@playwright/mcp@latest", "--isolated"], "env": {} }
 ```
 
-`--isolated` → profil Chromium en mémoire, aucun fichier écrit sur disque, repart vierge à chaque session MCP.
+Interdits : `--channel chrome`, `--cdp-endpoint` sur un Chrome ouvert, `--user-data-dir`
+partagé. **Avant toute injection de données de démo, vérifier que `--isolated` est
+présent.** Sinon : refuser d'injecter et alerter — une écriture dans une session non
+isolée écraserait le **portefeuille réel** de Rafael (clés `ibkr_u_*`, cf. §5).
 
-**Interdictions absolues :**
-- Ne **jamais** lancer Playwright avec `--channel chrome` (rattache le vrai Chrome de l'utilisateur).
-- Ne **jamais** utiliser `--cdp-endpoint` connecté à un Chrome ouvert.
-- Ne **jamais** partager un `--user-data-dir` avec un autre navigateur.
+### Scripts d'outillage
 
-**Avant toute injection de démo, vérifier que `--isolated` est présent dans la config MCP courante.** Si absent : refuser d'injecter et alerter l'utilisateur.
+- `npm run check:color-law` — contrôle **statique** (pas un test) : scanne `src/` et
+  signale toute application de token/classe de perte à un champ greek. Sortie
+  `fichier:ligne` + extrait, **exit ≠ 0** si violation. À faire tourner avant merge.
+- `npm run audit:visual` — Playwright : capture les 12 pages à **1591×900, DPR 1.35**,
+  thème midnight, vers `docs/captures/audit-AAAAMMJJ/`. **Dev server requis.** Seed un
+  dataset de test reproductible → les captures doivent montrer des pages **peuplées**
+  (des captures vides = travail non terminé).
 
----
+### Artefacts
 
-## 3. Clés localStorage protégées
-
-Sont des **données réelles utilisateur** dans le repo cible :
-
-| Clé | Contenu |
-|-----|---------|
-| `ibkr_u_o` | open positions |
-| `ibkr_u_c` | closed trades |
-| `ibkr_u_f` | cash flows |
-| `ibkr_u_j` | journal entries |
-| `ibkr_u_s` | settings (liveRate, cashReport, ibkrLiveData, gwAutoConnect, snapshots…) |
-
-**Ne jamais écrire ces clés tant que l'isolation Playwright n'est pas confirmée.** Une injection dans une session non isolée écraserait le portefeuille réel.
-
-Les données de démo, quand l'isolation est confirmée, sont injectées dans la session isolée uniquement et disparaissent à sa fermeture — c'est voulu.
+Captures et caches Playwright **ne sont pas commités** (`.playwright-mcp/`,
+`/c3-*.png`, etc. gitignorés). Les audits versionnés vivent sous `docs/captures/`.
+Les images légitimes du projet restent sous `public/`, `src/assets/`.
 
 ---
 
-## 4. Artefacts de vérification
+## 8. Sémantique financière (ne jamais confondre)
 
-Captures et caches Playwright **ne sont pas commités**. Ils restent dans `.playwright-mcp/` et à la racine sous des noms reconnaissables (`dashboard.png`, `brique*.png`, `nettoyage*.png`) — patterns gitignorés. Les images légitimes du projet vivent sous `public/`, `src/assets/`, etc. et restent traquées.
+QuantumCall analyse du **long premium**. Le raisonnement se fait en
+**delta / vega / theta / mouvement de prime** — **JAMAIS** en break-even à expiration
+ni en « probabilité de profit ». On ne tient pas une option jusqu'à l'échéance ; on
+joue le mouvement de la prime.
+
+Distinctions à respecter dans le code, les labels et les tooltips :
+
+- **Risk $** (exposition ajustée au stop) **≠ Max Loss** (prime totale engagée).
+- **Capital engagé** (coût d'entrée : entry × qty × mul) **≠ valeur mark** (valeur
+  courante). Deux chiffres différents, deux sens différents.
+- Carte **EXPOSURE / DÉPLOYÉ** = capital **DÉPLOYÉ** (coût des primes engagées, hors
+  P&L latent). Ce n'est **pas** le « notionnel » (qui serait strike × 100 × contrats).
+  Le label doit dire ce qu'il montre.
+
+---
+
+## 9. Rituels de fin de brique
+
+- **CHANGELOG.md** — entrée datée décrivant la brique (format Keep a Changelog).
+- **ROADMAP.md** — mettre à jour l'état (livré / en cours), retirer les mentions
+  périmées.
+- **SemVer** (`package.json`) — bump à ton jugement : `patch` (fix/outillage),
+  `minor` (feature/brique visible), selon l'ampleur.
+- **Rapport à l'architecte** — récap structuré : hash `main` + version, corrections
+  fichier par fichier, chemins des captures, décisions prises seul.
+
+Le fichier `.claude/CLAUDE.local.md` (non versionné) peut contenir des notes locales ;
+il ne doit jamais **contredire** cette constitution.
