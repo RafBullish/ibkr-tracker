@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:color-law": "node scripts/check-color-law.mjs",
+    "audit:visual": "node scripts/visual-audit.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",
