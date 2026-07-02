@@ -38,6 +38,7 @@ Thumbs.db
 # Local dev artifacts
 .claude/
 .tmp.driveupload/
+.tmp.drivedownload/
 fichiers.txt
 tree.txt
 phase-*.txt
@@ -54,6 +55,10 @@ contexte_pour_gemini.md
 /font-*.png
 /c3-*.png
 /c3-*.zip
+
+# Runs de audit:visual — régénérables via `npm run audit:visual` (docs/captures/c3/
+# reste traqué comme historique). On ne commite pas les 12 captures par run (bloat).
+docs/captures/audit-*/
 
 # Iosevka source pack (non-subsetté, 1.6 MB chaque) — gardé hors public/ pour ne pas shipper
 scripts/iosevka-source/
