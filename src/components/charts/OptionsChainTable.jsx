@@ -67,7 +67,7 @@ function fmtVol(v) {
   return String(Math.round(v));
 }
 
-function ChainCell({ contract, fieldKey, align = 'right', tone }) {
+function ChainCell({ contract, fieldKey, align = 'right' }) {
   if (!contract) return <span className="options-chain__empty">—</span>;
   const dead = contract._dead;
   const isBidAsk = fieldKey === 'bid' || fieldKey === 'ask';
@@ -106,13 +106,9 @@ function ChainCell({ contract, fieldKey, align = 'right', tone }) {
     default:
       text = v ?? '—';
   }
-  const color = dead
-    ? 'var(--text-tertiary)'
-    : tone === 'profit'
-      ? 'var(--profit-text)'
-      : tone === 'loss'
-        ? 'var(--loss-text)'
-        : 'var(--text-secondary)';
+  // LOI DE COULEUR : les cellules de chaîne (greeks + prix) sont neutres. Pas de
+  // tonalité profit/loss — le rouge/vert est réservé aux pertes/gains $ réels.
+  const color = dead ? 'var(--text-tertiary)' : 'var(--text-secondary)';
   return (
     <span className="options-chain__cell mono" style={{ textAlign: align, color }}>
       {text}
@@ -151,13 +147,15 @@ function ChainRow({ call, put, strike, spot, maxVolume, onRowClick }) {
         data-sniper={callSniper || undefined}
         onClick={() => call && onRowClick?.('call', strike, call)}
       >
+        {/* LOI DE COULEUR : delta/theta sont des Greeks → NEUTRES (pas de tone
+            profit/loss). Le rouge/vert reste réservé aux pertes/gains $ réels. */}
         <div className="options-chain__side-row">
           <VolumeBar volume={call?.volume} maxVolume={maxVolume} side="call" />
           <ChainCell contract={call} fieldKey="bid" />
           <ChainCell contract={call} fieldKey="ask" />
-          <ChainCell contract={call} fieldKey="delta" tone="profit" />
+          <ChainCell contract={call} fieldKey="delta" />
           <ChainCell contract={call} fieldKey="vega" />
-          <ChainCell contract={call} fieldKey="theta" tone="loss" />
+          <ChainCell contract={call} fieldKey="theta" />
           <ChainCell contract={call} fieldKey="iv" />
         </div>
       </td>
@@ -178,9 +176,9 @@ function ChainRow({ call, put, strike, spot, maxVolume, onRowClick }) {
       >
         <div className="options-chain__side-row options-chain__side-row--reverse">
           <ChainCell contract={put} fieldKey="iv" />
-          <ChainCell contract={put} fieldKey="theta" tone="loss" />
+          <ChainCell contract={put} fieldKey="theta" />
           <ChainCell contract={put} fieldKey="vega" />
-          <ChainCell contract={put} fieldKey="delta" tone="loss" />
+          <ChainCell contract={put} fieldKey="delta" />
           <ChainCell contract={put} fieldKey="bid" />
           <ChainCell contract={put} fieldKey="ask" />
           <VolumeBar volume={put?.volume} maxVolume={maxVolume} side="put" />

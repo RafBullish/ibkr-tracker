@@ -73,19 +73,14 @@ export default function ThetaDecayProjection({
       <div className="theta-decay__summary">
         <div>
           <span className="theta-decay__summary-label">Par jour</span>
-          <span
-            className="theta-decay__summary-value mono"
-            data-tone={dailyTheta < 0 ? 'loss' : 'profit'}
-          >
+          {/* Θ NEUTRE (loi de couleur) : le signe du theta ne colore plus. */}
+          <span className="theta-decay__summary-value mono" data-tone="neutral">
             {formatCurrency(dailyTheta)}
           </span>
         </div>
         <div>
           <span className="theta-decay__summary-label">Cumul {days}j</span>
-          <span
-            className="theta-decay__summary-value mono"
-            data-tone={series[series.length - 1].cumulative < 0 ? 'loss' : 'profit'}
-          >
+          <span className="theta-decay__summary-value mono" data-tone="neutral">
             {formatCurrency(series[series.length - 1].cumulative)}
           </span>
         </div>
@@ -102,7 +97,7 @@ export default function ThetaDecayProjection({
             <div key={i} className="theta-decay__day">
               <div
                 className="theta-decay__bar"
-                data-tone={p.cumulative < 0 ? 'loss' : 'profit'}
+                data-tone="neutral"
                 style={{ height: `${Math.max(6, ratio * 100)}%` }}
                 title={`J+${p.day} · cumul ${formatCurrency(p.cumulative)}`}
               />
