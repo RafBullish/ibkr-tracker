@@ -4,7 +4,16 @@ Direction du code après le palier `2.0.0`. Vivant : se met à jour au fil des p
 
 ---
 
-## En cours — V2
+## En cours — Phase D « Design »
+
+- **D0 — Fondation** *(livrée, 2.1.1)* : réécriture de `CLAUDE.md` (constitution),
+  sweep loi de couleur (Greeks toujours neutres), fix du label de la carte EXPOSURE
+  (NOTIONAL → DÉPLOYÉ), scripts `check:color-law` + `audit:visual`. **Aucune** refonte
+  design.
+- **D1 — Direction visuelle** *(à venir, cadré par l'architecte)* : refonte
+  typographique, direction **« Bloomberg-dense × moderne (TradingView / SaaS pro) »**.
+
+## Historique — V2
 
 - **Refonte densité / 4K** : phases B → C.2 **et C.3.0 (« zoom 4K @ 90 % » /
   densification 1591) livrées**. Plancher typo 13 homogène sur les 12 pages, résidus

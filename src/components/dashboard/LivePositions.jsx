@@ -228,7 +228,8 @@ function PositionRow({ pos, onTag }) {
       <td className={`live-pos__cell--${toneFromSign(pos.unrealPct)}`}>
         {fmtPctSigned(pos.unrealPct, 2)}
       </td>
-      <td className={`live-pos__cell--${isStock ? 'mute' : toneFromSign(pos.delta)}`}>
+      {/* Δ NEUTRE (loi de couleur) : delta signé ≠ perte $ → toujours mute. */}
+      <td className="live-pos__cell--mute">
         {isStock || pos.delta == null ? '—' : fmtNumberSigned(pos.delta, 2)}
       </td>
       {/* Θ NEUTRE (loi de couleur) : theta signé ≠ perte $ → toujours mute. */}
@@ -403,9 +404,7 @@ export default function LivePositions({ data, area = 'positions' }) {
         <div className="live-pos__subheader">
           <div className="live-pos__ctx">
             Σ Δ{' '}
-            <span
-              className={`live-pos__ctx-val live-pos__ctx-val--${toneFromSign(stats.totalDelta)}`}
-            >
+            <span className="live-pos__ctx-val live-pos__ctx-val--mute">
               {fmtNumberSigned(stats.totalDelta, 2)}
             </span>
           </div>
@@ -550,9 +549,7 @@ export default function LivePositions({ data, area = 'positions' }) {
           </div>
           <div className="live-pos__footer-cell">
             <span className="live-pos__footer-label">Σ Δ $</span>
-            <span
-              className={`live-pos__footer-value live-pos__footer-value--${toneFromSign(stats.deltaDollar)}`}
-            >
+            <span className="live-pos__footer-value live-pos__footer-value--mute">
               {fmtUsdSigned(stats.deltaDollar, 0)}
             </span>
           </div>

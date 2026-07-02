@@ -1,14 +1,16 @@
 {
   "name": "quantumcall",
   "private": true,
-  "version": "2.1.0",
+  "version": "2.1.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:color-law": "node scripts/check-color-law.mjs",
+    "audit:visual": "node scripts/visual-audit.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",
@@ -37,6 +39,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
+    "playwright": "^1.61.1",
     "vite": "^7.3.1",
     "vitest": "^4.1.7"
   }

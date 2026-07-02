@@ -360,9 +360,14 @@ function KpiFooter({ cells }) {
   );
 }
 
-function Pill({ tone = 'mute', children }) {
+function Pill({ tone = 'mute', title, children }) {
   return (
-    <span className={`dash-kpi-card__pill dash-kpi-card__pill--${tone}`}>{children}</span>
+    <span
+      className={`dash-kpi-card__pill dash-kpi-card__pill--${tone}`}
+      title={title || undefined}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -2639,10 +2644,15 @@ export default function DashboardKPICards() {
           ]}
         />
 
-        {/* SECONDARY 4. EXPOSURE */}
+        {/* SECONDARY 4. EXPOSURE — le chiffre = capital DÉPLOYÉ (coût des primes
+            engagées). « NOTIONAL » était faux (le notionnel = strike×100×contrats). */}
         <KpiCard
           label="EXPOSURE"
-          topRight={<Pill tone="amber">NOTIONAL</Pill>}
+          topRight={
+            <Pill tone="amber" title="Coût des primes engagées · hors P&L latent">
+              DÉPLOYÉ
+            </Pill>
+          }
           value={fmtUsdCompact(exposureUsd)}
           valueTone="neutral"
           chfLine={exposureChfLine}

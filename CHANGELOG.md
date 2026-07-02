@@ -6,6 +6,37 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [2.1.1] — 2026-07
+
+Phase **D0 — Fondation** (avant la refonte design D1) : constitution, mise en
+conformité de la loi de couleur, outillage de contrôle. Aucune refonte design.
+
+### Ajouté
+- **`CLAUDE.md`** réécrit — constitution permanente en 9 sections (identité produit,
+  utilisateur, rôles & workflow, autonomie git + interdits, stack & conventions,
+  design system + loi de couleur + Phase D, doctrine de vérification visuelle,
+  sémantique financière, rituels de fin de brique).
+- **`npm run check:color-law`** — contrôle statique (pas un test) : signale tout Greek
+  coloré via une classe/token de P&L (rouge/vert). Exit ≠ 0 si violation.
+- **`npm run audit:visual`** — capture Playwright des 12 pages à 1591×900, DPR 1.35,
+  thème midnight, avec seed reproductible → `docs/captures/audit-AAAAMMJJ/`.
+
+### Corrigé
+- **Loi de couleur** : toutes les valeurs de Greeks (delta / gamma / theta / vega)
+  sont désormais neutres partout — RiskMatrix (Σ DELTA/VEGA), LivePositions (colonne
+  Delta, Σ Delta, Σ Δ$), Chain (delta/theta), ThetaDecayProjection (neutralisé à la
+  source). Le rouge/vert reste réservé aux pertes/gains d'argent RÉELS.
+- **Carte EXPOSURE** (Dashboard) : badge « NOTIONAL » (faux — le notionnel serait
+  strike×100×contrats) → « DÉPLOYÉ » + tooltip « Coût des primes engagées · hors P&L
+  latent ». Le chiffre (capital déployé) est inchangé.
+
+### Interne
+- Dépendance dev `playwright` (script d'audit visuel). Captures `c3-*` déplacées de la
+  racine vers `docs/captures/c3/`. `.gitignore` : runs `audit:visual` régénérables
+  ignorés, `.tmp.drivedownload/` ajouté.
+
+---
+
 ## [2.1.0] — 2026-07
 
 Phase **C.3.0 — « Zoom 4K @ 90 % » / densification 1591**. Palier haute-résolution

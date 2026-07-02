@@ -156,16 +156,13 @@
 .greeks-page .theta-decay__summary-label {
   color: var(--ink-mute);
 }
-.greeks-page .theta-decay__summary-value,
-.greeks-page .theta-decay__summary-value[data-tone="loss"],
-.greeks-page .theta-decay__summary-value[data-tone="profit"] {
+.greeks-page .theta-decay__summary-value {
   color: var(--ink-pure);
 }
 .greeks-page .theta-decay__bars {
   border-bottom: 1px solid var(--line-hairline);
 }
-.greeks-page .theta-decay__bar[data-tone="loss"],
-.greeks-page .theta-decay__bar[data-tone="profit"] {
+.greeks-page .theta-decay__bar {
   background: var(--ink-soft);
   opacity: 0.6;
 }

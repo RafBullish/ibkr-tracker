@@ -478,11 +478,6 @@ const fmtUsdCompact = (v) => {
   return `${sign}$${Math.abs(Math.round(v)).toLocaleString('de-CH')}`;
 };
 
-const toneFromSign = (v) => {
-  if (v == null || !Number.isFinite(v) || v === 0) return 'mute';
-  return v > 0 ? 'profit' : 'loss';
-};
-
 const GREEKS_LABELS = ['Σ DELTA', 'Σ GAMMA', 'Σ THETA', 'Σ VEGA', 'OPTIONS'];
 
 function GreeksStripCell({ label, value, sub, tone }) {
@@ -536,11 +531,14 @@ function GreeksStrip({ greeks }) {
 
   return (
     <div className="risk-matrix__greeks-strip" aria-label="Options greeks aggregated">
+      {/* LOI DE COULEUR : les 4 Greeks agrégés (Δ/Γ/Θ/ν) sont TOUJOURS neutres
+          (tone="mute") — un Greek signé n'est pas une perte $. Le rouge reste
+          réservé aux pertes d'argent réelles (P&L, Max Loss). */}
       <GreeksStripCell
         label="Σ DELTA"
         value={fmtNumSigned(g.sumDelta, 0)}
         sub={`exp ${fmtUsdCompact(g.notionalDelta)}`}
-        tone={toneFromSign(g.sumDelta)}
+        tone="mute"
       />
       <GreeksStripCell
         label="Σ GAMMA"
@@ -548,8 +546,6 @@ function GreeksStrip({ greeks }) {
         sub="per $1↑"
         tone="mute"
       />
-      {/* Θ NEUTRE (loi de couleur, cross-page) : un Greek signé n'est pas une
-          perte $ → tone mute (neutre), plus rouge sur le signe. */}
       <GreeksStripCell
         label="Σ THETA"
         value={fmtUsdSigned2(g.thetaDaily)}
@@ -560,7 +556,7 @@ function GreeksStrip({ greeks }) {
         label="Σ VEGA"
         value={fmtUsdSigned2(g.vegaPer1Pct)}
         sub="per 1%IV"
-        tone={toneFromSign(g.vegaPer1Pct)}
+        tone="mute"
       />
       <GreeksStripCell
         label="OPTIONS"
