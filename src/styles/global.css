@@ -188,6 +188,14 @@ hr {
   font-feature-settings: "tnum", "zero";
 }
 
+/* D1.2 — vraie chasse fixe pour les usages NON numériques qui l'exigent (noms
+   de fichier .env / CSV importé). --qc-font-num (Plex Condensed, proportionnel)
+   servirait mais casserait l'alignement caractère d'un chemin → Geist Mono. */
+.mono-code {
+  font-family: var(--qc-font-code);
+  font-variant-numeric: normal;
+}
+
 .font-ui {
   font-family: var(--qc-font-sans);
 }

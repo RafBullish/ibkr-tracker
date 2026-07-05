@@ -1,6 +1,12 @@
 import './styles/tokens.css';
 import '@fontsource-variable/geist';
 import '@fontsource-variable/geist-mono';
+// D1.2 — IBM Plex Sans Condensed = police de TOUS les chiffres de l'app
+// (héros, KPI, tables). Graisses 600 + 700 seulement (pas d'italique) : les
+// chiffres sont toujours ≥600. Import runtime global (candidate retenue par
+// Rafael au lab /lab/typo). Les 3 autres candidates restent cantonnées au lab.
+import '@fontsource/ibm-plex-sans-condensed/600.css';
+import '@fontsource/ibm-plex-sans-condensed/700.css';
 import './styles/fonts.css';
 import './styles/global.css';
 import './styles/animations.css';

@@ -524,4 +524,39 @@
   .chain-v5 .options-chain__col-heads th {
     top: 37px;
   }
+
+  /* ════════════════════════════════════════════════════════════════
+     D1.2 · VOLET 2 — REMONTÉE D'ÉCHELLE DU PETIT TEXTE (palier ≥1440).
+     Verdict Rafael sur le lab : « ce qui est écrit petit est trop petit ;
+     plus grand ET plus gras ». La condensation d'IBM Plex Sans Condensed
+     (~10 % plus étroite, cf. --qc-font-num) ABSORBE la montée en taille →
+     densité horizontale préservée (garde-fou : 0 colonne perdue, 0 overflow
+     sur Positions / History / Chain, vérifié @1591).
+     ════════════════════════════════════════════════════════════════ */
+
+  /* Cellules de tables denses (.v3-table, partagée Positions ↔ History) :
+     13 → 14. Colonnes chiffrées (.mono) en wght 600 (chiffres qui mènent). */
+  .v3-table__td {
+    font-size: 14px;
+  }
+  .v3-table__td.mono {
+    font-weight: 600;
+  }
+
+  /* Microlabels uppercase partagés (en-têtes de colonnes de table + labels
+     canoniques) : wght 600, tracking inchangé. Plancher 12 déjà tenu (13 au
+     palier) — on ne touche pas la taille, seulement la graisse. */
+  .v3-table__th,
+  .uppercase-label {
+    font-weight: 600;
+  }
+
+  /* Lignes secondaires des cartes KPI (ligne CHF, pill delta) : +1px → 14,
+     wght 600. Padding-based → aucun clip vertical. Les variantes --hero
+     (spécificité supérieure) gardent leur propre échelle. */
+  .dash-kpi-card__chf,
+  .dash-kpi-card__pill {
+    font-size: 14px;
+    font-weight: 600;
+  }
 }

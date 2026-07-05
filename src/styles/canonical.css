@@ -25,11 +25,26 @@
   --accent-soft:       color-mix(in srgb, #FFA028 18%, transparent);
 
   /* — Typographie — */
-  /* Brique 15 (P1) — Geist Mono devient la mono de toute l'app. canonical.css
-     est chargé en dernier : cette déclaration PREND LE PAS sur la chaîne
-     legacy de tokens.css. Le héros garde --qc-font-hero (brique 11) — non touché. */
-  --qc-font-mono:      'Geist Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+  /* D1.2 — POLICE DES CHIFFRES. IBM Plex Sans Condensed (candidate « C »,
+     retenue par Rafael au lab /lab/typo) devient la fonte de TOUS les chiffres
+     de l'app. Condensée (~10 % plus étroite) → finance la remontée d'échelle du
+     petit texte (volet 2) sans perdre en densité horizontale. Pas de fonte
+     système condensée fiable → Arial Narrow (Win/Mac) puis Inter Tight en
+     attente du swap. canonical.css charge en DERNIER → fait autorité. */
+  --qc-font-num:       'IBM Plex Sans Condensed', 'Arial Narrow', 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
+  /* --qc-font-mono devient un ALIAS de --qc-font-num : les ~300 règles qui
+     stylaient les chiffres via --qc-font-mono (Geist Mono) basculent en une
+     seule source. Le nom « mono » est conservé pour rétrocompat des sélecteurs
+     (tickers/dates suivent aussi, cohérence visuelle voulue). */
+  --qc-font-mono:      var(--qc-font-num);
   --type-mono:         var(--qc-font-mono);
+  /* --qc-font-hero (défini dans tokens.css sur Iosevka QC Hero) devient un
+     ALIAS de --qc-font-num : les 2 héros Dashboard basculent sur Plex. */
+  --qc-font-hero:      var(--qc-font-num);
+  /* --qc-font-code — SEULE survivance monospace : usages non numériques qui
+     exigent une vraie chasse fixe (nom de fichier .env, CSV importé). Geist Mono
+     y reste légitime (non orphelin). */
+  --qc-font-code:      'Geist Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
 
   /* Brique 15 (P2) — échelle Terminal Pass. PLANCHER ABSOLU 12px
      (lisibilité zoom 90%) : aucun token ni valeur ne descend dessous. */
@@ -50,6 +65,51 @@
   --space-4:           12px;
   --space-5:           16px;
   --space-6:           24px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* === ANATOMIE DU CHIFFRE FINANCIER (D1.2) — spans .qc-anat* émis par le    === */
+/* === composant partagé NumAnat. Le « $ » et les séparateurs de milliers    === */
+/* === « ' » reculent pour que les chiffres mènent. Loi de couleur : sur un  === */
+/* === montant coloré (P&L), $ et séparateurs SUIVENT la teinte (jamais      === */
+/* === neutralisés) → color:inherit ; sur un montant neutre/accent, $ =      === */
+/* === ink-soft, séparateur = ink-mute.                                      === */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+.qc-anat {
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+.qc-anat__cur { color: var(--ink-soft); }
+.qc-anat__grp { color: var(--ink-mute); }
+
+/* Tier DISPLAY (héros ≥40px) : $ à 58 %, aligné hauteur de capitale, chasse
+   resserrée −1.5 %. */
+.qc-anat--display {
+  letter-spacing: -0.015em;
+}
+.qc-anat--display .qc-anat__cur {
+  font-size: 0.58em;
+  vertical-align: 0.16em;
+  margin-right: 0.03em;
+}
+
+/* Tier MID (KPI 18-39px) : $ à 70 %. */
+.qc-anat--mid .qc-anat__cur {
+  font-size: 0.70em;
+  vertical-align: 0.10em;
+  margin-right: 0.02em;
+}
+
+/* Montant coloré (P&L) : le $ et les séparateurs suivent la couleur portée par
+   le conteneur (data-tone sur la carte, ou .text-profit/.text-loss). */
+[data-tone="profit"] .qc-anat__cur,
+[data-tone="profit"] .qc-anat__grp,
+[data-tone="loss"] .qc-anat__cur,
+[data-tone="loss"] .qc-anat__grp,
+.text-profit .qc-anat__cur,
+.text-profit .qc-anat__grp,
+.text-loss .qc-anat__cur,
+.text-loss .qc-anat__grp {
+  color: inherit;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
