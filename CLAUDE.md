@@ -150,7 +150,9 @@ vérifient la correctness du *code*, pas celle de la *feature*. La preuve est
 
 ### Séquence obligatoire avant de rapporter « terminé » (tout changement de rendu)
 
-1. Vérifier que le dev server tourne (http://localhost:5173).
+1. Vérifier que le dev server tourne. Vite écoute **http://localhost:5173** par
+   défaut, mais **bascule sur 5174** si 5173 est déjà pris — vérifier le port réel
+   dans la sortie de `npm run dev` et ouvrir la bonne URL.
 2. Via **Playwright MCP** (isolé, cf. ci-dessous), ouvrir la route concernée à
    viewport **1591×900, DPR 1.35**, thème midnight.
 3. **Exercer** concrètement la feature (cliquer, survoler, scroller — pas juste
@@ -186,9 +188,10 @@ isolée écraserait le **portefeuille réel** de Rafael (clés `ibkr_u_*`, cf. �
   signale toute application de token/classe de perte à un champ greek. Sortie
   `fichier:ligne` + extrait, **exit ≠ 0** si violation. À faire tourner avant merge.
 - `npm run audit:visual` — Playwright : capture les 12 pages à **1591×900, DPR 1.35**,
-  thème midnight, vers `docs/captures/audit-AAAAMMJJ/`. **Dev server requis.** Seed un
-  dataset de test reproductible → les captures doivent montrer des pages **peuplées**
-  (des captures vides = travail non terminé).
+  thème midnight, vers `docs/captures/audit-AAAAMMJJ/`. **Dev server requis** (sonde
+  automatiquement 5173 puis 5174 ; `AUDIT_BASE_URL` force une URL). Seed un dataset de
+  test reproductible → les captures doivent montrer des pages **peuplées** (des captures
+  vides = travail non terminé).
 
 ### Artefacts
 
