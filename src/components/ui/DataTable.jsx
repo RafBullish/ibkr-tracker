@@ -62,10 +62,12 @@ export default function DataTable({
   );
   const [globalFilter, setGlobalFilter] = useState('');
   const [density, setDensity] = useState(densityProp || 'default');
-  // 'default' suit le palier (34 ≥1440 / 40 sinon) ; compact(32)/relaxed(48)
+  // 'default' suit le palier (D1.2 volet 2 : 36 ≥1440 / 40 sinon ; 34 → 36 pour
+  // accommoder les cellules 14px/wght 600 sans étrangler la ligne — la
+  // condensation Plex tient la densité horizontale) ; compact(32)/relaxed(48)
   // restent des choix explicites du toggle, non palier-dépendants.
   const rowHeight =
-    density === 'default' ? (isWide ? 34 : 40) : DENSITIES[density] || DENSITIES.default;
+    density === 'default' ? (isWide ? 36 : 40) : DENSITIES[density] || DENSITIES.default;
 
   const visibleColumns = useMemo(() => columns.filter((c) => !c.hide), [columns]);
 
