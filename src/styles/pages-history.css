@@ -123,7 +123,7 @@
   color: var(--ink-soft);
   font-family: var(--type-mono);
   font-size: var(--type-caption);
-  font-weight: 500;
+  font-weight: 600; /* D2.E — label KPI au barème D2 (était 500). */
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -135,7 +135,8 @@
   color: var(--ink-pure);
   font-family: var(--type-mono);
   font-size: var(--type-display);
-  font-weight: 600;
+  /* D2.E — parité KPI : 34px (--type-display) / 700 comme Dashboard (était 600). */
+  font-weight: 700;
   font-variant-numeric: tabular-nums slashed-zero;
   letter-spacing: -0.01em;
   line-height: 1.15;

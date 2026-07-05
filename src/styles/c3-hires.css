@@ -637,7 +637,10 @@
     padding: 0 18px;
   }
   .ticker-cell__value { font-size: 16px; }
-  .ticker-cell__symbol { font-size: 11px; }
+  /* D2.E — symbole au plancher constitutionnel C.3 (12px, était 11 : la
+     dérogation 11 venait de la spec, corrigée). La valeur (16) mène toujours ;
+     cellule 208px absorbe 12px (symbole court) sans déborder. */
+  .ticker-cell__symbol { font-size: 12px; }
   .ticker-cell__change { font-size: 14px; }
 
   /* Statusbar (bas) + nav (haut) : texte +1-2px, hauteurs de shell INCHANGÉES
