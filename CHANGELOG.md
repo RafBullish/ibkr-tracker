@@ -6,6 +6,42 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [2.2.0] — 2026-07
+
+Phase **D1.2 — Déploiement typo « C »**. IBM Plex Sans Condensed (candidate retenue
+par Rafael au lab `/lab/typo`) devient la police de **tous les chiffres** de l'app,
+avec l'anatomie du chiffre financier, et le petit texte remonte d'échelle au palier
+≥1440. La condensation (~10 % plus étroite) finance la montée en taille sans perte de
+densité horizontale.
+
+### Ajouté
+- **`--qc-font-num`** (canonical.css) = `'IBM Plex Sans Condensed'` + fallbacks ;
+  import runtime global (graisses 600 + 700). `--qc-font-mono` et `--qc-font-hero`
+  deviennent des **alias** → tous les chiffres + les 2 héros basculent en une source.
+- **`NumAnat`** (`src/components/ui/NumAnat.jsx`) — composant partagé d'anatomie du
+  chiffre : `$` et séparateurs de milliers en retrait (tiers display 58 % / mid 70 % /
+  dense = brut). Appliqué aux héros + cartes KPI Dashboard + tuiles Greeks. Loi de
+  couleur respectée (greeks neutres ; `$`/séparateurs suivent la teinte P&L).
+- **`--qc-font-code`** (Geist Mono) + classe `.mono-code` — vraie chasse fixe pour les
+  usages non numériques (nom de fichier `.env` / CSV importé).
+
+### Modifié
+- **Volet 2 — remontée d'échelle du petit texte** (`c3-hires.css`, palier ≥1440,
+  mobile <1440 intact) : cellules `.v3-table` 13 → 14 + chiffres wght 600 ; microlabels
+  (`.v3-table__th`, `.uppercase-label`) wght 600 ; lignes secondaires KPI
+  (`.dash-kpi-card__chf`, `__pill`) +1px → 14, wght 600 ; `rowHeight` DataTable 34 → 36.
+
+### Retiré
+- **@font-face Iosevka QC + Iosevka QC Hero** (orphelins après le repoint) + woff2
+  self-hosted (`public/fonts/iosevka*`, **−44 Ko**). Geist Mono conservé (`--qc-font-code`).
+
+### Vérification
+- 12 pages @1591×900 DPR 1.35 midnight peuplées : **0 overflow-x** (contrôle
+  programmatique) incl. après tri/survol ; greeks neutres ; `check:color-law` = 0 ;
+  build vert. Code-split du lab `/lab/typo` (D1) intact.
+
+---
+
 ## [2.1.2] — 2026-07
 
 Phase **D1 — Lab typographique héros**. Outil de décision DEV-ONLY : compare, à
