@@ -44,6 +44,13 @@
     --kpi-label-size: 13px;
     --chip-font-size: 13px;
 
+    /* D2 — ÉCHELLE NUMÉRIQUE TERMINAL. Les valeurs principales des cartes KPI
+       (--type-display, mid-row Dashboard + tuiles Greeks/Analytics) montent
+       28 → 34 : plus grosses, cohérentes sur la rangée. Les héros
+       (--type-hero 56/64) NE bougent PAS. Grossir le texte tout en densifiant
+       le chrome (cf. bloc D2.A ci-dessous). */
+    --type-display: 34px;
+
     /* SPACING : TENU, jamais inflaté (correction void Rafael —
        priorité = MOINS de vide). Aucune surcharge --space-* /
        --qc-space-* : on resserre par page (B3+), pas globalement. */
@@ -535,9 +542,10 @@
      ════════════════════════════════════════════════════════════════ */
 
   /* Cellules de tables denses (.v3-table, partagée Positions ↔ History) :
-     13 → 14. Colonnes chiffrées (.mono) en wght 600 (chiffres qui mènent). */
+     13 → 15 (D2 : montée d'échelle terminal). Colonnes chiffrées (.mono) en
+     wght 600 (chiffres qui mènent). rowHeight 36 (DataTable) tient à 15px. */
   .v3-table__td {
-    font-size: 14px;
+    font-size: 15px;
   }
   .v3-table__td.mono {
     font-weight: 600;
@@ -551,12 +559,156 @@
     font-weight: 600;
   }
 
-  /* Lignes secondaires des cartes KPI (ligne CHF, pill delta) : +1px → 14,
+  /* Lignes secondaires des cartes KPI (ligne CHF, pill delta) : → 15,
      wght 600. Padding-based → aucun clip vertical. Les variantes --hero
      (spécificité supérieure) gardent leur propre échelle. */
   .dash-kpi-card__chf,
   .dash-kpi-card__pill {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     D2.A · SYSTÈME DE DENSITÉ « TERMINAL » (palier ≥1440). Principe :
+     GROSSIR le texte ET densifier — la densité vient de l'éradication du
+     chrome mort (paddings, headers hauts, air), PAS de la petitesse du
+     texte. Aucune information supprimée. Mobile <1440 strictement intact.
+     ════════════════════════════════════════════════════════════════ */
+
+  /* — D2.A.1 · Padding interne des cartes/panneaux : ~20 → 14. — */
+  .dashboard-page__panel,
+  .history-page__panel,
+  .greeks-v3__panel,
+  .analytics-v3__panel,
+  .journal-v3__panel,
+  .import-page__panel,
+  .glass-card {
+    padding: 14px;
+  }
+  .settings-page__panel { padding: 12px 14px; }
+  .calendar-page__panel { padding: 10px 14px; }
+
+  /* Headers de carte FINS : blocs d'air (marge + pad-bottom 12/12) divisés
+     par ~2. Le filet hairline structure sans creuser. */
+  .dashboard-page__panel-head,
+  .history-page__panel-head,
+  .analytics-v3__panel-head,
+  .journal-v3__panel-head,
+  .greeks-v3__panel-head,
+  .import-page__panel-head {
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+  }
+  .module-header { height: 28px; }
+
+  /* Marges de section / gaps de grille resserrés (moins de vide entre zones).
+     .dash-grid est déjà à 8px (natif, plus dense que 10) → laissé tel quel. */
+  .page-container { gap: 10px; padding: 16px 16px 20px; }
+  .positions-v3__kpi-strip,
+  .history-page__kpi-strip { gap: 10px; }
+
+  /* — D2.A.2 · Angles : radius 6px max. Les panneaux plats sont déjà à 2px ;
+     seule exception résiduelle traitée dans canonical.css (glass-card-hero). — */
+
+  /* — D2.A.3 · Échelle numérique (héros 56/64 inchangés). — */
+  /* Valeur Win Rate au barème de la rangée (34/700, était 30/500). */
+  .dash-kpi-card__wr-value {
+    font-size: 34px;
+    font-weight: 700;
+  }
+  /* Stats de pied de carte : valeur 16/600, label 12/600. */
+  .dash-kpi-card__cell-value,
+  .dash-kpi-card__micro-stat-value,
+  .dash-kpi-card__stats-grid-value {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .dash-kpi-card__cell-label,
+  .dash-kpi-card__micro-stat-label,
+  .dash-kpi-card__stats-grid-label {
+    font-weight: 600;
+  }
+
+  /* Strip marchés (haut) : la VALEUR mène (16), le symbole recule (11/600),
+     cellules resserrées → plus de tickers visibles, moins d'air. */
+  .ticker-cell {
+    min-width: 208px;
+    gap: 12px;
+    padding: 0 18px;
+  }
+  .ticker-cell__value { font-size: 16px; }
+  .ticker-cell__symbol { font-size: 11px; }
+  .ticker-cell__change { font-size: 14px; }
+
+  /* Statusbar (bas) + nav (haut) : texte +1-2px, hauteurs de shell INCHANGÉES
+     (cellules height:100% centrées → aucun débordement). */
+  .statusbar { font-size: 14px; }
+  .statusbar__label,
+  .statusbar__value,
+  .statusbar__feed-label,
+  .statusbar__clock-code,
+  .statusbar__clock-time,
+  .statusbar__clock-badge {
+    font-size: 13px;
+  }
+  .nav-pill { font-size: 15px; }
+
+  /* — D2.A.4 · Contraste des labels fonctionnels : ink-mute → ink-soft
+     (lisibilité perçue). Scopé aux labels de structure denses. — */
+  .dash-kpi-card__cell-label,
+  .dash-kpi-card__micro-stat-label,
+  .dash-kpi-card__stats-grid-label,
+  .uppercase-label {
+    color: var(--ink-soft);
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     D2.C · DASHBOARD (page reine). Internes des cartes resserrés, valeurs
+     du milieu au barème (34, via --type-display), chrome héros dégraissé.
+     Le gros chiffre héros (64px) NE bouge PAS. Même dashboard, lu plus
+     gros, rien de perdu.
+     ════════════════════════════════════════════════════════════════ */
+  /* Cartes KPI : padding 16 → 14 (milieu), 24 → 16 (héros). */
+  .dash-kpi-card { padding: 14px; }
+  .dash-kpi-cards__row--hero .dash-kpi-card { padding: 16px; }
+
+  /* Héros : air interne du bloc valeur/chart réduit (gap 24 → 14,
+     margin-top 16 → 8). La géométrie du chart (HERO_CHART_* en JSX) reste
+     intacte — on ne touche qu'à l'air CSS autour. */
+  .dash-kpi-card__hero-body {
+    gap: 14px;
+    margin-top: 8px;
+  }
+  .dash-kpi-card__hero-chart { padding-top: 4px; }
+
+  /* ════════════════════════════════════════════════════════════════
+     D2.D · PREMARKET — recomposition dense (≥1440). Page la plus vide :
+     les 4 sections empilées pleine largeur passent en GRILLE 2 colonnes.
+     Positions/Gates + Routine en pleine largeur ; Macro | Earnings côte à
+     côte ; checklist routine sur 2 colonnes. Objectif : zéro demi-écran
+     mort, tout visible sans scroll @1591. Mobile <1440 = empilé (intact).
+     ════════════════════════════════════════════════════════════════ */
+  .premarket-page__sections {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: start;
+  }
+  /* Sections devenues cartes côte à côte → filet complet (structure les zones
+     denses, D2.A.2) au lieu du seul border-bottom. */
+  .premarket-page__sections .premarket-page__section {
+    border: 1px solid var(--line-hairline);
+    border-bottom: 1px solid var(--line-hairline);
+    border-radius: 2px;
+  }
+  .premarket-page__section--positions,
+  .premarket-page__section--routine {
+    grid-column: 1 / -1;
+  }
+  /* Checklist routine : 1 → 2 colonnes (6 items → 3 rangées denses). */
+  .premarket-page__section--routine .premarket-page__checklist {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 20px;
   }
 }
