@@ -6,6 +6,34 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [2.1.2] — 2026-07
+
+Phase **D1 — Lab typographique héros**. Outil de décision DEV-ONLY : compare, à
+conditions strictement égales, la typo actuelle des gros montants (TÉMOIN) contre
+4 candidates, sur des clones réalistes des composants Dashboard. **Aucune page
+réelle, aucun style global, aucune police existante n'est modifié.**
+
+### Ajouté
+- **Route `/lab/typo`** (dev-only) — enregistrée uniquement si `import.meta.env.DEV`,
+  hors AppShell, sans entrée de nav. 5 blocs comparables @1591 (TÉMOIN · A · B · C · D),
+  chacun à 4 échelles : héros NLV 56px, héros REALIZED, ligne KPI 26px, table dense 13px.
+  Données **statiques codées en dur** (aucun accès store/localStorage).
+- **Anatomie du chiffre** (candidates A-D uniquement) : `tabular-nums slashed-zero`,
+  devise `$` à 58 % (ink-soft, alignée cap-height), séparateurs `'` ink-mute,
+  letter-spacing légèrement négatif, line-height 1. Loi de couleur respectée au lab :
+  greeks (Δ/Θ) neutres, P&L vert/rouge.
+- **4 dépendances de police** (autorisées par l'architecte), importées **uniquement**
+  dans le module lazy du lab (code-split) : `@fontsource-variable/martian-mono`,
+  `@fontsource-variable/inter-tight`, `@fontsource-variable/space-grotesk`,
+  `@fontsource/ibm-plex-sans-condensed`. **Build vérifié : zéro police candidate et
+  zéro chunk lab dans le bundle des pages réelles.**
+
+### Corrigé
+- **`scripts/visual-audit.mjs`** port-tolérant : sonde 5173 puis 5174 (Vite bascule
+  quand 5173 est pris), `AUDIT_BASE_URL` force une URL. `CLAUDE.md §7` mis à jour.
+
+---
+
 ## [2.1.1] — 2026-07
 
 Phase **D0 — Fondation** (avant la refonte design D1) : constitution, mise en
