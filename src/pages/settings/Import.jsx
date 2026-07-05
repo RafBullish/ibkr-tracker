@@ -371,7 +371,7 @@ function CsvUploadSection() {
         <div className="import-page__last" role="status">
           <CheckCircle2 size={13} aria-hidden="true" style={{ color: 'var(--pnl-up)' }} />
           <div>
-            <strong className="mono">{lastImport.name}</strong> (
+            <strong className="mono-code">{lastImport.name}</strong> (
             {(lastImport.size / 1024).toFixed(1)} kB)
             <div className="import-page__last-meta">
               {lastImport.positions} pos · {lastImport.trades} trades · {lastImport.cashFlows}{' '}

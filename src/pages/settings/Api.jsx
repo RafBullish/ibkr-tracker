@@ -199,7 +199,7 @@ export default function SettingsApi() {
                 }}
               >
                 Les clés Finnhub et Twelve Data se configurent côté serveur via les variables
-                d'environnement Vercel (voir <code className="mono">.env.example</code>). Les
+                d'environnement Vercel (voir <code className="mono-code">.env.example</code>). Les
                 identifiants IBKR Flex (QueryID + token) sont stockés localement dans ton
                 navigateur.
               </p>

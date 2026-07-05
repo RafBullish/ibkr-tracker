@@ -41,6 +41,7 @@ import { tradePnlUsd, calculateOpenPositionPnl } from '../../utils/calculations'
 import { currentDrawdownPct, totalSlDollar } from '../../utils/risk';
 import { tierParams } from '../../utils/sniperMeta';
 import Sparkline from './Sparkline';
+import NumAnat from '../ui/NumAnat';
 
 // Recharts est déjà code-splitté ailleurs (EquityChart, DailyPnLChart) :
 // même `lazy(import('recharts'))` réutilise le même chunk côté Rollup.
@@ -1651,7 +1652,7 @@ function KpiCardHero({
         {/* Left Side: Values and Dense Stats Grid */}
         <div className="dash-kpi-card__hero-left">
           <div className="dash-kpi-card__hero-main-metrics">
-            <div className="dash-kpi-card__value">{value}</div>
+            <div className="dash-kpi-card__value"><NumAnat tier="display">{value}</NumAnat></div>
             {chfLine ? <div className="dash-kpi-card__chf">{chfLine}</div> : null}
             {Number.isFinite(deltaUsd) ? (
               <span
@@ -1777,7 +1778,7 @@ function KpiCard({
         {topRight ?? null}
       </div>
       <div className="dash-kpi-card__money">
-        <div className="dash-kpi-card__value">{value}</div>
+        <div className="dash-kpi-card__value"><NumAnat tier="mid">{value}</NumAnat></div>
         {chfLine ? <div className="dash-kpi-card__chf">{chfLine}</div> : null}
       </div>
       <div className="dash-kpi-card__visual">{visual}</div>

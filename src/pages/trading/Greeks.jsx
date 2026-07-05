@@ -38,6 +38,7 @@ import { getGreeksForAllPositions } from '../../utils/greeksApi';
 
 import StatusBadge from '../../components/ui/StatusBadge';
 import InfoTooltip from '../../components/ui/InfoTooltip';
+import NumAnat from '../../components/ui/NumAnat';
 import EmptyState from '../../components/ui/EmptyState';
 import GreekEvolutionChart from '../../components/charts/GreekEvolutionChart';
 import ThetaDecayProjection from '../../components/charts/ThetaDecayProjection';
@@ -149,7 +150,7 @@ function KpiTile({ label, tooltip, value, compact = false }) {
         {label}
         {tooltip && <InfoTooltip content={tooltip} size={12} />}
       </span>
-      <span className="greeks-v3__kpi-value">{value}</span>
+      <span className="greeks-v3__kpi-value"><NumAnat tier="mid">{value}</NumAnat></span>
     </div>
   );
 }

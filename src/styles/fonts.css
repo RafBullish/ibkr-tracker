@@ -5,54 +5,12 @@
 @import "@fontsource/jetbrains-mono/500.css";
 @import "@fontsource/jetbrains-mono/600.css";
 
-/* Brique 15 — Iosevka (largeur normale) : fonte mono de TOUTE l'app.
-   Iosevka 34.6.1 (be5invis/Iosevka, OFL-1.1), subsets ~29 Ko/graisse
-   via scripts/subset_iosevka_ui.py (latin-1 + grec + ponctuation +
-   flèches/opérateurs, feature zero, sans ligatures de code).
-   Consommée via --qc-font-mono (basculé dans canonical.css). */
-@font-face {
-  font-family: 'Iosevka QC';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/iosevka/IosevkaQC-Regular.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Iosevka QC';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('/fonts/iosevka/IosevkaQC-Medium.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Iosevka QC';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('/fonts/iosevka/IosevkaQC-Bold.woff2') format('woff2');
-}
-
-/* Brique 11 — Iosevka Extended pour le gros chiffre héro.
-   Iosevka 34.6.1 (be5invis/Iosevka, OFL-1.1), subset strict ~3.3 Ko
-   via scripts/subset_iosevka_hero.py (pyftsubset + brotli).
-   Charset : 0-9 $ % ' + , - . − (U+2212) espace · feature zero gardée.
-   Tout glyphe hors range tombe sur la chaîne de fallback (Geist Mono). */
-@font-face {
-  font-family: 'Iosevka QC Hero';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/iosevka-extended/Iosevka-Extended.woff2') format('woff2');
-  unicode-range: U+0020, U+0024-0025, U+0027, U+002B-002E, U+0030-0039, U+2212;
-}
-@font-face {
-  font-family: 'Iosevka QC Hero';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('/fonts/iosevka-extended/Iosevka-ExtendedBold.woff2') format('woff2');
-  unicode-range: U+0020, U+0024-0025, U+0027, U+002B-002E, U+0030-0039, U+2212;
-}
+/* D1.2 — Les @font-face Iosevka QC (mono app, brique 15) et Iosevka QC Hero
+   (gros chiffre héro, brique 11) ont été RETIRÉS : orphelins depuis le passage
+   des chiffres à IBM Plex Sans Condensed (--qc-font-num, cf. canonical.css).
+   Plus aucun consommateur ne référençait ces familles → −44 Ko de woff2
+   (dossiers public/fonts iosevka + iosevka-extended supprimés au même commit).
+   La mono légitime restante (--qc-font-code, noms de fichiers) = Geist Mono. */
 
 :root {
   --font-sans: "Inter Tight", system-ui, -apple-system, sans-serif;
