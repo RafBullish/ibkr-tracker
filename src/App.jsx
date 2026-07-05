@@ -25,6 +25,12 @@ const Chain = lazy(() => import('./pages/trading/Chain'));
 const Greeks = lazy(() => import('./pages/trading/Greeks'));
 const Analytics = lazy(() => import('./pages/insights/Analytics'));
 
+// LAB TYPO (D1) — route DEV-ONLY, hors AppShell (pas de nav). Le lazy import
+// n'est créé qu'en dev : en prod, import.meta.env.DEV vaut false → la branche
+// est éliminée par Vite (tree-shaking) → aucun chunk, aucune police candidate
+// dans le bundle des pages réelles.
+const TypoLab = import.meta.env.DEV ? lazy(() => import('./pages/lab/TypoLab')) : null;
+
 const Loader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
     <GlassCard style={{ padding: '40px 60px', textAlign: 'center' }}>
@@ -49,6 +55,16 @@ export default function App() {
           <FxInvalidBanner />
           <FxStaleBanner />
           <Routes>
+            {import.meta.env.DEV && TypoLab && (
+              <Route
+                path="/lab/typo"
+                element={
+                  <Suspense fallback={<Loader />}>
+                    <TypoLab />
+                  </Suspense>
+                }
+              />
+            )}
             <Route element={<AppShell />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/premarket" element={<PreMarketBriefing />} />

@@ -5,7 +5,9 @@
  * Cible : viewport CSS 1591×900, deviceScaleFactor 1.35, thème midnight — la cible
  * de design unique (4K Chrome 90 %). Sortie : docs/captures/audit-AAAAMMJJ/.
  *
- * PRÉREQUIS : le dev server doit tourner (`npm run dev` → http://localhost:5173).
+ * PRÉREQUIS : le dev server doit tourner (`npm run dev`). Vite écoute 5173, mais
+ *   bascule sur 5174 si 5173 est déjà pris — le script sonde les deux et choisit
+ *   le premier joignable. Force une URL précise avec AUDIT_BASE_URL si besoin.
  * USAGE     : `npm run audit:visual`
  *
  * Seed reproductible : les pages persistent via localStorage (clés ibkr_u_*). On
@@ -22,7 +24,11 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const BASE = process.env.AUDIT_BASE_URL || 'http://localhost:5173';
+// Port-tolérant : AUDIT_BASE_URL force une URL ; sinon on sonde 5173 puis 5174
+// (Vite bascule sur 5174 quand 5173 est occupé) et on garde le premier joignable.
+const BASE_CANDIDATES = process.env.AUDIT_BASE_URL
+  ? [process.env.AUDIT_BASE_URL]
+  : ['http://localhost:5173', 'http://localhost:5174'];
 
 const stamp = (() => {
   const d = new Date();
@@ -111,11 +117,22 @@ async function reachable(url) {
   }
 }
 
+async function resolveBase() {
+  for (const url of BASE_CANDIDATES) {
+    if (await reachable(url)) return url;
+  }
+  return null;
+}
+
 async function main() {
-  if (!(await reachable(BASE))) {
-    console.error(`✗ Dev server injoignable sur ${BASE}. Lance d'abord \`npm run dev\`.`);
+  const BASE = await resolveBase();
+  if (!BASE) {
+    console.error(
+      `✗ Dev server injoignable (sondé : ${BASE_CANDIDATES.join(', ')}). Lance d'abord \`npm run dev\`.`,
+    );
     process.exit(2);
   }
+  console.log(`  → dev server détecté sur ${BASE}`);
   fs.mkdirSync(OUT, { recursive: true });
 
   const browser = await chromium.launch({ headless: true });
