@@ -466,8 +466,12 @@ export default function PreMarketBriefing() {
         })}
       </div>
 
+      {/* D2.D — zones 2/3 en grille dense ≥1440 (recomposition : plus de
+          demi-écran mort). Positions/Gates + Routine pleine largeur ; Macro |
+          Earnings côte à côte. En dessous de 1440 : empilé (mobile intact). */}
+      <div className="premarket-page__sections">
       {/* 3. Positions review — gates table */}
-      <section className="premarket-page__section">
+      <section className="premarket-page__section premarket-page__section--positions">
         <header className="premarket-page__section-head">
           <span className="premarket-page__section-title">Positions Review · Gates</span>
           <span className="premarket-page__section-hint">
@@ -566,7 +570,7 @@ export default function PreMarketBriefing() {
       </section>
 
       {/* 3b. Calendrier macro du jour (feeds Finnhub + fallback offline) */}
-      <section className="premarket-page__section">
+      <section className="premarket-page__section premarket-page__section--macro">
         <header className="premarket-page__section-head">
           <span className="premarket-page__section-title">Calendrier macro · {sessionLabel}</span>
           <span className="premarket-page__section-hint">
@@ -615,7 +619,7 @@ export default function PreMarketBriefing() {
       </section>
 
       {/* 3c. Earnings du jour — BMO / AMC, positions tenues en évidence */}
-      <section className="premarket-page__section">
+      <section className="premarket-page__section premarket-page__section--earnings">
         <header className="premarket-page__section-head">
           <span className="premarket-page__section-title">Earnings · {sessionLabel}</span>
           <span className="premarket-page__section-hint">
@@ -675,7 +679,7 @@ export default function PreMarketBriefing() {
       </section>
 
       {/* 4. Routine checklist */}
-      <section className="premarket-page__section">
+      <section className="premarket-page__section premarket-page__section--routine">
         <header className="premarket-page__section-head">
           <span className="premarket-page__section-title">Routine pré-marché · {dateKey}</span>
           <span className="premarket-page__section-hint">
@@ -723,6 +727,7 @@ export default function PreMarketBriefing() {
           </button>
         </div>
       </section>
+      </div>
     </div>
   );
 }

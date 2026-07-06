@@ -135,10 +135,16 @@ un champ greek fait échouer le contrôle.
 ### Phase D en cours
 
 Direction visuelle **« Bloomberg-dense × moderne (TradingView / SaaS pro) »** :
-densité informationnelle maximale, chrome flat, hiérarchie typographique nette. Une
-**refonte typographique arrive en D1** via l'architecte. **D0 ne fait AUCUNE refonte
-design** — uniquement fondation (constitution, sweep loi de couleur, fixes
-sémantiques, outillage).
+densité informationnelle maximale, chrome flat, hiérarchie typographique nette.
+
+État : **typo** déployée (D1/D1.2 — IBM Plex Sans Condensed 700 sur tous les
+chiffres, choisie au lab `/lab/typo`) ; **densité + échelle** livrées et CLOSES
+(D2.A→F, v2.3.0) — chrome terminal dense au palier ≥1440, **échelle de texte
+calibrée par Rafael au lab `/lab/scale` : cran S2 (×1.30)**. Repères S2 :
+KPI 44, cellules `.v3-table` 20 (rowHeight 47), plancher caption 17, strip
+21/16/18, ticks charts plafonnés 14, héros 56/64 **intouchés**. Toute nouvelle
+règle de densité respecte cette échelle — on ne rouvre pas le chapitre.
+Prochaine brique : **D3.A « Obsidienne »** (cadrée par l'architecte).
 
 ---
 

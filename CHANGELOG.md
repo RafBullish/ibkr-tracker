@@ -6,6 +6,48 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [2.3.0] — 2026-07
+
+Phase **D2 — Densité terminal + calibration d'échelle (D2.A→F)**. Le palier ≥1440
+passe en chrome « terminal » dense (paddings amincis, headers fins, radius ≤6px),
+puis l'échelle de texte est **calibrée avec Rafael** au lab `/lab/scale` : cran
+**S2 (×1.30)** retenu et appliqué à tout le système. La densité vient de
+l'éradication du chrome mort, jamais de la petitesse du texte. Chapitre densité
+**clos**. Mobile <1440 strictement intact.
+
+### Ajouté
+- **Route `/lab/scale`** (dev-only, même pattern que `/lab/typo`) — 4 blocs empilés
+  @1591 (S0 témoin · S1 ×1.15 · S2 ×1.30 · S3 ×1.45), composite réaliste par bloc
+  (strip marchés, carte KPI, module-header + extrait `.v3-table`). Données statiques,
+  zéro accès store. Seuls texte et hauteurs de ligne varient, le chrome D2 est fixe.
+- **Wrapper grille 2 colonnes Premarket** (D2.D) : Macro | Earnings côte à côte,
+  Positions/Gates + Routine pleine largeur, checklist sur 2 colonnes — zéro
+  demi-écran mort @1591.
+- **États vides inline partagés** (D2.B) + plafond radius 6px sur les primitives.
+
+### Modifié
+- **Échelle S2 (×1.30, arrondis px entiers)** sur `c3-hires.css` : plancher caption
+  13 → **17** ; tokens intermédiaires scalés (`--fs-md` 17, `--fs-lg` 18, `--fs-xl` 21,
+  `--fs-2xl` 23, `--type-body` 18, `--type-title` 21, `--type-cell-value` 21) ;
+  `--type-display` 34 → **44** (+ Win Rate 44) ; cellules `.v3-table` 15 → **20**
+  (rowHeight DataTable 36 → **47**, ratio 2.35, cohérent Positions ↔ History) ;
+  strip marchés 16/21/18 ; statusbar 18/17 ; nav 20 ; stats de pied 21 ;
+  module-header 28 → 36 (titre 18, variantes LP/Sniper 20/16).
+- **Charts Recharts** : ticks d'axes + légendes **plafonnés à 14** (data-viz ≠ texte
+  de lecture). Héros NLV/REALIZED (`--type-hero` 56/64) **intouchés**.
+- **Chrome dense D2.A** : padding cartes ~20 → 14, headers de panneau 6/6,
+  `page-container` gap 10, labels fonctionnels ink-soft, cellules strip resserrées.
+- Accommodations mesurées au runtime : pills Premarket h24, badge sniper Chain lh 1,
+  thead sticky Chain recalé top 42.
+
+### Vérification
+- 12 pages @1591×900 DPR 1.35 midnight peuplées (`docs/captures/d2f/`) :
+  **0 overflow-x @1591 ET @1920** (contrôle programmatique, Chain peuplée incluse),
+  tailles S2 confirmées au pixel via `getComputedStyle`, tri/survol exercés,
+  `check:color-law` = 0, build vert, console = tolérés uniquement.
+
+---
+
 ## [2.2.0] — 2026-07
 
 Phase **D1.2 — Déploiement typo « C »**. IBM Plex Sans Condensed (candidate retenue
