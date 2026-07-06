@@ -10,8 +10,15 @@ Direction du code après le palier `2.0.0`. Vivant : se met à jour au fil des p
   sweep loi de couleur (Greeks toujours neutres), fix du label de la carte EXPOSURE
   (NOTIONAL → DÉPLOYÉ), scripts `check:color-law` + `audit:visual`. **Aucune** refonte
   design.
-- **D1 — Direction visuelle** *(à venir, cadré par l'architecte)* : refonte
-  typographique, direction **« Bloomberg-dense × moderne (TradingView / SaaS pro) »**.
+- **D1 / D1.2 — Typo** *(livrées, 2.1.2 + 2.2.0)* : lab `/lab/typo`, candidate « C »
+  (IBM Plex Sans Condensed 700) retenue par Rafael et déployée sur tous les chiffres
+  (`--qc-font-num`, `NumAnat`), Iosevka retirée.
+- **D2 — Densité terminal + calibration d'échelle (A→F)** *(livrée, 2.3.0)* : chrome
+  terminal dense au palier ≥1440 (paddings 14, headers fins, radius ≤6, Premarket
+  2 colonnes), lab `/lab/scale` → **cran S2 (×1.30)** appliqué à tout le système
+  (KPI 44, cellules 20/row 47, plancher 17, ticks charts cap 14, héros intouchés).
+  **Chapitre densité clos.**
+- **D3.A — « Obsidienne »** *(à venir, cadrée par l'architecte)*.
 
 ## Historique — V2
 
