@@ -1,0 +1,249 @@
+/* ═══════════════════════════════════════════════════════════════
+   SCALE-LAB (D2.F) — styles du laboratoire d'échelle /lab/scale.
+   Chunk dev-only (importé par ScaleLab.jsx, route lazy dev-only) :
+   jamais dans le bundle prod. Namespace .sl-* ; zéro nouvelle
+   variable globale — consommation des tokens canoniques uniquement.
+
+   Principe : chaque bloc porte ses tailles en custom properties
+   locales (--sl-*), valeurs ENTIÈRES en px = cran × valeur S0 du
+   palier c3-hires (KPI 34, cellules 15, row 36, th 13, strip
+   12/16/14, titre carte 14, hint 13, hauteur header 28).
+   Le chrome D2 (paddings 14, gaps, hauteur strip 64) ne bouge PAS ;
+   seule exception : la hauteur du module-header (conteneur d'une
+   ligne de texte = hauteur de ligne, donc scalée).
+   ═══════════════════════════════════════════════════════════════ */
+
+.sl-root {
+  min-height: 100vh;
+  background: var(--depth-void);
+  color: var(--ink-pure);
+  padding: 28px 32px 64px;
+  font-family: var(--qc-font-sans);
+}
+
+/* ── En-tête de page (chrome lab, non scalé) ─────────────────── */
+.sl-head__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-pure);
+}
+
+.sl-head__sub {
+  margin: 6px 0 0;
+  font-family: var(--qc-font-mono);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* ── Blocs & en-têtes de bloc (chrome lab, non scalé) ────────── */
+.sl-block {
+  margin-top: 36px;
+
+  /* S0 — témoin : valeurs actuelles du palier ≥1440 (c3-hires) */
+  --sl-kpi: 34px;
+  --sl-kpi-label: 16px;
+  --sl-chf: 15px;
+  --sl-cell: 15px;
+  --sl-row: 36px;
+  --sl-th: 13px;
+  --sl-tick-sym: 12px;
+  --sl-tick-val: 16px;
+  --sl-tick-chg: 14px;
+  --sl-mh-title: 14px;
+  --sl-mh-hint: 13px;
+  --sl-mh-h: 28px;
+}
+
+.sl-block--s1 {
+  --sl-kpi: 39px;
+  --sl-kpi-label: 18px;
+  --sl-chf: 17px;
+  --sl-cell: 17px;
+  --sl-row: 41px;
+  --sl-th: 15px;
+  --sl-tick-sym: 14px;
+  --sl-tick-val: 18px;
+  --sl-tick-chg: 16px;
+  --sl-mh-title: 16px;
+  --sl-mh-hint: 15px;
+  --sl-mh-h: 32px;
+}
+
+.sl-block--s2 {
+  --sl-kpi: 44px;
+  --sl-kpi-label: 21px;
+  --sl-chf: 20px;
+  --sl-cell: 20px;
+  --sl-row: 47px;
+  --sl-th: 17px;
+  --sl-tick-sym: 16px;
+  --sl-tick-val: 21px;
+  --sl-tick-chg: 18px;
+  --sl-mh-title: 18px;
+  --sl-mh-hint: 17px;
+  --sl-mh-h: 36px;
+}
+
+.sl-block--s3 {
+  --sl-kpi: 49px;
+  --sl-kpi-label: 23px;
+  --sl-chf: 22px;
+  --sl-cell: 22px;
+  --sl-row: 52px;
+  --sl-th: 19px;
+  --sl-tick-sym: 17px;
+  --sl-tick-val: 23px;
+  --sl-tick-chg: 20px;
+  --sl-mh-title: 20px;
+  --sl-mh-hint: 19px;
+  --sl-mh-h: 41px;
+}
+
+.sl-block__head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line-hairline);
+}
+
+.sl-block__letter {
+  font-family: var(--qc-font-num);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.sl-block__mult {
+  font-family: var(--qc-font-num);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-pure);
+}
+
+.sl-block__name {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.sl-block__sizes {
+  margin-left: auto;
+  font-family: var(--qc-font-num);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* ── Layout du composite (chrome lab) ────────────────────────── */
+.sl-block__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sl-row2 {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 10px;
+  align-items: stretch;
+}
+
+/* Carte fine : header de module + extrait de table */
+.sl-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-1);
+  border: 1px solid var(--qc-border-subtle);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.sl-card .sl-noborder {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Strip : statique, sans marquee ni fondu de masque */
+.sl-strip {
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+/* Carte KPI : hauteur libre dans le lab (la grille dashboard n'existe pas ici) */
+.sl-kpi-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 0;
+}
+
+.sl-block .dash-kpi-card {
+  height: auto;
+  min-height: 0;
+  gap: 12px;
+}
+
+/* ── ÉCHELLE — seuls le texte et les hauteurs de ligne varient ── */
+.sl-block .dash-kpi-card__value {
+  font-size: var(--sl-kpi);
+}
+
+.sl-block .dash-kpi-card__label {
+  font-size: var(--sl-kpi-label);
+}
+
+.sl-block .dash-kpi-card__chf,
+.sl-block .dash-kpi-card__pill {
+  font-size: var(--sl-chf);
+}
+
+.sl-block .v3-table__td {
+  font-size: var(--sl-cell);
+  height: var(--sl-row);
+}
+
+.sl-block .v3-table__row {
+  height: var(--sl-row);
+  line-height: var(--sl-row);
+}
+
+.sl-block .v3-table__th {
+  font-size: var(--sl-th);
+}
+
+.sl-block .ticker-cell__symbol {
+  font-size: var(--sl-tick-sym);
+}
+
+.sl-block .ticker-cell__value {
+  font-size: var(--sl-tick-val);
+}
+
+.sl-block .ticker-cell__change {
+  font-size: var(--sl-tick-chg);
+}
+
+.sl-block .module-header {
+  height: var(--sl-mh-h);
+}
+
+.sl-block .module-header__title {
+  font-size: var(--sl-mh-title);
+}
+
+.sl-block .module-header__hint {
+  font-size: var(--sl-mh-hint);
+}
+
+/* P&L latent : argent réel → toné (loi de couleur respectée) */
+.sl-pnl--up {
+  color: var(--pnl-up);
+}
+
+.sl-pnl--down {
+  color: var(--pnl-down);
+}
