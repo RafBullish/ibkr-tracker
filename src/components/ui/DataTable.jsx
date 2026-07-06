@@ -54,7 +54,7 @@ export default function DataTable({
   focusedRowId, // quand défini, la ligne correspondante reçoit .--focus + scrollIntoView
 }) {
   const isMobile = useMediaQuery('(max-width: 767px)');
-  // C.3 palier 4K — voir en-tête : densité 'default' = 34px à ≥1440, 40px sinon.
+  // C.3 palier 4K — voir en-tête : densité 'default' = 47px à ≥1440, 40px sinon.
   const isWide = useMediaQuery('(min-width: 1440px)');
   const id = useId();
   const [sorting, setSorting] = useState(
@@ -62,12 +62,12 @@ export default function DataTable({
   );
   const [globalFilter, setGlobalFilter] = useState('');
   const [density, setDensity] = useState(densityProp || 'default');
-  // 'default' suit le palier (D1.2 volet 2 : 36 ≥1440 / 40 sinon ; 34 → 36 pour
-  // accommoder les cellules 14px/wght 600 sans étrangler la ligne — la
-  // condensation Plex tient la densité horizontale) ; compact(32)/relaxed(48)
-  // restent des choix explicites du toggle, non palier-dépendants.
+  // 'default' suit le palier (D2.F cran S2 : 47 ≥1440 / 40 sinon — cellules
+  // .v3-table à 20px, ratio ligne/texte 2.35, cohérent Positions ↔ History) ;
+  // compact(32)/relaxed(48) restent des choix explicites du toggle, non
+  // palier-dépendants.
   const rowHeight =
-    density === 'default' ? (isWide ? 36 : 40) : DENSITIES[density] || DENSITIES.default;
+    density === 'default' ? (isWide ? 47 : 40) : DENSITIES[density] || DENSITIES.default;
 
   const visibleColumns = useMemo(() => columns.filter((c) => !c.hide), [columns]);
 
