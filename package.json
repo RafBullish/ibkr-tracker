@@ -15,9 +15,6 @@
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",
     "@fontsource-variable/geist-mono": "^5.2.8",
-    "@fontsource-variable/inter-tight": "^5.2.7",
-    "@fontsource-variable/martian-mono": "^5.2.7",
-    "@fontsource-variable/space-grotesk": "^5.2.10",
     "@fontsource/ibm-plex-sans-condensed": "^5.2.8",
     "@fontsource/inter-tight": "^5.2.7",
     "@fontsource/jetbrains-mono": "^5.2.8",
