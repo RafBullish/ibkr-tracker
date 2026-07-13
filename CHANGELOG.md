@@ -6,6 +6,31 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [2.3.1] — 2026-07-13
+
+**Clôture du projet** (décision propriétaire). Version finale. Chantiers D3
+« Obsidienne » / Dashboard 3.0 et D4→D7 annulés. Mode maintenance : correctifs
+ponctuels sur demande explicite uniquement.
+
+### Retiré
+- **Toutes les branches de chantier** (locales et distantes, mergées ou non,
+  `feat/d3a-obsidienne` incluse) — il ne reste que `main`.
+- **Labs dev-only** `src/pages/lab/` (TypoLab D1, ScaleLab D2.F + CSS), leurs
+  routes `/lab/typo` · `/lab/scale` et lazy imports DEV dans `App.jsx` — mission
+  accomplie (typo et échelle calibrées et déployées).
+- **3 polices candidates D1 non retenues** (`@fontsource-variable/martian-mono`,
+  `space-grotesk`, `inter-tight`) — utilisées uniquement par le lab.
+- **Scripts orphelins** `scripts/subset_iosevka*.py` + `verify_subset.py`
+  (recette des subsets Iosevka supprimés en D1.2).
+- **Captures historiques** `docs/captures/*` — remplacées par un jeu final
+  unique `docs/captures/final/` (12 pages @1591×900, DPR 1.35, seedées).
+
+### Modifié
+- **Documentation de clôture** : `CLAUDE.md` §6 (état final + mode maintenance),
+  `ROADMAP.md` (historique livré, projet clos). Les règles permanentes restent
+  en vigueur (loi de couleur, interdits git, viewport 1591, vérification
+  visuelle, gates build/color-law).
+
 ## [2.3.0] — 2026-07
 
 Phase **D2 — Densité terminal + calibration d'échelle (D2.A→F)**. Le palier ≥1440
