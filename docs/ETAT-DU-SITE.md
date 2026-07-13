@@ -12,7 +12,7 @@ les incertitudes sont marquées `[À VÉRIFIER]`.
 - **Produit** : QuantumCall — tracker d'options personnel mono-utilisateur (achat de premium, doctrine « Sniper OTM »). Nom npm : `quantumcall`.
 - **Repo** : github.com/RafBullish/ibkr-tracker (public). Branche unique : `main`.
 - **Version** : **2.3.1** (package.json) · hash de clôture **ea64652** · tag **v2.3.1** (posé le 13.07.2026 ; tags antérieurs : v2.0.0, v2.0.1).
-- **Vercel** : projet `ibkr-tracker` (id `prj_RApArMFpRix2WtwZ5pXIGQL0PEt5`, team `rafbullishs-projects` / `team_9ymYgzp1xzDvDhphaketRViT`). Prod = déploiement `dpl_5c8YR6suohq12KFvNBrNGo6AMHhW`, état **READY**, construit sur ea64652. Alias de branche : `ibkr-tracker-git-main-rafbullishs-projects.vercel.app`. URL canonique courte [À VÉRIFIER — probablement ibkr-tracker.vercel.app, non confirmée par l'API].
+- **Vercel** : projet `ibkr-tracker` (id `prj_RApArMFpRix2WtwZ5pXIGQL0PEt5`, team `rafbullishs-projects` / `team_9ymYgzp1xzDvDhphaketRViT`). Prod = déploiement `dpl_5c8YR6suohq12KFvNBrNGo6AMHhW`, état **READY**, construit sur ea64652. Alias prod : **ibkr-tracker-lemon.vercel.app** (canonique), ibkr-tracker-rafbullishs-projects.vercel.app, ibkr-tracker-git-main-rafbullishs-projects.vercel.app.
 - **Dev local** : `npm run dev` → Vite sur **http://localhost:5173**, bascule automatique sur **5174** si 5173 occupé (toujours lire le port réel dans la sortie).
 - **Cible de rendu unique** : viewport CSS **1591×900, DPR 1.35** (écran 4K, Chrome 90 %), thème midnight. Mobile <1440 = socle à ne pas casser, jamais cible de design.
 
