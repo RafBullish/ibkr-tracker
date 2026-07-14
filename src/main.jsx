@@ -69,6 +69,9 @@ import './styles/pages-premarket.css';
 // porte uniquement le wrapper .dashboard-page + cibles canoniques neuves
 // (.dashboard-page__panel/__panel-head) pour les futures migrations.
 import './styles/pages-dashboard.css';
+// v1-dashboard.css — Dashboard ère produit v1.0 (brique 1.A) : base <1440
+// de la Ligne de commandement (.command-deck). Palier ≥1440 dans c3-hires.
+import './styles/v1-dashboard.css';
 // pages-calendar.css — page-vitrine /insights/calendar, huitième et dernière
 // consommation des tokens canoniques. Calendar a été désintoxiquée de la
 // palette JS divergente (`T from '../../theme/tokens'`) — l'import T est
