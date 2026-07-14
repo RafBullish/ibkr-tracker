@@ -257,63 +257,8 @@ hr {
   border: 0;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   AMBIENT BACKGROUND — Fixed orbs with subtle float
-   Rendered by <AmbientBackground /> mounted once in AppShell.
-   ═══════════════════════════════════════════════════════════════ */
-.app-ambient-bg {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  overflow: hidden;
-  pointer-events: none;
-  background: var(--surface-0);
-  transition: background-color 300ms var(--ease-out);
-}
-
-.app-ambient-bg::before,
-.app-ambient-bg::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  animation: orb-float 30s ease-in-out infinite;
-  will-change: transform;
-}
-
-.app-ambient-bg::before {
-  width: 600px;
-  height: 600px;
-  top: -200px;
-  left: -100px;
-  background: radial-gradient(circle, var(--orb-violet) 0%, transparent 70%);
-}
-
-.app-ambient-bg::after {
-  width: 500px;
-  height: 500px;
-  bottom: -150px;
-  right: -100px;
-  background: radial-gradient(circle, var(--orb-blue) 0%, transparent 70%);
-  animation-delay: -10s;
-}
-
-@keyframes orb-float {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  50% {
-    transform: translate(40px, -30px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .app-ambient-bg::before,
-  .app-ambient-bg::after {
-    animation: none;
-  }
-}
+/* v1.0 · 1.A — AMBIENT BACKGROUND (orbes radiaux) SUPPRIMÉ. Le fond de
+   l'app est porté par html/body (var(--surface-0) → depth-void). */
 
 /* ═══════════════════════════════════════════════════════════════
    SHIMMER KEYFRAMES — LoadingSkeleton

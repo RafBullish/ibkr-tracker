@@ -23,7 +23,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import GlobalStyles from '../../theme/GlobalStyles';
-import AmbientBackground from './AmbientBackground';
 import CommandBar from './CommandBar';
 import TickerTape from './TickerTape';
 import StatusBar from './StatusBar';
@@ -152,7 +151,6 @@ export default function AppShell() {
         position: 'relative',
       }}
     >
-      <AmbientBackground />
       <a href="#main-content" className="skip-to-content">
         Aller au contenu principal
       </a>
