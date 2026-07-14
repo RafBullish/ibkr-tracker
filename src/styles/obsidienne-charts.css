@@ -1,0 +1,116 @@
+/* ════════════════════════════════════════════════════════════════
+   OBSIDIENNE-CHARTS.CSS — kit data-viz Obsidienne (v1.0 · 1.A)
+
+   Chargé juste après canonical.css (main.jsx), avant les pages-*.
+   Contenu :
+   - .obs-tooltip*  : LE tooltip unique (ObsidienneTooltip.jsx)
+   - .obs-live-dot* : dot du vivant + pulse LIVE (anneau ambre, 2 s)
+   - overrides par défaut scopés .obsidienne-chart
+   - prefers-reduced-motion : pulse et animations coupés
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Tooltip verre noir ──────────────────────────────────────── */
+.obs-tooltip {
+  background: rgba(10, 10, 12, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--hairline-rest);
+  border-radius: 8px;
+  padding: 6px 10px;
+  pointer-events: none;
+}
+
+.obs-tooltip__label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-mute);
+  margin-bottom: 2px;
+}
+
+.obs-tooltip__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.obs-tooltip__name {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+
+/* Valeur : IBM Plex Sans Condensed 700 tabulaire 15px — texte
+   data-viz (comme les ticks), exempt du plancher page 17. */
+.obs-tooltip__value {
+  font-family: var(--qc-font-num);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-pure);
+}
+
+/* Loi de couleur : up/down = P&L d'argent réel uniquement. */
+.obs-tooltip__value--up {
+  color: var(--pnl-up);
+}
+.obs-tooltip__value--down {
+  color: var(--pnl-down);
+}
+
+/* ── Dot du vivant + pulse LIVE (anneau ambre, 2 s) ──────────── */
+.obs-live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+}
+
+/* Respiration : anneau ambre qui s'évase puis s'éteint, 2 s. */
+.obs-live-dot--pulse {
+  animation: obs-live-pulse 2s ease-out infinite;
+}
+
+/* Variante éteinte (session fermée / EOD) : encre mute, pas de pulse. */
+.obs-live-dot--off {
+  background: var(--ink-mute);
+  animation: none;
+}
+
+@keyframes obs-live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 160, 40, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(255, 160, 40, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 160, 40, 0);
+  }
+}
+
+/* ── Overrides par défaut, scopés .obsidienne-chart ──────────── */
+/* Les ticks/grille/curseur sont pilotés par props JSX (OBS.*) ; le
+   scope CSS ne porte que ce que les props ne couvrent pas. */
+.obsidienne-chart .recharts-cartesian-axis-line,
+.obsidienne-chart .recharts-cartesian-axis-tick-line {
+  display: none;
+}
+
+/* ── Reduced motion : tout s'immobilise ──────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .obs-live-dot,
+  .obs-live-dot--pulse {
+    animation: none;
+  }
+  .obsidienne-chart * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

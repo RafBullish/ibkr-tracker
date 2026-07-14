@@ -20,6 +20,8 @@
 import { Suspense, lazy, useMemo, useState } from 'react';
 import useLiveTheme from '../../hooks/useLiveTheme';
 import { TIMEFRAMES, filterByTimeframe } from '../../utils/equity';
+import { OBS } from './obsidienne';
+import ObsidienneTooltip from './ObsidienneTooltip';
 
 const LazyRecharts = lazy(() =>
   import('recharts').then((mod) => ({ default: ({ children }) => children(mod) }))
@@ -52,20 +54,6 @@ const fmtAxisUsd = (v) => {
   const sign = v < 0 ? '-' : '';
   return `${sign}$${Math.round(Math.abs(v)).toLocaleString('de-CH')}`;
 };
-
-function EquityTooltip({ active, payload }) {
-  if (!active || !payload?.length) return null;
-  const row = payload[0]?.payload || {};
-  return (
-    <div className="trading-chart__tooltip">
-      <div className="trading-chart__tooltip-date">{row.date}</div>
-      <div className="trading-chart__tooltip-row">
-        <span>EQUITY</span>
-        <span className="trading-chart__tooltip-val">{fmtUsd(row.equity)}</span>
-      </div>
-    </div>
-  );
-}
 
 function ChartFallback({ message }) {
   return <div className="trading-chart__empty">{message}</div>;
@@ -148,7 +136,7 @@ export default function EquityChart({
   const lastDate = safeData[safeData.length - 1]?.date || '—';
 
   return (
-    <section className="trading-chart equity-chart" style={{ gridArea: area }}>
+    <section className="trading-chart equity-chart obsidienne-chart" style={{ gridArea: area }}>
       <header className="trading-chart__header">
         <div className="trading-chart__title-wrap">
           <span className="trading-chart__title">Equity Curve</span>
@@ -223,11 +211,13 @@ export default function EquityChart({
                         <stop offset="100%" stopColor={T.profit} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <R.CartesianGrid stroke={T.chart.grid} strokeDasharray="0" vertical={true} horizontal={true} />
+    {/* 1.A retrofit props — grille horizontale seule (hairlines
+                        --chart-grid), ticks OBS.tick (cap 14). */}
+                    <R.CartesianGrid stroke={OBS.color.grid} strokeDasharray="0" vertical={false} horizontal={true} />
                     <R.XAxis
                       dataKey="date"
-                      stroke={T.text.tertiary}
-                      tick={{ fontFamily: T.fonts.mono, fontSize: 12, fill: T.text.tertiary }}
+                      stroke={OBS.color.tick}
+                      tick={OBS.tick}
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={fmtAxisDate}
@@ -235,8 +225,8 @@ export default function EquityChart({
                       height={22}
                     />
                     <R.YAxis
-                      stroke={T.text.tertiary}
-                      tick={{ fontFamily: T.fonts.mono, fontSize: 12, fill: T.text.tertiary }}
+                      stroke={OBS.color.tick}
+                      tick={OBS.tick}
                       axisLine={false}
                       tickLine={false}
                       width={64}
@@ -267,9 +257,18 @@ export default function EquityChart({
                       isAnimationActive={false}
                       activeDot={{ r: 5, fill: T.profit, stroke: T.surface.base, strokeWidth: 2 }}
                     />
+    {/* 1.A — tooltip unique ObsidienneTooltip ; equity = valeur
+                        de portefeuille, pas un P&L → neutre (pas de tone). */}
                     <R.Tooltip
-                      content={<EquityTooltip />}
-                      cursor={{ stroke: T.text.tertiary, strokeDasharray: '2 3' }}
+                      content={
+                        <ObsidienneTooltip
+                          rows={(payload) => {
+                            const row = payload[0]?.payload || {};
+                            return [{ label: 'EQUITY', value: fmtUsd(row.equity) }];
+                          }}
+                        />
+                      }
+                      cursor={OBS.cursor}
                       isAnimationActive={false}
                     />
                   </R.ComposedChart>
