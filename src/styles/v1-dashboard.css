@@ -198,10 +198,19 @@
    restant se répartit. */
 .command-deck__zone--duo {
   display: grid;
-  grid-template-columns: minmax(max-content, 1fr) minmax(max-content, 1fr);
+  /* minmax(0, max-content) : colonnes à leur contenu quand la place
+     existe, DÉGRADABLES (ellipse sur le label) quand la zone est
+     comprimée — jamais de débordement hors du panneau. */
+  grid-template-columns: minmax(0, max-content) minmax(0, max-content);
   grid-template-rows: auto auto 1fr;
   column-gap: 16px;
   align-content: start;
+}
+
+.command-deck__zone--duo .command-deck__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .command-deck__zone--duo .command-deck__sub {

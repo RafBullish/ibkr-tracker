@@ -755,8 +755,12 @@
      Échelle S2 : NLV 56 · monétaires 44 (--type-display) · WR/PF 23
      (--fs-2xl) · MTD 21 (--type-cell-value) · captions 17 (plancher).
      ════════════════════════════════════════════════════════════════ */
+  /* 1.B — fractions re-réglées pour la largeur de contenu du Shell
+     (1591 − sidebar 232 ≈ 1359) : la zone 6 (WIN RATE · PROFIT FACTOR,
+     min-content 253px) reçoit 1.55fr, padding resserré 20 → 16.
+     Tailles S2 FIXES, aucune régression. */
   .command-deck {
-    grid-template-columns: 1.6fr 0.95fr 0.95fr 1.05fr 1.15fr 1.2fr;
+    grid-template-columns: 1.4fr 0.92fr 0.95fr 1fr 1.08fr 1.55fr;
     grid-template-rows: auto auto 1fr;
     min-height: 112px;
   }
@@ -766,7 +770,7 @@
     grid-template-rows: subgrid;
     grid-row: 1 / 4;
     gap: 6px 0;
-    padding: 14px 20px 12px;
+    padding: 14px 16px 12px;
     border-top: none;
   }
 
@@ -790,7 +794,7 @@
   /* Zone 6 : le gap de zone (6px 0) écraserait le column-gap de la
      grille duo — on le re-pose. */
   .command-deck__zone--duo {
-    column-gap: 16px;
+    column-gap: 14px;
   }
 
   .command-deck__label,
