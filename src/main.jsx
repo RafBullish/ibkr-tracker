@@ -28,6 +28,10 @@ import './styles/v5-chain.css';
 // pour faire autorité quand les pages migreront. Étape additive : aucune page
 // ne le consomme encore, aucun changement visuel attendu.
 import './styles/canonical.css';
+// obsidienne-charts.css — kit data-viz Obsidienne (v1.0 · 1.A) : tooltip
+// unique .obs-tooltip, dot/pulse LIVE, overrides scopés .obsidienne-chart.
+// Juste après canonical.css (consomme ses tokens), avant les pages-*.
+import './styles/obsidienne-charts.css';
 // pages-positions.css — page-vitrine /trading/positions, première consommatrice
 // de la palette canonique. Scopée à .positions-v3 / .positions-flat /
 // .positions-empty — n'affecte aucune autre page.
@@ -65,6 +69,9 @@ import './styles/pages-premarket.css';
 // porte uniquement le wrapper .dashboard-page + cibles canoniques neuves
 // (.dashboard-page__panel/__panel-head) pour les futures migrations.
 import './styles/pages-dashboard.css';
+// v1-dashboard.css — Dashboard ère produit v1.0 (brique 1.A) : base <1440
+// de la Ligne de commandement (.command-deck). Palier ≥1440 dans c3-hires.
+import './styles/v1-dashboard.css';
 // pages-calendar.css — page-vitrine /insights/calendar, huitième et dernière
 // consommation des tokens canoniques. Calendar a été désintoxiquée de la
 // palette JS divergente (`T from '../../theme/tokens'`) — l'import T est

@@ -339,8 +339,8 @@
   --orb-2-opacity: 0.03;
   --orb-3-color: var(--qc-info);
   --orb-3-opacity: 0.04;
-  --orb-blue: var(--qc-accent);
-  --orb-violet: #8B5CF6;
+  /* --orb-blue / --orb-violet retirés (1.A) — consommés uniquement par
+     l'AmbientBackground supprimé. */
 
   /* --- Charts / Greeks --- */
   --chart-tooltip-bg: var(--qc-bg-elevated);

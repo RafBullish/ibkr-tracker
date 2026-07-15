@@ -746,4 +746,80 @@
     grid-template-columns: 1fr 1fr;
     gap: 2px 20px;
   }
+
+  /* ════════════════════════════════════════════════════════════════
+     V1.0 · 1.A — LIGNE DE COMMANDEMENT (.command-deck), palier ≥1440.
+     UNE rangée de 6 zones sur un panneau continu ; hairlines verticales
+     entre zones ; valeurs alignées sur une même ligne de base via
+     subgrid (3 rangées partagées : tête / valeur / sous-ligne).
+     Échelle S2 : NLV 56 · monétaires 44 (--type-display) · WR/PF 23
+     (--fs-2xl) · MTD 21 (--type-cell-value) · captions 17 (plancher).
+     ════════════════════════════════════════════════════════════════ */
+  .command-deck {
+    grid-template-columns: 1.6fr 0.95fr 0.95fr 1.05fr 1.15fr 1.2fr;
+    grid-template-rows: auto auto 1fr;
+    min-height: 112px;
+  }
+
+  .command-deck__zone {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: 1 / 4;
+    gap: 6px 0;
+    padding: 14px 20px 12px;
+    border-top: none;
+  }
+
+  .command-deck__zone--nlv {
+    grid-column: auto;
+  }
+
+  /* Hairlines VERTICALES sur les zones 2-6 (la base <1440 posait des
+     séparateurs horizontaux + un vertical inter-colonne : annulés). */
+  .command-deck__zone:not(.command-deck__zone--nlv),
+  .command-deck__zone:nth-child(odd):not(.command-deck__zone--nlv) {
+    border-left: 1px solid var(--hairline-rest);
+  }
+
+  /* Ligne de base partagée : les valeurs (rangée 2 du subgrid)
+     s'alignent baseline d'une zone à l'autre. */
+  .command-deck__value {
+    align-self: baseline;
+  }
+
+  /* Zone 6 : le gap de zone (6px 0) écraserait le column-gap de la
+     grille duo — on le re-pose. */
+  .command-deck__zone--duo {
+    column-gap: 16px;
+  }
+
+  .command-deck__label,
+  .command-deck__live-text,
+  .command-deck__mtd-label {
+    font-size: var(--type-caption); /* 17 — plancher S2 */
+  }
+
+  .command-deck__value {
+    font-size: var(--type-display); /* 44 */
+  }
+
+  .command-deck__value--nlv {
+    font-size: 56px;
+  }
+
+  .command-deck__value--duo {
+    font-size: var(--fs-2xl); /* 23 */
+  }
+
+  .command-deck__mtd-value {
+    font-size: var(--type-cell-value); /* 21 */
+  }
+
+  .command-deck__caption {
+    font-size: var(--type-caption); /* 17 */
+  }
+
+  .command-deck__gauge {
+    margin: 8px 0 4px;
+  }
 }

@@ -35,6 +35,8 @@ import {
 import { tradePnlUsd } from '../../utils/calculations';
 import { useClosedTrades, useSettings } from '../../store/useStore';
 import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
+import { OBS } from './obsidienne';
+import ObsidienneTooltip from './ObsidienneTooltip';
 
 const LazyRecharts = lazy(() =>
   import('recharts').then((mod) => ({ default: ({ children }) => children(mod) }))
@@ -79,34 +81,16 @@ const fmtAxisCumul = (v) => {
   return `${sign}$${Math.round(Math.abs(v)).toLocaleString('de-CH')}`;
 };
 
-function CumulTooltip({ active, payload }) {
-  if (!active || !payload?.length) return null;
+// 1.A — lignes du tooltip unique (ObsidienneTooltip). CUMUL + DAILY Δ =
+// P&L RÉALISÉ (argent réel) → tone up/down par signe, autorisé.
+function cumulTooltipRows(payload) {
   const row = payload[0]?.payload || {};
-  const cumul = row.cumul;
-  const daily = row.dailyPnl;
-  return (
-    <div className="trading-chart__tooltip">
-      <div className="trading-chart__tooltip-date">{row.date}</div>
-      <div className="trading-chart__tooltip-row">
-        <span>CUMUL</span>
-        <span
-          className={`trading-chart__tooltip-val${cumul > 0 ? ' is-profit' : cumul < 0 ? ' is-loss' : ''}`}
-        >
-          {cumul >= 0 ? '+' : '−'}
-          {fmtUsd(Math.abs(cumul))}
-        </span>
-      </div>
-      <div className="trading-chart__tooltip-row">
-        <span>DAILY Δ</span>
-        <span
-          className={`trading-chart__tooltip-val${daily > 0 ? ' is-profit' : daily < 0 ? ' is-loss' : ''}`}
-        >
-          {daily >= 0 ? '+' : '−'}
-          {fmtUsd(Math.abs(daily))}
-        </span>
-      </div>
-    </div>
-  );
+  const line = (label, v) => ({
+    label,
+    value: `${v >= 0 ? '+' : '−'}${fmtUsd(Math.abs(v || 0))}`,
+    tone: v > 0 ? 'up' : v < 0 ? 'down' : undefined,
+  });
+  return [line('CUMUL', row.cumul), line('DAILY Δ', row.dailyPnl)];
 }
 
 function ChartFallback({ message }) {
@@ -263,7 +247,7 @@ export default function DailyPnLChart({
 
   return (
     <section
-      className="trading-chart trading-chart--cumul"
+      className="trading-chart trading-chart--cumul obsidienne-chart"
       style={{ gridArea: area }}
       data-tone={cumulTone}
     >
@@ -357,11 +341,13 @@ export default function DailyPnLChart({
                         <stop offset="100%" stopColor={cumulColor} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <R.CartesianGrid stroke={T.chart.grid} strokeDasharray="0" vertical={true} horizontal={true} />
+    {/* 1.A retrofit props — grille horizontale seule (hairlines
+                        --chart-grid), ticks OBS.tick (cap 14). */}
+                    <R.CartesianGrid stroke={OBS.color.grid} strokeDasharray="0" vertical={false} horizontal={true} />
                     <R.XAxis
                       dataKey="date"
-                      stroke={T.text.tertiary}
-                      tick={{ fontFamily: T.fonts.mono, fontSize: 12, fill: T.text.tertiary }}
+                      stroke={OBS.color.tick}
+                      tick={OBS.tick}
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={fmtAxisDate}
@@ -369,8 +355,8 @@ export default function DailyPnLChart({
                       height={22}
                     />
                     <R.YAxis
-                      stroke={T.text.tertiary}
-                      tick={{ fontFamily: T.fonts.mono, fontSize: 12, fill: T.text.tertiary }}
+                      stroke={OBS.color.tick}
+                      tick={OBS.tick}
                       axisLine={false}
                       tickLine={false}
                       width={64}
@@ -409,8 +395,8 @@ export default function DailyPnLChart({
                       activeDot={{ r: 5, fill: cumulColor, stroke: T.surface.base, strokeWidth: 2 }}
                     />
                     <R.Tooltip
-                      content={<CumulTooltip />}
-                      cursor={{ stroke: T.text.tertiary, strokeDasharray: '2 3' }}
+                      content={<ObsidienneTooltip rows={cumulTooltipRows} />}
+                      cursor={OBS.cursor}
                       isAnimationActive={false}
                       allowEscapeViewBox={{ x: false, y: false }}
                       offset={20}

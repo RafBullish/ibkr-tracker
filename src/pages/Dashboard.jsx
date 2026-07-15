@@ -25,7 +25,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo, useState } from 'react';
-import DashboardKPICards from '../components/dashboard/DashboardKPICards';
+import CommandDeck from '../components/dashboard/CommandDeck';
 import EquityChart from '../components/charts/EquityChart';
 import DailyPnLChart from '../components/charts/DailyPnLChart';
 import RiskMatrix from '../components/dashboard/RiskMatrix';
@@ -140,7 +140,8 @@ export default function Dashboard() {
   return (
     <div className="dashboard-page">
       <div className="dash-shell">
-        <DashboardKPICards />
+        {/* v1.0 · 1.A — Ligne de commandement (remplace DashboardKPICards) */}
+        <CommandDeck />
       <div className="dash-grid">
         <EquityChart
           data={equityHistory}

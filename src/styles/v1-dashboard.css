@@ -1,0 +1,219 @@
+/* ════════════════════════════════════════════════════════════════
+   V1-DASHBOARD.CSS — Dashboard ère produit v1.0 (brique 1.A)
+
+   Styles de BASE (<1440) de la Ligne de commandement (.command-deck).
+   Le palier haute-résolution (≥1440) vit dans c3-hires.css, section
+   scopée .command-deck — jamais de hack local.
+
+   Base <1440 (socle mobile, jamais la cible de design) : grille
+   repliée en 2 colonnes, NLV sur toute la largeur, séparateurs
+   HORIZONTAUX, zéro overflow.
+   NLV 40 · monétaires 28 · WR/PF 18 · MTD 16 · captions 12 caps.
+
+   Chargée juste après pages-dashboard.css (main.jsx), avant c3-hires.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Panneau continu — la matière vient de .obs-panel (canonical) ── */
+.command-deck {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-radius: 2px;
+  margin-bottom: 8px;
+}
+
+/* ── Zones — base : pile verticale, séparateurs horizontaux ─────── */
+.command-deck__zone {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--hairline-rest);
+}
+
+/* NLV : pleine largeur, première rangée (pas de filet au-dessus). */
+.command-deck__zone--nlv {
+  grid-column: 1 / -1;
+  border-top: none;
+}
+
+/* Colonne de droite (zones 3 et 5 dans l'ordre DOM après NLV) :
+   filet vertical entre les deux colonnes de la grille repliée. */
+.command-deck__zone:nth-child(odd):not(.command-deck__zone--nlv) {
+  border-left: 1px solid var(--hairline-rest);
+}
+
+/* ── Tête de zone : label micro-caps + indicateur éventuel ──────── */
+.command-deck__head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-height: 16px;
+}
+
+.command-deck__label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+/* ── Valeurs — NumAnat, Plex 700 tabulaire, couleur par sémantique ── */
+.command-deck__value {
+  font-family: var(--qc-font-num);
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+  color: var(--ink-pure);
+  white-space: nowrap;
+}
+
+.command-deck__value--nlv {
+  font-size: 40px;
+}
+
+.command-deck__value--duo {
+  font-size: 18px;
+}
+
+/* Loi de couleur : rouge/vert = argent réel uniquement (DAY /
+   UNREALIZED / REALIZED / MTD portent data-tone ; EXPOSURE, WR, PF
+   restent neutres — aucun data-tone posé). */
+.command-deck__value[data-tone='profit'],
+.command-deck__mtd-value[data-tone='profit'] {
+  color: var(--pnl-up);
+}
+.command-deck__value[data-tone='loss'],
+.command-deck__mtd-value[data-tone='loss'] {
+  color: var(--pnl-down);
+}
+
+/* ── Sous-ligne ─────────────────────────────────────────────────── */
+.command-deck__sub {
+  min-height: 0;
+}
+
+.command-deck__mtd {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.command-deck__mtd-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-mute);
+}
+
+.command-deck__mtd-value {
+  font-family: var(--qc-font-num);
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-pure);
+}
+
+/* ── Captions (jauge, n < 10) ───────────────────────────────────── */
+.command-deck__caption {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ≥70 % du NLV : signal de DÉCISION → ambre (usage sanctionné). */
+.command-deck__caption--warn {
+  color: var(--accent);
+}
+
+/* ── Jauge EXPOSURE : piste 8 %, remplissage ambre, repère 70 % ─── */
+.command-deck__gauge {
+  position: relative;
+  height: 6px;
+  margin: 6px 0 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+.command-deck__gauge-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 180ms ease-out;
+}
+
+.command-deck__gauge-marker {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  left: 70%;
+  width: 1px;
+  background: var(--line-emphasis);
+}
+
+/* ── Indicateur du vivant (NET LIQ) ─────────────────────────────── */
+.command-deck__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.command-deck__live-text {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.command-deck__live[data-live='closed'] .command-deck__live-text {
+  color: var(--ink-mute);
+}
+
+/* Respiration LIVE 2 s (opacité) — uniquement à l'état live. */
+.command-deck__live[data-live='live'] {
+  animation: command-deck-breathe 2s ease-in-out infinite;
+}
+
+@keyframes command-deck-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* ── Zone 6 : deux mini-colonnes WIN RATE · PROFIT FACTOR ────────
+   Grille 2 colonnes PARTAGÉE entre labels (rangée 1) et valeurs
+   (rangée 2) : chaque valeur s'aligne sous son label. minmax(
+   max-content, 1fr) : les labels ne se compriment jamais, l'espace
+   restant se répartit. */
+.command-deck__zone--duo {
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) minmax(max-content, 1fr);
+  grid-template-rows: auto auto 1fr;
+  column-gap: 16px;
+  align-content: start;
+}
+
+.command-deck__zone--duo .command-deck__sub {
+  grid-column: 1 / -1;
+}
+
+/* ── Reduced motion : respiration et transitions coupées ────────── */
+@media (prefers-reduced-motion: reduce) {
+  .command-deck__live[data-live='live'] {
+    animation: none;
+  }
+  .command-deck__gauge-fill {
+    transition: none;
+  }
+}
