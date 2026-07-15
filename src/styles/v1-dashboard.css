@@ -13,12 +13,29 @@
    Chargée juste après pages-dashboard.css (main.jsx), avant c3-hires.
    ════════════════════════════════════════════════════════════════ */
 
-/* ── Panneau continu — la matière vient de .obs-panel (canonical) ── */
+/* ════════════════════════════════════════════════════════════════
+   LE COCKPIT (1.C.2) — chrome d'instrument continu, full-bleed.
+   UN panneau (fond raised, ZÉRO radius, pas de hover global), docké
+   sous la hairline du tape (gap 0 — la hairline du tape sert de bord
+   haut) et collé à la hairline droite de la sidebar. Séparation
+   interne = 1 hairline pleine largeur entre étage marché et étage
+   portefeuille (border-top du .command-deck).
+   ════════════════════════════════════════════════════════════════ */
+.cockpit {
+  background: var(--depth-raised);
+  border-bottom: 1px solid var(--hairline-rest);
+}
+
+/* Le puits de contenu reprend son padding SOUS le cockpit. */
+.cockpit + .dash-shell {
+  padding-top: 8px;
+}
+
+/* ── Étage portefeuille — grille (le chrome vient du .cockpit) ──── */
 .command-deck {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  border-radius: 2px;
-  margin-bottom: 8px;
+  border-top: 1px solid var(--hairline-rest); /* hairline interne du cockpit */
 }
 
 /* ── Zones — base : pile verticale, séparateurs horizontaux ─────── */
@@ -260,21 +277,22 @@
 }
 
 /* ════════════════════════════════════════════════════════════════
-   MARKET DECK (1.C) — étage 0 : le marché en un coup d'œil.
+   MARKET DECK v2 (1.C.2) — étage marché du cockpit, densité absolue.
    Base <1440 : grille repliée 2 colonnes, séparateurs horizontaux.
-   Palier ≥1440 (c3-hires) : 1 rangée, 5 zones, hairlines verticales.
+   Palier ≥1440 (c3-hires) : 1 rangée, 6 zones, hairlines verticales,
+   min-height ~150. Registre micro data-viz sanctionné (§0 1.C.2) :
+   valeurs secondaires / intérieurs de pastilles 13-16 ; labels de
+   lecture ≥17 (au palier).
    ════════════════════════════════════════════════════════════════ */
 .market-deck {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  border-radius: 2px;
-  margin-bottom: 8px;
 }
 
 .market-deck__zone {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
   min-width: 0;
   padding: 12px 16px 12px;
   border-top: 1px solid var(--hairline-rest);
@@ -297,7 +315,7 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -346,7 +364,7 @@
 }
 
 .market-deck__session-phase {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -356,7 +374,7 @@
 .market-deck__countdown {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .market-deck__countdown-label {
@@ -364,30 +382,53 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   color: var(--ink-mute);
+  text-transform: uppercase;
 }
 
 .market-deck__countdown-value {
   font-family: var(--qc-font-num);
   font-variant-numeric: tabular-nums;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--ink-pure);
   line-height: 1;
 }
 
-/* ── Pastille Δ% (anatomie du tape) ─────────────────────────────── */
+.market-deck__ny {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Pastilles Δ% (anatomie tape, 3 tailles du registre micro) ──── */
 .market-deck__pill {
   display: inline-flex;
   align-items: center;
   font-family: var(--qc-font-mono);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
   font-weight: 600;
   line-height: 1;
-  padding: 1px 6px;
+  padding: 1px 5px;
   border-radius: 4px;
   white-space: nowrap;
   width: fit-content;
+}
+
+.market-deck__pill--xs {
+  font-size: 11px;
+  padding: 1px 4px;
+}
+
+.market-deck__pill--sm {
+  font-size: 12px;
+}
+
+.market-deck__pill--md {
+  font-size: 14px;
+  padding: 1px 6px;
 }
 
 .market-deck__pill--up {
@@ -408,41 +449,34 @@
 
 .market-deck__pill-arrow {
   font-size: 0.72em;
-  margin-right: 3px;
+  margin-right: 2px;
 }
 
-.market-deck__pill--compact {
-  font-size: 12px;
-  padding: 1px 5px;
-}
-
-/* ── Z2 INDICES ─────────────────────────────────────────────────── */
-.market-deck__indices-row {
-  display: flex;
-  align-items: stretch;
-  gap: 18px;
+/* ── Z2 INDICES US : grille 2×2 + sous-ligne FUTURES ────────────── */
+.market-deck__indices-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
   min-width: 0;
 }
 
-/* Anatomie d'indice : rangée 1 = symbole + pastille Δ% ; rangée 2 =
-   prix + sparkline. Tient 3 indices côte à côte sans wrap. */
 .market-deck__index {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 3px;
   min-width: 0;
 }
 
 .market-deck__index-head {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
 }
 
 .market-deck__index-body {
   display: inline-flex;
   align-items: flex-end;
-  gap: 8px;
+  gap: 7px;
 }
 
 .market-deck__index-symbol {
@@ -457,7 +491,7 @@
 .market-deck__index-price {
   font-family: var(--qc-font-num);
   font-variant-numeric: tabular-nums;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--ink-pure);
   line-height: 1;
@@ -469,11 +503,38 @@
   line-height: 0;
 }
 
-/* ── Z3 VIX ─────────────────────────────────────────────────────── */
+.market-deck__futures {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.market-deck__futures-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ink-mute);
+}
+
+.market-deck__future {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.market-deck__future-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+
+/* ── Z3 VOLATILITÉ ──────────────────────────────────────────────── */
 .market-deck__vix-row {
   display: inline-flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 7px;
 }
 
 .market-deck__vix-value {
@@ -505,6 +566,33 @@
   border-color: color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
+.market-deck__hl {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.market-deck__hl-bit {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.market-deck__hl-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ink-mute);
+}
+
+.market-deck__hl-value {
+  font-family: var(--qc-font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
 /* ── Z4 FX & TAUX ───────────────────────────────────────────────── */
 .market-deck__fx-mode {
   display: inline-flex;
@@ -517,30 +605,50 @@
   color: var(--ink-mute);
 }
 
+/* Rangée principale FX : alignée sur la grille des taux dessous
+   (USD/CHF = label de rangée, même colonne que EUR/USD·US10Y·DXY). */
+.market-deck__fx-row {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  align-items: baseline;
+  column-gap: 8px;
+  min-width: 0;
+}
+
 .market-deck__fx-value {
   font-family: var(--qc-font-num);
   font-variant-numeric: tabular-nums;
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--ink-pure);
   line-height: 1;
 }
 
-.market-deck__rates-row {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
+.market-deck__fx-caption {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
 }
 
-.market-deck__rate {
-  display: inline-flex;
+.market-deck__rates {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.market-deck__rate-row {
+  display: grid;
+  grid-template-columns: 58px 1fr auto;
   align-items: baseline;
-  gap: 6px;
-  white-space: nowrap;
+  column-gap: 8px;
+  min-width: 0;
 }
 
 .market-deck__rate-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
   color: var(--ink-mute);
@@ -549,30 +657,76 @@
 .market-deck__rate-value {
   font-family: var(--qc-font-num);
   font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-pure);
+  white-space: nowrap;
+}
+
+/* ── Z5 EUROPE · ASIE : pile serrée alignée en colonnes ─────────── */
+.market-deck__intl {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.market-deck__intl-row {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: baseline;
+  column-gap: 6px;
+  min-width: 0;
+}
+
+.market-deck__intl-symbol {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.market-deck__intl-price {
+  font-family: var(--qc-font-num);
+  font-variant-numeric: tabular-nums;
   font-size: 15px;
   font-weight: 700;
   color: var(--ink-pure);
+  white-space: nowrap;
 }
 
-/* ── Z5 ÉVÉNEMENT ───────────────────────────────────────────────── */
-.market-deck__event-line {
+/* ── Z6 AGENDA 14 J — items empilés, un par ligne (1.C.2) ───────── */
+.market-deck__agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.market-deck__agenda-line {
   display: flex;
   align-items: baseline;
   gap: 8px;
   min-width: 0;
-  font-size: 14px;
+  font-size: 13px;
 }
 
-.market-deck__event-kind {
-  font-size: 12px;
+.market-deck__agenda-kind {
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   color: var(--ink-mute);
   flex: none;
-  width: 76px;
+  width: 64px;
 }
 
-.market-deck__event-name {
+.market-deck__agenda-sep {
+  color: var(--ink-mute);
+}
+
+.market-deck__agenda-name {
+  flex: 1;
   font-weight: 600;
   color: var(--ink-pure);
   overflow: hidden;
@@ -581,7 +735,7 @@
   min-width: 0;
 }
 
-.market-deck__event-eta {
+.market-deck__agenda-eta {
   font-family: var(--qc-font-num);
   font-variant-numeric: tabular-nums;
   font-weight: 700;
@@ -589,17 +743,22 @@
   flex: none;
 }
 
-.market-deck__event-empty {
+/* AUJ. / J-1 / J-2 : signal d'attention (ambre sanctionné). */
+.market-deck__agenda-eta--hot {
+  color: var(--accent);
+}
+
+.market-deck__agenda-empty {
   color: var(--ink-mute);
 }
 
 /* ARMED ≤ J-2 : zone de décision Sniper (ambre sanctionné). */
 .market-deck__armed {
   display: inline-flex;
-  padding: 1px 6px;
+  padding: 1px 5px;
   border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
   color: var(--accent);

@@ -224,7 +224,7 @@ export default function CommandDeck() {
   const winCount = trading?.winCount ?? 0;
 
   return (
-    <section className="command-deck obs-panel" aria-label="Ligne de commandement">
+    <section className="command-deck" aria-label="Ligne de commandement">
       {/* 1 · NET LIQ — la donnée reine */}
       <div className="command-deck__zone command-deck__zone--nlv">
         <div className="command-deck__head">

@@ -798,24 +798,19 @@
   }
 
   /* ════════════════════════════════════════════════════════════════
-     V1.0 · 1.C — MARKET DECK, palier ≥1440. UNE rangée, 5 zones sur
-     hairlines verticales. Composer GRAND (boussole d'échelle 1.B.3) :
-     session 21 / countdown 23 · indices 28 + pastilles 18 · VIX 32 ·
-     FX 28, DXY/US10Y 21 · événement 18. Micro-signalétique chrome
-     (heure NY, badges, « taux appliqué ») : 12-13.
+     V1.0 · 1.C.2 — MARKET DECK v2, palier ≥1440. DENSITÉ ABSOLUE :
+     6 zones, 2-3 lignes de données chacune, min-height ~150. Labels de
+     lecture 17 ; registre micro data-viz sanctionné (pastilles 13-18,
+     valeurs secondaires 15-16, NY/countdown-label 15).
      ════════════════════════════════════════════════════════════════ */
-  /* Fractions réglées au CONTENU (dérogation loggée au ±10 % du brief :
-     3 indices à prix 28 + pastilles 18 + sparklines exigent ~2.4fr —
-     l'alternative, réduire les tailles, est interdite par la boussole
-     d'échelle). Tenue vérifiée @1359 sans wrap. */
   .market-deck {
-    grid-template-columns: 0.9fr 2.4fr 0.95fr 1.2fr 1.55fr;
-    min-height: 100px;
+    grid-template-columns: 1.15fr 1.85fr 1.1fr 1.25fr 1.3fr 1.4fr;
+    min-height: 150px;
   }
 
   .market-deck__zone {
     padding: 12px 18px 12px;
-    gap: 6px;
+    gap: 7px;
     border-top: none;
   }
 
@@ -831,67 +826,105 @@
   }
 
   .market-deck__label {
-    font-size: 13px;
+    font-size: 17px; /* label de lecture — plancher S2 */
   }
 
+  /* Z1 */
   .market-deck__session-phase {
-    font-size: 21px;
-  }
-
-  .market-deck__countdown-value {
     font-size: 23px;
   }
-
-  .market-deck__index-symbol {
-    font-size: 17px;
+  .market-deck__countdown-label {
+    font-size: 15px;
+  }
+  .market-deck__countdown-value {
+    font-size: 30px;
+  }
+  .market-deck__ny {
+    font-size: 15px;
   }
 
-  .market-deck__index-price {
-    font-size: 28px;
+  /* Pastilles */
+  .market-deck__pill--xs {
+    font-size: 13px;
   }
-
-  .market-deck__indices-row {
-    gap: 22px;
+  .market-deck__pill--sm {
+    font-size: 15px;
   }
-
-  .market-deck__pill {
+  .market-deck__pill--md {
     font-size: 18px;
-    padding: 1px 6px;
   }
 
-  .market-deck__pill--compact {
-    font-size: 14px;
-    padding: 1px 5px;
+  /* Z2 */
+  .market-deck__indices-grid {
+    gap: 8px 20px;
+  }
+  .market-deck__index-symbol {
+    font-size: 16px;
+  }
+  .market-deck__index-price {
+    font-size: 22px;
+  }
+  .market-deck__futures-tag {
+    font-size: 13px;
+  }
+  .market-deck__future-label {
+    font-size: 15px;
   }
 
+  /* Z3 */
   .market-deck__vix-value {
     font-size: 32px;
   }
-
   .market-deck__regime {
     font-size: 14px;
   }
+  .market-deck__hl-label {
+    font-size: 13px;
+  }
+  .market-deck__hl-value {
+    font-size: 16px;
+  }
 
+  /* Z4 */
   .market-deck__fx-value {
-    font-size: 28px;
+    font-size: 26px;
   }
-
+  .market-deck__fx-caption {
+    font-size: 17px; /* caption descriptive — plancher S2 */
+    letter-spacing: 0.04em;
+  }
+  .market-deck__fx-row,
+  .market-deck__rate-row {
+    grid-template-columns: 66px 1fr auto;
+  }
+  .market-deck__rate-label {
+    font-size: 13px;
+  }
   .market-deck__rate-value {
-    font-size: 21px;
-  }
-
-  .market-deck__event-line {
     font-size: 18px;
   }
 
-  .market-deck__event-kind {
-    font-size: 13px;
-    width: 86px;
+  /* Z5 */
+  .market-deck__intl-row {
+    grid-template-columns: 56px 1fr auto;
+  }
+  .market-deck__intl-symbol {
+    font-size: 16px;
+  }
+  .market-deck__intl-price {
+    font-size: 20px;
   }
 
-  .market-deck__caption,
-  .market-deck__countdown-label {
-    font-size: 12px;
+  /* Z6 */
+  .market-deck__agenda-line {
+    font-size: 16px;
+  }
+  .market-deck__agenda-kind {
+    font-size: 13px;
+    width: 78px;
+  }
+  .market-deck__armed {
+    font-size: 11px;
   }
 
   .command-deck__label,

@@ -1,42 +1,35 @@
 // ═══════════════════════════════════════════════════════════════
-//  MARKET DECK — le marché en un coup d'œil (v1.0 · 1.C)
+//  MARKET DECK v2 — densité absolue (v1.0 · 1.C.2)
 //
-//  Étage 0 du Dashboard (doctrine Avenant n°1 : « tout en haut = le
-//  marché, live »), au-dessus du CommandDeck. UN panneau .obs-panel,
-//  5 zones sur hairlines verticales :
-//    Z1 SESSION   — phase NY + dot du vivant + compte à rebours 1 s
-//                   (tick isolé dans <SessionZone/>, ne re-rend pas le
-//                   deck) + heure NY
-//    Z2 INDICES   — SPX · NDX · DJI : prix 28, pastille Δ% (anatomie
-//                   tape), sparkline 48×36
-//    Z3 VIX       — valeur 32 + pastille Δ% + chip RÉGIME (seuils
-//                   architecte : <15 CALME · 15-20 NORMAL · 20-27
-//                   NERVEUX · ≥27 STRESS ; NERVEUX/STRESS = --accent)
-//    Z4 FX & TAUX — USD/CHF DU STORE FX (taux appliqué aux conversions,
-//                   PAS le quote brut du tape) + badge AUTO/LIVE/MANUEL ·
-//                   DXY & US10Y (flux existant)
-//    Z5 ÉVÉNEMENT — prochain macro (useCalendarFeeds, fallback local
-//                   macroEvents2026) + prochain earnings d'une POSITION
-//                   OUVERTE (croisement ticker∩dates — la gate EARN-J2
-//                   de useSniperGates est un stub « pending », non
-//                   consommable), badge ARMED ambre si ≤ J-2. Fenêtre 14 j.
+//  Étage MARCHÉ du cockpit (le conteneur .cockpit soude cet étage à
+//  l'étage portefeuille — CommandDeck — sous la hairline du tape).
+//  6 zones sur hairlines verticales, 2-3 lignes de données par zone :
+//    Z1 SESSION     — dot + phase 23 · countdown 30 (tick 1 s isolé) ·
+//                     heure NY 15
+//    Z2 INDICES US  — grille 2×2 SPX·NDX / DJI·RUT (prix 22, pastille
+//                     15, spark 36×24) + sous-ligne FUTURES hors RTH
+//                     (ES/NQ/YM — injectés dans le MÊME batch quotes
+//                     via useQuoteBatchExtras, zéro boucle nouvelle)
+//    Z3 VOLATILITÉ  — VIX 32 + pastille 18 + chip RÉGIME (seuils 1.C)
+//                     + bornes du jour H · L (payload quote high/low)
+//    Z4 FX & TAUX   — USD/CHF appliqué 26 (store FX, badge mode) +
+//                     EUR/USD · US10Y · DXY empilés
+//    Z5 EUROPE·ASIE — DAX / FTSE / NIKKEI en pile serrée
+//    Z6 AGENDA 14 J — 2 macro + 2 earnings de POSITIONS OUVERTES,
+//                     AUJ./J-1/J-2 en accent, ARMED ≤ J-2
 //
-//  DONNÉES : quotes/sparklines = les hooks du tape avec la MÊME liste
-//  de symboles → poller partagé module-scope (1.C), ZÉRO appel réseau
-//  additionnel. Calendrier : useCalendarFeeds (déjà caché côté
-//  calendarApi). Lecture seule, rien au store.
+//  Registre micro data-viz sanctionné (1.C.2 §0) : valeurs secondaires
+//  et intérieurs de pastilles 13-16 ; labels de LECTURE ≥17.
+//  Données : pollers partagés 1.C (tape) — zéro appel additionnel.
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo, useState } from 'react';
-import useMarketQuotes from '../../hooks/useMarketQuotes';
+import useMarketQuotes, { useQuoteBatchExtras } from '../../hooks/useMarketQuotes';
 import { useMarketSparklines } from '../../hooks/useMarketSparklines';
 import useCalendarFeeds from '../../hooks/useCalendarFeeds';
 import { useFx } from '../../hooks/useFx';
 import { useOpenPositions } from '../../store/useStore';
-import {
-  STATIC_FETCH_SYMBOLS,
-  TickerSparkline,
-} from '../layout/TickerTape';
+import { STATIC_FETCH_SYMBOLS, TickerSparkline } from '../layout/TickerTape';
 import { computeMarketPhase, formatCountdown } from '../../utils/marketPhase';
 import { macroEventsInRange } from '../../data/macroEvents2026';
 
@@ -49,7 +42,16 @@ const PHASE_LABELS = {
 
 const EVENT_WINDOW_DAYS = 14;
 
-// ─── Z1 — Session : tick 1 s isolé ──────────────────────────────
+// Futures overnight — mêmes symboles que la page Premarket (U12),
+// servis par /api/quote (cascade Yahoo). Consommés HORS RTH uniquement.
+const FUTURES = [
+  { sym: 'ES=F', label: 'ES' },
+  { sym: 'NQ=F', label: 'NQ' },
+  { sym: 'YM=F', label: 'YM' },
+];
+const FUTURES_SYMBOLS = FUTURES.map((f) => f.sym);
+
+// ─── Z1 — Session : tick 1 s isolé (ne re-rend pas le deck) ─────
 function SessionZone() {
   const [now, setNow] = useState(() => new Date());
   const reduced = useMemo(
@@ -85,57 +87,55 @@ function SessionZone() {
         </span>
         <span className="market-deck__countdown-value">{countdown}</span>
       </div>
-      <div className="market-deck__caption">NEW YORK {nyLabel}</div>
+      <div className="market-deck__ny">NEW YORK {nyLabel}</div>
     </>
   );
 }
 
-// ─── Pastille Δ% (anatomie exacte du tape) ──────────────────────
-function DeltaPill({ pct, compact = false }) {
+// ─── Pastille Δ% (anatomie tape, tailles du registre micro) ─────
+function DeltaPill({ pct, size = 'sm' }) {
   if (pct == null || !Number.isFinite(pct)) {
-    return <span className="market-deck__pill market-deck__pill--mute">—</span>;
+    return <span className={`market-deck__pill market-deck__pill--${size} market-deck__pill--mute`}>—</span>;
   }
   const dir = pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat';
   const arrow = pct > 0 ? '▲' : pct < 0 ? '▼' : '';
   return (
-    <span
-      className={`market-deck__pill market-deck__pill--${dir}${compact ? ' market-deck__pill--compact' : ''}`}
-    >
+    <span className={`market-deck__pill market-deck__pill--${size} market-deck__pill--${dir}`}>
       {arrow && <span className="market-deck__pill-arrow">{arrow}</span>}
       {Math.abs(pct).toFixed(2)}%
     </span>
   );
 }
 
-// ─── Z2 — un indice ─────────────────────────────────────────────
-function IndexCell({ label, quote, spark }) {
-  const price = quote?.price;
-  const sparkColor = useMemo(() => {
-    if (!spark?.prices || spark.prices.length < 2) return 'var(--ink-soft)';
-    const first = spark.prices[0];
-    const last = spark.prices[spark.prices.length - 1];
-    if (last > first) return 'var(--pnl-up)';
-    if (last < first) return 'var(--pnl-down)';
-    return 'var(--ink-soft)';
-  }, [spark]);
+function fmtIndexPrice(price, decimals = 2) {
+  if (price == null || !Number.isFinite(price)) return '—';
+  if (price >= 1000) return new Intl.NumberFormat('de-CH').format(Math.round(price));
+  return price.toFixed(decimals);
+}
 
+function sparkColorOf(spark) {
+  if (!spark?.prices || spark.prices.length < 2) return 'var(--ink-soft)';
+  const first = spark.prices[0];
+  const last = spark.prices[spark.prices.length - 1];
+  if (last > first) return 'var(--pnl-up)';
+  if (last < first) return 'var(--pnl-down)';
+  return 'var(--ink-soft)';
+}
+
+// ─── Z2 — cellule d'indice US (grille 2×2) ──────────────────────
+function IndexCell({ label, quote, spark }) {
+  const color = useMemo(() => sparkColorOf(spark), [spark]);
   return (
     <div className="market-deck__index">
       <div className="market-deck__index-head">
         <span className="market-deck__index-symbol">{label}</span>
-        <DeltaPill pct={quote?.changePercent} />
+        <DeltaPill pct={quote?.changePercent} size="sm" />
       </div>
       <div className="market-deck__index-body">
-        <span className="market-deck__index-price">
-          {price != null && Number.isFinite(price)
-            ? price >= 1000
-              ? new Intl.NumberFormat('de-CH').format(Math.round(price))
-              : price.toFixed(2)
-            : '—'}
-        </span>
+        <span className="market-deck__index-price">{fmtIndexPrice(quote?.price)}</span>
         {spark?.prices && spark.prices.length > 1 && (
           <span className="market-deck__index-spark">
-            <TickerSparkline prices={spark.prices} color={sparkColor} width={48} height={36} />
+            <TickerSparkline prices={spark.prices} color={color} width={36} height={24} />
           </span>
         )}
       </div>
@@ -143,7 +143,31 @@ function IndexCell({ label, quote, spark }) {
   );
 }
 
-// ─── Z3 — régime VIX (seuils architecte, pure logique d'affichage) ──
+// ─── Z5 — rangée internationale (pile serrée) ───────────────────
+function IntlRow({ label, quote }) {
+  return (
+    <div className="market-deck__intl-row">
+      <span className="market-deck__intl-symbol">{label}</span>
+      <span className="market-deck__intl-price">{fmtIndexPrice(quote?.price)}</span>
+      <DeltaPill pct={quote?.changePercent} size="sm" />
+    </div>
+  );
+}
+
+// ─── Z4 — rangée taux/FX secondaire ─────────────────────────────
+function RateRow({ label, quote, decimals = 2 }) {
+  return (
+    <div className="market-deck__rate-row">
+      <span className="market-deck__rate-label">{label}</span>
+      <span className="market-deck__rate-value">
+        {quote?.price != null && Number.isFinite(quote.price) ? quote.price.toFixed(decimals) : '—'}
+      </span>
+      <DeltaPill pct={quote?.changePercent} size="xs" />
+    </div>
+  );
+}
+
+// ─── Z3 — régime VIX (seuils 1.C inchangés) ─────────────────────
 function vixRegime(v) {
   if (v == null || !Number.isFinite(v)) return null;
   if (v < 15) return { label: 'CALME', hot: false };
@@ -152,7 +176,7 @@ function vixRegime(v) {
   return { label: 'STRESS', hot: true };
 }
 
-// ─── Z5 — dates ─────────────────────────────────────────────────
+// ─── Z6 — dates ─────────────────────────────────────────────────
 function isoToday() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -162,14 +186,68 @@ function isoPlusDays(days) {
 }
 
 function daysUntil(iso) {
-  const today = isoToday();
-  const a = new Date(`${today}T00:00:00Z`).getTime();
+  const a = new Date(`${isoToday()}T00:00:00Z`).getTime();
   const b = new Date(`${iso}T00:00:00Z`).getTime();
   return Math.round((b - a) / 86_400_000);
 }
 
+function etaLabel(days) {
+  return days === 0 ? 'AUJ.' : `J-${days}`;
+}
+
+// Compacte le nom d'événement macro : « FOMC — Décision de taux » →
+// « FOMC », « CPI (juin 2026) » → « CPI ». La zone n'offre ~90 px au
+// nom : une ellipse en pleine parenthèse (« CPI (jui… ») est pire que
+// le sigle sec — le détail complet reste dans le title (hover).
+function compactEventName(name) {
+  return String(name || '')
+    .split(' — ')[0]
+    .split(' (')[0];
+}
+
+// Groupe d'agenda (macro ou earnings) : items EMPILÉS, un par ligne —
+// le kind n'est posé que sur la première ligne, les suivantes s'indentent.
+function AgendaGroup({ kind, items, emptyLabel, armedAt = null }) {
+  if (items.length === 0) {
+    return (
+      <div className="market-deck__agenda-line">
+        <span className="market-deck__agenda-kind">{kind}</span>
+        <span className="market-deck__agenda-empty">{emptyLabel}</span>
+      </div>
+    );
+  }
+  return (
+    <>
+      {items.map((it, i) => {
+        const d = daysUntil(it.date);
+        const hot = d <= 2; // AUJ./J-1/J-2 en accent (signal d'attention)
+        return (
+          <div className="market-deck__agenda-line" key={`${it.name}-${it.date}-${i}`}>
+            <span className="market-deck__agenda-kind">{i === 0 ? kind : ''}</span>
+            <span className="market-deck__agenda-name" title={it.name}>
+              {compactEventName(it.name)}
+            </span>
+            {armedAt != null && d <= armedAt && <span className="market-deck__armed">ARMED</span>}
+            <span className={`market-deck__agenda-eta${hot ? ' market-deck__agenda-eta--hot' : ''}`}>
+              {etaLabel(d)}
+            </span>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 export default function MarketDeck() {
+  // Phase de marché au rythme des re-renders du deck (les trains de
+  // quotes 60 s suffisent ; le tick 1 s vit dans SessionZone).
+  // eslint-disable-next-line react-hooks/purity
+  const phase = computeMarketPhase(new Date()).phase;
+  const horsRTH = phase !== 'open';
+
   const { quotes } = useMarketQuotes(STATIC_FETCH_SYMBOLS);
+  // Futures : rejoignent le MÊME batch, HORS RTH uniquement.
+  useQuoteBatchExtras(STATIC_FETCH_SYMBOLS, horsRTH ? FUTURES_SYMBOLS : []);
   const { sparklines } = useMarketSparklines(STATIC_FETCH_SYMBOLS);
   const openPositions = useOpenPositions();
   const { rate, mode, source } = useFx();
@@ -192,143 +270,155 @@ export default function MarketDeck() {
     minImpact: 'medium',
   });
 
-  // MACRO : feed Finnhub si non vide, sinon fallback local (Finnhub HS).
-  const nextMacro = useMemo(() => {
+  // MACRO : jusqu'à 2 prochains (feed Finnhub sinon fallback local).
+  const nextMacros = useMemo(() => {
     const feed = (macro || [])
       .map((e) => ({ date: e.time || e.date, name: e.event }))
       .filter((e) => e.date && e.date >= today && e.date <= horizon);
-    const source2 = feed.length
+    const src = feed.length
       ? feed
       : macroEventsInRange(today, horizon).map((e) => ({ date: e.time, name: e.event }));
-    if (!source2.length) return null;
-    return source2.sort((a, b) => a.date.localeCompare(b.date))[0];
+    return src.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 2);
   }, [macro, today, horizon]);
 
-  // EARNINGS : prochain earnings d'une POSITION OUVERTE (le feed est déjà
-  // filtré myTickers par useCalendarFeeds).
+  // EARNINGS : jusqu'à 2 prochains d'une POSITION OUVERTE.
   const nextEarnings = useMemo(() => {
     const rows = (earnings || [])
-      .map((e) => ({ date: e.date || e.time, ticker: String(e.symbol || '').toUpperCase() }))
-      .filter((e) => e.date && e.date >= today && e.date <= horizon);
-    if (!rows.length) return null;
-    return rows.sort((a, b) => a.date.localeCompare(b.date))[0];
+      .map((e) => ({ date: e.date || e.time, name: String(e.symbol || '').toUpperCase() }))
+      .filter((e) => e.date && e.name && e.date >= today && e.date <= horizon);
+    return rows.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 2);
   }, [earnings, today, horizon]);
 
   const vix = quotes['^VIX'];
   const regime = vixRegime(vix?.price);
+  const vixHigh = vix?.high;
+  const vixLow = vix?.low;
 
-  // Badge de mode FX : manual → MANUEL ; auto + source live → LIVE ; sinon AUTO.
+  // Badge de mode FX (1.C) : manual → MANUEL ; auto + source live → LIVE ; sinon AUTO.
   const fxBadge =
     mode === 'manual' ? 'MANUEL' : String(source || '').startsWith('live') ? 'LIVE' : 'AUTO';
 
-  const earnDays = nextEarnings ? daysUntil(nextEarnings.date) : null;
+  // Futures avec données servies (prix fini) — proxy muet → ligne absente.
+  const liveFutures = horsRTH
+    ? FUTURES.filter((f) => Number.isFinite(quotes[f.sym]?.price))
+    : [];
 
   return (
-    <section className="market-deck obs-panel" aria-label="Marché en un coup d'œil">
+    <section className="market-deck" aria-label="Marché en un coup d'œil">
       {/* Z1 — SESSION */}
       <div className="market-deck__zone market-deck__zone--session">
         <span className="market-deck__label">SESSION</span>
         <SessionZone />
       </div>
 
-      {/* Z2 — INDICES */}
+      {/* Z2 — INDICES US (2×2) + FUTURES hors RTH */}
       <div className="market-deck__zone market-deck__zone--indices">
         <span className="market-deck__label">INDICES US</span>
-        <div className="market-deck__indices-row">
+        <div className="market-deck__indices-grid">
           <IndexCell label="SPX" quote={quotes['^SPX']} spark={sparklines['^SPX']} />
           <IndexCell label="NDX" quote={quotes['^NDX']} spark={sparklines['^NDX']} />
           <IndexCell label="DJI" quote={quotes['^DJI']} spark={sparklines['^DJI']} />
+          <IndexCell label="RUT" quote={quotes['^RUT']} spark={sparklines['^RUT']} />
         </div>
+        {liveFutures.length > 0 && (
+          <div className="market-deck__futures">
+            <span className="market-deck__futures-tag">FUT</span>
+            {liveFutures.map((f) => (
+              <span className="market-deck__future" key={f.sym}>
+                <span className="market-deck__future-label">{f.label}</span>
+                <DeltaPill pct={quotes[f.sym]?.changePercent} size="xs" />
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Z3 — VIX + RÉGIME */}
+      {/* Z3 — VOLATILITÉ */}
       <div className="market-deck__zone">
-        <span className="market-deck__label">VIX</span>
+        <span className="market-deck__label">VOLATILITÉ</span>
         <div className="market-deck__vix-row">
           <span className="market-deck__vix-value">
             {vix?.price != null && Number.isFinite(vix.price) ? vix.price.toFixed(2) : '—'}
           </span>
-          <DeltaPill pct={vix?.changePercent} compact />
+          <DeltaPill pct={vix?.changePercent} size="md" />
         </div>
         {regime ? (
-          <span
-            className={`market-deck__regime${regime.hot ? ' market-deck__regime--hot' : ''}`}
-          >
+          <span className={`market-deck__regime${regime.hot ? ' market-deck__regime--hot' : ''}`}>
             {regime.label}
           </span>
         ) : (
           <span className="market-deck__caption">— régime</span>
         )}
+        <div className="market-deck__hl">
+          {Number.isFinite(vixHigh) && Number.isFinite(vixLow) ? (
+            <>
+              <span className="market-deck__hl-bit">
+                <span className="market-deck__hl-label">H</span>
+                <span className="market-deck__hl-value">{vixHigh.toFixed(2)}</span>
+              </span>
+              <span className="market-deck__agenda-sep">·</span>
+              <span className="market-deck__hl-bit">
+                <span className="market-deck__hl-label">L</span>
+                <span className="market-deck__hl-value">{vixLow.toFixed(2)}</span>
+              </span>
+            </>
+          ) : (
+            <span className="market-deck__hl-bit">
+              <span className="market-deck__hl-label">H · L</span>
+              <span className="market-deck__hl-value">—</span>
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Z4 — FX & TAUX */}
       <div className="market-deck__zone">
         <span className="market-deck__label">
-          USD/CHF
+          FX &amp; TAUX
           <span className="market-deck__fx-mode">{fxBadge}</span>
         </span>
         <div className="market-deck__fx-row">
+          <span className="market-deck__rate-label">USD/CHF</span>
           <span className="market-deck__fx-value">
             {rate != null && Number.isFinite(rate) ? rate.toFixed(4) : '—'}
           </span>
         </div>
-        <div className="market-deck__rates-row">
-          <span className="market-deck__rate">
-            <span className="market-deck__rate-label">DXY</span>
-            <span className="market-deck__rate-value">
-              {Number.isFinite(quotes['DX-Y.NYB']?.price)
-                ? quotes['DX-Y.NYB'].price.toFixed(2)
-                : '—'}
-            </span>
-            <DeltaPill pct={quotes['DX-Y.NYB']?.changePercent} compact />
-          </span>
-          <span className="market-deck__rate">
-            <span className="market-deck__rate-label">US10Y</span>
-            <span className="market-deck__rate-value">
-              {Number.isFinite(quotes['^TNX']?.price) ? quotes['^TNX'].price.toFixed(2) : '—'}
-            </span>
-            <DeltaPill pct={quotes['^TNX']?.changePercent} compact />
-          </span>
+        <span className="market-deck__fx-caption">taux appliqué</span>
+        <div className="market-deck__rates">
+          <RateRow label="EUR/USD" quote={quotes['EURUSD=X']} decimals={4} />
+          <RateRow label="US10Y" quote={quotes['^TNX']} />
+          <RateRow label="DXY" quote={quotes['DX-Y.NYB']} />
         </div>
-        <span className="market-deck__caption">taux appliqué</span>
       </div>
 
-      {/* Z5 — ÉVÉNEMENT */}
+      {/* Z5 — EUROPE · ASIE */}
+      <div className="market-deck__zone">
+        <span className="market-deck__label">EUROPE · ASIE</span>
+        <div className="market-deck__intl">
+          <IntlRow label="DAX" quote={quotes['^GDAXI']} />
+          <IntlRow label="FTSE" quote={quotes['^FTSE']} />
+          <IntlRow label="NIKKEI" quote={quotes['^N225']} />
+        </div>
+      </div>
+
+      {/* Z6 — AGENDA 14 J */}
       <div className="market-deck__zone market-deck__zone--events">
         <span className="market-deck__label">
-          ÉVÉNEMENT
+          AGENDA 14 J
           {calError ? <span className="market-deck__fx-mode">LOCAL</span> : null}
         </span>
-        <div className="market-deck__event-line">
-          <span className="market-deck__event-kind">MACRO</span>
-          {nextMacro ? (
-            <>
-              <span className="market-deck__event-name" title={nextMacro.name}>
-                {nextMacro.name}
-              </span>
-              <span className="market-deck__event-eta">
-                {daysUntil(nextMacro.date) === 0 ? 'AUJ.' : `J-${daysUntil(nextMacro.date)}`}
-              </span>
-            </>
-          ) : (
-            <span className="market-deck__event-empty">— sous {EVENT_WINDOW_DAYS} j</span>
-          )}
-        </div>
-        <div className="market-deck__event-line">
-          <span className="market-deck__event-kind">EARNINGS</span>
-          {nextEarnings ? (
-            <>
-              <span className="market-deck__event-name">{nextEarnings.ticker}</span>
-              <span className="market-deck__event-eta">
-                {earnDays === 0 ? 'AUJ.' : `J-${earnDays}`}
-              </span>
-              {earnDays != null && earnDays <= 2 && (
-                <span className="market-deck__armed">ARMED</span>
-              )}
-            </>
-          ) : (
-            <span className="market-deck__event-empty">— sous {EVENT_WINDOW_DAYS} j</span>
-          )}
+        <div className="market-deck__agenda">
+          <AgendaGroup
+            kind="MACRO"
+            items={nextMacros}
+            emptyLabel={`— sous ${EVENT_WINDOW_DAYS} j`}
+          />
+          <AgendaGroup
+            kind="EARNINGS"
+            items={nextEarnings}
+            emptyLabel={`— sous ${EVENT_WINDOW_DAYS} j`}
+            armedAt={2}
+          />
         </div>
       </div>
     </section>

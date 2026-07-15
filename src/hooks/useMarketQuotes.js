@@ -83,6 +83,11 @@ function createPoller(symbols, refreshMs) {
       lastUpdate: null,
     },
     subscribers: new Set(),
+    // 1.C.2 — symboles ADDITIONNELS injectés dans le MÊME batch par des
+    // consommateurs tiers (futures ES/NQ/YM hors RTH, cf.
+    // useQuoteBatchExtras). Même train fetchMultipleQuotes, même
+    // interval — aucune boucle nouvelle.
+    extras: new Map(),
   };
 
   const notify = () => {
@@ -94,7 +99,11 @@ function createPoller(symbols, refreshMs) {
     if (typeof document !== 'undefined' && document.hidden) return;
     poller.inFlight = true;
     try {
-      const { results, errors } = await fetchMultipleQuotes(symbols);
+      const extraList = [...new Set([...poller.extras.values()].flat())].filter(
+        (s) => !symbols.includes(s)
+      );
+      const batch = extraList.length ? [...symbols, ...extraList] : symbols;
+      const { results, errors } = await fetchMultipleQuotes(batch);
       if (poller.refCount === 0) return;
 
       const errorMap = {};
@@ -143,7 +152,38 @@ function createPoller(symbols, refreshMs) {
     document.removeEventListener('visibilitychange', onVisibility);
   };
 
+  // Rafraîchissement immédiat à la (dé)registration d'extras : le batch
+  // suivant part tout de suite (une seule fois), l'interval reste le même.
+  poller.kick = () => {
+    run();
+  };
+
   return poller;
+}
+
+/**
+ * 1.C.2 — Enregistre des symboles ADDITIONNELS sur le poller partagé
+ * d'une liste de base déjà active (ex. le batch du TickerTape). Les
+ * extras rejoignent le MÊME train /api/quote à la MÊME cadence — zéro
+ * interval ni boucle supplémentaire. Extras vides → no-op total.
+ * Le composant appelant doit AUSSI consommer useMarketQuotes(baseSymbols)
+ * (garantit l'existence du poller et la réception des quotes).
+ */
+export function useQuoteBatchExtras(baseSymbols, extraSymbols, { refreshMs = DEFAULT_REFRESH_MS } = {}) {
+  const pollerKey = `${baseSymbols.join('|')}|${refreshMs}`;
+  const extrasKey = (extraSymbols || []).join('|');
+
+  useEffect(() => {
+    if (!extrasKey) return undefined;
+    const poller = pollers.get(pollerKey);
+    if (!poller) return undefined;
+    const id = {};
+    poller.extras.set(id, extrasKey.split('|'));
+    poller.kick();
+    return () => {
+      poller.extras.delete(id);
+    };
+  }, [pollerKey, extrasKey]);
 }
 
 export default function useMarketQuotes(symbols, { refreshMs = DEFAULT_REFRESH_MS } = {}) {

@@ -134,11 +134,14 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-page">
-      <div className="dash-shell">
-        {/* v1.0 · 1.C — étage 0 : le marché en un coup d'œil */}
+      {/* v1.0 · 1.C.2 — LE COCKPIT : une seule pièce d'instrument soudée
+          (full-bleed, dockée sous la hairline du tape). Étage marché
+          (MarketDeck) + hairline interne + étage portefeuille (CommandDeck). */}
+      <section className="cockpit" aria-label="Cockpit — marché et portefeuille">
         <MarketDeck />
-        {/* v1.0 · 1.A — Ligne de commandement (remplace DashboardKPICards) */}
         <CommandDeck />
+      </section>
+      <div className="dash-shell">
       <div className="dash-grid">
         <EquityChart
           data={equityHistory}
