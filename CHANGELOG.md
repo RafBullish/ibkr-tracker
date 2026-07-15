@@ -6,6 +6,53 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0-rc.2] — 2026-07-15
+
+**Brique 1.B « Le Shell »** (+ correctifs 1.B.2 « niveau pro » et 1.B.3
+« Lab Tape », GO Rafael après calibration au lab). Le site change de
+silhouette : navigation verticale, bandeau de marchés bord à bord.
+
+### Ajouté
+- **SideNav** (`SideNav.jsx` + `v1-shell.css`) : sidebar 232 px repliable
+  64 px (**⌘B**, bouton footer, persisté `qc:sidenav:collapsed`, défauts
+  déployée ≥1440 / repliée <1440) ; header logomark QC + wordmark +
+  pastille REAL/LIVE (logique de fraîcheur reprise à l'identique) ;
+  recherche ⌘K intégrée ; navigation groupée **OVERVIEW** (Dashboard,
+  Premarket, Calendar, Options Live) / **TRADING** (Positions, History,
+  Greeks*) / **INSIGHTS** (Analytics, Journal) / **SYSTÈME** (Settings) ;
+  chips keycap des raccourcis réels ⌘1..9 (mapping inchangé) ; actif =
+  barre ambre 2×18 + fond raised ; replié = icônes 20 + tooltips.
+- **Grille AppShell 3 rangées** (100dvh) : TickerTape pleine largeur ·
+  SideNav + main (seul scrollable) · StatusBar. Mobile <768 :
+  SubNav/BottomNav intacts, pas de SideNav.
+- **Flash au tick** (`usePriceFlash` + `.tape-flash`) : aplat color-mix
+  10 % up/down 600 ms + pulse de luminosité du prix, au rythme réel des
+  quotes ; coupé sous prefers-reduced-motion.
+
+### Modifié
+- **TickerTape « Salle des marchés »** — **barème calibré au lab
+  comparatif /lab/tape (variante retenue : D)** : 92 px ≥1440 (48 px
+  base), SYMBOLE 19 caps au-dessus du PRIX 36 IBM Plex Sans Condensed
+  700 tabulaire, **pastilles Δ% désaturées** (color-mix 16 %, radius 4)
+  au-dessus du **Δ net en $** (dérivé du payload quotes, aucun appel
+  nouveau), sparklines 84×46 stroke 1 aire ≤8 %, padding 34, fondus aux
+  deux bords, pause au survol, hover cellule +2 %. 19 instruments et
+  ordre inchangés. **Lab /lab/tape purgé** après le choix.
+- Renommage **« Chain » → « Options Live »** (sidebar, CommandPalette,
+  CheatsheetModal) — route `/trading/chain` et fichiers inchangés.
+- CheatsheetModal : ligne « ⌘B — replier/déployer la navigation ».
+- 12 pages adaptées à la nouvelle largeur de contenu (CommandDeck
+  retuné : fractions + duo dégradable, tailles S2 fixes).
+
+### Retiré
+- **CommandBar** (composant + tous ses blocs CSS + `--shell-cmdbar-h`) —
+  logomark, badge REAL/LIVE et ⌘/ migrés dans la SideNav.
+- **Halo radial violacé** (capture Rafael /positions) : `body::before`
+  d'aura-boost (4 dégradés d'ambiance mix-blend screen, dont violet à
+  48 % 88 %) supprimé, variante daylight incluse. Grain conservé.
+- Badge « glow » des mouvements forts du tape — remplacé par la pastille
+  Δ% systématique.
+
 ## [1.0.0-rc.1] — 2026-07-15
 
 **Ouverture de l'ère produit v1.0** (brique 1.A « Fondation Obsidienne + Ligne

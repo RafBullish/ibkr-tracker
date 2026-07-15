@@ -86,6 +86,14 @@ Si VS Code demande une permission (git push…), demande à Rafael de cliquer
 - **AUCUNE nouvelle dépendance** sans décision de l'architecte.
 - **Tokens CSS canoniques** (`src/styles/canonical.css` = source unique). Pas de
   valeurs de couleur en dur ; on cible les `var(--*)` canoniques.
+- **Chrome commun (v1.0, brique 1.B)** : grille AppShell 3 rangées —
+  **TickerTape** pleine largeur bord à bord (92 px ≥1440, barème calibré au lab,
+  flash au tick via `usePriceFlash`) · **SideNav** verticale 232 px repliable
+  64 px (**⌘B**, persistance `qc:sidenav:collapsed`, groupes OVERVIEW/TRADING/
+  INSIGHTS/SYSTÈME, « Options Live » = route `/trading/chain`, badge REAL/LIVE,
+  ⌘K) · **StatusBar** en bas (inchangée). La CommandBar horizontale est morte
+  en 1.B. Raccourcis globaux : ⌘1..9 (mapping historique intouchable), ⌘K, ⌘/,
+  ⌘B. Mobile <768 : SubNav + BottomNav, pas de SideNav.
 - Patterns établis à réutiliser (ne pas réinventer) :
   - `.v3-table` — table dense partagée (Positions ↔ History).
   - **Palier haute-résolution** `@media (min-width: 1440px)` dans
@@ -118,8 +126,12 @@ Thèmes **midnight** (défaut) / **daylight**, tous deux WCAG AA.
 > réel.) Les valeurs de **Greeks (delta, gamma, theta, vega)** sont **TOUJOURS
 > neutres**, quel que soit leur signe.
 
-- « Perte d'argent réel » = P&L réalisé négatif, P&L latent (unrealized) négatif,
-  Max Loss. C'est le SEUL rouge autorisé sur une valeur chiffrée.
+- « Perte d'argent réel » = P&L réalisé négatif, P&L latent (unrealized) négatif.
+  C'est le SEUL rouge autorisé sur une valeur chiffrée.
+- **Amendement (décision architecte 15.07.2026)** : les montants
+  **hypothétiques** (Max Loss / Max Risk potentiels) sont **NEUTRES** —
+  l'autorisation historique du rouge sur Max Loss est **abrogée**. L'alignement
+  du code (rendu actuel de Positions notamment) est planifié en **brique 2.A**.
 - Un Greek est **signé par nature** (theta ~toujours négatif pour du long premium,
   delta directionnel, etc.). Colorer son signe en rouge/vert **confond signe et
   perte** → interdit. Neutralité = encre `ink-*` (mute/soft/pure), pas de
@@ -136,8 +148,9 @@ un champ greek fait échouer le contrôle.
 ### PHASE FINALE v1.0
 
 **Phase finale v1.0 OUVERTE** — ligne de base v2.3.1 (ea64652 ; baseline
-effective 1254a34). Brique 1.A mergée (1.0.0-rc.1). Prochaine brique : **1.B —
-Le Shell : sidebar de navigation + TickerTape pleine largeur.**
+effective 1254a34). Briques 1.A (1.0.0-rc.1) et **1.B mergée (1.0.0-rc.2)**.
+Prochaine brique : **1.C — Zone haute du Dashboard (Market Deck + Command
+Deck v2).**
 
 Repères S2 toujours en vigueur : KPI 44, cellules `.v3-table` 20 (rowHeight 47),
 plancher caption 17, strip 21/16/18, ticks charts plafonnés 14, héros 56/64

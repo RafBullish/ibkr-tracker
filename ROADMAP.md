@@ -13,11 +13,12 @@ Objectif : **tag v1.0.0 au 01.09.2026**.
   d'AmbientBackground, infra charts (`obsidienne.js` / `ObsidienneTooltip` /
   `obsidienne-charts.css`), CommandDeck 6 zones (remplace DashboardKPICards),
   retrofit tooltips EquityChart/DailyPnL.
-- **1.B — Le Shell** : sidebar de navigation (remplace la CommandBar
-  horizontale ; ~232 px, repliable 64 px, ⌘B, nav groupée, badge REAL + ⌘K
-  intégrés), TickerTape pleine largeur bord à bord, StatusBar conservée ;
-  les 12 pages s'adaptent à la nouvelle largeur de contenu ; raccourcis
-  ⌘1..9 conservés ; mobile <1440 intact.
+- **1.B ✅ (1.0.0-rc.2)** — Le Shell : SideNav 232/64 (⌘B, persistance, nav
+  groupée OVERVIEW/TRADING/INSIGHTS/SYSTÈME, badge REAL/LIVE + ⌘K, chips
+  keycap, « Options Live »), mort de la CommandBar, TickerTape salle des
+  marchés (92 px, barème calibré au lab /lab/tape — variante D choisie par
+  Rafael —, pastilles Δ% + Δ$, flash au tick, fondus), halo résiduel
+  /positions éliminé, 12 pages adaptées ; raccourcis ⌘1..9 conservés.
 - **1.C — Zone haute du Dashboard** : Market Deck (session RTH + countdown,
   indices US + sparklines, VIX + régime, USD/CHF · DXY · US10Y, prochain
   événement macro/earnings croisé aux positions ouvertes — feeds existants
