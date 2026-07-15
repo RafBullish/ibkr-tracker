@@ -80,14 +80,12 @@
 }
 
 /* Loi de couleur : rouge/vert = argent réel uniquement (DAY /
-   UNREALIZED / REALIZED / MTD portent data-tone ; EXPOSURE, WR, PF
-   restent neutres — aucun data-tone posé). */
-.command-deck__value[data-tone='profit'],
-.command-deck__mtd-value[data-tone='profit'] {
+   UNREALIZED / REALIZED et leurs sous-lignes portent data-tone ;
+   EXPOSURE, WR, PF restent neutres — aucun data-tone posé). */
+.command-deck__value[data-tone='profit'] {
   color: var(--pnl-up);
 }
-.command-deck__value[data-tone='loss'],
-.command-deck__mtd-value[data-tone='loss'] {
+.command-deck__value[data-tone='loss'] {
   color: var(--pnl-down);
 }
 
@@ -96,26 +94,64 @@
   min-height: 0;
 }
 
-.command-deck__mtd {
-  display: inline-flex;
+/* ── Sous-lignes v2 (1.C) : R/U, ↑↓, MTD·YTD, n/N trades ─────────
+   (Les classes __mtd* de 1.A sont mortes — remplacées par __subline*.) */
+.command-deck__subline {
+  display: flex;
+  flex-wrap: wrap; /* zones étroites : les bits s'empilent, jamais de clip */
   align-items: baseline;
-  gap: 8px;
+  gap: 2px 6px;
+  min-width: 0;
 }
 
-.command-deck__mtd-label {
+.command-deck__subline-bit,
+.command-deck__subline-pct {
+  white-space: nowrap;
+}
+
+.command-deck__subline-bit {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.command-deck__subline-label {
   font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
   color: var(--ink-mute);
 }
 
-.command-deck__mtd-value {
+.command-deck__subline-value {
   font-family: var(--qc-font-num);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--ink-pure);
+}
+
+/* Loi de couleur : vert/rouge = argent réel (R, U, MTD, YTD, ↑↓). */
+.command-deck__subline-value[data-tone='profit'] {
+  color: var(--pnl-up);
+}
+
+.command-deck__subline-value[data-tone='loss'] {
+  color: var(--pnl-down);
+}
+
+.command-deck__subline-sep {
+  color: var(--ink-mute);
+  font-size: 13px;
+}
+
+.command-deck__subline-pct {
+  font-family: var(--qc-font-num);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-mute);
+  margin-left: 4px;
 }
 
 /* ── Captions (jauge, n < 10) ───────────────────────────────────── */
@@ -157,6 +193,12 @@
   background: var(--line-emphasis);
 }
 
+/* Second repère (1.C) : cap du tier Sniper actif — DYNAMIQUE (left posé
+   en inline). Un cran plus présent que le repère fixe 70 %. */
+.command-deck__gauge-marker--cap {
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
 /* ── Indicateur du vivant (NET LIQ) ─────────────────────────────── */
 .command-deck__live {
   display: inline-flex;
@@ -172,7 +214,7 @@
   color: var(--accent);
 }
 
-.command-deck__live[data-live='closed'] .command-deck__live-text {
+.command-deck__live[data-live='eod'] .command-deck__live-text {
   color: var(--ink-mute);
 }
 

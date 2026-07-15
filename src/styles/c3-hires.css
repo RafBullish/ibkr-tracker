@@ -893,11 +893,9 @@
   .market-deck__countdown-label {
     font-size: 12px;
   }
-}
 
   .command-deck__label,
-  .command-deck__live-text,
-  .command-deck__mtd-label {
+  .command-deck__live-text {
     font-size: var(--type-caption); /* 17 — plancher S2 */
   }
 
@@ -913,8 +911,22 @@
     font-size: var(--fs-2xl); /* 23 */
   }
 
-  .command-deck__mtd-value {
-    font-size: var(--type-cell-value); /* 21 */
+  /* Sous-lignes v2 (1.C) : valeurs 17 (fourchette 17-18 du brief —
+     17 retenu pour la tenue des zones étroites), labels/percents 14. */
+  .command-deck__subline-value {
+    font-size: 17px;
+  }
+
+  .command-deck__subline-label {
+    font-size: 14px;
+  }
+
+  .command-deck__subline-sep {
+    font-size: 15px;
+  }
+
+  .command-deck__subline-pct {
+    font-size: 14px;
   }
 
   .command-deck__caption {
