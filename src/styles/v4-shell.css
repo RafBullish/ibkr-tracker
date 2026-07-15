@@ -360,6 +360,7 @@
    TOUTES les cellules (pas de :last-child:none) pour que les séparateurs
    restent continus dans la boucle dupliquée. ===== */
 .ticker-cell {
+  position: relative; /* ancre l'overlay .tape-flash (1.B.3) */
   flex: 0 0 auto;
   min-width: 240px;
   display: flex;
@@ -369,6 +370,39 @@
   padding: 0 22px;
   border-right: 1px solid var(--line-hairline);
   transition: background-color 120ms ease-out;
+}
+
+/* ── FLASH AU TICK (1.B.3, utilitaire production — cf. usePriceFlash) ──
+   Overlay plat color-mix 10 % up/down qui s'éteint en ~600 ms ease-out.
+   Texte inchangé, AUCUN glow. Remonté par `key` à chaque tick. */
+.tape-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: tape-flash-fade 600ms ease-out forwards;
+}
+
+.tape-flash--up {
+  background: color-mix(in srgb, var(--pnl-up) 10%, transparent);
+}
+
+.tape-flash--down {
+  background: color-mix(in srgb, var(--pnl-down) 10%, transparent);
+}
+
+@keyframes tape-flash-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tape-flash {
+    display: none;
+  }
 }
 
 /* 1.B.2 — cellule survolée : fond +2 % (le défilement est déjà en

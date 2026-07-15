@@ -32,7 +32,7 @@ import { isMarketOpen, getAssetClass } from '../../utils/marketHours';
 //     permanence. Sans impact visuel (pas de règle CSS sur l'état
 //     CLOSED), prix/spark s'affichent normalement. Étendre marketHours.js
 //     si une vraie détection de session étrangère devient nécessaire.
-const STATIC_TICKERS = [
+export const STATIC_TICKERS = [
   { display: 'SPX',     fetch: '^SPX',     classKey: 'US_INDICES' },
   { display: 'NDX',     fetch: '^NDX',     classKey: 'US_INDICES' },
   { display: 'DJI',     fetch: '^DJI',     classKey: 'US_INDICES' },
@@ -54,12 +54,12 @@ const STATIC_TICKERS = [
   { display: 'NATGAS',  fetch: 'NG=F',     classKey: 'COMMODITIES' },
 ];
 
-const STATIC_FETCH_SYMBOLS = STATIC_TICKERS.map((t) => t.fetch);
+export const STATIC_FETCH_SYMBOLS = STATIC_TICKERS.map((t) => t.fetch);
 
 // Note : ^SPX et ^VIX peuvent rater Finnhub puis tomber sur Yahoo
 // (cascade auto côté /api/quote). Fallback SPX / VIX sans caret possible.
 
-function deriveState(quote, classKey, now) {
+export function deriveState(quote, classKey, now) {
   if (!quote || quote.price == null) return 'OFFLINE';
   const lastUpdate = quote.timestamp || quote.lastUpdate;
   if (!lastUpdate) return 'STALE';
@@ -70,7 +70,7 @@ function deriveState(quote, classKey, now) {
   return 'LIVE';
 }
 
-function formatPrice(price, ticker) {
+export function formatPrice(price, ticker) {
   if (price == null) return '—';
   // US10Y / ^TNX : la valeur brute renvoyée par /api/quote est déjà dans la
   // bonne unité (~4.4 pour 4.4 %). Pas de division ici — la division /10
@@ -90,7 +90,7 @@ function formatPrice(price, ticker) {
 // Sparkline inline — spec DA Obsidienne (1.B.2) : stroke 1 px, aire fermée
 // à 8 % (≤ cap 8 %), AUCUN glow, ~56×30. Couleurs directionnelles
 // conservées (sémantique marché).
-function TickerSparkline({ prices, color, width = 56, height = 30, stroke = 1 }) {
+export function TickerSparkline({ prices, color, width = 56, height = 30, stroke = 1 }) {
   if (!prices || prices.length < 2) return null;
   const min = Math.min(...prices);
   const max = Math.max(...prices);
@@ -127,7 +127,7 @@ function TickerSparkline({ prices, color, width = 56, height = 30, stroke = 1 })
 // Δ net en valeur (1.B.2) : priorité au champ `change` du payload quotes ;
 // sinon dérivé du prix et du pourcentage (net = price − price/(1+pct/100)).
 // Aucun nouveau champ réseau, aucun nouvel appel.
-function netChange(quote) {
+export function netChange(quote) {
   if (!quote) return null;
   if (quote.change != null && Number.isFinite(quote.change)) return quote.change;
   const { price, changePercent: pct } = quote;
@@ -138,7 +138,7 @@ function netChange(quote) {
 
 // Formatage du Δ net — mêmes conventions d'affichage que formatPrice
 // (FX 4 décimales, de-CH arrondi ≥1000, sinon 2 décimales), signé.
-function formatNetChange(net, ticker) {
+export function formatNetChange(net, ticker) {
   if (net == null || !Number.isFinite(net)) return null;
   const sign = net > 0 ? '+' : net < 0 ? '−' : '';
   const abs = Math.abs(net);
@@ -202,19 +202,11 @@ function TickerCell({ ticker, quote, spark, state }) {
   );
 }
 
-export default function TickerTape() {
+// Vue PRÉSENTATIONNELLE (1.B.3) — reçoit quotes/sparklines en props.
+// Consommée par le composant par défaut (hooks propres, prod) ET par le
+// lab /lab/tape (une seule source de données page, zéro polling en plus).
+export function TickerTapeView({ quotes, sparklines, prefersReducedMotion }) {
   const now = new Date();
-  const { quotes } = useMarketQuotes(STATIC_FETCH_SYMBOLS);
-  const { sparklines } = useMarketSparklines(STATIC_FETCH_SYMBOLS);
-
-  // Marquee seamless = liste rendue 2× (track translateX 0 → -50 %).
-  // En reduced-motion, contenu rendu 1× + overflow-x:auto pour scroll manuel.
-  const prefersReducedMotion = useMemo(
-    () =>
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-    []
-  );
 
   const renderCell = (t, key) => (
     <TickerCell
@@ -236,5 +228,27 @@ export default function TickerTape() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TickerTape() {
+  const { quotes } = useMarketQuotes(STATIC_FETCH_SYMBOLS);
+  const { sparklines } = useMarketSparklines(STATIC_FETCH_SYMBOLS);
+
+  // Marquee seamless = liste rendue 2× (track translateX 0 → -50 %).
+  // En reduced-motion, contenu rendu 1× + overflow-x:auto pour scroll manuel.
+  const prefersReducedMotion = useMemo(
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    []
+  );
+
+  return (
+    <TickerTapeView
+      quotes={quotes}
+      sparklines={sparklines}
+      prefersReducedMotion={prefersReducedMotion}
+    />
   );
 }
