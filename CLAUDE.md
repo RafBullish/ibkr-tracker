@@ -101,6 +101,7 @@ Si VS Code demande une permission (git push…), demande à Rafael de cliquer
   | `ibkr_u_f` | cash flows |
   | `ibkr_u_j` | entrées de journal |
   | `ibkr_u_s` | settings (liveRate, cashReport, ibkrLiveData, gwAutoConnect, snapshots…) |
+  | `ibkr_u_w` | watchlist (tickers suivis) |
 
 ---
 
@@ -132,22 +133,16 @@ Le respect de cette loi est **contrôlé statiquement** par
 `npm run check:color-law` (cf. §7) : toute application d'un token/classe de perte à
 un champ greek fait échouer le contrôle.
 
-### PROJET CLOS
+### PHASE FINALE v1.0
 
-**PROJET CLOS le 13.07.2026, décision propriétaire. Version finale : 2.3.1.**
+**Phase finale v1.0 OUVERTE** — ligne de base v2.3.1 (ea64652 ; baseline
+effective 1254a34). Brique 1.A mergée (1.0.0-rc.1). Prochaine brique : **1.B —
+Le Shell : sidebar de navigation + TickerTape pleine largeur.**
 
-Livré : **C.3** densification 4K · **D0** fondation · **D1/D1.2** typographie
-IBM Plex Sans Condensed 700 · **D2** densité terminale · **D2.F** échelle
-calibrée **S2 (×1.30)**. Repères S2 en vigueur : KPI 44, cellules `.v3-table` 20
-(rowHeight 47), plancher caption 17, strip 21/16/18, ticks charts plafonnés 14,
-héros 56/64 intouchés.
-
-Chantiers **D3→D7 : ANNULÉS**.
-
-**Mode maintenance** : toute session future = correctif ponctuel sur demande
-explicite de Rafael, aucune brique planifiée. Les règles permanentes restent en
-vigueur (loi de couleur, interdits git, viewport 1591, vérification visuelle,
-gates build/color-law).
+Repères S2 toujours en vigueur : KPI 44, cellules `.v3-table` 20 (rowHeight 47),
+plancher caption 17, strip 21/16/18, ticks charts plafonnés 14, héros 56/64
+intouchés. Les règles permanentes restent en vigueur (loi de couleur, interdits
+git, viewport 1591, vérification visuelle, gates build/color-law).
 
 ---
 

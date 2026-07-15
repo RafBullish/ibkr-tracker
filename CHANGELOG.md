@@ -6,6 +6,49 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0-rc.1] — 2026-07-15
+
+**Ouverture de l'ère produit v1.0** (brique 1.A « Fondation Obsidienne + Ligne
+de commandement », GO Rafael). Baseline effective **1254a34** (= `ea64652` +
+2 commits docs de cartographie, vérifiés docs-only). Lancement visé : 01.09.2026.
+
+### Ajouté
+- **Fondation matière Obsidienne** (`canonical.css`) : tokens
+  `--hairline-rest` (.06) / `--hairline-hover` (.10) / `--chart-grid` (.04),
+  `--line-hairline` re-pointé sur `--hairline-rest` ; plans de profondeur
+  re-valués plus sombres (base `#09090A`, raised `#0C0C0E`, focus `#121216`,
+  void inchangé) ; recette panneau **`.obs-panel`** (verre noir, hairline,
+  lumière de tranche, hover 120 ms, zéro scale sur les surfaces de données).
+- **Infra charts Obsidienne** : `src/components/charts/obsidienne.js` (OBS —
+  trait 1.5 arrondi, palette midnight, ticks 14 Plex tabulaires, curseur
+  pointillé ; `obsAreaGradientStops` 12 %→0 ; `useMountOnlyAnimation`),
+  `ObsidienneTooltip.jsx` (LE tooltip unique — verre `rgba(10,10,12,.85)`,
+  blur 12, hairline, radius 8 ; API `formatLabel`/`formatValue` + mapper
+  `rows`), `src/styles/obsidienne-charts.css` (tooltip, dot/pulse LIVE
+  anneau ambre 2 s, reduced-motion).
+- **Ligne de commandement** (`CommandDeck.jsx` + `v1-dashboard.css` + palier
+  ≥1440 dans `c3-hires.css`) : UN panneau continu `.obs-panel`, 6 zones sur
+  hairlines verticales — NET LIQ 56 px + indicateur du vivant
+  (LIVE/SESSION/CLOSED) · DAY P&L · UNREALIZED · REALIZED + MTD · EXPOSURE +
+  jauge engagé/NLV (repère 70 %, caption ambre au-delà) · WIN RATE · PROFIT
+  FACTOR (« — » + « n < 10 » sous l'échantillon). Ligne de base partagée
+  (subgrid), micro-mouvement 180 ms sur valeurs live, état vide robuste.
+
+### Modifié
+- **EquityChart / DailyPnLChart** (retrofit props uniquement) : tooltip unique
+  Obsidienne, curseur `OBS.cursor`, grille hairlines horizontales seules,
+  ticks `OBS.tick` — lignes CUMUL + DAILY Δ conservées (P&L réalisé, couleur
+  signée autorisée). Recomposition des charts réservée aux briques 1.D/1.E.
+
+### Retiré
+- **DashboardKPICards** (7 cartes KPI, ~2 740 lignes) — remplacé par la Ligne
+  de commandement ; données re-logées ou différées avec maison nommée (matrice
+  de non-perte au rapport de brique). `Sparkline.jsx` (orphelin) supprimé,
+  `PositionSparkline` conservé (LivePositions).
+- **AmbientBackground** (orbes radiaux) + son CSS (`.app-ambient-bg`,
+  keyframes `orb-float`) + tokens `--orb-blue`/`--orb-violet` — le fond de
+  l'app est porté par `html/body` (void).
+
 ## [2.3.1] — 2026-07-13
 
 **Clôture du projet** (décision propriétaire). Version finale. Chantiers D3
