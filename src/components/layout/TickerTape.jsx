@@ -87,10 +87,10 @@ function formatPrice(price, ticker) {
   return price.toFixed(2);
 }
 
-// Sparkline inline : couleur explicite passée en prop (pas de dépendance
-// au composant ui/Sparkline). Defaults 60×32 stroke 2 pour rendu plus
-// contrasté qu'avant, lisible d'un œil dans le bandeau 64 px.
-function TickerSparkline({ prices, color, width = 60, height = 32, stroke = 2 }) {
+// Sparkline inline — spec DA Obsidienne (1.B) : stroke 1 px, aire fermée
+// à 8 % (≤ cap 8 %), AUCUN glow, hauteur portée 24 px. Couleurs
+// directionnelles conservées (sémantique marché).
+function TickerSparkline({ prices, color, width = 60, height = 24, stroke = 1 }) {
   if (!prices || prices.length < 2) return null;
   const min = Math.min(...prices);
   const max = Math.max(...prices);
@@ -102,6 +102,7 @@ function TickerSparkline({ prices, color, width = 60, height = 32, stroke = 2 })
     return `${x.toFixed(2)},${y.toFixed(2)}`;
   });
   const pathD = `M ${points.join(' L ')}`;
+  const areaD = `${pathD} L ${width},${height} L 0,${height} Z`;
   return (
     <svg
       width={width}
@@ -109,6 +110,7 @@ function TickerSparkline({ prices, color, width = 60, height = 32, stroke = 2 })
       viewBox={`0 0 ${width} ${height}`}
       style={{ display: 'block', overflow: 'visible' }}
     >
+      <path d={areaD} fill={color} fillOpacity="0.08" stroke="none" />
       <path
         d={pathD}
         fill="none"

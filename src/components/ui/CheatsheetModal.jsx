@@ -19,6 +19,7 @@ import Modal from './Modal';
 const NAVIGATION = [
   { keys: ['⌘ K', 'Ctrl K'], desc: 'Ouvrir la palette de commandes (recherche globale)' },
   { keys: ['⌘ /', 'Ctrl /'], desc: 'Ouvrir cette aide-mémoire' },
+  { keys: ['⌘ B', 'Ctrl B'], desc: 'Replier / déployer la navigation' },
   { keys: ['⌘ 1'], desc: 'Aller à Tableau de bord' },
   { keys: ['⌘ 2'], desc: 'Aller à Positions' },
   { keys: ['⌘ 3'], desc: 'Aller à Historique' },

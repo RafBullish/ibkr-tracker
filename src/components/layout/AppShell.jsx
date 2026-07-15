@@ -1,29 +1,29 @@
 // ═══════════════════════════════════════════════════════════════
-//  APP SHELL v10.0 « Institutional Terminal v4 »
+//  APP SHELL v1.0 « Le Shell » (brique 1.B)
 //
-//  Top-down chrome (no vertical sidebar) :
-//    1. CommandBar  (32 px sticky top)   — logo + nav pills + ⌘K
-//    2. SubNav      (mobile only)        — sub-tabs within sections
-//    3. <main>      (flex 1, scrollable) — page content
-//    4. StatusBar   (22 px sticky bottom) — connections + clocks + risk
-//    5. BottomNav   (mobile only)        — primary nav (legacy parity)
-//    6. CommandPalette (modal, ⌘K)       — fuzzy search
+//  Grille 100dvh, 3 rangées :
+//    1. TickerTape  — PLEINE LARGEUR bord à bord (le marché d'abord)
+//    2. Corps       — SideNav (232/64 px, ⌘B) + <main> (seul scrollable)
+//    3. StatusBar   — pleine largeur (géométrie seule, zéro redesign)
+//  + SubNav / BottomNav (mobile <768 uniquement, socle intact)
+//  + CommandPalette (⌘K) / CheatsheetModal (⌘/)
+//
+//  La CommandBar horizontale est morte en 1.B : logomark, badge
+//  REAL/LIVE et déclencheur ⌘/ ont migré dans la SideNav.
 //
 //  Keyboard shortcuts (global) :
 //    ⌘K / Ctrl+K  → toggle command palette
+//    ⌘/ / Ctrl+/  → cheatsheet
+//    ⌘B / Ctrl+B  → replier/déployer la SideNav (persisté
+//                   localStorage `qc:sidenav:collapsed`)
 //    ⌘1..9        → jump to nav workspace (1=DASH, 9=IMP)
 //                   ⌘4 = GRKS, no-op when FEATURE_GREEK_CENTER is off
-//
-//  La sidebar verticale Aura v9 a été retirée en brique 1 v4 — le
-//  composant inline `Sidebar` et l'import du Header ont été supprimés
-//  ici. Header.jsx reste sur disque (deletion différée selon la règle
-//  "dead code 2 semaines" du feedback_dead_code memo).
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import GlobalStyles from '../../theme/GlobalStyles';
-import CommandBar from './CommandBar';
+import SideNav from './SideNav';
 import TickerTape from './TickerTape';
 import StatusBar from './StatusBar';
 import BottomNav from './BottomNav';
@@ -32,6 +32,21 @@ import CheatsheetModal from '../ui/CheatsheetModal';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import useIbkrLive from '../../hooks/useIbkrLive';
 import { FEATURE_GREEK_CENTER } from '../../constants/featureFlags';
+
+// Persistance du repli SideNav — pattern qc:* (PAS une slice du store).
+const SIDENAV_COLLAPSED_KEY = 'qc:sidenav:collapsed';
+
+function readInitialCollapsed() {
+  try {
+    const saved = window.localStorage.getItem(SIDENAV_COLLAPSED_KEY);
+    if (saved === '1') return true;
+    if (saved === '0') return false;
+  } catch {
+    /* storage indisponible → défauts */
+  }
+  // Défauts sans préférence : déployée ≥1440, repliée <1440.
+  return !window.matchMedia('(min-width: 1440px)').matches;
+}
 
 // ⌘1..9 navigation map. Order matches CommandBar pills (NAV) so the
 // shortcut shown in tooltip aligns with what the keyboard does. When
@@ -93,9 +108,22 @@ function SubNav({ pathname, navigate }) {
 export default function AppShell() {
   const [cmdOpen, setCmdOpen] = useState(false);
   const [cheatOpen, setCheatOpen] = useState(false);
+  // 1.B — repli SideNav (⌘B + bouton footer), persisté qc:sidenav:collapsed.
+  const [navCollapsed, setNavCollapsed] = useState(readInitialCollapsed);
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const isMobile = useMediaQuery('(max-width: 767px)');
+
+  const toggleSideNav = () =>
+    setNavCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(SIDENAV_COLLAPSED_KEY, next ? '1' : '0');
+      } catch {
+        /* storage indisponible → état session seulement */
+      }
+      return next;
+    });
 
   // Bridge IBKR (étape 3) — polling /ibkr/account toutes les 5s quand
   // settings.gwAutoConnect est ON. Gating + erreurs silencieuses internes
@@ -113,6 +141,12 @@ export default function AppShell() {
       if ((e.metaKey || e.ctrlKey) && e.key === '/') {
         e.preventDefault();
         setCheatOpen((prev) => !prev);
+        return;
+      }
+      // 1.B : ⌘B / Ctrl+B replie/déploie la SideNav.
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'B')) {
+        e.preventDefault();
+        toggleSideNav();
         return;
       }
       if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '9') {
@@ -141,42 +175,28 @@ export default function AppShell() {
   }, []);
 
   return (
-    <div
-      className="app-shell"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100vh',
-        overflow: 'hidden',
-        position: 'relative',
-      }}
-    >
+    <div className="app-shell">
       <a href="#main-content" className="skip-to-content">
         Aller au contenu principal
       </a>
       <GlobalStyles />
-      <CommandBar onOpenCommand={() => setCmdOpen(true)} />
+      {/* Rangée 1 — le marché d'abord : tape pleine largeur, bord à bord. */}
       <TickerTape />
       {isMobile && <SubNav pathname={pathname} navigate={navigate} />}
-      <main
-        id="main-content"
-        key={pathname}
-        tabIndex={-1}
-        className="app-main"
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: isMobile ? '0 0 80px' : '0',
-          background: 'transparent',
-          scrollBehavior: 'smooth',
-          overscrollBehavior: 'contain',
-          position: 'relative',
-          zIndex: 2,
-          minHeight: 0,
-        }}
-      >
-        <Outlet />
-      </main>
+      {/* Rangée 2 — SideNav (non-mobile) + main, seul élément scrollable. */}
+      <div className="app-shell__body">
+        {!isMobile && (
+          <SideNav
+            collapsed={navCollapsed}
+            onToggle={toggleSideNav}
+            onOpenCommand={() => setCmdOpen(true)}
+          />
+        )}
+        <main id="main-content" key={pathname} tabIndex={-1} className="app-main">
+          <Outlet />
+        </main>
+      </div>
+      {/* Rangée 3 — StatusBar pleine largeur (inchangée). */}
       <StatusBar />
       {isMobile && <BottomNav />}
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
