@@ -124,7 +124,9 @@
 .side-nav__logo-name {
   font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  /* 0.18em tronquait « QUANTUMCALL » à côté du badge REAL (232px) —
+     resserré pour tenir en entier. */
+  letter-spacing: 0.11em;
   text-transform: uppercase;
   color: color-mix(in srgb, var(--ink-pure) 70%, transparent);
   overflow: hidden;
