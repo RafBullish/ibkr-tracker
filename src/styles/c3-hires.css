@@ -835,29 +835,44 @@
      TickerTape : 52 px, padding horizontal généreux ; barème S2 du
      strip CONSERVÉ (21/16/18, réglé plus haut section D2.F).
      ════════════════════════════════════════════════════════════════ */
-  .side-nav__item {
+  .side-nav__item,
+  .side-nav__foot-btn {
     font-size: 17px;
     height: 38px;
   }
   .side-nav__group-title {
     font-size: 13px;
   }
-  .side-nav__hint {
-    font-size: 14px;
+  .side-nav__key {
+    font-size: 12px; /* keycap chrome, taille fixe (spec 1.B.2) */
   }
-  .side-nav__search,
-  .side-nav__foot-btn {
-    font-size: 14px;
+  .side-nav__search {
+    font-size: 15px;
   }
 
+  /* 1.B.2 — TickerTape v2 : VRAI bandeau de salle de marchés. 64 px,
+     prix 24 Plex 700, symbole 17 caps, Δ% 18 / Δ net 17 (ces valeurs
+     PRIMENT sur le barème strip D2.F 21/16 plus haut — ordre de source). */
   .ticker-tape {
-    height: 52px;
+    height: 64px;
   }
   .ticker-cell {
-    padding: 0 26px;
+    padding: 0 22px;
     gap: 14px;
   }
+  .ticker-cell__symbol {
+    font-size: 17px;
+  }
+  .ticker-cell__value {
+    font-size: 24px;
+  }
+  .ticker-cell__change {
+    font-size: 18px;
+  }
+  .ticker-cell__change-net {
+    font-size: 17px;
+  }
   .ticker-cell__sparkline {
-    height: 24px;
+    height: 30px;
   }
 }

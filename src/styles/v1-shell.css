@@ -66,12 +66,12 @@
 .side-nav__item-label,
 .side-nav__search-label,
 .side-nav__foot-label,
-.side-nav__hint {
+.side-nav__key {
   white-space: nowrap;
   transition: opacity 120ms ease-out;
 }
 
-/* ── Header : logomark + wordmark + badge REAL/LIVE ─────────────── */
+/* ── Header (1.B.2) : UNE rangée — logomark 26 + wordmark + pastille ── */
 .side-nav__header {
   display: flex;
   align-items: center;
@@ -90,7 +90,7 @@
 .side-nav__logo {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   min-width: 0;
   background: transparent;
   border: 0;
@@ -104,10 +104,10 @@
   outline-offset: 2px;
 }
 
-/* Logomark QC — repris de la CommandBar (28 px, fond accent). */
+/* Logomark QC ~26 px, fond accent. */
 .side-nav__logo-mark {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -115,7 +115,7 @@
   color: var(--depth-void);
   border-radius: 5px;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.05em;
   line-height: 1;
   flex-shrink: 0;
@@ -124,24 +124,23 @@
 .side-nav__logo-name {
   font-size: 12px;
   font-weight: 500;
-  /* 0.18em tronquait « QUANTUMCALL » à côté du badge REAL (232px) —
-     resserré pour tenir en entier. */
-  letter-spacing: 0.11em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--ink-pure) 70%, transparent);
+  color: var(--ink-soft);
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Badge REAL/LIVE/PAPER — visuel migré de la CommandBar. */
+/* Pastille REAL/LIVE/PAPER (1.B.2) : compacte — dot 6 + texte 11 caps,
+   bord hairline, radius 4, padding 2/6. Logique de fraîcheur inchangée. */
 .side-nav__mode-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 24px;
-  padding: 0 9px;
+  gap: 5px;
+  padding: 2px 6px;
   margin-left: auto;
-  border-radius: 12px;
+  border: 1px solid var(--hairline-rest);
+  border-radius: 4px;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -157,14 +156,10 @@
 .side-nav__mode-pill[data-mode='live'],
 .side-nav__mode-pill[data-mode='real'] {
   color: var(--pnl-up);
-  background: color-mix(in srgb, var(--pnl-up) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--pnl-up) 25%, transparent);
 }
 
 .side-nav__mode-pill[data-mode='paper'] {
   color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 /* Replié : dot seul, pastille sans chrome. */
@@ -176,8 +171,8 @@
 }
 
 .side-nav__mode-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: currentColor;
   flex-shrink: 0;
@@ -206,6 +201,8 @@
   padding: 10px 8px;
 }
 
+/* Bouton-champ recherche (1.B.2) : 34 px, radius 6, loupe 16 mute,
+   label 15 mute, chip ⌘K à droite. Hover : fond +2 %. */
 .side-nav__search {
   display: flex;
   align-items: center;
@@ -214,16 +211,17 @@
   height: 34px;
   padding: 0 10px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 15px;
   letter-spacing: 0.02em;
   color: var(--ink-mute);
-  background: var(--depth-raised);
+  background: transparent;
   border: 1px solid var(--hairline-rest);
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
   transition:
     color 120ms ease-out,
-    border-color 120ms ease-out;
+    border-color 120ms ease-out,
+    background-color 120ms ease-out;
 }
 
 .side-nav--collapsed .side-nav__search {
@@ -234,6 +232,7 @@
 .side-nav__search:hover {
   color: var(--ink-soft);
   border-color: var(--hairline-hover);
+  background: color-mix(in srgb, var(--depth-base) 98%, #ffffff 2%);
 }
 
 .side-nav__search:focus-visible {
@@ -246,14 +245,30 @@
   text-align: left;
 }
 
-/* ── Hints raccourcis (⌘1..9, ⌘K, ⌘/, ⌘B) ───────────────────────── */
-.side-nav__hint {
+/* ── Chips keycap des raccourcis (⌘1..9, ⌘K, ⌘/, ⌘B) — 1.B.2 ────── */
+.side-nav__key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 5px;
+  border: 1px solid var(--hairline-rest);
+  border-radius: 4px;
   font-family: inherit;
   font-size: 12px;
   font-weight: 500;
   color: var(--ink-mute);
   line-height: 1;
   flex-shrink: 0;
+}
+
+/* Chip d'item : en retrait au repos, pleine présence au hover. */
+.side-nav__item .side-nav__key {
+  opacity: 0.65;
+  transition: opacity 120ms ease-out;
+}
+
+.side-nav__item:hover .side-nav__key {
+  opacity: 1;
 }
 
 /* ── Navigation groupée ─────────────────────────────────────────── */
@@ -268,27 +283,30 @@
 }
 
 .side-nav__group {
-  margin-top: 12px;
+  margin-top: 22px;
 }
 
 .side-nav__group:first-child {
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
+/* Headers de groupe (1.B.2) : 12 caps .1em mute, alignés sur le TEXTE
+   des items (padding-left = padding item 10 + icône 18 + gap 10). */
 .side-nav__group-title {
-  padding: 6px 10px 4px;
+  padding: 0 10px 6px 38px;
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-mute);
   white-space: nowrap;
 }
 
-/* Replié : header de groupe → hairline horizontale. */
+/* Replié : header de groupe → hairline horizontale centrée ~24 px. */
 .side-nav__group-rule {
   height: 1px;
-  margin: 8px 10px;
+  width: 24px;
+  margin: 10px auto;
   background: var(--hairline-rest);
 }
 
@@ -307,7 +325,7 @@
   color: var(--ink-soft);
   background: transparent;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   transition:
     color 120ms ease-out,
@@ -330,8 +348,9 @@
   outline-offset: -1px;
 }
 
-/* Actif : filet gauche 2 px ambre (usage sanctionné « nav active »)
-   + encre pure + fond légèrement raised. */
+/* Actif (1.B.2) : barre ambre 2×18 arrondie, centrée verticalement au
+   bord gauche + encre pure + fond raised (usage sanctionné « nav
+   active »). */
 .side-nav__item[data-active],
 .side-nav__item[aria-current='page'] {
   color: var(--ink-pure);
@@ -344,8 +363,9 @@
   content: '';
   position: absolute;
   left: 0;
-  top: 6px;
-  bottom: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 18px;
   width: 2px;
   border-radius: 1px;
   background: var(--accent);
@@ -381,19 +401,22 @@
   padding: 10px 8px 12px;
 }
 
+/* Footer (1.B.2) : mêmes styles d'item que la navigation. */
 .side-nav__foot-btn {
   display: flex;
   align-items: center;
   gap: 10px;
   width: 100%;
-  height: 32px;
+  height: 36px;
   padding: 0 10px;
   font-family: inherit;
-  font-size: 13px;
-  color: var(--ink-mute);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--ink-soft);
   background: transparent;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   transition:
     color 120ms ease-out,
@@ -407,7 +430,7 @@
 }
 
 .side-nav__foot-btn:hover {
-  color: var(--ink-soft);
+  color: var(--ink-pure);
   background: color-mix(in srgb, var(--depth-base) 98%, #ffffff 2%);
 }
 
@@ -428,10 +451,11 @@
   .side-nav__item-label,
   .side-nav__search-label,
   .side-nav__foot-label,
-  .side-nav__hint,
+  .side-nav__key,
   .side-nav__item,
   .side-nav__foot-btn,
-  .side-nav__search {
+  .side-nav__search,
+  .ticker-cell {
     transition: none;
   }
   .side-nav__mode-dot--pulse {

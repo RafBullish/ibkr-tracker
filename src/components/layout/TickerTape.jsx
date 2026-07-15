@@ -87,10 +87,10 @@ function formatPrice(price, ticker) {
   return price.toFixed(2);
 }
 
-// Sparkline inline — spec DA Obsidienne (1.B) : stroke 1 px, aire fermée
-// à 8 % (≤ cap 8 %), AUCUN glow, hauteur portée 24 px. Couleurs
-// directionnelles conservées (sémantique marché).
-function TickerSparkline({ prices, color, width = 60, height = 24, stroke = 1 }) {
+// Sparkline inline — spec DA Obsidienne (1.B.2) : stroke 1 px, aire fermée
+// à 8 % (≤ cap 8 %), AUCUN glow, ~56×30. Couleurs directionnelles
+// conservées (sémantique marché).
+function TickerSparkline({ prices, color, width = 56, height = 30, stroke = 1 }) {
   if (!prices || prices.length < 2) return null;
   const min = Math.min(...prices);
   const max = Math.max(...prices);
@@ -124,9 +124,35 @@ function TickerSparkline({ prices, color, width = 60, height = 24, stroke = 1 })
   );
 }
 
+// Δ net en valeur (1.B.2) : priorité au champ `change` du payload quotes ;
+// sinon dérivé du prix et du pourcentage (net = price − price/(1+pct/100)).
+// Aucun nouveau champ réseau, aucun nouvel appel.
+function netChange(quote) {
+  if (!quote) return null;
+  if (quote.change != null && Number.isFinite(quote.change)) return quote.change;
+  const { price, changePercent: pct } = quote;
+  if (price == null || pct == null || !Number.isFinite(price) || !Number.isFinite(pct)) return null;
+  if (pct <= -100) return null;
+  return price - price / (1 + pct / 100);
+}
+
+// Formatage du Δ net — mêmes conventions d'affichage que formatPrice
+// (FX 4 décimales, de-CH arrondi ≥1000, sinon 2 décimales), signé.
+function formatNetChange(net, ticker) {
+  if (net == null || !Number.isFinite(net)) return null;
+  const sign = net > 0 ? '+' : net < 0 ? '−' : '';
+  const abs = Math.abs(net);
+  const classKey = getAssetClass(ticker);
+  if (classKey === 'FX') return `${sign}${abs.toFixed(4)}`;
+  if (abs >= 1000) return `${sign}${new Intl.NumberFormat('de-CH').format(Math.round(abs))}`;
+  return `${sign}${abs.toFixed(2)}`;
+}
+
 function TickerCell({ ticker, quote, spark, state }) {
   const price = quote?.price;
   const change = quote?.changePercent;
+  const net = netChange(quote);
+  const netText = formatNetChange(net, ticker.display);
   const stateClass = `ticker-cell--${state.toLowerCase()}`;
   const changeClass =
     change > 0 ? 'qc-profit' : change < 0 ? 'qc-loss' : 'qc-text-secondary';
@@ -144,24 +170,29 @@ function TickerCell({ ticker, quote, spark, state }) {
 
   return (
     <div className={`ticker-cell ${stateClass}`}>
-      <div className="ticker-cell__text">
-        <div className="ticker-cell__head">
-          <span className="ticker-cell__symbol">{ticker.display}</span>
-          {change != null && Number.isFinite(change) && (
-            <span
-              className={`ticker-cell__change qc-pct ${changeClass}${isStrongMove ? ' ticker-cell__change--glow' : ''}`}
-            >
-              {changeArrow && <span className="ticker-cell__arrow">{changeArrow}</span>}
-              {Math.abs(change).toFixed(2)}%
-            </span>
-          )}
-        </div>
+      {/* Bloc gauche — SYMBOLE au-dessus du PRIX (héros de cellule). */}
+      <div className="ticker-cell__main">
+        <span className="ticker-cell__symbol">{ticker.display}</span>
         {state === 'OFFLINE' ? (
           <span className="ticker-cell__value ticker-cell__value--offline qc-num">—</span>
         ) : (
           <span className="ticker-cell__value qc-num">{formatPrice(price, ticker.display)}</span>
         )}
       </div>
+      {/* Bloc droit — Δ% au-dessus du Δ net (couleurs marché conservées). */}
+      {change != null && Number.isFinite(change) && (
+        <div className="ticker-cell__delta">
+          <span
+            className={`ticker-cell__change qc-pct ${changeClass}${isStrongMove ? ' ticker-cell__change--glow' : ''}`}
+          >
+            {changeArrow && <span className="ticker-cell__arrow">{changeArrow}</span>}
+            {Math.abs(change).toFixed(2)}%
+          </span>
+          {netText && (
+            <span className={`ticker-cell__change-net ${changeClass}`}>{netText}</span>
+          )}
+        </div>
+      )}
       {state !== 'OFFLINE' && spark?.prices && spark.prices.length > 1 && (
         <span className="ticker-cell__sparkline">
           <TickerSparkline prices={spark.prices} color={sparkColor} />

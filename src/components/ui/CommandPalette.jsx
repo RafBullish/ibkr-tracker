@@ -14,7 +14,7 @@ const navItems = [
   { label: 'Tableau de bord', shortcut: '⌘1', path: '/dashboard', icon: 'grid' },
   { label: 'Positions', shortcut: '⌘2', path: '/trading/positions', icon: 'trending' },
   { label: 'Historique', shortcut: '', path: '/trading/history', icon: 'list' },
-  { label: 'Options Chain', shortcut: '⌘4', path: '/trading/chain', icon: 'layers' },
+  { label: 'Options Live', shortcut: '⌘4', path: '/trading/chain', icon: 'layers' },
   { label: 'Analytics', shortcut: '⌘5', path: '/insights/analytics', icon: 'bar' },
   { label: 'Journal', shortcut: '', path: '/insights/journal', icon: 'book' },
   { label: 'Calendrier', shortcut: '', path: '/insights/calendar', icon: 'cal' },
@@ -23,7 +23,7 @@ const navItems = [
 
 const quickActions = [
   { label: 'Synchroniser (Flex)', icon: 'refresh', path: '/settings/import' },
-  { label: 'Options Chain', icon: 'layers', path: '/trading/chain' },
+  { label: 'Options Live', icon: 'layers', path: '/trading/chain' },
   { label: 'Purge des données', icon: 'settings', path: '/settings/import' },
 ];
 

@@ -365,33 +365,42 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 14px;
-  padding: 0 24px;
+  gap: 12px;
+  padding: 0 22px;
   border-right: 1px solid var(--line-hairline);
+  transition: background-color 120ms ease-out;
 }
 
-.ticker-cell__text {
+/* 1.B.2 — cellule survolée : fond +2 % (le défilement est déjà en
+   pause via .ticker-tape:hover). */
+.ticker-cell:hover {
+  background: color-mix(in srgb, var(--qc-bg-surface) 98%, #ffffff 2%);
+}
+
+/* Bloc gauche : SYMBOLE au-dessus du PRIX. */
+.ticker-cell__main {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   flex: 0 1 auto;
   min-width: 0;
 }
 
-.ticker-cell__head {
+/* Bloc droit : Δ% au-dessus du Δ net, aligné à droite. */
+.ticker-cell__delta {
   display: flex;
-  align-items: baseline;
-  justify-content: flex-start;
-  gap: 10px;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
+  flex: 0 0 auto;
 }
 
 /* Symbole = label discret qui recule devant le prix héro. */
 .ticker-cell__symbol {
   font-family: var(--qc-font-mono);
-  /* Brique 15 (P4) — 13 → 12, le ticker recule devant la valeur. */
-  font-size: var(--type-caption, 12px);
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-soft);
   line-height: 1;
@@ -444,14 +453,12 @@
   background: color-mix(in srgb, var(--pnl-down) 15%, transparent);
 }
 
-/* PRIX — héros, domine par la taille. tabular-nums + nowrap pour rester
-   verrouillé sur sa colonne. */
+/* PRIX — héros de cellule. tabular-nums + nowrap pour rester
+   verrouillé sur sa colonne. (1.B.2 : 24 px au palier ≥1440.) */
 .ticker-cell__value {
   font-family: var(--qc-font-mono);
   font-variant-numeric: tabular-nums;
-  /* Brique 15 (P4) — 24 → 16/700 : la bande de marché est du contexte,
-     pas un héros ; elle cède la dominance aux cartes du Dashboard. */
-  font-size: var(--type-cell-value, 16px);
+  font-size: 16px;
   font-weight: 700;
   color: var(--ink-pure);
   letter-spacing: -0.01em;
@@ -459,12 +466,32 @@
   white-space: nowrap;
 }
 
+/* Δ net en valeur (1.B.2) — même couleur directionnelle que le Δ%,
+   en retrait par l'opacité. */
+.ticker-cell__change-net {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.ticker-cell__change-net.qc-profit {
+  color: var(--pnl-up);
+}
+
+.ticker-cell__change-net.qc-loss {
+  color: var(--pnl-down);
+}
+
 .ticker-cell__sparkline {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 32px;
-  width: 60px;
+  height: 30px;
+  width: 56px;
   flex-shrink: 0;
   opacity: 0.95;
 }

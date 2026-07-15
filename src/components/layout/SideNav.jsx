@@ -38,15 +38,19 @@ import { useOpenPositions, useSettings } from '../../store/useStore';
 import { FRESHNESS } from '../../constants/timing';
 import { FEATURE_GREEK_CENTER } from '../../constants/featureFlags';
 
-// Groupes de navigation. `shortcut` = hint du raccourci RÉEL câblé dans
-// AppShell (NAV_PATHS ⌘1..9) — affiché, jamais remappé. Icônes = celles
-// des anciens onglets CommandBar, à l'identique.
+// Groupes de navigation (regroupement 1.B.2, décision architecte).
+// `shortcut` = chip keycap du raccourci RÉEL câblé dans AppShell
+// (NAV_PATHS ⌘1..9) — affiché même non séquentiel, JAMAIS remappé.
+// « Options Live » = ancien « Chain » renommé (ROUTE INCHANGÉE
+// /trading/chain, Chain.jsx inchangé).
 const GROUPS = [
   {
     title: 'OVERVIEW',
     items: [
       { label: 'Dashboard', aria: 'Tableau de bord', path: '/dashboard', shortcut: '⌘1', icon: LayoutDashboard },
       { label: 'Premarket', aria: 'Pré-marché', path: '/premarket', shortcut: '', icon: Sunrise },
+      { label: 'Calendar', aria: 'Calendrier', path: '/insights/calendar', shortcut: '⌘7', icon: Calendar },
+      { label: 'Options Live', aria: 'Options Live', path: '/trading/chain', shortcut: '⌘5', icon: Link2 },
     ],
   },
   {
@@ -55,14 +59,12 @@ const GROUPS = [
       { label: 'Positions', aria: 'Positions', path: '/trading/positions', shortcut: '⌘2', icon: Layers },
       { label: 'History', aria: 'Historique', path: '/trading/history', shortcut: '⌘3', icon: History },
       { label: 'Greeks', aria: 'Greeks Center', path: '/trading/greeks', shortcut: '⌘4', icon: Sigma, flag: 'GREEK_CENTER' },
-      { label: 'Chain', aria: 'Chain Options', path: '/trading/chain', shortcut: '⌘5', icon: Link2 },
     ],
   },
   {
     title: 'INSIGHTS',
     items: [
       { label: 'Analytics', aria: 'Analytics', path: '/insights/analytics', shortcut: '⌘6', icon: BarChart3 },
-      { label: 'Calendar', aria: 'Calendrier', path: '/insights/calendar', shortcut: '⌘7', icon: Calendar },
       { label: 'Journal', aria: 'Journal', path: '/insights/journal', shortcut: '⌘8', icon: BookOpen },
     ],
   },
@@ -70,7 +72,7 @@ const GROUPS = [
     title: 'SYSTÈME',
     items: [
       // ⌘9 réel (AppShell) cible /settings/import — le clic sur l'item va
-      // sur /settings/general comme l'ancien onglet. Hint conservé tel quel
+      // sur /settings/general comme l'ancien onglet. Chip conservé tel quel
       // (cf. cheatsheet « ⌘9 — Import / Settings »).
       { label: 'Settings', aria: 'Réglages', path: '/settings/general', shortcut: '⌘9', icon: Settings },
     ],
@@ -141,12 +143,17 @@ function NavItem({ item, active, collapsed, onNavigate }) {
       aria-label={item.aria}
       onClick={() => onNavigate(item.path)}
     >
-      <Icon size={18} strokeWidth={1.75} className="side-nav__item-icon" aria-hidden="true" />
+      <Icon
+        size={collapsed ? 20 : 18}
+        strokeWidth={1.75}
+        className="side-nav__item-icon"
+        aria-hidden="true"
+      />
       {!collapsed && (
         <>
           <span className="side-nav__item-label">{item.label}</span>
           {item.shortcut ? (
-            <kbd className="side-nav__hint" aria-hidden="true">
+            <kbd className="side-nav__key" aria-hidden="true">
               {item.shortcut}
             </kbd>
           ) : null}
@@ -180,7 +187,7 @@ export default function SideNav({ collapsed, onToggle, onOpenCommand }) {
       {!collapsed && (
         <>
           <span className="side-nav__search-label">Rechercher</span>
-          <kbd className="side-nav__hint" aria-hidden="true">
+          <kbd className="side-nav__key" aria-hidden="true">
             ⌘K
           </kbd>
         </>
@@ -199,7 +206,7 @@ export default function SideNav({ collapsed, onToggle, onOpenCommand }) {
       {!collapsed && (
         <>
           <span className="side-nav__foot-label">Aide</span>
-          <kbd className="side-nav__hint" aria-hidden="true">
+          <kbd className="side-nav__key" aria-hidden="true">
             ⌘/
           </kbd>
         </>
@@ -223,7 +230,7 @@ export default function SideNav({ collapsed, onToggle, onOpenCommand }) {
       {!collapsed && (
         <>
           <span className="side-nav__foot-label">Réduire</span>
-          <kbd className="side-nav__hint" aria-hidden="true">
+          <kbd className="side-nav__key" aria-hidden="true">
             ⌘B
           </kbd>
         </>
