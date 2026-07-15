@@ -783,9 +783,14 @@
 
   /* Ligne de base partagée : les valeurs (rangée 2 du subgrid)
      s'alignent baseline d'une zone à l'autre. */
-  .command-deck__value,
-  .command-deck__duo-values {
+  .command-deck__value {
     align-self: baseline;
+  }
+
+  /* Zone 6 : le gap de zone (6px 0) écraserait le column-gap de la
+     grille duo — on le re-pose. */
+  .command-deck__zone--duo {
+    column-gap: 16px;
   }
 
   .command-deck__label,

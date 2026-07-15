@@ -238,20 +238,18 @@ export default function CommandDeck() {
         </div>
       </div>
 
-      {/* 6 · WIN RATE · PROFIT FACTOR — neutres */}
+      {/* 6 · WIN RATE · PROFIT FACTOR — neutres. Enfants directs de la
+          grille 2 colonnes de la zone : chaque valeur s'aligne sous SON
+          label (colonnes partagées entre les deux rangées). */}
       <div className="command-deck__zone command-deck__zone--duo">
-        <div className="command-deck__head command-deck__head--duo">
-          <span className="command-deck__label">WIN RATE</span>
-          <span className="command-deck__label">PROFIT FACTOR</span>
-        </div>
-        <div className="command-deck__duo-values">
-          <span className="command-deck__value command-deck__value--duo">
-            <NumAnat tier="mid">{winRate != null ? `${winRate.toFixed(1)}%` : '—'}</NumAnat>
-          </span>
-          <span className="command-deck__value command-deck__value--duo">
-            <NumAnat tier="mid">{profitFactor != null ? profitFactor.toFixed(2) : '—'}</NumAnat>
-          </span>
-        </div>
+        <span className="command-deck__label">WIN RATE</span>
+        <span className="command-deck__label">PROFIT FACTOR</span>
+        <span className="command-deck__value command-deck__value--duo">
+          <NumAnat tier="mid">{winRate != null ? `${winRate.toFixed(1)}%` : '—'}</NumAnat>
+        </span>
+        <span className="command-deck__value command-deck__value--duo">
+          <NumAnat tier="mid">{profitFactor != null ? profitFactor.toFixed(2) : '—'}</NumAnat>
+        </span>
         <div className="command-deck__sub">
           {underSample ? <span className="command-deck__caption">n &lt; 10</span> : null}
         </div>

@@ -191,23 +191,21 @@
   }
 }
 
-/* ── Zone 6 : deux mini-colonnes WIN RATE · PROFIT FACTOR ───────── */
-.command-deck__head--duo {
-  display: flex;
-  gap: 0;
+/* ── Zone 6 : deux mini-colonnes WIN RATE · PROFIT FACTOR ────────
+   Grille 2 colonnes PARTAGÉE entre labels (rangée 1) et valeurs
+   (rangée 2) : chaque valeur s'aligne sous son label. minmax(
+   max-content, 1fr) : les labels ne se compriment jamais, l'espace
+   restant se répartit. */
+.command-deck__zone--duo {
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) minmax(max-content, 1fr);
+  grid-template-rows: auto auto 1fr;
+  column-gap: 16px;
+  align-content: start;
 }
 
-.command-deck__head--duo .command-deck__label {
-  flex: 1;
-}
-
-.command-deck__duo-values {
-  display: flex;
-  align-items: baseline;
-}
-
-.command-deck__duo-values .command-deck__value {
-  flex: 1;
+.command-deck__zone--duo .command-deck__sub {
+  grid-column: 1 / -1;
 }
 
 /* ── Reduced motion : respiration et transitions coupées ────────── */
