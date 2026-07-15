@@ -75,7 +75,7 @@
 
   /* ===== LAYOUT CHROME ===== */
   --qc-hero-strip-h: 168px;
-  --qc-ticker-h: 64px;
+  --qc-ticker-h: 48px; /* 1.B.2 : base <1440 (le palier ≥1440 monte à 64 via c3-hires) */
 
   /* ===== TRANSITIONS ===== */
   --qc-transition-fast: 120ms ease-out;

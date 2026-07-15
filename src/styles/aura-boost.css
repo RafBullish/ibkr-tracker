@@ -18,23 +18,11 @@
    scrollbar — kept intact for the not-yet-refonded pages.
    ═══════════════════════════════════════════════════════════════ */
 
-/* ▓▓▓ 1. UNIVERSAL AMBIENT LAYER — body::before + body::after ▓▓▓ */
-body::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 900px 600px at 12% 8%, rgba(99, 102, 241, 0.18) 0%, transparent 62%),
-    radial-gradient(ellipse 800px 700px at 88% 18%, rgba(6, 182, 212, 0.12) 0%, transparent 62%),
-    radial-gradient(ellipse 700px 500px at 48% 88%, rgba(139, 92, 246, 0.11) 0%, transparent 62%),
-    radial-gradient(ellipse 500px 400px at 78% 65%, rgba(236, 72, 153, 0.05) 0%, transparent 62%);
-  mix-blend-mode: screen;
-}
+/* ▓▓▓ 1. AMBIENT LAYER ▓▓▓ */
+/* v1.0 · 1.B.2 — body::before (4 halos radiaux indigo/cyan/violet/rose
+   en mix-blend screen) SUPPRIMÉ : c'était la source du voile violacé
+   visible en bas des pages (capture Rafael /positions). DA Obsidienne :
+   halos morts. Le grain (body::after ci-dessous) est conservé. */
 
 body::after {
   content: "";
@@ -50,14 +38,8 @@ body::after {
   mix-blend-mode: overlay;
 }
 
-/* Daylight (light theme) — softer ambient layer */
-[data-theme="daylight"] body::before {
-  background:
-    radial-gradient(ellipse 900px 600px at 12% 8%, rgba(99, 102, 241, 0.07) 0%, transparent 62%),
-    radial-gradient(ellipse 800px 700px at 88% 18%, rgba(6, 182, 212, 0.05) 0%, transparent 62%),
-    radial-gradient(ellipse 700px 500px at 48% 88%, rgba(139, 92, 246, 0.04) 0%, transparent 62%);
-  mix-blend-mode: multiply;
-}
+/* Daylight — la variante body::before a été supprimée avec le layer
+   ambient (1.B.2). */
 [data-theme="daylight"] body::after {
   opacity: 0.018;
 }

@@ -79,6 +79,10 @@ import './styles/v1-dashboard.css';
 // scopées. theme/tokens.js reste intact (ErrorBoundary, CommandPalette,
 // WinRateDonut, ThemeSwitcher en dépendent) — purge dans CANONICAL-PURGE.
 import './styles/pages-calendar.css';
+// v1-shell.css — Le Shell v1.0 (brique 1.B) : grille AppShell 3 rangées
+// (TickerTape pleine largeur · SideNav+main · StatusBar) + SideNav base.
+// Juste avant c3-hires.css (qui reste dernier).
+import './styles/v1-shell.css';
 // c3-hires.css — PALIER HAUTE RÉSOLUTION C.3.0 (≥1440px). Importé EN
 // DERNIER pour gagner par ordre de source. Densifie l'usage fenêtré
 // ~1591 px / dpr 1.35 ; n'affecte pas le mobile (<1440).

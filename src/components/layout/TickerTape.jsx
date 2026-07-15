@@ -18,6 +18,7 @@
 import { useMemo } from 'react';
 import useMarketQuotes from '../../hooks/useMarketQuotes';
 import { useMarketSparklines } from '../../hooks/useMarketSparklines';
+import usePriceFlash from '../../hooks/usePriceFlash';
 import { isMarketOpen, getAssetClass } from '../../utils/marketHours';
 
 // Liste curée, éditable à la main. Ajouter / retirer un ticker = touche
@@ -87,10 +88,10 @@ function formatPrice(price, ticker) {
   return price.toFixed(2);
 }
 
-// Sparkline inline : couleur explicite passée en prop (pas de dépendance
-// au composant ui/Sparkline). Defaults 60×32 stroke 2 pour rendu plus
-// contrasté qu'avant, lisible d'un œil dans le bandeau 64 px.
-function TickerSparkline({ prices, color, width = 60, height = 32, stroke = 2 }) {
+// Sparkline inline — spec DA Obsidienne (1.B.2) : stroke 1 px, aire fermée
+// à 8 % (≤ cap 8 %), AUCUN glow, ~56×30. Couleurs directionnelles
+// conservées (sémantique marché).
+function TickerSparkline({ prices, color, width = 84, height = 46, stroke = 1 }) {
   if (!prices || prices.length < 2) return null;
   const min = Math.min(...prices);
   const max = Math.max(...prices);
@@ -102,6 +103,7 @@ function TickerSparkline({ prices, color, width = 60, height = 32, stroke = 2 })
     return `${x.toFixed(2)},${y.toFixed(2)}`;
   });
   const pathD = `M ${points.join(' L ')}`;
+  const areaD = `${pathD} L ${width},${height} L 0,${height} Z`;
   return (
     <svg
       width={width}
@@ -109,6 +111,7 @@ function TickerSparkline({ prices, color, width = 60, height = 32, stroke = 2 })
       viewBox={`0 0 ${width} ${height}`}
       style={{ display: 'block', overflow: 'visible' }}
     >
+      <path d={areaD} fill={color} fillOpacity="0.08" stroke="none" />
       <path
         d={pathD}
         fill="none"
@@ -122,14 +125,42 @@ function TickerSparkline({ prices, color, width = 60, height = 32, stroke = 2 })
   );
 }
 
+// Δ net en valeur (1.B.2) : priorité au champ `change` du payload quotes ;
+// sinon dérivé du prix et du pourcentage (net = price − price/(1+pct/100)).
+// Aucun nouveau champ réseau, aucun nouvel appel.
+function netChange(quote) {
+  if (!quote) return null;
+  if (quote.change != null && Number.isFinite(quote.change)) return quote.change;
+  const { price, changePercent: pct } = quote;
+  if (price == null || pct == null || !Number.isFinite(price) || !Number.isFinite(pct)) return null;
+  if (pct <= -100) return null;
+  return price - price / (1 + pct / 100);
+}
+
+// Formatage du Δ net — mêmes conventions d'affichage que formatPrice
+// (FX 4 décimales, de-CH arrondi ≥1000, sinon 2 décimales), signé.
+function formatNetChange(net, ticker) {
+  if (net == null || !Number.isFinite(net)) return null;
+  const sign = net > 0 ? '+' : net < 0 ? '−' : '';
+  const abs = Math.abs(net);
+  const classKey = getAssetClass(ticker);
+  if (classKey === 'FX') return `${sign}${abs.toFixed(4)}`;
+  if (abs >= 1000) return `${sign}${new Intl.NumberFormat('de-CH').format(Math.round(abs))}`;
+  return `${sign}${abs.toFixed(2)}`;
+}
+
 function TickerCell({ ticker, quote, spark, state }) {
   const price = quote?.price;
   const change = quote?.changePercent;
+  const net = netChange(quote);
+  const netText = formatNetChange(net, ticker.display);
   const stateClass = `ticker-cell--${state.toLowerCase()}`;
   const changeClass =
     change > 0 ? 'qc-profit' : change < 0 ? 'qc-loss' : 'qc-text-secondary';
   const changeArrow = change > 0 ? '▲' : change < 0 ? '▼' : '';
-  const isStrongMove = change != null && Math.abs(change) > 2;
+  // 1.B.3/L2 — flash au tick (variante D) : overlay plat + pulse de
+  // luminosité du prix, re-déclenchés par key à chaque changement de prix.
+  const flash = usePriceFlash(price);
 
   const sparkColor = useMemo(() => {
     if (!spark?.prices || spark.prices.length < 2) return 'var(--ink-soft)';
@@ -142,46 +173,53 @@ function TickerCell({ ticker, quote, spark, state }) {
 
   return (
     <div className={`ticker-cell ${stateClass}`}>
-      <div className="ticker-cell__text">
-        <div className="ticker-cell__head">
-          <span className="ticker-cell__symbol">{ticker.display}</span>
-          {change != null && Number.isFinite(change) && (
-            <span
-              className={`ticker-cell__change qc-pct ${changeClass}${isStrongMove ? ' ticker-cell__change--glow' : ''}`}
-            >
-              {changeArrow && <span className="ticker-cell__arrow">{changeArrow}</span>}
-              {Math.abs(change).toFixed(2)}%
-            </span>
-          )}
-        </div>
+      {flash && (
+        <span
+          key={flash.id}
+          className={`tape-flash tape-flash--${flash.dir}`}
+          aria-hidden="true"
+        />
+      )}
+      {/* Bloc gauche — SYMBOLE au-dessus du PRIX (héros de cellule). */}
+      <div className="ticker-cell__main">
+        <span className="ticker-cell__symbol">{ticker.display}</span>
         {state === 'OFFLINE' ? (
           <span className="ticker-cell__value ticker-cell__value--offline qc-num">—</span>
         ) : (
-          <span className="ticker-cell__value qc-num">{formatPrice(price, ticker.display)}</span>
+          <span
+            key={flash ? `p${flash.id}` : 'p'}
+            className={`ticker-cell__value qc-num${flash ? ' ticker-cell__value--pulse' : ''}`}
+          >
+            {formatPrice(price, ticker.display)}
+          </span>
         )}
       </div>
+      {/* Bloc droit — pastille Δ% au-dessus du Δ net (couleurs marché
+          conservées ; pastille désaturée 16 %, variante D). */}
+      {change != null && Number.isFinite(change) && (
+        <div className="ticker-cell__delta">
+          <span className={`ticker-cell__change qc-pct ${changeClass}`}>
+            {changeArrow && <span className="ticker-cell__arrow">{changeArrow}</span>}
+            {Math.abs(change).toFixed(2)}%
+          </span>
+          {netText && (
+            <span className={`ticker-cell__change-net ${changeClass}`}>{netText}</span>
+          )}
+        </div>
+      )}
       {state !== 'OFFLINE' && spark?.prices && spark.prices.length > 1 && (
         <span className="ticker-cell__sparkline">
-          <TickerSparkline prices={spark.prices} color={sparkColor} />
+          <TickerSparkline prices={spark.prices} color={sparkColor} width={84} height={46} />
         </span>
       )}
     </div>
   );
 }
 
-export default function TickerTape() {
+// Vue présentationnelle — reçoit quotes/sparklines en props (héritage
+// du lab 1.B.3, purgé ; conservée : elle isole le rendu des hooks).
+function TickerTapeView({ quotes, sparklines, prefersReducedMotion }) {
   const now = new Date();
-  const { quotes } = useMarketQuotes(STATIC_FETCH_SYMBOLS);
-  const { sparklines } = useMarketSparklines(STATIC_FETCH_SYMBOLS);
-
-  // Marquee seamless = liste rendue 2× (track translateX 0 → -50 %).
-  // En reduced-motion, contenu rendu 1× + overflow-x:auto pour scroll manuel.
-  const prefersReducedMotion = useMemo(
-    () =>
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-    []
-  );
 
   const renderCell = (t, key) => (
     <TickerCell
@@ -203,5 +241,27 @@ export default function TickerTape() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TickerTape() {
+  const { quotes } = useMarketQuotes(STATIC_FETCH_SYMBOLS);
+  const { sparklines } = useMarketSparklines(STATIC_FETCH_SYMBOLS);
+
+  // Marquee seamless = liste rendue 2× (track translateX 0 → -50 %).
+  // En reduced-motion, contenu rendu 1× + overflow-x:auto pour scroll manuel.
+  const prefersReducedMotion = useMemo(
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    []
+  );
+
+  return (
+    <TickerTapeView
+      quotes={quotes}
+      sparklines={sparklines}
+      prefersReducedMotion={prefersReducedMotion}
+    />
   );
 }

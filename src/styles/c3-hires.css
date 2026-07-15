@@ -675,8 +675,9 @@
   .ticker-cell__symbol { font-size: 16px; }
   .ticker-cell__change { font-size: 18px; } /* D2.F : 14 × 1.30 */
 
-  /* Statusbar (bas) + nav (haut) : texte scalé D2.F (18/17, nav 20),
-     hauteurs de shell INCHANGÉES (cellules height:100% centrées). */
+  /* Statusbar (bas) : texte scalé D2.F (18/17), hauteurs de shell
+     INCHANGÉES (cellules height:100% centrées). (.nav-pill retiré en
+     1.B avec la CommandBar — la SideNav a sa propre section plus bas.) */
   .statusbar { font-size: 18px; }
   .statusbar__label,
   .statusbar__value,
@@ -686,7 +687,6 @@
   .statusbar__clock-badge {
     font-size: 17px;
   }
-  .nav-pill { font-size: 20px; }
 
   /* — D2.A.4 · Contraste des labels fonctionnels : ink-mute → ink-soft
      (lisibilité perçue). Scopé aux labels de structure denses. — */
@@ -755,8 +755,12 @@
      Échelle S2 : NLV 56 · monétaires 44 (--type-display) · WR/PF 23
      (--fs-2xl) · MTD 21 (--type-cell-value) · captions 17 (plancher).
      ════════════════════════════════════════════════════════════════ */
+  /* 1.B — fractions re-réglées pour la largeur de contenu du Shell
+     (1591 − sidebar 232 ≈ 1359) : la zone 6 (WIN RATE · PROFIT FACTOR,
+     min-content 253px) reçoit 1.55fr, padding resserré 20 → 16.
+     Tailles S2 FIXES, aucune régression. */
   .command-deck {
-    grid-template-columns: 1.6fr 0.95fr 0.95fr 1.05fr 1.15fr 1.2fr;
+    grid-template-columns: 1.4fr 0.92fr 0.95fr 1fr 1.08fr 1.55fr;
     grid-template-rows: auto auto 1fr;
     min-height: 112px;
   }
@@ -766,7 +770,7 @@
     grid-template-rows: subgrid;
     grid-row: 1 / 4;
     gap: 6px 0;
-    padding: 14px 20px 12px;
+    padding: 14px 16px 12px;
     border-top: none;
   }
 
@@ -790,7 +794,7 @@
   /* Zone 6 : le gap de zone (6px 0) écraserait le column-gap de la
      grille duo — on le re-pose. */
   .command-deck__zone--duo {
-    column-gap: 16px;
+    column-gap: 14px;
   }
 
   .command-deck__label,
@@ -821,5 +825,58 @@
 
   .command-deck__gauge {
     margin: 8px 0 4px;
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     V1.0 · 1.B — LE SHELL, palier ≥1440.
+     SideNav : labels d'item 17 ; headers de groupe 13 / hints 14 =
+     micro-signalétique chrome (même famille que ticks 14 / strip 16 —
+     décision architecte, exemptée du plancher 17).
+     TickerTape : 52 px, padding horizontal généreux ; barème S2 du
+     strip CONSERVÉ (21/16/18, réglé plus haut section D2.F).
+     ════════════════════════════════════════════════════════════════ */
+  .side-nav__item,
+  .side-nav__foot-btn {
+    font-size: 17px;
+    height: 38px;
+  }
+  .side-nav__group-title {
+    font-size: 13px;
+  }
+  .side-nav__key {
+    font-size: 12px; /* keycap chrome, taille fixe (spec 1.B.2) */
+  }
+  .side-nav__search {
+    font-size: 15px;
+  }
+
+  /* 1.B.3/L2 — TickerTape DÉFINITIF : variante D « Salle des marchés »
+     choisie par Rafael au lab /lab/tape. 92 px, prix 36 Plex 700,
+     symbole 19 caps, pastille Δ% 20 (mix 16 %) / Δ net 18, sparkline
+     84×46, padding 34. (Ces valeurs PRIMENT sur le barème strip D2.F
+     plus haut — ordre de source.) */
+  .ticker-tape {
+    height: 92px;
+  }
+  .ticker-cell {
+    padding: 0 34px;
+    gap: 16px;
+  }
+  .ticker-cell__symbol {
+    font-size: 19px;
+  }
+  .ticker-cell__value {
+    font-size: 36px;
+  }
+  .ticker-cell__change {
+    font-size: 20px;
+  }
+  .ticker-cell__change-net {
+    font-size: 18px;
+  }
+  .ticker-cell__sparkline,
+  .ticker-cell__sparkline svg {
+    height: 46px;
+    width: 84px;
   }
 }

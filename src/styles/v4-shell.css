@@ -1,328 +1,24 @@
 /* ════════════════════════════════════════════════════════════════
    v4-shell.css — Institutional Terminal v4 brick 1 (+ v5 Sprint 1)
-   Shell-level chrome only : CommandBar (64 px), TickerTape (64 px,
-   scrolling marquee), StatusBar (36 px). Token-driven, tied to tokens.css.
+   Shell-level chrome : TickerTape (marquee) + StatusBar (36 px).
+   Token-driven, tied to tokens.css.
+
+   v1.0 · 1.B — la CommandBar est MORTE (remplacée par la SideNav,
+   cf. v1-shell.css) : tous ses blocs .cmdbar*/.nav-pill* ont été
+   retirés de ce fichier, ainsi que --shell-cmdbar-h.
 
    Loaded after v3-components.css in main.jsx so its rules win when
    class names overlap legacy headers/sidebars.
 
    Source unique pour la hauteur TickerTape : --qc-ticker-h dans
-   tokens.css (= 64 px). Toute autre valeur dans ce fichier est
-   un commentaire à corriger.
+   tokens.css (= 64 px base ; 52 px au palier ≥1440 via c3-hires).
    ════════════════════════════════════════════════════════════════ */
 
 /* ─── Shell-level vars ───────────────────────────────────────────── */
 :root {
-  --shell-cmdbar-h: 64px;
   --shell-statusbar-h: 36px;
   --shell-pill-h: 36px;
   --shell-hairline: var(--qc-border-subtle);
-}
-
-/* ════════════════════════════════════════════════════════════════
-   COMMAND BAR (top, 32px)
-   ════════════════════════════════════════════════════════════════ */
-
-.cmdbar {
-  display: flex;
-  align-items: center;
-  height: var(--shell-cmdbar-h);
-  padding: 0 var(--qc-space-5);
-  gap: var(--qc-space-4);
-  background: var(--bg-elev-1);
-  border-bottom: 1px solid var(--shell-hairline);
-  flex-shrink: 0;
-  font-family: var(--qc-font-mono);
-  position: relative;
-  z-index: 10;
-}
-
-.cmdbar__left {
-  display: flex;
-  align-items: center;
-  gap: var(--qc-space-2);
-  min-width: 220px;
-  flex-shrink: 0;
-}
-
-.cmdbar__logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  background: transparent;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  font-family: var(--qc-font-mono);
-  color: var(--qc-text-primary);
-  transition: filter 120ms ease-out;
-}
-
-.cmdbar__logo:hover .cmdbar__logo-name {
-  color: var(--qc-text-primary);
-}
-
-.cmdbar__logo:focus-visible {
-  outline: 1px solid var(--qc-accent);
-  outline-offset: 2px;
-}
-
-/* 4K refonte Phase B.2 — QC mini-badge teal, agrandi 28 px. */
-.cmdbar__logo-mark {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--qc-accent);
-  color: var(--qc-bg-base);
-  border-radius: 5px;
-  font-weight: 500;
-  font-size: 12px;
-  letter-spacing: 0.05em;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.cmdbar__logo-name {
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  /* Légère uplift de contraste vs --text-secondary : 70 % --text-primary
-     dilué par 30 % transparent → couleur theme-aware un cran plus dense. */
-  color: color-mix(in srgb, var(--qc-text-primary) 70%, transparent);
-  line-height: 1;
-  transition: color 120ms ease-out;
-}
-
-/* Vertical hairline divider — replaces the legacy "·" character */
-.cmdbar__divider {
-  display: inline-block;
-  width: 1px;
-  height: 20px;
-  background: var(--qc-border-subtle);
-  flex-shrink: 0;
-}
-
-.cmdbar__crumb {
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--qc-text-tertiary);
-  white-space: nowrap;
-}
-
-.cmdbar__nav {
-  display: flex;
-  align-items: stretch;
-  gap: 4px;
-  flex: 1 1 auto;
-  justify-content: center;
-  min-width: 0;
-  height: 100%;
-}
-
-/* Tabs full-height (64 px), mots entiers, text-transform: none.
-   Underline géré par <motion.span class="nav-pill__underline"> dans le JSX
-   (framer-motion layoutId) — pas de pseudo-élément ::after ici, sinon
-   double soulignement. */
-.nav-pill {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  height: 100%;
-  padding: 0 18px;
-  font-family: var(--qc-font-mono);
-  /* Brique 15 (P4) — 15 → 14 (le brief partait de 13 ; l'existant
-     était à 15 : cible 14 appliquée). */
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: none;
-  color: var(--ink-soft);
-  background: transparent;
-  border: none;
-  border-radius: var(--qc-radius-sm);
-  cursor: pointer;
-  transition:
-    color var(--qc-transition-fast),
-    background-color var(--qc-transition-fast);
-  white-space: nowrap;
-}
-
-.nav-pill:hover {
-  color: var(--ink-pure);
-  background: var(--depth-focus);
-}
-
-.nav-pill:focus-visible {
-  outline: 1px solid var(--accent);
-  outline-offset: -2px;
-}
-
-/* Onglet actif : texte blanc + weight 600. L'amber passe sur l'icône
-   (.nav-pill__icon) ET sur le filet (.nav-pill__underline), pas sur le
-   texte — équilibre visuel : présence forte sans surcharger. */
-.nav-pill[data-active],
-.nav-pill[aria-current="page"] {
-  color: var(--ink-pure);
-  background: transparent;
-  font-weight: 600;
-}
-
-/* Icône suit currentColor par défaut (inactif = --ink-soft, hover =
-   --ink-pure). Override --accent quand le pill est actif. Le z-index
-   sur l'icône ET le label garde la lisibilité au-dessus du filet. */
-.nav-pill__icon {
-  position: relative;
-  z-index: 1;
-  flex-shrink: 0;
-  color: currentColor;
-  transition: color var(--qc-transition-fast);
-}
-
-.nav-pill[data-active] .nav-pill__icon,
-.nav-pill[aria-current="page"] .nav-pill__icon {
-  color: var(--accent);
-}
-
-.nav-pill__label {
-  position: relative;
-  z-index: 1;
-}
-
-/* Filet amber animé via framer-motion layoutId : glisse entre onglets
-   au changement de route. Insets 14 px gauche/droite, halo amber doux
-   (color-mix 60 % du token) pour faire ressortir l'état actif sans
-   blinder l'œil. */
-.nav-pill__underline {
-  position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: 0;
-  height: 2.5px;
-  background: var(--accent);
-  border-radius: 1.25px;
-  pointer-events: none;
-  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 60%, transparent);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .nav-pill {
-    transition: none;
-  }
-}
-
-.cmdbar__right {
-  display: flex;
-  align-items: center;
-  gap: var(--qc-space-2);
-  flex-shrink: 0;
-}
-
-/* 4K refonte Phase B.2 — search bar agrandie (34 px, 12 px font). */
-.cmdbar__search {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 34px;
-  padding: 0 14px;
-  font-family: var(--qc-font-mono);
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  color: var(--qc-text-tertiary);
-  background: var(--bg-glass);
-  border: 1px solid var(--qc-border-subtle);
-  border-radius: 5px;
-  cursor: pointer;
-  transition:
-    color 120ms ease-out,
-    border-color 120ms ease-out,
-    background 120ms ease-out;
-  min-width: 34px;
-}
-
-.cmdbar__search:hover {
-  color: var(--qc-text-secondary);
-  border-color: var(--qc-border-strong);
-  background: var(--bg-glass-hover);
-}
-
-.cmdbar__search:focus-visible {
-  outline: 1px solid var(--qc-accent);
-  outline-offset: 1px;
-}
-
-.cmdbar__kbd {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2px 7px;
-  font-family: var(--qc-font-mono);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--qc-text-tertiary);
-  background: var(--qc-bg-base);
-  border: 1px solid var(--qc-border-subtle);
-  border-radius: 3px;
-  line-height: 1;
-}
-
-/* 4K refonte Phase B.2 — Mode pill REAL / PAPER / LIVE agrandie 30 px. */
-.cmdbar__mode-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 12px;
-  border-radius: var(--qc-radius-md);
-  font-family: var(--qc-font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.cmdbar__mode-pill[data-mode="live"],
-.cmdbar__mode-pill[data-mode="real"] {
-  color: var(--qc-profit);
-  background: color-mix(in srgb, var(--qc-profit) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--qc-profit) 25%, transparent);
-}
-
-.cmdbar__mode-pill[data-mode="paper"] {
-  color: var(--accent-amber);
-  background: color-mix(in srgb, var(--accent-amber) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent-amber) 25%, transparent);
-}
-
-.cmdbar__mode-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-  flex-shrink: 0;
-}
-
-@media (max-width: 1023px) {
-  .cmdbar__left {
-    min-width: 0;
-  }
-}
-
-@media (max-width: 767px) {
-  .cmdbar {
-    padding: 0 var(--qc-space-2);
-  }
-  .cmdbar__crumb,
-  .cmdbar__sep {
-    display: none;
-  }
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -664,38 +360,81 @@
    TOUTES les cellules (pas de :last-child:none) pour que les séparateurs
    restent continus dans la boucle dupliquée. ===== */
 .ticker-cell {
+  position: relative; /* ancre l'overlay .tape-flash (1.B.3) */
   flex: 0 0 auto;
   min-width: 240px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 14px;
-  padding: 0 24px;
+  gap: 12px;
+  padding: 0 22px;
   border-right: 1px solid var(--line-hairline);
+  transition: background-color 120ms ease-out;
 }
 
-.ticker-cell__text {
+/* ── FLASH AU TICK (1.B.3, utilitaire production — cf. usePriceFlash) ──
+   Overlay plat color-mix 10 % up/down qui s'éteint en ~600 ms ease-out.
+   Texte inchangé, AUCUN glow. Remonté par `key` à chaque tick. */
+.tape-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: tape-flash-fade 600ms ease-out forwards;
+}
+
+.tape-flash--up {
+  background: color-mix(in srgb, var(--pnl-up) 10%, transparent);
+}
+
+.tape-flash--down {
+  background: color-mix(in srgb, var(--pnl-down) 10%, transparent);
+}
+
+@keyframes tape-flash-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tape-flash {
+    display: none;
+  }
+}
+
+/* 1.B.2 — cellule survolée : fond +2 % (le défilement est déjà en
+   pause via .ticker-tape:hover). */
+.ticker-cell:hover {
+  background: color-mix(in srgb, var(--qc-bg-surface) 98%, #ffffff 2%);
+}
+
+/* Bloc gauche : SYMBOLE au-dessus du PRIX. */
+.ticker-cell__main {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   flex: 0 1 auto;
   min-width: 0;
 }
 
-.ticker-cell__head {
+/* Bloc droit : Δ% au-dessus du Δ net, aligné à droite. */
+.ticker-cell__delta {
   display: flex;
-  align-items: baseline;
-  justify-content: flex-start;
-  gap: 10px;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
+  flex: 0 0 auto;
 }
 
 /* Symbole = label discret qui recule devant le prix héro. */
 .ticker-cell__symbol {
   font-family: var(--qc-font-mono);
-  /* Brique 15 (P4) — 13 → 12, le ticker recule devant la valeur. */
-  font-size: var(--type-caption, 12px);
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-soft);
   line-height: 1;
@@ -708,6 +447,10 @@
    rouge est l'exception explicite (Bloomberg/Reuters convention).
    N'autorise PAS la même chromatique ailleurs.
    ─────────────────────────────────────────────────────────────── */
+/* Δ% en PASTILLE désaturée (1.B.3/L2, variante D « Salle des marchés »
+   choisie au lab) : fond color-mix 16 % de la couleur directionnelle,
+   radius 4, padding 1/6. Remplace l'ancien badge --glow des mouvements
+   forts (toutes les variations sont des pastilles désormais). */
 .ticker-cell__change {
   font-family: var(--qc-font-mono);
   font-variant-numeric: tabular-nums;
@@ -716,46 +459,33 @@
   letter-spacing: -0.01em;
   line-height: 1;
   position: relative;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 
 .ticker-cell__change.qc-profit {
   color: var(--pnl-up);
+  background: color-mix(in srgb, var(--pnl-up) 16%, transparent);
 }
 
 .ticker-cell__change.qc-loss {
   color: var(--pnl-down);
+  background: color-mix(in srgb, var(--pnl-down) 16%, transparent);
 }
 
 .ticker-cell__arrow {
-  font-size: 12px;
+  font-size: 0.72em;
   margin-right: 4px;
   display: inline-block;
 }
 
-/* Badge glow sur mouvements forts (|change%| > 2) — fond plat translucide
-   dérivé du token via color-mix (theme-aware). */
-.ticker-cell__change--glow {
-  padding: 2px 6px;
-  border-radius: var(--qc-radius-sm);
-  margin-left: -6px;
-}
-
-.ticker-cell__change--glow.qc-profit {
-  background: color-mix(in srgb, var(--pnl-up) 15%, transparent);
-}
-
-.ticker-cell__change--glow.qc-loss {
-  background: color-mix(in srgb, var(--pnl-down) 15%, transparent);
-}
-
-/* PRIX — héros, domine par la taille. tabular-nums + nowrap pour rester
-   verrouillé sur sa colonne. */
+/* PRIX — héros de cellule. tabular-nums + nowrap pour rester
+   verrouillé sur sa colonne. (1.B.2 : 24 px au palier ≥1440.) */
 .ticker-cell__value {
   font-family: var(--qc-font-mono);
   font-variant-numeric: tabular-nums;
-  /* Brique 15 (P4) — 24 → 16/700 : la bande de marché est du contexte,
-     pas un héros ; elle cède la dominance aux cartes du Dashboard. */
-  font-size: var(--type-cell-value, 16px);
+  font-size: 16px;
   font-weight: 700;
   color: var(--ink-pure);
   letter-spacing: -0.01em;
@@ -763,18 +493,63 @@
   white-space: nowrap;
 }
 
+/* Δ net en valeur (1.B.2) — même couleur directionnelle que le Δ%,
+   en retrait par l'opacité. */
+.ticker-cell__change-net {
+  font-family: var(--qc-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.ticker-cell__change-net.qc-profit {
+  color: var(--pnl-up);
+}
+
+.ticker-cell__change-net.qc-loss {
+  color: var(--pnl-down);
+}
+
 .ticker-cell__sparkline {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 32px;
-  width: 60px;
+  height: 30px;
+  width: 56px;
   flex-shrink: 0;
   opacity: 0.95;
 }
 
+/* Le SVG est émis à 84×46 (palier, viewBox fixe) et re-scalé en CSS à
+   la base — vector-effect: non-scaling-stroke garde le trait à 1 px. */
 .ticker-cell__sparkline svg {
   display: block;
+  width: 56px;
+  height: 30px;
+}
+
+/* Pulse de luminosité du prix au tick (variante D) — remonté par key
+   en même temps que le flash de cellule. */
+.ticker-cell__value--pulse {
+  animation: tape-price-pulse 500ms ease-out;
+}
+
+@keyframes tape-price-pulse {
+  from {
+    opacity: 0.7;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-cell__value--pulse {
+    animation: none;
+  }
 }
 
 /* Les sparklines restent visibles à toutes les largeurs : avec le marquee,
@@ -806,52 +581,4 @@
 .statusbar__group--gate .statusbar__value {
   color: var(--accent-amber, #ffa028);
   letter-spacing: 0.04em;
-}
-
-/* ════════════════════════════════════════════════════════════════
-   COMMAND BAR — Cmd+/ help pill (v5 Sprint 10)
-   ════════════════════════════════════════════════════════════════ */
-
-.cmdbar__kbd--help {
-  cursor: pointer;
-  transition:
-    color 80ms ease-out,
-    border-color 80ms ease-out;
-  user-select: none;
-}
-
-.cmdbar__kbd--help:hover {
-  color: var(--accent-amber, #ffa028);
-  border-color: var(--accent-amber, #ffa028);
-}
-
-.cmdbar__kbd--help:focus-visible {
-  outline: 1px solid var(--qc-accent);
-  outline-offset: 1px;
-}
-
-/* ============================================================
-   LIVE INDICATOR — Pulse subtil sur le dot uniquement
-   Brick B1 refonte
-   ============================================================ */
-
-.cmdbar__live-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--qc-profit);
-  animation: cmdbar-live-pulse 2s ease-in-out infinite;
-}
-
-@keyframes cmdbar-live-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cmdbar__live-dot {
-    animation: none;
-    opacity: 1;
-  }
 }
