@@ -15,14 +15,18 @@
 //      the others (fetchMultipleQuotes already returns partial
 //      results + errors[]).
 //
+//  1.C — POLLER PARTAGÉ MODULE-SCOPE : N consommateurs avec la MÊME
+//  liste de symboles (TickerTape + MarketDeck) partagent UNE seule
+//  boucle de polling (subscribe/notify). Un seul setInterval, un seul
+//  train de requêtes /api/quote quel que soit le nombre d'instances.
+//  API du hook inchangée. Le poller s'éteint quand le dernier abonné
+//  se démonte (refCount).
+//
 //  Returned shape:
 //    {
 //      quotes:         { [symbol]: Quote },
 //      errors:         { [symbol]: string },
-//      loadingInitial: boolean,   // true only until first network
-//                                 // response arrives (cache doesn't
-//                                 // count — caller wants a shimmer
-//                                 // until a real number is fresh)
+//      loadingInitial: boolean,
 //      lastUpdate:     ISO-8601 | null,
 //    }
 //
@@ -30,7 +34,7 @@
 //    { price, change, changePercent, source, timestamp, stale }
 // ═══════════════════════════════════════════════════════════════
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { fetchMultipleQuotes } from '../utils/stockApi';
 import { POLLING, TIME } from '../constants/timing';
 
@@ -63,12 +67,94 @@ function writeCache(quotes) {
   }
 }
 
+// ─── Pollers partagés, un par (symbolsKey, refreshMs) ─────────────
+const pollers = new Map();
+
+function createPoller(symbols, refreshMs) {
+  const cache = readCache();
+  const poller = {
+    refCount: 0,
+    timer: null,
+    inFlight: false,
+    state: {
+      quotes: cache?.quotes || {},
+      errors: {},
+      loadingInitial: !cache,
+      lastUpdate: null,
+    },
+    subscribers: new Set(),
+  };
+
+  const notify = () => {
+    for (const cb of poller.subscribers) cb(poller.state);
+  };
+
+  const run = async () => {
+    if (poller.inFlight) return;
+    if (typeof document !== 'undefined' && document.hidden) return;
+    poller.inFlight = true;
+    try {
+      const { results, errors } = await fetchMultipleQuotes(symbols);
+      if (poller.refCount === 0) return;
+
+      const errorMap = {};
+      for (const { ticker, error } of errors) errorMap[ticker] = error;
+
+      const nextQuotes = { ...poller.state.quotes, ...results };
+      writeCache(nextQuotes);
+      poller.state = {
+        quotes: nextQuotes,
+        errors: errorMap,
+        loadingInitial: false,
+        lastUpdate: new Date().toISOString(),
+      };
+      notify();
+    } finally {
+      poller.inFlight = false;
+    }
+  };
+
+  const schedule = () => {
+    if (poller.timer) clearInterval(poller.timer);
+    poller.timer = setInterval(run, refreshMs);
+  };
+
+  const onVisibility = () => {
+    if (document.hidden) {
+      if (poller.timer) {
+        clearInterval(poller.timer);
+        poller.timer = null;
+      }
+    } else {
+      run();
+      schedule();
+    }
+  };
+
+  poller.start = () => {
+    run();
+    schedule();
+    document.addEventListener('visibilitychange', onVisibility);
+  };
+
+  poller.stop = () => {
+    if (poller.timer) clearInterval(poller.timer);
+    poller.timer = null;
+    document.removeEventListener('visibilitychange', onVisibility);
+  };
+
+  return poller;
+}
+
 export default function useMarketQuotes(symbols, { refreshMs = DEFAULT_REFRESH_MS } = {}) {
   // Lock the symbols reference so identity churn in the caller
   // (re-rendered array literal) doesn't restart the polling loop.
   const symbolsKey = symbols.join('|');
+  const pollerKey = `${symbolsKey}|${refreshMs}`;
 
   const [state, setState] = useState(() => {
+    const existing = pollers.get(pollerKey);
+    if (existing) return existing.state;
     const cache = readCache();
     return {
       quotes: cache?.quotes || {},
@@ -78,69 +164,29 @@ export default function useMarketQuotes(symbols, { refreshMs = DEFAULT_REFRESH_M
     };
   });
 
-  const aliveRef = useRef(true);
-  const timerRef = useRef(null);
-  const inFlightRef = useRef(false);
-
   useEffect(() => {
-    aliveRef.current = true;
-
-    const run = async () => {
-      if (inFlightRef.current) return;
-      if (typeof document !== 'undefined' && document.hidden) return;
-      inFlightRef.current = true;
-      try {
-        const { results, errors } = await fetchMultipleQuotes(symbols);
-        if (!aliveRef.current) return;
-
-        const errorMap = {};
-        for (const { ticker, error } of errors) errorMap[ticker] = error;
-
-        setState((prev) => {
-          const nextQuotes = { ...prev.quotes, ...results };
-          writeCache(nextQuotes);
-          return {
-            quotes: nextQuotes,
-            errors: errorMap,
-            loadingInitial: false,
-            lastUpdate: new Date().toISOString(),
-          };
-        });
-      } finally {
-        inFlightRef.current = false;
-      }
-    };
-
-    // Kick off immediately on mount / symbol change.
-    run();
-
-    const schedule = () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      timerRef.current = setInterval(run, refreshMs);
-    };
-    schedule();
-
-    const onVisibility = () => {
-      if (document.hidden) {
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-          timerRef.current = null;
-        }
-      } else {
-        // On resume, refresh immediately then re-arm.
-        run();
-        schedule();
-      }
-    };
-    document.addEventListener('visibilitychange', onVisibility);
+    let poller = pollers.get(pollerKey);
+    if (!poller) {
+      poller = createPoller(symbolsKey.split('|'), refreshMs);
+      pollers.set(pollerKey, poller);
+    }
+    poller.subscribers.add(setState);
+    poller.refCount += 1;
+    // Sync immédiat (le poller peut avoir des données plus fraîches que
+    // l'état initial de cette instance).
+    setState(poller.state);
+    if (poller.refCount === 1) poller.start();
 
     return () => {
-      aliveRef.current = false;
-      if (timerRef.current) clearInterval(timerRef.current);
-      document.removeEventListener('visibilitychange', onVisibility);
+      poller.subscribers.delete(setState);
+      poller.refCount -= 1;
+      if (poller.refCount === 0) {
+        poller.stop();
+        pollers.delete(pollerKey);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbolsKey, refreshMs]);
+  }, [pollerKey]);
 
   return state;
 }

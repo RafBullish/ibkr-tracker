@@ -33,7 +33,9 @@ import { isMarketOpen, getAssetClass } from '../../utils/marketHours';
 //     permanence. Sans impact visuel (pas de règle CSS sur l'état
 //     CLOSED), prix/spark s'affichent normalement. Étendre marketHours.js
 //     si une vraie détection de session étrangère devient nécessaire.
-const STATIC_TICKERS = [
+// Exportés pour le MarketDeck (1.C) : il consomme la MÊME liste → le
+// poller partagé (useMarketQuotes/useMarketSparklines) reste unique.
+export const STATIC_TICKERS = [
   { display: 'SPX',     fetch: '^SPX',     classKey: 'US_INDICES' },
   { display: 'NDX',     fetch: '^NDX',     classKey: 'US_INDICES' },
   { display: 'DJI',     fetch: '^DJI',     classKey: 'US_INDICES' },
@@ -55,7 +57,7 @@ const STATIC_TICKERS = [
   { display: 'NATGAS',  fetch: 'NG=F',     classKey: 'COMMODITIES' },
 ];
 
-const STATIC_FETCH_SYMBOLS = STATIC_TICKERS.map((t) => t.fetch);
+export const STATIC_FETCH_SYMBOLS = STATIC_TICKERS.map((t) => t.fetch);
 
 // Note : ^SPX et ^VIX peuvent rater Finnhub puis tomber sur Yahoo
 // (cascade auto côté /api/quote). Fallback SPX / VIX sans caret possible.
@@ -91,7 +93,7 @@ function formatPrice(price, ticker) {
 // Sparkline inline — spec DA Obsidienne (1.B.2) : stroke 1 px, aire fermée
 // à 8 % (≤ cap 8 %), AUCUN glow, ~56×30. Couleurs directionnelles
 // conservées (sémantique marché).
-function TickerSparkline({ prices, color, width = 84, height = 46, stroke = 1 }) {
+export function TickerSparkline({ prices, color, width = 84, height = 46, stroke = 1 }) {
   if (!prices || prices.length < 2) return null;
   const min = Math.min(...prices);
   const max = Math.max(...prices);

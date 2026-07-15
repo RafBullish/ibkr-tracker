@@ -25,6 +25,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo, useState } from 'react';
+import MarketDeck from '../components/dashboard/MarketDeck';
 import CommandDeck from '../components/dashboard/CommandDeck';
 import EquityChart from '../components/charts/EquityChart';
 import DailyPnLChart from '../components/charts/DailyPnLChart';
@@ -134,6 +135,8 @@ export default function Dashboard() {
   return (
     <div className="dashboard-page">
       <div className="dash-shell">
+        {/* v1.0 · 1.C — étage 0 : le marché en un coup d'œil */}
+        <MarketDeck />
         {/* v1.0 · 1.A — Ligne de commandement (remplace DashboardKPICards) */}
         <CommandDeck />
       <div className="dash-grid">

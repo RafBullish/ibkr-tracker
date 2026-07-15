@@ -21,7 +21,7 @@
 //      Si le 2e échoue, marque l'erreur (dégradé propre, pas de boucle).
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 const CACHE_KEY = 'ibkr_market_sparklines_v1';
 const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 h — anti-flash réhydratation
@@ -111,41 +111,48 @@ async function fetchSparkline(symbol) {
   return promise;
 }
 
-export function useMarketSparklines(symbols) {
-  // Clé stable pour les deps : évite de refetch quand l'array reference
-  // change mais le contenu non (cf. pattern useMarketQuotes).
-  const symbolsKey = (symbols || []).join('|');
+// ─── 1.C — Poller partagé module-scope (pattern useMarketQuotes) ──
+// N consommateurs avec la MÊME liste (TickerTape + MarketDeck)
+// partagent UNE boucle : un seul setInterval, un seul train
+// /api/chart, un seul cacheRef (le skip-if-fresh reste cohérent
+// entre instances). API du hook inchangée.
+const sparkPollers = new Map();
 
-  const [sparklines, setSparklines] = useState(() => loadCache());
-  const [errors, setErrors] = useState({});
-  const inflightRef = useRef(false);
-  const cacheRef = useRef(loadCache());
-  // Le premier fetch doit toujours s'exécuter, même si le tab est marqué
-  // 'hidden' au mount (cas typique : DevTools ouvert juste après load).
-  // La garde visibility ne s'applique qu'aux fetchs subséquents du polling.
-  const hasInitialFetchedRef = useRef(false);
+function createSparkPoller(symbols) {
+  const poller = {
+    refCount: 0,
+    timer: null,
+    inFlight: false,
+    hasInitialFetched: false,
+    cache: loadCache(),
+    state: { sparklines: loadCache(), errors: {} },
+    subscribers: new Set(),
+  };
 
-  const fetchAll = useCallback(async () => {
-    if (inflightRef.current) return;
+  const notify = () => {
+    for (const cb of poller.subscribers) cb(poller.state);
+  };
+
+  const fetchAll = async () => {
+    if (poller.inFlight) return;
     if (!symbols || symbols.length === 0) return;
     if (
-      hasInitialFetchedRef.current &&
+      poller.hasInitialFetched &&
       typeof document !== 'undefined' &&
       document.visibilityState === 'hidden'
-    ) return;
+    ) {
+      return;
+    }
 
-    inflightRef.current = true;
-    const next = { ...cacheRef.current };
+    poller.inFlight = true;
+    const next = { ...poller.cache };
     const nextErrors = {};
     const now = Date.now();
 
     try {
       for (const symbol of symbols) {
-        // ─── B1.2 — Skip si cache frais ───────────────────────────
-        // FRESH_TTL_MS (5 min) — distinct de CACHE_MAX_AGE_MS (24 h
-        // = anti-flash réhydratation). Le 2e reload dans 5 min ne
-        // déclenche aucun appel réseau pour ce symbole.
-        const cached = cacheRef.current[symbol];
+        // ─── B1.2 — Skip si cache frais (FRESH_TTL 5 min) ─────────
+        const cached = poller.cache[symbol];
         if (cached && typeof cached.timestamp === 'number' && now - cached.timestamp < FRESH_TTL_MS) {
           continue;
         }
@@ -162,42 +169,72 @@ export function useMarketSparklines(symbols) {
         }
         await new Promise((r) => setTimeout(r, INTER_FETCH_DELAY_MS));
       }
-      cacheRef.current = next;
+      poller.cache = next;
       persistCache(next);
-      setSparklines({ ...next });
-      setErrors(nextErrors);
+      poller.state = { sparklines: { ...next }, errors: nextErrors };
+      notify();
     } finally {
-      inflightRef.current = false;
-      hasInitialFetchedRef.current = true;
+      poller.inFlight = false;
+      poller.hasInitialFetched = true;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbolsKey]);
+  };
 
-  useEffect(() => {
+  const onVisibility = () => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      fetchAll();
+    }
+  };
+
+  poller.start = () => {
     fetchAll();
-    const id = setInterval(fetchAll, POLL_INTERVAL_MS);
-
-    // ─── B1.4 — visibility refetch bénéficie du skip-if-fresh ────
-    // Le path visibilitychange appelle simplement fetchAll() qui
-    // applique déjà le skip TTL (B1.2). Toggle DevTools focus/blur
-    // ne déclenche plus de burst si la donnée est < FRESH_TTL.
-    const onVisibility = () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        fetchAll();
-      }
-    };
-
+    poller.timer = setInterval(fetchAll, POLL_INTERVAL_MS);
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', onVisibility);
     }
+  };
+
+  poller.stop = () => {
+    if (poller.timer) clearInterval(poller.timer);
+    poller.timer = null;
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', onVisibility);
+    }
+  };
+
+  return poller;
+}
+
+export function useMarketSparklines(symbols) {
+  // Clé stable pour les deps : évite de refetch quand l'array reference
+  // change mais le contenu non (cf. pattern useMarketQuotes).
+  const symbolsKey = (symbols || []).join('|');
+
+  const [state, setState] = useState(() => {
+    const existing = sparkPollers.get(symbolsKey);
+    return existing ? existing.state : { sparklines: loadCache(), errors: {} };
+  });
+
+  useEffect(() => {
+    let poller = sparkPollers.get(symbolsKey);
+    if (!poller) {
+      poller = createSparkPoller(symbolsKey ? symbolsKey.split('|') : []);
+      sparkPollers.set(symbolsKey, poller);
+    }
+    poller.subscribers.add(setState);
+    poller.refCount += 1;
+    setState(poller.state);
+    if (poller.refCount === 1) poller.start();
 
     return () => {
-      clearInterval(id);
-      if (typeof document !== 'undefined') {
-        document.removeEventListener('visibilitychange', onVisibility);
+      poller.subscribers.delete(setState);
+      poller.refCount -= 1;
+      if (poller.refCount === 0) {
+        poller.stop();
+        sparkPollers.delete(symbolsKey);
       }
     };
-  }, [fetchAll]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [symbolsKey]);
 
-  return { sparklines, errors };
+  return state;
 }

@@ -797,6 +797,104 @@
     column-gap: 14px;
   }
 
+  /* ════════════════════════════════════════════════════════════════
+     V1.0 · 1.C — MARKET DECK, palier ≥1440. UNE rangée, 5 zones sur
+     hairlines verticales. Composer GRAND (boussole d'échelle 1.B.3) :
+     session 21 / countdown 23 · indices 28 + pastilles 18 · VIX 32 ·
+     FX 28, DXY/US10Y 21 · événement 18. Micro-signalétique chrome
+     (heure NY, badges, « taux appliqué ») : 12-13.
+     ════════════════════════════════════════════════════════════════ */
+  /* Fractions réglées au CONTENU (dérogation loggée au ±10 % du brief :
+     3 indices à prix 28 + pastilles 18 + sparklines exigent ~2.4fr —
+     l'alternative, réduire les tailles, est interdite par la boussole
+     d'échelle). Tenue vérifiée @1359 sans wrap. */
+  .market-deck {
+    grid-template-columns: 0.9fr 2.4fr 0.95fr 1.2fr 1.55fr;
+    min-height: 100px;
+  }
+
+  .market-deck__zone {
+    padding: 12px 18px 12px;
+    gap: 6px;
+    border-top: none;
+  }
+
+  .market-deck__zone:not(:first-child),
+  .market-deck__zone:nth-child(even),
+  .market-deck__zone:nth-child(n + 3) {
+    border-left: 1px solid var(--hairline-rest);
+    border-top: none;
+  }
+
+  .market-deck__zone:first-child {
+    border-left: none;
+  }
+
+  .market-deck__label {
+    font-size: 13px;
+  }
+
+  .market-deck__session-phase {
+    font-size: 21px;
+  }
+
+  .market-deck__countdown-value {
+    font-size: 23px;
+  }
+
+  .market-deck__index-symbol {
+    font-size: 17px;
+  }
+
+  .market-deck__index-price {
+    font-size: 28px;
+  }
+
+  .market-deck__indices-row {
+    gap: 22px;
+  }
+
+  .market-deck__pill {
+    font-size: 18px;
+    padding: 1px 6px;
+  }
+
+  .market-deck__pill--compact {
+    font-size: 14px;
+    padding: 1px 5px;
+  }
+
+  .market-deck__vix-value {
+    font-size: 32px;
+  }
+
+  .market-deck__regime {
+    font-size: 14px;
+  }
+
+  .market-deck__fx-value {
+    font-size: 28px;
+  }
+
+  .market-deck__rate-value {
+    font-size: 21px;
+  }
+
+  .market-deck__event-line {
+    font-size: 18px;
+  }
+
+  .market-deck__event-kind {
+    font-size: 13px;
+    width: 86px;
+  }
+
+  .market-deck__caption,
+  .market-deck__countdown-label {
+    font-size: 12px;
+  }
+}
+
   .command-deck__label,
   .command-deck__live-text,
   .command-deck__mtd-label {
