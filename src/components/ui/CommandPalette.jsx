@@ -7,18 +7,24 @@ import { useNavigate } from 'react-router-dom';
 import { useOpenPositions, useSettings } from '../../store/useStore';
 import { calculateOpenPositionPnl } from '../../utils/calculations';
 import { toFloat } from '../../utils/math';
+import { FEATURE_GREEK_CENTER } from '../../constants/featureFlags';
 import T from '../../theme/tokens';
 import Icons from './Icons';
 
+// 1.C — hints alignés sur le mapping RÉEL ⌘1..9 (AppShell NAV_PATHS).
+// Affichage seulement : rien n'est remappé ici.
 const navItems = [
   { label: 'Tableau de bord', shortcut: '⌘1', path: '/dashboard', icon: 'grid' },
   { label: 'Positions', shortcut: '⌘2', path: '/trading/positions', icon: 'trending' },
-  { label: 'Historique', shortcut: '', path: '/trading/history', icon: 'list' },
-  { label: 'Options Live', shortcut: '⌘4', path: '/trading/chain', icon: 'layers' },
-  { label: 'Analytics', shortcut: '⌘5', path: '/insights/analytics', icon: 'bar' },
-  { label: 'Journal', shortcut: '', path: '/insights/journal', icon: 'book' },
-  { label: 'Calendrier', shortcut: '', path: '/insights/calendar', icon: 'cal' },
-  { label: 'Réglages', shortcut: '', path: '/settings/general', icon: 'settings' },
+  { label: 'Historique', shortcut: '⌘3', path: '/trading/history', icon: 'list' },
+  ...(FEATURE_GREEK_CENTER
+    ? [{ label: 'Greeks Center', shortcut: '⌘4', path: '/trading/greeks', icon: 'bar' }]
+    : []),
+  { label: 'Options Live', shortcut: '⌘5', path: '/trading/chain', icon: 'layers' },
+  { label: 'Analytics', shortcut: '⌘6', path: '/insights/analytics', icon: 'bar' },
+  { label: 'Journal', shortcut: '⌘8', path: '/insights/journal', icon: 'book' },
+  { label: 'Calendrier', shortcut: '⌘7', path: '/insights/calendar', icon: 'cal' },
+  { label: 'Réglages', shortcut: '⌘9', path: '/settings/general', icon: 'settings' },
 ];
 
 const quickActions = [

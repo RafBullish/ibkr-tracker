@@ -34,15 +34,14 @@
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   grid-auto-rows: auto;
-  /* Phase C.2.10 — SniperGateMonitor retiré du dashboard. Grid
-     simplifié en 5 rows. Ordre : Row 1 charts+risk → Row 2 positions
-     → Row 3 history → Row 4 watch+calendar → Row 5 ivr+heat+alert. */
+  /* 1.C — stubs IVRankMovers/SectorHeatmap retirés (hooks vides) :
+     AlertsFeed prend la Row 5 pleine largeur. */
   grid-template-areas:
     "equity equity equity dailypnl dailypnl dailypnl risk risk risk risk risk risk"
     "positions positions positions positions positions positions positions positions positions positions positions positions"
     "history history history history history history history history history history history history"
     "watch watch watch watch watch watch calendar calendar calendar calendar calendar calendar"
-    "ivr ivr ivr ivr heat heat heat heat alert alert alert alert";
+    "alert alert alert alert alert alert alert alert alert alert alert alert";
   gap: 8px;
   padding: 0 4px 4px;
   width: 100%;
@@ -95,12 +94,7 @@
 .dash-grid > [style*="grid-area: calendar"] {
   height: 180px;
 }
-.dash-grid > [style*="grid-area: ivr"] {
-  height: 160px;
-}
-.dash-grid > [style*="grid-area: heat"] {
-  height: 160px;
-}
+/* (1.C : areas ivr/heat supprimées avec les stubs.) */
 .dash-grid > [style*="grid-area: alert"] {
   height: 160px;
 }

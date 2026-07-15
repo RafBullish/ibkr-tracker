@@ -32,28 +32,9 @@ import useMarketSession from '../../hooks/useMarketSession';
 import { useClosedTrades, useSettings } from '../../store/useStore';
 import { FRESHNESS } from '../../constants/timing';
 import NumAnat from '../ui/NumAnat';
-
-// ─── Formateurs (convention KPI existante, cf. en-tête) ─────────
-
-const fmtUsdCompact = (v) => {
-  if (v == null || !Number.isFinite(v)) return '—';
-  if (Math.abs(v) >= 1_000_000) {
-    return `$${(v / 1_000_000).toLocaleString('de-CH', { maximumFractionDigits: 2 })}M`;
-  }
-  return `$${Math.round(v).toLocaleString('de-CH')}`;
-};
-
-const fmtUsdSigned = (v) => {
-  if (v == null || !Number.isFinite(v)) return '—';
-  if (v === 0) return '$0';
-  const sign = v > 0 ? '+' : '−';
-  return `${sign}$${Math.round(Math.abs(v)).toLocaleString('de-CH')}`;
-};
-
-const toneSign = (v) => {
-  if (v == null || !Number.isFinite(v) || v === 0) return undefined;
-  return v > 0 ? 'profit' : 'loss';
-};
+// 1.C — formateurs KPI extraits vers le module partagé (une seule
+// convention monétaire pour les decks).
+import { fmtUsdCompact, fmtUsdSigned, toneSign } from '../../utils/formatKpi';
 
 // Formule EXACTE de l'ancienne carte DAY P&L (DashboardKPICards) :
 // l'entrée du jour dans la série useDailyPnL (réalisé par close-date),
