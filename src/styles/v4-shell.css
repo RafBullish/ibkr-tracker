@@ -447,6 +447,10 @@
    rouge est l'exception explicite (Bloomberg/Reuters convention).
    N'autorise PAS la même chromatique ailleurs.
    ─────────────────────────────────────────────────────────────── */
+/* Δ% en PASTILLE désaturée (1.B.3/L2, variante D « Salle des marchés »
+   choisie au lab) : fond color-mix 16 % de la couleur directionnelle,
+   radius 4, padding 1/6. Remplace l'ancien badge --glow des mouvements
+   forts (toutes les variations sont des pastilles désormais). */
 .ticker-cell__change {
   font-family: var(--qc-font-mono);
   font-variant-numeric: tabular-nums;
@@ -455,36 +459,25 @@
   letter-spacing: -0.01em;
   line-height: 1;
   position: relative;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 
 .ticker-cell__change.qc-profit {
   color: var(--pnl-up);
+  background: color-mix(in srgb, var(--pnl-up) 16%, transparent);
 }
 
 .ticker-cell__change.qc-loss {
   color: var(--pnl-down);
+  background: color-mix(in srgb, var(--pnl-down) 16%, transparent);
 }
 
 .ticker-cell__arrow {
-  font-size: 12px;
+  font-size: 0.72em;
   margin-right: 4px;
   display: inline-block;
-}
-
-/* Badge glow sur mouvements forts (|change%| > 2) — fond plat translucide
-   dérivé du token via color-mix (theme-aware). */
-.ticker-cell__change--glow {
-  padding: 2px 6px;
-  border-radius: var(--qc-radius-sm);
-  margin-left: -6px;
-}
-
-.ticker-cell__change--glow.qc-profit {
-  background: color-mix(in srgb, var(--pnl-up) 15%, transparent);
-}
-
-.ticker-cell__change--glow.qc-loss {
-  background: color-mix(in srgb, var(--pnl-down) 15%, transparent);
 }
 
 /* PRIX — héros de cellule. tabular-nums + nowrap pour rester
@@ -530,8 +523,33 @@
   opacity: 0.95;
 }
 
+/* Le SVG est émis à 84×46 (palier, viewBox fixe) et re-scalé en CSS à
+   la base — vector-effect: non-scaling-stroke garde le trait à 1 px. */
 .ticker-cell__sparkline svg {
   display: block;
+  width: 56px;
+  height: 30px;
+}
+
+/* Pulse de luminosité du prix au tick (variante D) — remonté par key
+   en même temps que le flash de cellule. */
+.ticker-cell__value--pulse {
+  animation: tape-price-pulse 500ms ease-out;
+}
+
+@keyframes tape-price-pulse {
+  from {
+    opacity: 0.7;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-cell__value--pulse {
+    animation: none;
+  }
 }
 
 /* Les sparklines restent visibles à toutes les largeurs : avec le marquee,

@@ -850,29 +850,33 @@
     font-size: 15px;
   }
 
-  /* 1.B.2 — TickerTape v2 : VRAI bandeau de salle de marchés. 64 px,
-     prix 24 Plex 700, symbole 17 caps, Δ% 18 / Δ net 17 (ces valeurs
-     PRIMENT sur le barème strip D2.F 21/16 plus haut — ordre de source). */
+  /* 1.B.3/L2 — TickerTape DÉFINITIF : variante D « Salle des marchés »
+     choisie par Rafael au lab /lab/tape. 92 px, prix 36 Plex 700,
+     symbole 19 caps, pastille Δ% 20 (mix 16 %) / Δ net 18, sparkline
+     84×46, padding 34. (Ces valeurs PRIMENT sur le barème strip D2.F
+     plus haut — ordre de source.) */
   .ticker-tape {
-    height: 64px;
+    height: 92px;
   }
   .ticker-cell {
-    padding: 0 22px;
-    gap: 14px;
+    padding: 0 34px;
+    gap: 16px;
   }
   .ticker-cell__symbol {
-    font-size: 17px;
+    font-size: 19px;
   }
   .ticker-cell__value {
-    font-size: 24px;
+    font-size: 36px;
   }
   .ticker-cell__change {
-    font-size: 18px;
+    font-size: 20px;
   }
   .ticker-cell__change-net {
-    font-size: 17px;
+    font-size: 18px;
   }
-  .ticker-cell__sparkline {
-    height: 30px;
+  .ticker-cell__sparkline,
+  .ticker-cell__sparkline svg {
+    height: 46px;
+    width: 84px;
   }
 }
