@@ -1,23 +1,26 @@
 // ═══════════════════════════════════════════════════════════════
-//  MARKET LAB II — /lab/market (1.C.4) · DEV-ONLY, ÉPHÉMÈRE
+//  MARKET LAB III — /lab/market (1.C.5) · DEV-ONLY, ÉPHÉMÈRE
 //
-//  CONCEPTION DÉLÉGUÉE : trois LANGAGES de dessin (pas trois tailles),
-//  construits sous boucle d'autocritique (checklist de la claque) :
-//    A  · Témoin v2 (réel)
-//    V1 · TERMINAL   — mur de nombres réglé Bloomberg (variations =
-//                      gros chiffres colorés, chips reverse-video,
-//                      rail SESSION pleine hauteur)
-//    V2 · DATA-VIZ   — tuiles TradingView (sparklines HAUTES en
-//                      dégradé, prix massifs, pastilles du tape)
-//    V3 · COCKPIT    — instrument asymétrique (commandement | mur
-//                      central | intelligence : échelle VIX graduée
-//                      ~220×14 + timeline d'agenda VERTICALE)
+//  FUSION : UN seul langage (tuiles vivantes V2 × organes V3 ×
+//  discipline tabulaire V1), en TROIS calibrations F1/F2/F3 dont
+//  l'axe unique est la part des courbes (28 / 42 / 54 px).
 //
-//  LOIS : hiérarchie (primaires ≥26, héros 32-40, étage 240-300) ·
-//  anti-vide durcie (contenu → grille, gap max 32) · couleur marché
-//  sur les VARIATIONS (chiffres colorés autorisés à toute taille),
-//  prix en --ink-pure · ambre = vivant/décision only.
-//  Données : partage 1.C (une instanciation), zéro polling nouveau.
+//  LOIS DE CRAFT (1.C.5 §2) appliquées par construction :
+//  - une seule anatomie de pastille (tape à l'échelle 15/16/18) et
+//    une seule anatomie de chip reverse-video ;
+//  - héros (tuiles indices, VIX) = pastilles · rangées tabulaires
+//    (FX, MONDE, FUT) = Δ% texte coloré gras ;
+//  - baseline 24 px, grille 4 px, titres de zone identiques (13 caps
+//    .1em mute, même y), rangées tabulaires 24 px exactement ;
+//  - décimales par classe : indices 0 · FX 4 · taux 2 · VIX 2 ·
+//    GOLD/CRUDE 2 · BTC 0 ;
+//  - courbes : intraday 1d/5m (sonde : 79 points → largeur max
+//    474 px), interpolation monotone, aire 12 %→0, stroke 1.25 ;
+//  - hairlines : --line-emphasis entre blocs, --hairline-rest
+//    internes, zéro radius.
+//  Données : pollers partagés 1.C (quotes + extras FUT) ; série
+//  intraday via /api/chart EXISTANT (params range/interval déjà
+//  whitelistés côté serveur — aucun endpoint/param nouveau).
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -38,38 +41,43 @@ const FUTURES = [
   { sym: 'YM=F', label: 'YM' },
 ];
 const FUTURES_SYMBOLS = FUTURES.map((f) => f.sym);
-
 const US = [
   { sym: '^SPX', label: 'SPX' },
   { sym: '^NDX', label: 'NDX' },
   { sym: '^DJI', label: 'DJI' },
   { sym: '^RUT', label: 'RUT' },
 ];
-const INTL = [
-  { sym: '^GDAXI', label: 'DAX' },
-  { sym: '^FTSE', label: 'FTSE' },
-  { sym: '^N225', label: 'NIKKEI' },
-];
-const MONDE = [
-  { sym: 'GC=F', label: 'GOLD' },
-  { sym: 'CL=F', label: 'CRUDE' },
-  { sym: 'BTC-USD', label: 'BTC' },
-];
-
+const US_SYMBOLS = US.map((u) => u.sym);
 const PHASE_LABELS = { open: 'OUVERT', pre: 'PRÉ-MARCHÉ', after: 'AFTER', closed: 'FERMÉ' };
-const EVENT_WINDOW_DAYS = 14;
+const WINDOW_DAYS = 14;
 
-// ─── Helpers ────────────────────────────────────────────────────
-function fmtPrice(price, decimals = 2) {
-  if (price == null || !Number.isFinite(price)) return '—';
-  if (price >= 1000) return new Intl.NumberFormat('de-CH').format(Math.round(price));
-  return price.toFixed(decimals);
+// ─── Décimales par classe d'actif (loi §2.4) ────────────────────
+const CHF = new Intl.NumberFormat('de-CH');
+const CHF2 = new Intl.NumberFormat('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function fmtVal(v, cls) {
+  if (v == null || !Number.isFinite(v)) return '—';
+  switch (cls) {
+    case 'index':
+    case 'btc':
+      return CHF.format(Math.round(v));
+    case 'fx':
+      return v.toFixed(4);
+    case 'rate':
+    case 'vix':
+      return v.toFixed(2);
+    case 'cmdty':
+      return CHF2.format(v);
+    default:
+      return CHF.format(Math.round(v));
+  }
 }
-function fmtNet(change) {
+// Δ$ suit les décimales de la classe (loi §2.4) : indices 0 déc.
+function fmtNet(change, cls = 'index') {
   if (change == null || !Number.isFinite(change)) return '—';
   const sign = change > 0 ? '+' : change < 0 ? '−' : '';
   const abs = Math.abs(change);
-  return `${sign}${abs >= 1000 ? new Intl.NumberFormat('de-CH').format(Math.round(abs)) : abs.toFixed(2)}`;
+  if (cls === 'index' || cls === 'btc') return `${sign}${CHF.format(Math.round(abs))}`;
+  return `${sign}${abs.toFixed(2)}`;
 }
 function fmtPct(pct) {
   if (pct == null || !Number.isFinite(pct)) return '—';
@@ -94,61 +102,94 @@ function daysUntil(iso) {
 function etaLabel(d) {
   return d === 0 ? 'AUJ.' : `J-${d}`;
 }
+function shortDate(iso) {
+  return `${iso.slice(8, 10)}.${iso.slice(5, 7)}`;
+}
 function compactName(name) {
   return String(name || '').split(' — ')[0].split(' (')[0];
 }
 
-// Variation en NOMBRE COLORÉ (sémantique marché, sanctionnée à toute taille).
-function Delta({ v, kind = 'pct', className = '' }) {
-  const dir = dirOf(v);
-  const txt = kind === 'pct' ? fmtPct(v) : fmtNet(v);
-  return <span className={`lm2-delta lm2-delta--${dir} ${className}`.trim()}>{txt}</span>;
-}
-
-// Pastille (anatomie tape — langage V2).
-function Pill({ pct, size = 'lg' }) {
+// ─── Atomes de craft (anatomies UNIQUES — loi §2.1) ─────────────
+function Pastille({ pct, size = 16 }) {
   if (pct == null || !Number.isFinite(pct)) {
-    return <span className={`lm2-pill lm2-pill--${size} lm2-pill--flat`}>—</span>;
+    return <span className={`fz-pill fz-pill--${size} fz-pill--flat`}>—</span>;
   }
   const dir = dirOf(pct);
   const arrow = pct > 0 ? '▲' : pct < 0 ? '▼' : '';
   return (
-    <span className={`lm2-pill lm2-pill--${size} lm2-pill--${dir}`}>
-      {arrow && <span className="lm2-pill__arrow">{arrow}</span>}
+    <span className={`fz-pill fz-pill--${size} fz-pill--${dir}`}>
+      {arrow && <span className="fz-pill__arrow">{arrow}</span>}
       {Math.abs(pct).toFixed(2)}%
     </span>
   );
 }
 
-// Chip reverse-video (langage V1 — états Bloomberg).
-function Reverse({ children, tone = 'ink' }) {
-  return <span className={`lm2-rev lm2-rev--${tone}`}>{children}</span>;
+function Chip({ children, tone = 'ink' }) {
+  return <span className={`fz-chip fz-chip--${tone}`}>{children}</span>;
 }
 
-// Sparkline AIRE haute (langage V2) — dégradé 12 % → 0, stroke 1.5.
+function DeltaText({ v, size = 15 }) {
+  return (
+    <span className={`fz-delta fz-delta--${size} fz-delta--${dirOf(v)}`}>{fmtPct(v)}</span>
+  );
+}
+
+// ─── Courbe intraday — interpolation monotone (Fritsch–Carlson) ──
+// Lissage doux SANS invention de données : la courbe passe par tous
+// les points, les tangentes sont bornées pour ne jamais dépasser.
+function monotonePath(xs, ys) {
+  const n = xs.length;
+  if (n < 2) return '';
+  const dx = [];
+  const slopes = [];
+  for (let i = 0; i < n - 1; i += 1) {
+    dx.push(xs[i + 1] - xs[i]);
+    slopes.push((ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i]));
+  }
+  const m = [slopes[0]];
+  for (let i = 1; i < n - 1; i += 1) {
+    if (slopes[i - 1] * slopes[i] <= 0) m.push(0);
+    else {
+      const w1 = 2 * dx[i] + dx[i - 1];
+      const w2 = dx[i] + 2 * dx[i - 1];
+      m.push((w1 + w2) / (w1 / slopes[i - 1] + w2 / slopes[i]));
+    }
+  }
+  m.push(slopes[n - 2]);
+  let d = `M ${xs[0].toFixed(2)},${ys[0].toFixed(2)}`;
+  for (let i = 0; i < n - 1; i += 1) {
+    const h = dx[i] / 3;
+    d += ` C ${(xs[i] + h).toFixed(2)},${(ys[i] + m[i] * h).toFixed(2)} ${(xs[i + 1] - h).toFixed(2)},${(ys[i + 1] - m[i + 1] * h).toFixed(2)} ${xs[i + 1].toFixed(2)},${ys[i + 1].toFixed(2)}`;
+  }
+  return d;
+}
+
 let gradSeq = 0;
-function AreaSpark({ prices, height = 64, width = 150, fill = false }) {
+function IntradaySpark({ prices, height }) {
   const idRef = useRef(null);
   if (idRef.current == null) {
     gradSeq += 1;
-    idRef.current = `lm2grad${gradSeq}`;
+    idRef.current = `fzgrad${gradSeq}`;
   }
-  if (!prices || prices.length < 2) return <div style={fill ? undefined : { height }} />;
+  if (!prices || prices.length < 2) {
+    return <div className="fz-spark fz-spark--empty" style={{ height }} />;
+  }
+  const W = 120;
   const min = Math.min(...prices);
   const max = Math.max(...prices);
   const range = max - min || 1;
-  const stepX = width / (prices.length - 1);
-  const pts = prices.map((p, i) => `${(i * stepX).toFixed(2)},${(height - 6 - ((p - min) / range) * (height - 12)).toFixed(2)}`);
-  const line = `M ${pts.join(' L ')}`;
-  const area = `${line} L ${width},${height} L 0,${height} Z`;
+  const xs = prices.map((_, i) => (i / (prices.length - 1)) * W);
+  const ys = prices.map((p) => height - 3 - ((p - min) / range) * (height - 6));
+  const line = monotonePath(xs, ys);
+  const area = `${line} L ${W},${height} L 0,${height} Z`;
   const up = prices[prices.length - 1] >= prices[0];
   const color = up ? 'var(--pnl-up)' : 'var(--pnl-down)';
   return (
     <svg
-      className={`lm2-areaspark${fill ? ' lm2-areaspark--fill' : ''}`}
-      viewBox={`0 0 ${width} ${height}`}
+      className="fz-spark"
+      viewBox={`0 0 ${W} ${height}`}
       preserveAspectRatio="none"
-      style={fill ? undefined : { height }}
+      style={{ height }}
       aria-hidden="true"
     >
       <defs>
@@ -158,12 +199,11 @@ function AreaSpark({ prices, height = 64, width = 150, fill = false }) {
         </linearGradient>
       </defs>
       <path d={area} fill={`url(#${idRef.current})`} stroke="none" />
-      <path d={line} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      <path d={line} fill="none" stroke={color} strokeWidth="1.25" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
 
-// Session vivante (tick 1 s isolé par instance).
 function useSessionNow() {
   const [now, setNow] = useState(() => new Date());
   const reduced = useMemo(
@@ -178,371 +218,8 @@ function useSessionNow() {
   return now;
 }
 
-// ═══ V1 · TERMINAL — le mur réglé ═══════════════════════════════
-function V1RailSession() {
-  const now = useSessionNow();
-  const { phase, targetKind, targetMs, nyLabel } = computeMarketPhase(now);
-  return (
-    <div className="lmv1-rail">
-      <div className="lmv1-rail__phase">
-        <span className={`lm2-dot${phase === 'open' ? ' lm2-dot--live' : ''}`} aria-hidden="true" />
-        <Reverse tone={phase === 'open' ? 'amber' : 'ink'}>{PHASE_LABELS[phase]}</Reverse>
-      </div>
-      <div className="lmv1-rail__cd-label">{targetKind === 'close' ? 'CLÔTURE DANS' : 'OUVERTURE DANS'}</div>
-      <div className="lmv1-rail__cd">{formatCountdown(targetMs != null ? targetMs - now.getTime() : null)}</div>
-      <div className="lmv1-rail__ny">NEW YORK {nyLabel}</div>
-      <div className="lmv1-rail__rule" />
-      <div className="lmv1-rail__rth">RTH 09:30–16:00 NY</div>
-    </div>
-  );
-}
-
-function V1Row({ label, quote }) {
-  const range =
-    Number.isFinite(quote?.low) && Number.isFinite(quote?.high)
-      ? `${fmtPrice(quote.low)}–${fmtPrice(quote.high)}`
-      : '—';
-  return (
-    <div className="lmv1-tr">
-      <span className="lmv1-td lmv1-td--sym">{label}</span>
-      <span className="lmv1-td lmv1-td--last">{fmtPrice(quote?.price)}</span>
-      <Delta v={quote?.changePercent} className="lmv1-td lmv1-td--pct" />
-      <Delta v={quote?.change} kind="net" className="lmv1-td lmv1-td--net" />
-      <span className="lmv1-td lmv1-td--range">{range}</span>
-    </div>
-  );
-}
-
-function V1Terminal({ quotes, rate, fxBadge, macros, earnings, d5, futServed, showFut }) {
-  const vix = quotes['^VIX'];
-  const regime =
-    Number.isFinite(vix?.price)
-      ? vix.price < 15 ? 'CALME' : vix.price < 20 ? 'NORMAL' : vix.price < 27 ? 'NERVEUX' : 'STRESS'
-      : '—';
-  const regimeHot = Number.isFinite(vix?.price) && vix.price >= 20;
-  // Rangées RÉELLES uniquement (anti-vide : pas de tirets empilés) ;
-  // les absences se disent en UNE ligne récap par type.
-  const agendaEvents = [
-    ...macros.map((m) => ({ k: 'M', ...m })),
-    ...earnings.map((e) => ({ k: 'E', armed: true, ...e })),
-  ].sort((a, b) => a.date.localeCompare(b.date));
-  return (
-    <section className="lmv1" aria-label="V1 Terminal">
-      <V1RailSession />
-
-      {/* Mur de nombres réglé — deux tables jumelles (hauteur ≤ loi) */}
-      <div className="lmv1-wall">
-        <div className="lmv1-tr lmv1-tr--head">
-          <span className="lmv1-td lmv1-td--sym">USA</span>
-          <span className="lmv1-td lmv1-td--last">LAST</span>
-          <span className="lmv1-td lmv1-td--pct">VAR %</span>
-          <span className="lmv1-td lmv1-td--net">VAR $</span>
-          <span className="lmv1-td lmv1-td--range">RANGE JOUR</span>
-        </div>
-        {US.map(({ sym, label }) => (
-          <V1Row key={sym} label={label} quote={quotes[sym]} />
-        ))}
-        {/* Décision de variante : FUT PERMANENT dans le mur (cotation ~24 h,
-            range overnight informatif) — équilibre 7/7 avec la table MONDE. */}
-        {futServed && (
-          <>
-            <div className="lmv1-groupline" />
-            {FUTURES.map(({ sym, label }) => (
-              <V1Row key={sym} label={label} quote={quotes[sym]} />
-            ))}
-          </>
-        )}
-      </div>
-      <div className="lmv1-wall">
-        <div className="lmv1-tr lmv1-tr--head">
-          <span className="lmv1-td lmv1-td--sym">MONDE</span>
-          <span className="lmv1-td lmv1-td--last">LAST</span>
-          <span className="lmv1-td lmv1-td--pct">VAR %</span>
-          <span className="lmv1-td lmv1-td--net">VAR $</span>
-          <span className="lmv1-td lmv1-td--range">RANGE JOUR</span>
-        </div>
-        {INTL.map(({ sym, label }) => (
-          <V1Row key={sym} label={label} quote={quotes[sym]} />
-        ))}
-        <div className="lmv1-groupline" />
-        {MONDE.map(({ sym, label }) => (
-          <V1Row key={sym} label={label} quote={quotes[sym]} />
-        ))}
-      </div>
-
-      {/* Colonne VOL & FX */}
-      <div className="lmv1-volfx">
-        <div className="lmv1-sect">VOLATILITÉ</div>
-        <div className="lmv1-vix">
-          <span className="lmv1-vix__value">{Number.isFinite(vix?.price) ? vix.price.toFixed(2) : '—'}</span>
-          <Delta v={vix?.changePercent} className="lmv1-vix__pct" />
-          {d5 != null && (
-            <span className="lmv1-vix__d5">
-              Δ5J ~{d5 >= 0 ? '+' : '−'}{Math.abs(d5).toFixed(1)}%
-            </span>
-          )}
-        </div>
-        <div className="lmv1-hl">
-          <Reverse tone={regimeHot ? 'amber' : 'ink'}>{regime}</Reverse>{' '}
-          H <b>{Number.isFinite(vix?.high) ? vix.high.toFixed(2) : '—'}</b> · L{' '}
-          <b>{Number.isFinite(vix?.low) ? vix.low.toFixed(2) : '—'}</b>
-        </div>
-        <div className="lmv1-rule" />
-        <div className="lmv1-sect">FX &amp; TAUX</div>
-        <div className="lmv1-fxmain">
-          <span className="lmv1-fxmain__sym">USD/CHF</span>
-          <span className="lmv1-fxmain__val">{Number.isFinite(rate) ? rate.toFixed(4) : '—'}</span>
-          <Reverse tone="ink">{fxBadge}</Reverse>
-        </div>
-        {[
-          { label: 'EUR/USD', q: quotes['EURUSD=X'], d: 4 },
-          { label: 'US10Y', q: quotes['^TNX'], d: 2 },
-          { label: 'DXY', q: quotes['DX-Y.NYB'], d: 2 },
-        ].map(({ label, q, d }) => (
-          <div className="lmv1-fxrow" key={label}>
-            <span className="lmv1-fxrow__sym">{label}</span>
-            <span className="lmv1-fxrow__val">
-              {Number.isFinite(q?.price) ? q.price.toFixed(d) : '—'}
-            </span>
-            <Delta v={q?.changePercent} className="lmv1-fxrow__pct" />
-          </div>
-        ))}
-      </div>
-
-      {/* Agenda réglé */}
-      <div className="lmv1-agenda">
-        <div className="lmv1-sect">AGENDA 14 J</div>
-        {agendaEvents.map((ev, i) => {
-          const d = daysUntil(ev.date);
-          const hot = d <= 2;
-          return (
-            <div className="lmv1-agrow" key={i}>
-              <Reverse tone="ink">{ev.k}</Reverse>
-              <span className="lmv1-agrow__name" title={ev.name}>
-                {compactName(ev.name)}
-              </span>
-              <span className="lmv1-agrow__date">
-                {ev.date.slice(8, 10)}.{ev.date.slice(5, 7)}
-              </span>
-              <span className={`lmv1-agrow__eta${hot ? ' is-hot' : ''}`}>{etaLabel(d)}</span>
-              {ev.armed && hot && <Reverse tone="amber">ARMED</Reverse>}
-            </div>
-          );
-        })}
-        {macros.length === 0 && (
-          <div className="lmv1-agrow">
-            <Reverse tone="ink">M</Reverse>
-            <span className="lmv1-agrow__empty">macro — rien sous {EVENT_WINDOW_DAYS} j</span>
-          </div>
-        )}
-        {earnings.length === 0 && (
-          <div className="lmv1-agrow">
-            <Reverse tone="ink">E</Reverse>
-            <span className="lmv1-agrow__empty">earnings — rien sous {EVENT_WINDOW_DAYS} j</span>
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-// ═══ V2 · DATA-VIZ — les tuiles TradingView ═════════════════════
-function V2SessionTile() {
-  const now = useSessionNow();
-  const { phase, targetKind, targetMs, nyLabel } = computeMarketPhase(now);
-  return (
-    <div className="lmv2-tile lmv2-tile--session">
-      <div className="lmv2-tile__head">
-        <span className={`lm2-dot${phase === 'open' ? ' lm2-dot--live' : ''}`} aria-hidden="true" />
-        <span className="lmv2-session-phase">{PHASE_LABELS[phase]}</span>
-      </div>
-      <div className="lmv2-session-cdlabel">
-        {targetKind === 'close' ? 'CLÔTURE DANS' : 'OUVERTURE DANS'}
-      </div>
-      <div className="lmv2-session-cd">
-        {formatCountdown(targetMs != null ? targetMs - now.getTime() : null)}
-      </div>
-      <div className="lmv2-session-ny">NEW YORK {nyLabel}</div>
-    </div>
-  );
-}
-
-function V2IndexTile({ label, quote, spark }) {
-  return (
-    <div className="lmv2-tile">
-      <div className="lmv2-tile__head">
-        <span className="lmv2-sym">{label}</span>
-        <Pill pct={quote?.changePercent} size="lg" />
-      </div>
-      <div className="lmv2-price">{fmtPrice(quote?.price)}</div>
-      <Delta v={quote?.change} kind="net" className="lmv2-net" />
-      <div className="lmv2-chart lmv2-chart--fill">
-        <AreaSpark prices={spark?.prices} fill />
-      </div>
-    </div>
-  );
-}
-
-function V2DataViz({ quotes, sparklines, rate, fxBadge, macros, earnings, d5 }) {
-  const vix = quotes['^VIX'];
-  const regime =
-    Number.isFinite(vix?.price)
-      ? vix.price < 15 ? 'CALME' : vix.price < 20 ? 'NORMAL' : vix.price < 27 ? 'NERVEUX' : 'STRESS'
-      : '—';
-  const regimeHot = Number.isFinite(vix?.price) && vix.price >= 20;
-  const events = [
-    ...macros.map((m) => ({ ...m, kind: 'macro' })),
-    ...earnings.map((e) => ({ ...e, kind: 'earn' })),
-  ].filter((e) => {
-    const d = daysUntil(e.date);
-    return d >= 0 && d <= EVENT_WINDOW_DAYS;
-  });
-  return (
-    <section className="lmv2" aria-label="V2 Data-viz">
-      <V2SessionTile />
-      {US.map(({ sym, label }) => (
-        <V2IndexTile key={sym} label={label} quote={quotes[sym]} spark={sparklines[sym]} />
-      ))}
-
-      {/* VIX — tuile large, la courbe est le héros */}
-      <div className="lmv2-tile lmv2-tile--vix">
-        <div className="lmv2-tile__head">
-          <span className="lmv2-sym">VIX</span>
-          <Pill pct={vix?.changePercent} size="lg" />
-          <span className={`lmv2-regime${regimeHot ? ' is-hot' : ''}`}>{regime}</span>
-        </div>
-        <div className="lmv2-vix-row">
-          <span className="lmv2-price lmv2-price--vix">
-            {Number.isFinite(vix?.price) ? vix.price.toFixed(2) : '—'}
-          </span>
-          <span className="lmv2-vix-hl">
-            H {Number.isFinite(vix?.high) ? vix.high.toFixed(2) : '—'} · L{' '}
-            {Number.isFinite(vix?.low) ? vix.low.toFixed(2) : '—'}
-            {d5 != null && ` · Δ5J ~${d5 >= 0 ? '+' : '−'}${Math.abs(d5).toFixed(1)}%`}
-          </span>
-        </div>
-        <div className="lmv2-chart lmv2-chart--fill">
-          <AreaSpark prices={sparklines['^VIX']?.prices} fill />
-        </div>
-      </div>
-
-      {/* FX & TAUX */}
-      <div className="lmv2-tile lmv2-tile--fx">
-        <div className="lmv2-tile__head">
-          <span className="lmv2-sym">USD/CHF</span>
-          <span className="lmv2-fx-badge">{fxBadge}</span>
-        </div>
-        <div className="lmv2-price lmv2-price--fx">{Number.isFinite(rate) ? rate.toFixed(4) : '—'}</div>
-        <div className="lmv2-fx-caption">TAUX APPLIQUÉ</div>
-        <div className="lmv2-fx-rows">
-          {[
-            { label: 'EUR/USD', q: quotes['EURUSD=X'], d: 4 },
-            { label: 'US10Y', q: quotes['^TNX'], d: 2 },
-            { label: 'DXY', q: quotes['DX-Y.NYB'], d: 2 },
-          ].map(({ label, q, d }) => (
-            <div className="lmv2-fx-row" key={label}>
-              <span className="lmv2-fx-sym">{label}</span>
-              <span className="lmv2-fx-val">{Number.isFinite(q?.price) ? q.price.toFixed(d) : '—'}</span>
-              <Pill pct={q?.changePercent} size="sm" />
-            </div>
-          ))}
-        </div>
-        <div className="lmv2-chart lmv2-chart--fill">
-          <AreaSpark prices={sparklines['USDCHF=X']?.prices} fill />
-        </div>
-      </div>
-
-      {/* EUROPE · ASIE */}
-      <div className="lmv2-tile lmv2-tile--intl">
-        <div className="lmv2-tile__head">
-          <span className="lmv2-sym">EUROPE · ASIE</span>
-        </div>
-        <div className="lmv2-intl-rows">
-          {INTL.map(({ sym, label }) => (
-            <div className="lmv2-intl-row" key={sym}>
-              <span className="lmv2-fx-sym">{label}</span>
-              <span className="lmv2-intl-val">{fmtPrice(quotes[sym]?.price)}</span>
-              <Pill pct={quotes[sym]?.changePercent} size="sm" />
-            </div>
-          ))}
-        </div>
-        <div className="lmv2-chart lmv2-chart--fill">
-          <AreaSpark prices={sparklines['^GDAXI']?.prices} fill />
-        </div>
-      </div>
-
-      {/* AGENDA — timeline ÉPAISSE */}
-      <div className="lmv2-tile lmv2-tile--agenda">
-        <div className="lmv2-tile__head">
-          <span className="lmv2-sym">AGENDA 14 J</span>
-        </div>
-        <div className="lmv2-ag-rows">
-          {events.slice(0, 4).map((ev, i) => {
-            const d = daysUntil(ev.date);
-            const hot = d <= 2;
-            return (
-              <div className="lmv2-ag-row" key={i}>
-                <span className="lmv2-ag-k">{ev.kind === 'macro' ? 'M' : 'E'}</span>
-                <span className="lmv2-ag-name" title={ev.name}>{compactName(ev.name)}</span>
-                <span className="lmv2-ag-date">
-                  {ev.date.slice(8, 10)}.{ev.date.slice(5, 7)}
-                </span>
-                <span className={`lmv2-ag-eta${hot ? ' is-hot' : ''}`}>{etaLabel(d)}</span>
-                {ev.kind === 'earn' && hot && <span className="lmv2-armed">ARMED</span>}
-              </div>
-            );
-          })}
-          {!events.some((e) => e.kind === 'macro') && (
-            <div className="lmv2-ag-row">
-              <span className="lmv2-ag-k">M</span>
-              <span className="lmv2-ag-empty">macro — rien sous 14 j</span>
-            </div>
-          )}
-          {!events.some((e) => e.kind === 'earn') && (
-            <div className="lmv2-ag-row">
-              <span className="lmv2-ag-k">E</span>
-              <span className="lmv2-ag-empty">earnings — rien sous 14 j</span>
-            </div>
-          )}
-        </div>
-        <div className="lmv2-timeline">
-          <div className="lmv2-timeline__track">
-            {Array.from({ length: 15 }, (_, i) => (
-              <span className="lmv2-timeline__tick" key={i} style={{ left: `${(i / 14) * 100}%` }} />
-            ))}
-            {events.map((ev, i) => {
-              const d = daysUntil(ev.date);
-              const hot = d <= 2;
-              const pct = Math.max(3, Math.min(97, (d / 14) * 100));
-              return (
-                <span
-                  key={i}
-                  className={`lmv2-timeline__dot lmv2-timeline__dot--${ev.kind}${hot ? ' is-hot' : ''}`}
-                  style={{ left: `${pct}%` }}
-                  title={`${ev.name} · ${etaLabel(d)}`}
-                />
-              );
-            })}
-          </div>
-          <div className="lmv2-timeline__names">
-            {events.map((ev, i) => {
-              const d = daysUntil(ev.date);
-              const pct = Math.max(8, Math.min(90, (d / 14) * 100));
-              return (
-                <span key={i} className="lmv2-timeline__name" style={{ left: `${pct}%` }}>
-                  {compactName(ev.name)}
-                </span>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ═══ V3 · COCKPIT — l'instrument asymétrique ════════════════════
-function V3Command({ futServed, showFut, quotes }) {
+// ═══ B1 · COMMANDEMENT ══════════════════════════════════════════
+function CommandBlock() {
   const now = useSessionNow();
   const { phase, targetKind, targetMs, phaseStartMs, nyLabel } = computeMarketPhase(now);
   const nowMs = now.getTime();
@@ -551,231 +228,324 @@ function V3Command({ futServed, showFut, quotes }) {
       ? Math.max(0, Math.min(100, ((nowMs - phaseStartMs) / (targetMs - phaseStartMs)) * 100))
       : null;
   return (
-    <div className="lmv3-cmd">
-      <div className="lmv3-cmd__phase">
-        <span className={`lm2-dot lm2-dot--big${phase === 'open' ? ' lm2-dot--live' : ''}`} aria-hidden="true" />
-        <span className="lmv3-cmd__phase-txt">{PHASE_LABELS[phase]}</span>
+    <div className="fz-b fz-cmd">
+      <div className="fz-cmd__phase">
+        <span className={`fz-dot${phase === 'open' ? ' fz-dot--live' : ''}`} aria-hidden="true" />
+        <Chip tone={phase === 'open' ? 'amber' : 'ink'}>{PHASE_LABELS[phase]}</Chip>
       </div>
-      <div className="lmv3-cmd__cdlabel">
+      <div className="fz-cmd__cdlabel">
         {targetKind === 'close' ? 'CLÔTURE DANS' : 'OUVERTURE DANS'}
       </div>
-      <div className="lmv3-cmd__cd">
-        {formatCountdown(targetMs != null ? targetMs - nowMs : null)}
-      </div>
+      <div className="fz-cmd__cd">{formatCountdown(targetMs != null ? targetMs - nowMs : null)}</div>
       {pct != null && (
-        <div className="lmv3-progress" role="img" aria-label={`Phase écoulée à ${Math.round(pct)} %`}>
-          <div className="lmv3-progress__track">
-            <div className="lmv3-progress__fill" style={{ width: `${pct}%` }} />
+        <div className="fz-progress" role="img" aria-label={`Séance écoulée à ${Math.round(pct)} %`}>
+          <div className="fz-progress__track">
+            <div className="fz-progress__fill" style={{ width: `${pct}%` }} />
           </div>
-          <div className="lmv3-progress__caption">{Math.round(pct)} %</div>
+          <span className="fz-progress__pct">{Math.round(pct)} %</span>
         </div>
       )}
-      <div className="lmv3-cmd__ny">NEW YORK {nyLabel}</div>
-      {futServed && showFut && (
-        <div className="lmv3-cmd__fut">
-          <span className="lmv3-cmd__fut-tag">FUT</span>
-          {FUTURES.map(({ sym, label }) => (
-            <span className="lmv3-cmd__fut-item" key={sym}>
-              {label} <Delta v={quotes[sym]?.changePercent} className="lm2-delta--15" />
-            </span>
-          ))}
-        </div>
-      )}
+      <div className="fz-cmd__ny">NEW YORK {nyLabel}</div>
     </div>
   );
 }
 
-function V3WallRow({ label, quote, fxDecimals = null }) {
+// ═══ B2 · INDICES US + FUT ══════════════════════════════════════
+function IndexTile({ label, quote, spark, cal }) {
   return (
-    <div className="lmv3-wrow">
-      <span className="lmv3-wrow__sym">{label}</span>
-      <span className="lmv3-wrow__val">
-        {fxDecimals != null
-          ? Number.isFinite(quote?.price)
-            ? quote.price.toFixed(fxDecimals)
-            : '—'
-          : fmtPrice(quote?.price)}
-      </span>
-      <Delta v={quote?.changePercent} className="lmv3-wrow__pct" />
+    <div className="fz-tile">
+      <div className="fz-tile__head">
+        <span className="fz-tile__sym">{label}</span>
+        <Pastille pct={quote?.changePercent} size={cal.pill} />
+      </div>
+      <div className="fz-tile__pricerow">
+        <span className="fz-tile__price">{fmtVal(quote?.price, 'index')}</span>
+        <span className={`fz-delta fz-delta--15 fz-delta--${dirOf(quote?.change)}`}>
+          {fmtNet(quote?.change, 'index')}
+        </span>
+      </div>
+      <div className="fz-tile__spark">
+        <IntradaySpark prices={spark?.prices} height={cal.curve} />
+      </div>
     </div>
   );
 }
 
-const V3_SEGMENTS = [
-  { from: 10, to: 15, label: 'CALME' },
-  { from: 15, to: 20, label: 'NORMAL' },
-  { from: 20, to: 27, label: 'NERVEUX' },
-  { from: 27, to: 40, label: 'STRESS' },
-];
+function IndicesBlock({ quotes, intraday, futServed, cal }) {
+  return (
+    <div className="fz-b fz-indices">
+      <div className="fz-title">INDICES US</div>
+      <div className="fz-tiles">
+        {US.map(({ sym, label }) => (
+          <IndexTile key={sym} label={label} quote={quotes[sym]} spark={intraday[sym]} cal={cal} />
+        ))}
+      </div>
+      <div className="fz-fut">
+        <div className="fz-fut__label">
+          FUT <span className="fz-fut__label-sub">· RANGE O/N</span>
+        </div>
+        {futServed ? (
+          FUTURES.map(({ sym, label }) => {
+            const q = quotes[sym];
+            const range =
+              Number.isFinite(q?.low) && Number.isFinite(q?.high)
+                ? `${fmtVal(q.low, 'index')}–${fmtVal(q.high, 'index')}`
+                : '—';
+            return (
+              <div className="fz-row fz-fut__row" key={sym}>
+                <span className="fz-row__sym">{label}</span>
+                <span className="fz-row__val">{fmtVal(q?.price, 'index')}</span>
+                <DeltaText v={q?.changePercent} />
+                <span className="fz-fut__range">{range}</span>
+              </div>
+            );
+          })
+        ) : (
+          <div className="fz-row fz-fut__row">
+            <span className="fz-row__empty">en attente du 1er train…</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
-function V3RegimeScale({ vix }) {
+// ═══ B3 · VOLATILITÉ ════════════════════════════════════════════
+const REGIMES = [
+  { to: 15, label: 'CALME' },
+  { to: 20, label: 'NORMAL' },
+  { to: 27, label: 'NERVEUX' },
+  { to: 40, label: 'STRESS' },
+];
+const REGIME_GRADS = [10, 15, 20, 27, 40];
+
+function regimeOf(vix) {
+  if (!Number.isFinite(vix)) return null;
+  if (vix < 15) return 0;
+  if (vix < 20) return 1;
+  if (vix < 27) return 2;
+  return 3;
+}
+
+function RegimeScale({ vix }) {
   if (!Number.isFinite(vix)) return null;
   const clamped = Math.max(10, Math.min(40, vix));
-  let idx = V3_SEGMENTS.findIndex((s) => clamped >= s.from && clamped < s.to);
-  if (idx === -1) idx = 3;
-  const seg = V3_SEGMENTS[idx];
-  const pct = idx * 25 + ((clamped - seg.from) / (seg.to - seg.from)) * 25;
+  const idx = regimeOf(clamped);
+  const from = REGIME_GRADS[idx];
+  const to = REGIME_GRADS[idx + 1];
+  const pct = idx * 25 + ((clamped - from) / (to - from)) * 25;
   const hot = vix >= 20;
   return (
-    <div className="lmv3-scale" aria-label={`Régime VIX : ${seg.label}`}>
-      <div className="lmv3-scale__names">
-        {V3_SEGMENTS.map((s, i) => (
-          <span key={s.label} className={`lmv3-scale__name${i === idx ? ' is-active' : ''}`}>
-            {s.label}
-          </span>
+    <div className="fz-scale" aria-label={`Régime VIX : ${REGIMES[idx].label}`}>
+      <div className="fz-scale__track">
+        {REGIMES.map((r, i) => (
+          <span className={`fz-scale__seg${i === idx ? ' is-active' : ''}`} key={r.label} title={r.label} />
         ))}
+        <span className={`fz-scale__cursor${hot ? ' is-hot' : ''}`} style={{ left: `${pct}%` }} />
       </div>
-      <div className="lmv3-scale__track">
-        {V3_SEGMENTS.map((s) => (
-          <span className="lmv3-scale__seg" key={s.label} />
+      <div className="fz-scale__grads">
+        {REGIME_GRADS.map((g, i) => (
+          <span key={g} style={{ left: `${i * 25}%` }}>{g}</span>
         ))}
-        <span
-          className={`lmv3-scale__cursor${hot ? ' is-hot' : ''}`}
-          style={{ left: `${pct}%` }}
-        />
-      </div>
-      <div className="lmv3-scale__grads">
-        <span style={{ left: '0%' }}>10</span>
-        <span style={{ left: '25%' }}>15</span>
-        <span style={{ left: '50%' }}>20</span>
-        <span style={{ left: '75%' }}>27</span>
-        <span style={{ left: '100%' }}>40</span>
       </div>
     </div>
   );
 }
 
-function V3Cockpit({ quotes, rate, fxBadge, macros, earnings, d5, futServed, showFut }) {
+function VolBlock({ quotes, d5, cal }) {
   const vix = quotes['^VIX'];
-  const events = [
-    ...macros.map((m) => ({ ...m, kind: 'M' })),
-    ...earnings.map((e) => ({ ...e, kind: 'E', armed: true })),
-  ]
-    .filter((e) => {
-      const d = daysUntil(e.date);
-      return d >= 0 && d <= EVENT_WINDOW_DAYS;
-    })
-    .sort((a, b) => a.date.localeCompare(b.date));
+  const idx = regimeOf(vix?.price);
+  const hot = idx != null && idx >= 2;
   return (
-    <section className="lmv3" aria-label="V3 Cockpit">
-      <V3Command futServed={futServed} showFut={showFut} quotes={quotes} />
-
-      {/* Mur central — deux colonnes serrées */}
-      <div className="lmv3-wall">
-        <div className="lmv3-wcol">
-          <div className="lmv3-wsect">ÉTATS-UNIS</div>
-          {US.map(({ sym, label }) => (
-            <V3WallRow key={sym} label={label} quote={quotes[sym]} />
-          ))}
-          <div className="lmv3-wsect">EUROPE · ASIE</div>
-          {INTL.map(({ sym, label }) => (
-            <V3WallRow key={sym} label={label} quote={quotes[sym]} />
-          ))}
+    <div className="fz-b fz-vol">
+      <div className="fz-title">VOLATILITÉ</div>
+      <div className="fz-vol__hero">
+        <span className="fz-vol__val">{fmtVal(vix?.price, 'vix')}</span>
+        <Pastille pct={vix?.changePercent} size={cal.pill} />
+      </div>
+      <RegimeScale vix={vix?.price} />
+      <div className="fz-vol__meta">
+        {idx != null && <Chip tone={hot ? 'amber' : 'ink'}>{REGIMES[idx].label}</Chip>}
+        <span className="fz-vol__hl">
+          H <b>{fmtVal(vix?.high, 'vix')}</b> · L <b>{fmtVal(vix?.low, 'vix')}</b>
+        </span>
+      </div>
+      {d5 != null && (
+        <div className="fz-vol__d5">
+          Δ5J <b>~{d5 >= 0 ? '+' : '−'}{Math.abs(d5).toFixed(1)}%</b>
         </div>
-        <div className="lmv3-wcol">
-          <div className="lmv3-wsect">
-            FX &amp; TAUX <span className="lmv3-wbadge">{fxBadge}</span>
+      )}
+    </div>
+  );
+}
+
+// ═══ B4 · FX & TAUX ═════════════════════════════════════════════
+function FxBlock({ quotes, rate, fxBadge }) {
+  return (
+    <div className="fz-b fz-fx">
+      <div className="fz-title">
+        FX &amp; TAUX <Chip tone="ink">{fxBadge}</Chip>
+      </div>
+      <div className="fz-fx__hero">
+        <span className="fz-fx__herosym">USD/CHF</span>
+        <span className="fz-fx__heroval">{Number.isFinite(rate) ? rate.toFixed(4) : '—'}</span>
+      </div>
+      <div className="fz-fx__applied">APPLIQUÉ AU PORTEFEUILLE</div>
+      {[
+        { label: 'EUR/USD', q: quotes['EURUSD=X'], cls: 'fx' },
+        { label: 'US10Y', q: quotes['^TNX'], cls: 'rate' },
+        { label: 'DXY', q: quotes['DX-Y.NYB'], cls: 'rate' },
+      ].map(({ label, q, cls }) => (
+        <div className="fz-row" key={label}>
+          <span className="fz-row__sym">{label}</span>
+          <span className="fz-row__val">{fmtVal(q?.price, cls)}</span>
+          <DeltaText v={q?.changePercent} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ═══ B5 · MONDE ═════════════════════════════════════════════════
+const WORLD_COLS = [
+  [
+    { sym: '^GDAXI', label: 'DAX', cls: 'index' },
+    { sym: '^FTSE', label: 'FTSE', cls: 'index' },
+    { sym: '^N225', label: 'NIKKEI', cls: 'index' },
+  ],
+  [
+    { sym: 'GC=F', label: 'GOLD', cls: 'cmdty' },
+    { sym: 'CL=F', label: 'CRUDE', cls: 'cmdty' },
+    { sym: 'BTC-USD', label: 'BTC', cls: 'btc' },
+  ],
+];
+
+function WorldBlock({ quotes }) {
+  return (
+    <div className="fz-b fz-world">
+      <div className="fz-title">MONDE</div>
+      <div className="fz-world__cols">
+        {WORLD_COLS.map((col, ci) => (
+          <div className="fz-world__col" key={ci}>
+            {col.map(({ sym, label, cls }) => (
+              <div className="fz-row" key={sym}>
+                <span className="fz-row__sym">{label}</span>
+                <span className="fz-row__val">{fmtVal(quotes[sym]?.price, cls)}</span>
+                <DeltaText v={quotes[sym]?.changePercent} />
+              </div>
+            ))}
           </div>
-          <div className="lmv3-wrow">
-            <span className="lmv3-wrow__sym">USD/CHF</span>
-            <span className="lmv3-wrow__val">{Number.isFinite(rate) ? rate.toFixed(4) : '—'}</span>
-            <span className="lmv3-wrow__applied">APPLIQUÉ</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ═══ B6 · AGENDA 14 J ═══════════════════════════════════════════
+function AgendaBlock({ macros, earnings }) {
+  const rows = [
+    ...macros.slice(0, 3).map((m) => ({ k: 'M', ...m })),
+    ...(earnings.length
+      ? earnings.slice(0, 1).map((e) => ({ k: 'E', armed: true, ...e }))
+      : [{ k: 'E', empty: true }]),
+  ];
+  // La timeline ne pointe que la fenêtre 14 j ; les rangées, elles,
+  // listent les 3 prochains macro même au-delà (eta J-n l'indique).
+  const dots = [
+    ...macros.slice(0, 3).map((m) => ({ ...m, kind: 'M' })),
+    ...earnings.slice(0, 2).map((e) => ({ ...e, kind: 'E' })),
+  ].filter((ev) => daysUntil(ev.date) <= WINDOW_DAYS);
+  return (
+    <div className="fz-b fz-agenda">
+      <div className="fz-title">AGENDA 14 J</div>
+      {rows.map((row, i) => {
+        if (row.empty) {
+          return (
+            <div className="fz-row fz-agenda__row" key={i}>
+              <Chip tone="ink">E</Chip>
+              <span className="fz-row__empty fz-agenda__empty">— sous {WINDOW_DAYS} j</span>
+            </div>
+          );
+        }
+        const d = daysUntil(row.date);
+        const hot = d <= 2;
+        return (
+          <div className="fz-row fz-agenda__row" key={i}>
+            <Chip tone="ink">{row.k}</Chip>
+            <span className="fz-agenda__name" title={row.name}>{compactName(row.name)}</span>
+            <span className="fz-agenda__date">{shortDate(row.date)}</span>
+            <span className={`fz-agenda__eta${hot ? ' is-hot' : ''}`}>{etaLabel(d)}</span>
           </div>
-          <V3WallRow label="EUR/USD" quote={quotes['EURUSD=X']} fxDecimals={4} />
-          <V3WallRow label="US10Y" quote={quotes['^TNX']} fxDecimals={2} />
-          <V3WallRow label="DXY" quote={quotes['DX-Y.NYB']} fxDecimals={2} />
-          <div className="lmv3-wsect">MONDE</div>
-          {MONDE.map(({ sym, label }) => (
-            <V3WallRow key={sym} label={label} quote={quotes[sym]} />
+        );
+      })}
+      <div className="fz-timeline">
+        <div className="fz-timeline__track">
+          {Array.from({ length: 15 }, (_, i) => (
+            <span className="fz-timeline__tick" key={i} style={{ left: `${(i / 14) * 100}%` }} />
           ))}
+          {dots.map((ev, i) => {
+            const d = daysUntil(ev.date);
+            const hot = d <= 2;
+            const pct = Math.max(2, Math.min(98, (d / 14) * 100));
+            return (
+              <span
+                key={i}
+                className={`fz-timeline__dot fz-timeline__dot--${ev.kind}${hot ? ' is-hot' : ''}`}
+                style={{ left: `${pct}%` }}
+                title={`${ev.name} · ${etaLabel(d)}`}
+              />
+            );
+          })}
+        </div>
+        <div className="fz-timeline__labels">
+          {dots.map((ev, i) => {
+            const d = daysUntil(ev.date);
+            const pct = Math.max(8, Math.min(86, (d / 14) * 100));
+            return (
+              <span className="fz-timeline__label" key={i} style={{ left: `${pct}%` }}>
+                {compactName(ev.name)}
+              </span>
+            );
+          })}
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Intelligence — VIX instrument + timeline verticale */}
-      <div className="lmv3-intel">
-        <div className="lmv3-vix">
-          <div className="lmv3-wsect">VOLATILITÉ</div>
-          <div className="lmv3-vix__row">
-            <span className="lmv3-vix__val">
-              {Number.isFinite(vix?.price) ? vix.price.toFixed(2) : '—'}
-            </span>
-            <Delta v={vix?.changePercent} className="lmv3-vix__pct" />
-          </div>
-          <V3RegimeScale vix={vix?.price} />
-          <div className="lmv3-vix__hl">
-            H <b>{Number.isFinite(vix?.high) ? vix.high.toFixed(2) : '—'}</b> · L{' '}
-            <b>{Number.isFinite(vix?.low) ? vix.low.toFixed(2) : '—'}</b>
-            {d5 != null && (
-              <>
-                {' '}· Δ5J <b>~{d5 >= 0 ? '+' : '−'}{Math.abs(d5).toFixed(1)}%</b>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="lmv3-tl">
-          <div className="lmv3-wsect">AGENDA 14 J</div>
-          <div className="lmv3-tl__body">
-            <div className="lmv3-tl__axis">
-              {Array.from({ length: 15 }, (_, i) => (
-                <span className="lmv3-tl__tick" key={i} style={{ top: `${(i / 14) * 100}%` }} />
-              ))}
-              {/* graduations de lecture : AUJ. (ambre = aujourd'hui) · J+7 · J+14 */}
-              <span className="lmv3-tl__today" style={{ top: '0%' }} />
-              <span className="lmv3-tl__grad lmv3-tl__grad--today" style={{ top: '0%' }}>AUJ.</span>
-              <span className="lmv3-tl__grad" style={{ top: '50%' }}>J+7</span>
-              <span className="lmv3-tl__grad" style={{ top: '100%' }}>J+14</span>
-              {events.map((ev, i) => {
-                const d = daysUntil(ev.date);
-                const hot = d <= 2;
-                const pct = Math.max(2, Math.min(98, (d / 14) * 100));
-                return (
-                  <span
-                    key={i}
-                    className={`lmv3-tl__dot lmv3-tl__dot--${ev.kind}${hot ? ' is-hot' : ''}`}
-                    style={{ top: `${pct}%` }}
-                  />
-                );
-              })}
-            </div>
-            <div className="lmv3-tl__items">
-              {(() => {
-                // anti-chevauchement : espacement mini 14 % entre items
-                let lastPct = -20;
-                return events.map((ev, i) => {
-                  const d = daysUntil(ev.date);
-                  const hot = d <= 2;
-                  let pct = Math.max(2, Math.min(90, (d / 14) * 100));
-                  if (pct < lastPct + 14) pct = Math.min(90, lastPct + 14);
-                  lastPct = pct;
-                  return (
-                    <span className="lmv3-tl__item" key={i} style={{ top: `${pct}%` }}>
-                      <span className="lmv3-tl__k">{ev.kind}</span>
-                      <span className="lmv3-tl__name" title={ev.name}>{compactName(ev.name)}</span>
-                      <span className={`lmv3-tl__eta${hot ? ' is-hot' : ''}`}>{etaLabel(d)}</span>
-                      {ev.armed && hot && <span className="lmv3-armed">ARMED</span>}
-                    </span>
-                  );
-                });
-              })()}
-            </div>
-          </div>
-          {!events.some((e) => e.kind === 'M') && (
-            <div className="lmv3-tl__recap">M · macro — rien sous 14 j</div>
-          )}
-          {!events.some((e) => e.kind === 'E') && (
-            <div className="lmv3-tl__recap">E · earnings — rien sous 14 j</div>
-          )}
-        </div>
-      </div>
+// ═══ L'ÉTAGE FUSION (un langage, calibré par variables) ═════════
+function FusionDeck({ cal, quotes, intraday, rate, fxBadge, macros, earnings, d5, futServed }) {
+  return (
+    <section
+      className="fz"
+      style={{ '--fz-h': `${cal.height}px`, '--fz-price': `${cal.price}px`, '--fz-vix': `${cal.vix}px` }}
+      aria-label={`Calibration ${cal.key}`}
+    >
+      <CommandBlock />
+      <IndicesBlock quotes={quotes} intraday={intraday} futServed={futServed} cal={cal} />
+      <VolBlock quotes={quotes} d5={d5} cal={cal} />
+      <FxBlock quotes={quotes} rate={rate} fxBadge={fxBadge} />
+      <WorldBlock quotes={quotes} />
+      <AgendaBlock macros={macros} earnings={earnings} />
     </section>
   );
 }
+
+const CALS = [
+  { key: 'F1', label: 'F1 · FUSION SERRÉE — courbes 28, un cran plus tabulaire', height: 240, curve: 28, price: 26, vix: 32, pill: 16 },
+  { key: 'F2', label: 'F2 · FUSION ÉQUILIBRE — courbes 42', height: 256, curve: 42, price: 26, vix: 33, pill: 16 },
+  { key: 'F3', label: 'F3 · FUSION VIVANTE — courbes 56 dominantes, VIX 36', height: 276, curve: 56, price: 28, vix: 36, pill: 18 },
+];
 
 // ═══ Page ═══════════════════════════════════════════════════════
 export default function MarketLab() {
   const { quotes } = useMarketQuotes(STATIC_FETCH_SYMBOLS);
   useQuoteBatchExtras(STATIC_FETCH_SYMBOLS, FUTURES_SYMBOLS);
-  const { sparklines } = useMarketSparklines(STATIC_FETCH_SYMBOLS);
+  // Série 7 j du tape (partagée) — sert le Δ5J VIX.
+  const { sparklines: spark7d } = useMarketSparklines(STATIC_FETCH_SYMBOLS);
+  // Série INTRADAY des 4 indices (1d/5m, sonde : 79 pts) — poller
+  // partagé distinct, cadence 5 min, bucket chart 90/min.
+  const { sparklines: intraday } = useMarketSparklines(US_SYMBOLS, '1d', '5m');
   const openPositions = useOpenPositions();
   const { rate, mode, source } = useFx();
   const [forceFut, setForceFut] = useState(false);
@@ -783,16 +553,12 @@ export default function MarketLab() {
   const fxBadge =
     mode === 'manual' ? 'MANUEL' : String(source || '').startsWith('live') ? 'LIVE' : 'AUTO';
 
-  // eslint-disable-next-line react-hooks/purity
-  const phase = computeMarketPhase(new Date()).phase;
-  const isRTH = phase === 'open';
-
   const myTickers = useMemo(
     () => [...new Set((openPositions || []).map((p) => p.tk).filter(Boolean))],
     [openPositions]
   );
   const today = isoToday();
-  const horizon = isoPlusDays(EVENT_WINDOW_DAYS);
+  const horizon = isoPlusDays(WINDOW_DAYS);
   const view = useMemo(() => {
     const d = new Date();
     return { viewYear: d.getFullYear(), viewMonth: d.getMonth() };
@@ -804,15 +570,29 @@ export default function MarketLab() {
     minImpact: 'medium',
   });
 
+  // ─── Agenda enrichi (1.C.5 §3.3) : UNION Finnhub ∪ local, dédup,
+  // tri → les 3 PROCHAINS macro (sans borne haute — le fichier local
+  // garantit ainsi ≥3 rangées ; la timeline, elle, reste bornée 14 j).
+  const agendaStats = useRef({ feed: 0, local: 0 });
+  const farHorizon = isoPlusDays(60);
   const macros = useMemo(() => {
     const feed = (macro || [])
       .map((e) => ({ date: e.time || e.date, name: e.event }))
-      .filter((e) => e.date && e.date >= today && e.date <= horizon);
-    const src = feed.length
-      ? feed
-      : macroEventsInRange(today, horizon).map((e) => ({ date: e.time, name: e.event }));
-    return src.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 2);
-  }, [macro, today, horizon]);
+      .filter((e) => e.date && e.name && e.date >= today && e.date <= farHorizon);
+    const local = macroEventsInRange(today, farHorizon).map((e) => ({
+      date: e.time,
+      name: e.event,
+    }));
+    const seen = new Set();
+    const union = [...feed, ...local].filter((e) => {
+      const k = `${e.date}|${compactName(e.name).toUpperCase()}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    agendaStats.current = { feed: feed.length, local: local.length };
+    return union.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 3);
+  }, [macro, today, farHorizon]);
 
   const earningsItems = useMemo(() => {
     const rows = (earnings || [])
@@ -821,58 +601,56 @@ export default function MarketLab() {
     return rows.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 2);
   }, [earnings, today, horizon]);
 
-  // Δ5j VIX (dérivé de la série 7 j en cache, marqué ~).
+  // Δ5j VIX (série 7 j partagée, marqué ~).
   const d5 = useMemo(() => {
-    const p = sparklines['^VIX']?.prices;
+    const p = spark7d['^VIX']?.prices;
     if (!p || p.length < 6) return null;
     const ref = p[p.length - 6];
     const last = p[p.length - 1];
     if (!Number.isFinite(ref) || !Number.isFinite(last) || ref === 0) return null;
     return ((last - ref) / ref) * 100;
-  }, [sparklines]);
+  }, [spark7d]);
 
-  // Sonde FUT STICKY (1.C.4) : une fois les 3 futures vus servis dans
-  // cette session, le verdict reste SERVIS (un slot qui clignote est
-  // pire qu'absent — la fiabilité de l'API est tranchée par la sonde
-  // longue au rapport ; ceci ne gouverne que l'affichage lab).
+  // Sonde FUT sticky (verdict SERVIS ratifié 1.C.5 §3.2).
   const futLiveNow = FUTURES_SYMBOLS.every((s) => Number.isFinite(quotes[s]?.price));
   const futSeenRef = useRef(false);
   if (futLiveNow) futSeenRef.current = true;
-  const futServed = futSeenRef.current;
+  const futServed = futSeenRef.current || forceFut;
 
-  const showFut = forceFut || !isRTH;
+  // Sonde densité intraday (loi §2.5 : largeur max = pts × 6).
+  const intradayPts = intraday['^SPX']?.prices?.length || 0;
 
   const common = {
     quotes,
+    intraday,
     rate,
     fxBadge,
     macros,
     earnings: earningsItems,
     d5,
     futServed,
-    showFut,
   };
 
   return (
     <div className="lm-page">
       <header className="lm-head">
-        <h1 className="lm-title">LAB · MARKET II — trois langages (1.C.4)</h1>
+        <h1 className="lm-title">LAB · MARKET III — FUSION, calibration finale (1.C.5)</h1>
         <p className="lm-sub">
-          A = témoin. V1 TERMINAL (mur réglé Bloomberg) · V2 DATA-VIZ (tuiles TradingView) ·
-          V3 COCKPIT (instrument asymétrique). Mêmes données vives partout.
+          A = témoin. Puis UN langage (tuiles vivantes × organes × discipline tabulaire) en trois
+          réglages : F1 serré · F2 équilibre · F3 courbes dominantes. Mêmes données vives partout.
         </p>
         <div className="lm-probes">
           <span className={`lm-probe${futServed ? ' is-ok' : ' is-ko'}`}>
-            FUT (ES/NQ/YM) : {futServed ? 'SERVIS (verdict sticky session)' : 'en attente du 1er train…'}
+            FUT : {futServed ? 'SERVIS (verdict ratifié, sticky)' : 'en attente du 1er train…'}
           </span>
-          <span className="lm-probe is-ok">
-            H/L : {['^SPX', '^NDX', '^DJI', '^RUT', '^VIX']
-              .filter((s) => Number.isFinite(quotes[s]?.high))
-              .map((s) => s.replace('^', ''))
-              .join(' ') || 'en attente…'}
+          <span className={`lm-probe${intradayPts >= 20 ? ' is-ok' : ' is-ko'}`}>
+            Intraday 1d/5m : {intradayPts ? `${intradayPts} pts (largeur max ${intradayPts * 6} px)` : 'en attente…'}
           </span>
           <span className={`lm-probe${d5 != null ? ' is-ok' : ' is-ko'}`}>
             Δ5j VIX : {d5 != null ? 'dérivable (~)' : 'indérivable — omis'}
+          </span>
+          <span className="lm-probe is-ok">
+            Agenda : union {agendaStats.current.feed} Finnhub ∪ {agendaStats.current.local} local → {macros.length} macro + {earningsItems.length} earnings
           </span>
         </div>
         <button
@@ -892,20 +670,12 @@ export default function MarketLab() {
         </div>
       </section>
 
-      <section className="lm-variant">
-        <div className="lm-variant__label">V1 · TERMINAL — le mur réglé Bloomberg</div>
-        <V1Terminal {...common} />
-      </section>
-
-      <section className="lm-variant">
-        <div className="lm-variant__label">V2 · DATA-VIZ — les tuiles TradingView</div>
-        <V2DataViz {...common} sparklines={sparklines} />
-      </section>
-
-      <section className="lm-variant">
-        <div className="lm-variant__label">V3 · COCKPIT — l'instrument asymétrique</div>
-        <V3Cockpit {...common} />
-      </section>
+      {CALS.map((cal) => (
+        <section className="lm-variant" key={cal.key}>
+          <div className="lm-variant__label">{cal.label}</div>
+          <FusionDeck cal={cal} {...common} />
+        </section>
+      ))}
     </div>
   );
 }
