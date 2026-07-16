@@ -51,7 +51,12 @@ function nyDateToUtc(year, month, day, hourEt, minuteEt) {
  * @returns {{ phase: 'pre'|'open'|'after'|'closed',
  *             targetKind: 'open'|'close',
  *             targetMs: number,
+ *             phaseStartMs: number|null,
  *             nyLabel: string }}
+ *
+ * phaseStartMs (1.C.3) — début de la phase COURANTE (epoch), pour la
+ * barre de progression de session : pre→04:00, open→09:30, after→16:00,
+ * closed→le dernier 20:00 NY d'un jour ouvré (vendredi 20:00 le week-end).
  */
 export function computeMarketPhase(now = new Date()) {
   const p = nyParts(now);
@@ -90,6 +95,27 @@ export function computeMarketPhase(now = new Date()) {
     target = candidate;
   }
 
+  // Début de la phase courante (progression de session, 1.C.3).
+  let phaseStart = null;
+  if (phase === 'pre') phaseStart = nyDateToUtc(p.year, p.month, p.day, 4, 0);
+  else if (phase === 'open') phaseStart = nyDateToUtc(p.year, p.month, p.day, 9, 30);
+  else if (phase === 'after') phaseStart = nyDateToUtc(p.year, p.month, p.day, 16, 0);
+  else {
+    // closed : dernier 20:00 NY d'un jour OUVRÉ avant `now` (week-end →
+    // vendredi 20:00 ; nuit de semaine avant 04:00 → veille 20:00).
+    for (let i = 0; i <= 4; i += 1) {
+      const probe = new Date(now.getTime() - i * 86_400_000);
+      const pp = nyParts(probe);
+      if (pp.weekday >= 1 && pp.weekday <= 5) {
+        const candidate = nyDateToUtc(pp.year, pp.month, pp.day, 20, 0);
+        if (candidate.getTime() <= now.getTime()) {
+          phaseStart = candidate;
+          break;
+        }
+      }
+    }
+  }
+
   const nyLabel = new Intl.DateTimeFormat('fr-CH', {
     timeZone: 'America/New_York',
     hour: '2-digit',
@@ -97,7 +123,13 @@ export function computeMarketPhase(now = new Date()) {
     hour12: false,
   }).format(now);
 
-  return { phase, targetKind, targetMs: target ? target.getTime() : null, nyLabel };
+  return {
+    phase,
+    targetKind,
+    targetMs: target ? target.getTime() : null,
+    phaseStartMs: phaseStart ? phaseStart.getTime() : null,
+    nyLabel,
+  };
 }
 
 /** Formate un delta ms en « H:MM:SS » (heures non paddées, cf. brief). */
