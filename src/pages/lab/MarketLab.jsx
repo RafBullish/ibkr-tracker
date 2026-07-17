@@ -1,26 +1,21 @@
 // ═══════════════════════════════════════════════════════════════
-//  MARKET LAB III — /lab/market (1.C.5) · DEV-ONLY, ÉPHÉMÈRE
+//  MARKET LAB IV — /lab/market (1.C.6) · DEV-ONLY, ÉPHÉMÈRE
 //
-//  FUSION : UN seul langage (tuiles vivantes V2 × organes V3 ×
-//  discipline tabulaire V1), en TROIS calibrations F1/F2/F3 dont
-//  l'axe unique est la part des courbes (28 / 42 / 54 px).
+//  LA FINALE : structure VERROUILLÉE par le blueprint Rafael
+//  (17.07) — 5 blocs : SESSION (anatomie témoin + progression) ·
+//  INDICES US (4 colonnes-tuiles BORNÉES + rangée FUT permanente) ·
+//  PILIER VOL+FX · MONDE ×10 (zéro graphe) · AGENDA héros
+//  (timeline MORTE → matrice de non-perte : l'info J-x vit dans
+//  les chips des rangées).
+//  Seul micro-axe ouvert : le corps des tuiles d'indices —
+//  Ω1 LIGNE (courbe 48) vs Ω2 INSTRUMENT (courbe 38 + barre
+//  d'amplitude du jour L—●—H). Tout le reste IDENTIQUE.
 //
-//  LOIS DE CRAFT (1.C.5 §2) appliquées par construction :
-//  - une seule anatomie de pastille (tape à l'échelle 15/16/18) et
-//    une seule anatomie de chip reverse-video ;
-//  - héros (tuiles indices, VIX) = pastilles · rangées tabulaires
-//    (FX, MONDE, FUT) = Δ% texte coloré gras ;
-//  - baseline 24 px, grille 4 px, titres de zone identiques (13 caps
-//    .1em mute, même y), rangées tabulaires 24 px exactement ;
-//  - décimales par classe : indices 0 · FX 4 · taux 2 · VIX 2 ·
-//    GOLD/CRUDE 2 · BTC 0 ;
-//  - courbes : intraday 1d/5m (sonde : 79 points → largeur max
-//    474 px), interpolation monotone, aire 12 %→0, stroke 1.25 ;
-//  - hairlines : --line-emphasis entre blocs, --hairline-rest
-//    internes, zéro radius.
-//  Données : pollers partagés 1.C (quotes + extras FUT) ; série
-//  intraday via /api/chart EXISTANT (params range/interval déjà
-//  whitelistés côté serveur — aucun endpoint/param nouveau).
+//  Lois de craft 1.C.5 §2 inchangées. Loi anti-vide DURCIE (1.C.6) :
+//  la clause « surplus en fin de zone » est abrogée — tout vide
+//  résiduel est bloquant ou signalé au STOP.
+//  Données : pollers partagés (tape + extras FUT) · intraday 1d/5m
+//  79 pts (ratifié) · agenda = 3 prochains macro (union ∪ local).
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -51,7 +46,8 @@ const US_SYMBOLS = US.map((u) => u.sym);
 const PHASE_LABELS = { open: 'OUVERT', pre: 'PRÉ-MARCHÉ', after: 'AFTER', closed: 'FERMÉ' };
 const WINDOW_DAYS = 14;
 
-// ─── Décimales par classe d'actif (loi §2.4) ────────────────────
+// ─── Décimales par classe (loi §2.4, étendue B4 : SILVER/COPPER/
+// NATGAS 2 · ETH 0) ──────────────────────────────────────────────
 const CHF = new Intl.NumberFormat('de-CH');
 const CHF2 = new Intl.NumberFormat('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 function fmtVal(v, cls) {
@@ -71,7 +67,6 @@ function fmtVal(v, cls) {
       return CHF.format(Math.round(v));
   }
 }
-// Δ$ suit les décimales de la classe (loi §2.4) : indices 0 déc.
 function fmtNet(change, cls = 'index') {
   if (change == null || !Number.isFinite(change)) return '—';
   const sign = change > 0 ? '+' : change < 0 ? '−' : '';
@@ -108,6 +103,13 @@ function shortDate(iso) {
 function compactName(name) {
   return String(name || '').split(' — ')[0].split(' (')[0];
 }
+function detailOf(name) {
+  const s = String(name || '');
+  const dash = s.split(' — ')[1];
+  if (dash) return dash.split(' (')[0];
+  const paren = s.match(/\(([^)]+)\)/);
+  return paren ? paren[1] : null;
+}
 
 // ─── Atomes de craft (anatomies UNIQUES — loi §2.1) ─────────────
 function Pastille({ pct, size = 16 }) {
@@ -135,8 +137,6 @@ function DeltaText({ v, size = 15 }) {
 }
 
 // ─── Courbe intraday — interpolation monotone (Fritsch–Carlson) ──
-// Lissage doux SANS invention de données : la courbe passe par tous
-// les points, les tangentes sont bornées pour ne jamais dépasser.
 function monotonePath(xs, ys) {
   const n = xs.length;
   if (n < 2) return '';
@@ -169,7 +169,7 @@ function IntradaySpark({ prices, height }) {
   const idRef = useRef(null);
   if (idRef.current == null) {
     gradSeq += 1;
-    idRef.current = `fzgrad${gradSeq}`;
+    idRef.current = `fngrad${gradSeq}`;
   }
   if (!prices || prices.length < 2) {
     return <div className="fz-spark fz-spark--empty" style={{ height }} />;
@@ -199,8 +199,23 @@ function IntradaySpark({ prices, height }) {
         </linearGradient>
       </defs>
       <path d={area} fill={`url(#${idRef.current})`} stroke="none" />
-      <path d={line} fill="none" stroke={color} strokeWidth="1.25" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+      <path d={line} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
     </svg>
+  );
+}
+
+// ─── Barre d'amplitude du jour (Ω2) : L—●—H, organe 8 px ────────
+function AmpBar({ low, high, price }) {
+  const ok = Number.isFinite(low) && Number.isFinite(high) && Number.isFinite(price) && high > low;
+  const pct = ok ? Math.max(0, Math.min(100, ((price - low) / (high - low)) * 100)) : null;
+  return (
+    <div className="fn-amp" role="img" aria-label={ok ? `Prix à ${Math.round(pct)} % du range du jour` : 'Range indisponible'}>
+      <span className="fn-amp__cap">L</span>
+      <span className="fn-amp__track">
+        {pct != null && <span className="fn-amp__cursor" style={{ left: `${pct}%` }} />}
+      </span>
+      <span className="fn-amp__cap">H</span>
+    </div>
   );
 }
 
@@ -218,8 +233,8 @@ function useSessionNow() {
   return now;
 }
 
-// ═══ B1 · COMMANDEMENT ══════════════════════════════════════════
-function CommandBlock() {
+// ═══ B1 · SESSION — anatomie du témoin + progression de séance ══
+function SessionBlock() {
   const now = useSessionNow();
   const { phase, targetKind, targetMs, phaseStartMs, nyLabel } = computeMarketPhase(now);
   const nowMs = now.getTime();
@@ -228,89 +243,95 @@ function CommandBlock() {
       ? Math.max(0, Math.min(100, ((nowMs - phaseStartMs) / (targetMs - phaseStartMs)) * 100))
       : null;
   return (
-    <div className="fz-b fz-cmd">
-      <div className="fz-cmd__phase">
+    <div className="fn-b fn-session">
+      <div className="fn-title">SESSION</div>
+      <div className="fn-session__row">
         <span className={`fz-dot${phase === 'open' ? ' fz-dot--live' : ''}`} aria-hidden="true" />
-        <Chip tone={phase === 'open' ? 'amber' : 'ink'}>{PHASE_LABELS[phase]}</Chip>
+        <span className="fn-session__phase">{PHASE_LABELS[phase]}</span>
       </div>
-      <div className="fz-cmd__cdlabel">
+      <div className="fn-session__cdlabel">
         {targetKind === 'close' ? 'CLÔTURE DANS' : 'OUVERTURE DANS'}
       </div>
-      <div className="fz-cmd__cd">{formatCountdown(targetMs != null ? targetMs - nowMs : null)}</div>
+      <div className="fn-session__cd">{formatCountdown(targetMs != null ? targetMs - nowMs : null)}</div>
       {pct != null && (
-        <div className="fz-progress" role="img" aria-label={`Séance écoulée à ${Math.round(pct)} %`}>
-          <div className="fz-progress__track">
-            <div className="fz-progress__fill" style={{ width: `${pct}%` }} />
+        <div className="fn-progress" role="img" aria-label={`Séance écoulée à ${Math.round(pct)} %`}>
+          <div className="fn-progress__track">
+            <div className="fn-progress__fill" style={{ width: `${pct}%` }} />
           </div>
-          <span className="fz-progress__pct">{Math.round(pct)} %</span>
+          <span className="fn-progress__pct">{Math.round(pct)} %</span>
         </div>
       )}
-      <div className="fz-cmd__ny">NEW YORK {nyLabel}</div>
+      <div className="fn-session__ny">NEW YORK {nyLabel}</div>
     </div>
   );
 }
 
-// ═══ B2 · INDICES US + FUT ══════════════════════════════════════
-function IndexTile({ label, quote, spark, cal }) {
+// ═══ B2 · INDICES US — 4 colonnes-tuiles bornées + FUT ══════════
+function IndexTile({ label, quote, spark, fin }) {
   return (
-    <div className="fz-tile">
-      <div className="fz-tile__head">
-        <span className="fz-tile__sym">{label}</span>
-        <Pastille pct={quote?.changePercent} size={cal.pill} />
+    <div className="fn-tile">
+      <div className="fn-tile__head">
+        <span className="fn-tile__sym">{label}</span>
+        <Pastille pct={quote?.changePercent} size={16} />
       </div>
-      <div className="fz-tile__pricerow">
-        <span className="fz-tile__price">{fmtVal(quote?.price, 'index')}</span>
+      <div className="fn-tile__pricerow">
+        <span className="fn-tile__price">{fmtVal(quote?.price, 'index')}</span>
         <span className={`fz-delta fz-delta--15 fz-delta--${dirOf(quote?.change)}`}>
           {fmtNet(quote?.change, 'index')}
         </span>
       </div>
-      <div className="fz-tile__spark">
-        <IntradaySpark prices={spark?.prices} height={cal.curve} />
-      </div>
-    </div>
-  );
-}
-
-function IndicesBlock({ quotes, intraday, futServed, cal }) {
-  return (
-    <div className="fz-b fz-indices">
-      <div className="fz-title">INDICES US</div>
-      <div className="fz-tiles">
-        {US.map(({ sym, label }) => (
-          <IndexTile key={sym} label={label} quote={quotes[sym]} spark={intraday[sym]} cal={cal} />
-        ))}
-      </div>
-      <div className="fz-fut">
-        <div className="fz-fut__label">
-          FUT <span className="fz-fut__label-sub">· RANGE O/N</span>
-        </div>
-        {futServed ? (
-          FUTURES.map(({ sym, label }) => {
-            const q = quotes[sym];
-            const range =
-              Number.isFinite(q?.low) && Number.isFinite(q?.high)
-                ? `${fmtVal(q.low, 'index')}–${fmtVal(q.high, 'index')}`
-                : '—';
-            return (
-              <div className="fz-row fz-fut__row" key={sym}>
-                <span className="fz-row__sym">{label}</span>
-                <span className="fz-row__val">{fmtVal(q?.price, 'index')}</span>
-                <DeltaText v={q?.changePercent} />
-                <span className="fz-fut__range">{range}</span>
-              </div>
-            );
-          })
-        ) : (
-          <div className="fz-row fz-fut__row">
-            <span className="fz-row__empty">en attente du 1er train…</span>
-          </div>
+      <div className="fn-tile__body">
+        <IntradaySpark prices={spark?.prices} height={fin.curve} />
+        {fin.body === 'instrument' && (
+          <AmpBar low={quote?.low} high={quote?.high} price={quote?.price} />
         )}
       </div>
+      <div className="fn-tile__hl">
+        H <b>{fmtVal(quote?.high, 'index')}</b> · L <b>{fmtVal(quote?.low, 'index')}</b>
+      </div>
     </div>
   );
 }
 
-// ═══ B3 · VOLATILITÉ ════════════════════════════════════════════
+function IndicesBlock({ quotes, intraday, futServed, fin }) {
+  return (
+    <div className="fn-b fn-indices">
+      <div className="fn-title">INDICES US</div>
+      <div className="fn-tiles">
+        {US.map(({ sym, label }) => (
+          <IndexTile key={sym} label={label} quote={quotes[sym]} spark={intraday[sym]} fin={fin} />
+        ))}
+      </div>
+      {/* Rangée FUT permanente — colonnes ALIGNÉES sous les tuiles
+          (les hairlines continuent : zéro vide, structure tenue). */}
+      <div className="fn-fut">
+        <div className="fn-fut__cell fn-fut__cell--label">
+          <span className="fn-fut__tag">FUT</span>
+          <span className="fn-fut__sub">RANGE O/N</span>
+        </div>
+        {FUTURES.map(({ sym, label }) => {
+          const q = quotes[sym];
+          const range =
+            futServed && Number.isFinite(q?.low) && Number.isFinite(q?.high)
+              ? `${fmtVal(q.low, 'index')}–${fmtVal(q.high, 'index')}`
+              : '—';
+          return (
+            <div className="fn-fut__cell" key={sym}>
+              <div className="fn-fut__line">
+                <span className="fn-fut__sym">{label}</span>
+                <span className="fn-fut__val">{futServed ? fmtVal(q?.price, 'index') : '—'}</span>
+                {futServed ? <DeltaText v={q?.changePercent} /> : <span className="fz-delta fz-delta--15 fz-delta--flat">—</span>}
+              </div>
+              <div className="fn-fut__range">{range}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ═══ B3 · PILIER VOL + FX ═══════════════════════════════════════
 const REGIMES = [
   { to: 15, label: 'CALME' },
   { to: 20, label: 'NORMAL' },
@@ -327,6 +348,9 @@ function regimeOf(vix) {
   return 3;
 }
 
+// Anatomie RATIFIÉE (1.C.5, reconduite §1) : graduations numériques
+// 10/15/20/27/40 + chip de régime (les 4 noms à 11-12 px chevauchent
+// dans ~212 px : fallback chip du blueprint).
 function RegimeScale({ vix }) {
   if (!Number.isFinite(vix)) return null;
   const clamped = Math.max(10, Math.min(40, vix));
@@ -336,14 +360,14 @@ function RegimeScale({ vix }) {
   const pct = idx * 25 + ((clamped - from) / (to - from)) * 25;
   const hot = vix >= 20;
   return (
-    <div className="fz-scale" aria-label={`Régime VIX : ${REGIMES[idx].label}`}>
-      <div className="fz-scale__track">
+    <div className="fn-scale" aria-label={`Régime VIX : ${REGIMES[idx].label}`}>
+      <div className="fn-scale__track">
         {REGIMES.map((r, i) => (
-          <span className={`fz-scale__seg${i === idx ? ' is-active' : ''}`} key={r.label} title={r.label} />
+          <span className={`fn-scale__seg${i === idx ? ' is-active' : ''}`} key={r.label} title={r.label} />
         ))}
-        <span className={`fz-scale__cursor${hot ? ' is-hot' : ''}`} style={{ left: `${pct}%` }} />
+        <span className={`fn-scale__cursor${hot ? ' is-hot' : ''}`} style={{ left: `${pct}%` }} />
       </div>
-      <div className="fz-scale__grads">
+      <div className="fn-scale__grads">
         {REGIME_GRADS.map((g, i) => (
           <span key={g} style={{ left: `${i * 25}%` }}>{g}</span>
         ))}
@@ -352,86 +376,88 @@ function RegimeScale({ vix }) {
   );
 }
 
-function VolBlock({ quotes, d5, cal }) {
+function PilierBlock({ quotes, rate, fxBadge, d5 }) {
   const vix = quotes['^VIX'];
   const idx = regimeOf(vix?.price);
   const hot = idx != null && idx >= 2;
   return (
-    <div className="fz-b fz-vol">
-      <div className="fz-title">VOLATILITÉ</div>
-      <div className="fz-vol__hero">
-        <span className="fz-vol__val">{fmtVal(vix?.price, 'vix')}</span>
-        <Pastille pct={vix?.changePercent} size={cal.pill} />
+    <div className="fn-b fn-pilier">
+      <div className="fn-title">VOLATILITÉ</div>
+      <div className="fn-vol__hero">
+        <span className="fn-vol__val">{fmtVal(vix?.price, 'vix')}</span>
+        <Pastille pct={vix?.changePercent} size={18} />
+        {idx != null && <Chip tone={hot ? 'amber' : 'ink'}>{REGIMES[idx].label}</Chip>}
       </div>
       <RegimeScale vix={vix?.price} />
-      <div className="fz-vol__meta">
-        {idx != null && <Chip tone={hot ? 'amber' : 'ink'}>{REGIMES[idx].label}</Chip>}
-        <span className="fz-vol__hl">
-          H <b>{fmtVal(vix?.high, 'vix')}</b> · L <b>{fmtVal(vix?.low, 'vix')}</b>
-        </span>
+      <div className="fn-vol__hl">
+        H <b>{fmtVal(vix?.high, 'vix')}</b> · L <b>{fmtVal(vix?.low, 'vix')}</b>
+        {d5 != null && (
+          <>
+            {' '}· Δ5J <b>~{d5 >= 0 ? '+' : '−'}{Math.abs(d5).toFixed(1)}%</b>
+          </>
+        )}
       </div>
-      {d5 != null && (
-        <div className="fz-vol__d5">
-          Δ5J <b>~{d5 >= 0 ? '+' : '−'}{Math.abs(d5).toFixed(1)}%</b>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ═══ B4 · FX & TAUX ═════════════════════════════════════════════
-function FxBlock({ quotes, rate, fxBadge }) {
-  return (
-    <div className="fz-b fz-fx">
-      <div className="fz-title">
+      <div className="fn-pilier__divider" />
+      <div className="fn-title fn-title--fx">
         FX &amp; TAUX <Chip tone="ink">{fxBadge}</Chip>
       </div>
-      <div className="fz-fx__hero">
-        <span className="fz-fx__herosym">USD/CHF</span>
-        <span className="fz-fx__heroval">{Number.isFinite(rate) ? rate.toFixed(4) : '—'}</span>
+      <div className="fn-fx__hero">
+        <span className="fn-fx__herosym">USD/CHF</span>
+        <span className="fn-fx__heroval">{Number.isFinite(rate) ? rate.toFixed(4) : '—'}</span>
       </div>
-      <div className="fz-fx__applied">APPLIQUÉ AU PORTEFEUILLE</div>
+      <div className="fn-fx__applied">APPLIQUÉ AU PORTEFEUILLE</div>
       {[
         { label: 'EUR/USD', q: quotes['EURUSD=X'], cls: 'fx' },
         { label: 'US10Y', q: quotes['^TNX'], cls: 'rate' },
         { label: 'DXY', q: quotes['DX-Y.NYB'], cls: 'rate' },
       ].map(({ label, q, cls }) => (
-        <div className="fz-row" key={label}>
-          <span className="fz-row__sym">{label}</span>
-          <span className="fz-row__val">{fmtVal(q?.price, cls)}</span>
-          <DeltaText v={q?.changePercent} />
+        <div className="fn-row" key={label}>
+          <span className="fn-row__sym">{label}</span>
+          <span className="fn-row__val">{fmtVal(q?.price, cls)}</span>
+          <DeltaText v={q?.changePercent} size={15} />
         </div>
       ))}
     </div>
   );
 }
 
-// ═══ B5 · MONDE ═════════════════════════════════════════════════
+// ═══ B4 · MONDE ×10 (zéro graphe) ═══════════════════════════════
 const WORLD_COLS = [
-  [
-    { sym: '^GDAXI', label: 'DAX', cls: 'index' },
-    { sym: '^FTSE', label: 'FTSE', cls: 'index' },
-    { sym: '^N225', label: 'NIKKEI', cls: 'index' },
-  ],
-  [
-    { sym: 'GC=F', label: 'GOLD', cls: 'cmdty' },
-    { sym: 'CL=F', label: 'CRUDE', cls: 'cmdty' },
-    { sym: 'BTC-USD', label: 'BTC', cls: 'btc' },
-  ],
+  {
+    header: 'ACTIONS · CRYPTO',
+    items: [
+      { sym: '^GDAXI', label: 'DAX', cls: 'index' },
+      { sym: '^FTSE', label: 'FTSE', cls: 'index' },
+      { sym: '^N225', label: 'NIKKEI', cls: 'index' },
+      { sym: 'BTC-USD', label: 'BTC', cls: 'btc' },
+      { sym: 'ETH-USD', label: 'ETH', cls: 'btc' },
+    ],
+  },
+  {
+    header: 'MATIÈRES',
+    items: [
+      { sym: 'GC=F', label: 'GOLD', cls: 'cmdty' },
+      { sym: 'SI=F', label: 'SILVER', cls: 'cmdty' },
+      { sym: 'HG=F', label: 'COPPER', cls: 'cmdty' },
+      { sym: 'CL=F', label: 'CRUDE', cls: 'cmdty' },
+      { sym: 'NG=F', label: 'NATGAS', cls: 'cmdty' },
+    ],
+  },
 ];
 
-function WorldBlock({ quotes }) {
+function MondeBlock({ quotes }) {
   return (
-    <div className="fz-b fz-world">
-      <div className="fz-title">MONDE</div>
-      <div className="fz-world__cols">
-        {WORLD_COLS.map((col, ci) => (
-          <div className="fz-world__col" key={ci}>
-            {col.map(({ sym, label, cls }) => (
-              <div className="fz-row" key={sym}>
-                <span className="fz-row__sym">{label}</span>
-                <span className="fz-row__val">{fmtVal(quotes[sym]?.price, cls)}</span>
-                <DeltaText v={quotes[sym]?.changePercent} />
+    <div className="fn-b fn-monde">
+      <div className="fn-title">MONDE</div>
+      <div className="fn-monde__cols">
+        {WORLD_COLS.map((col) => (
+          <div className="fn-monde__col" key={col.header}>
+            <div className="fn-microhead">{col.header}</div>
+            {col.items.map(({ sym, label, cls }) => (
+              <div className="fn-row" key={sym}>
+                <span className="fn-row__sym">{label}</span>
+                <span className="fn-row__val">{fmtVal(quotes[sym]?.price, cls)}</span>
+                <DeltaText v={quotes[sym]?.changePercent} size={14} />
               </div>
             ))}
           </div>
@@ -441,110 +467,88 @@ function WorldBlock({ quotes }) {
   );
 }
 
-// ═══ B6 · AGENDA 14 J ═══════════════════════════════════════════
+// ═══ B5 · AGENDA — héros + rangées, SANS timeline ═══════════════
+// Matrice de non-perte : la timeline horizontale (lab III) est MORTE
+// (trou structurel : 3 événements / 27 j) ; l'information de distance
+// survit intégralement dans les chips J-x de chaque rangée.
 function AgendaBlock({ macros, earnings }) {
-  const rows = [
-    ...macros.slice(0, 3).map((m) => ({ k: 'M', ...m })),
-    ...(earnings.length
-      ? earnings.slice(0, 1).map((e) => ({ k: 'E', armed: true, ...e }))
-      : [{ k: 'E', empty: true }]),
-  ];
-  // La timeline ne pointe que la fenêtre 14 j ; les rangées, elles,
-  // listent les 3 prochains macro même au-delà (eta J-n l'indique).
-  const dots = [
-    ...macros.slice(0, 3).map((m) => ({ ...m, kind: 'M' })),
-    ...earnings.slice(0, 2).map((e) => ({ ...e, kind: 'E' })),
-  ].filter((ev) => daysUntil(ev.date) <= WINDOW_DAYS);
+  const all = [
+    ...macros.map((m) => ({ ...m, k: 'M' })),
+    ...earnings.map((e) => ({ ...e, k: 'E', armed: true })),
+  ].sort((a, b) => a.date.localeCompare(b.date));
+  const hero = all[0] || null;
+  const rest = all.slice(1, 4);
+  const hasE = earnings.length > 0;
+  const heroD = hero ? daysUntil(hero.date) : null;
+  const heroHot = heroD != null && heroD <= 2;
+  const heroDetail = hero ? detailOf(hero.name) : null;
   return (
-    <div className="fz-b fz-agenda">
-      <div className="fz-title">AGENDA 14 J</div>
-      {rows.map((row, i) => {
-        if (row.empty) {
-          return (
-            <div className="fz-row fz-agenda__row" key={i}>
-              <Chip tone="ink">E</Chip>
-              <span className="fz-row__empty fz-agenda__empty">— sous {WINDOW_DAYS} j</span>
-            </div>
-          );
-        }
-        const d = daysUntil(row.date);
+    <div className="fn-b fn-agenda">
+      <div className="fn-title">AGENDA</div>
+      {hero ? (
+        <div className="fn-hero">
+          <div className="fn-hero__row">
+            <Chip tone="ink">{hero.k}</Chip>
+            <span className="fn-hero__name" title={hero.name}>{compactName(hero.name)}</span>
+          </div>
+          <div className="fn-hero__eta-row">
+            <span className={`fn-hero__eta${heroHot ? ' is-hot' : ''}`}>{etaLabel(heroD)}</span>
+            <span className="fn-hero__date">· {shortDate(hero.date)}</span>
+            {hero.k === 'E' && heroHot && <Chip tone="amber">ARMED</Chip>}
+          </div>
+          {heroDetail && <div className="fn-hero__detail">{heroDetail}</div>}
+        </div>
+      ) : (
+        <div className="fn-hero">
+          <div className="fn-hero__detail">— aucun événement sous {WINDOW_DAYS} j</div>
+        </div>
+      )}
+      <div className="fn-agenda__divider" />
+      {rest.map((ev, i) => {
+        const d = daysUntil(ev.date);
         const hot = d <= 2;
         return (
-          <div className="fz-row fz-agenda__row" key={i}>
-            <Chip tone="ink">{row.k}</Chip>
-            <span className="fz-agenda__name" title={row.name}>{compactName(row.name)}</span>
-            <span className="fz-agenda__date">{shortDate(row.date)}</span>
-            <span className={`fz-agenda__eta${hot ? ' is-hot' : ''}`}>{etaLabel(d)}</span>
+          <div className="fn-row fn-agenda__row" key={i}>
+            <Chip tone="ink">{ev.k}</Chip>
+            <span className="fn-agenda__name" title={ev.name}>{compactName(ev.name)}</span>
+            <span className="fn-agenda__date">{shortDate(ev.date)}</span>
+            <span className={`fn-agenda__eta${hot ? ' is-hot' : ''}`}>{etaLabel(d)}</span>
           </div>
         );
       })}
-      <div className="fz-timeline">
-        <div className="fz-timeline__track">
-          {Array.from({ length: 15 }, (_, i) => (
-            <span className="fz-timeline__tick" key={i} style={{ left: `${(i / 14) * 100}%` }} />
-          ))}
-          {dots.map((ev, i) => {
-            const d = daysUntil(ev.date);
-            const hot = d <= 2;
-            const pct = Math.max(2, Math.min(98, (d / 14) * 100));
-            return (
-              <span
-                key={i}
-                className={`fz-timeline__dot fz-timeline__dot--${ev.kind}${hot ? ' is-hot' : ''}`}
-                style={{ left: `${pct}%` }}
-                title={`${ev.name} · ${etaLabel(d)}`}
-              />
-            );
-          })}
+      {!hasE && (
+        <div className="fn-row fn-agenda__row">
+          <Chip tone="ink">E</Chip>
+          <span className="fn-agenda__empty">— sous {WINDOW_DAYS} j</span>
         </div>
-        <div className="fz-timeline__labels">
-          {dots.map((ev, i) => {
-            const d = daysUntil(ev.date);
-            const pct = Math.max(8, Math.min(86, (d / 14) * 100));
-            return (
-              <span className="fz-timeline__label" key={i} style={{ left: `${pct}%` }}>
-                {compactName(ev.name)}
-              </span>
-            );
-          })}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
 
-// ═══ L'ÉTAGE FUSION (un langage, calibré par variables) ═════════
-function FusionDeck({ cal, quotes, intraday, rate, fxBadge, macros, earnings, d5, futServed }) {
+// ═══ L'ÉTAGE FINALE (structure verrouillée, finition par props) ══
+function FinaleDeck({ fin, quotes, intraday, rate, fxBadge, macros, earnings, d5, futServed }) {
   return (
-    <section
-      className="fz"
-      style={{ '--fz-h': `${cal.height}px`, '--fz-price': `${cal.price}px`, '--fz-vix': `${cal.vix}px` }}
-      aria-label={`Calibration ${cal.key}`}
-    >
-      <CommandBlock />
-      <IndicesBlock quotes={quotes} intraday={intraday} futServed={futServed} cal={cal} />
-      <VolBlock quotes={quotes} d5={d5} cal={cal} />
-      <FxBlock quotes={quotes} rate={rate} fxBadge={fxBadge} />
-      <WorldBlock quotes={quotes} />
+    <section className="fn" aria-label={`Finition ${fin.key}`}>
+      <SessionBlock />
+      <IndicesBlock quotes={quotes} intraday={intraday} futServed={futServed} fin={fin} />
+      <PilierBlock quotes={quotes} rate={rate} fxBadge={fxBadge} d5={d5} />
+      <MondeBlock quotes={quotes} />
       <AgendaBlock macros={macros} earnings={earnings} />
     </section>
   );
 }
 
-const CALS = [
-  { key: 'F1', label: 'F1 · FUSION SERRÉE — courbes 28, un cran plus tabulaire', height: 240, curve: 28, price: 26, vix: 32, pill: 16 },
-  { key: 'F2', label: 'F2 · FUSION ÉQUILIBRE — courbes 42', height: 256, curve: 42, price: 26, vix: 33, pill: 16 },
-  { key: 'F3', label: 'F3 · FUSION VIVANTE — courbes 56 dominantes, VIX 36', height: 276, curve: 56, price: 28, vix: 36, pill: 18 },
+const FINS = [
+  { key: 'Ω1', label: 'Ω1 · LIGNE — la vie par la courbe (48 px, rien d\'autre)', body: 'line', curve: 48 },
+  { key: 'Ω2', label: 'Ω2 · INSTRUMENT — courbe 38 px + barre d\'amplitude du jour (L—●—H)', body: 'instrument', curve: 38 },
 ];
 
 // ═══ Page ═══════════════════════════════════════════════════════
 export default function MarketLab() {
   const { quotes } = useMarketQuotes(STATIC_FETCH_SYMBOLS);
   useQuoteBatchExtras(STATIC_FETCH_SYMBOLS, FUTURES_SYMBOLS);
-  // Série 7 j du tape (partagée) — sert le Δ5J VIX.
   const { sparklines: spark7d } = useMarketSparklines(STATIC_FETCH_SYMBOLS);
-  // Série INTRADAY des 4 indices (1d/5m, sonde : 79 pts) — poller
-  // partagé distinct, cadence 5 min, bucket chart 90/min.
   const { sparklines: intraday } = useMarketSparklines(US_SYMBOLS, '1d', '5m');
   const openPositions = useOpenPositions();
   const { rate, mode, source } = useFx();
@@ -559,6 +563,7 @@ export default function MarketLab() {
   );
   const today = isoToday();
   const horizon = isoPlusDays(WINDOW_DAYS);
+  const farHorizon = isoPlusDays(60);
   const view = useMemo(() => {
     const d = new Date();
     return { viewYear: d.getFullYear(), viewMonth: d.getMonth() };
@@ -570,11 +575,9 @@ export default function MarketLab() {
     minImpact: 'medium',
   });
 
-  // ─── Agenda enrichi (1.C.5 §3.3) : UNION Finnhub ∪ local, dédup,
-  // tri → les 3 PROCHAINS macro (sans borne haute — le fichier local
-  // garantit ainsi ≥3 rangées ; la timeline, elle, reste bornée 14 j).
+  // Agenda : UNION Finnhub ∪ local dédupliquée → 3 PROCHAINS macro
+  // (ratifié — sans borne haute) ; earnings de positions sous 14 j.
   const agendaStats = useRef({ feed: 0, local: 0 });
-  const farHorizon = isoPlusDays(60);
   const macros = useMemo(() => {
     const feed = (macro || [])
       .map((e) => ({ date: e.time || e.date, name: e.event }))
@@ -591,7 +594,8 @@ export default function MarketLab() {
       return true;
     });
     agendaStats.current = { feed: feed.length, local: local.length };
-    return union.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 3);
+    // 4 = héros + 3 rangées macro restantes (blueprint B5 : 3-4 rangées).
+    return union.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
   }, [macro, today, farHorizon]);
 
   const earningsItems = useMemo(() => {
@@ -601,7 +605,6 @@ export default function MarketLab() {
     return rows.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 2);
   }, [earnings, today, horizon]);
 
-  // Δ5j VIX (série 7 j partagée, marqué ~).
   const d5 = useMemo(() => {
     const p = spark7d['^VIX']?.prices;
     if (!p || p.length < 6) return null;
@@ -611,13 +614,11 @@ export default function MarketLab() {
     return ((last - ref) / ref) * 100;
   }, [spark7d]);
 
-  // Sonde FUT sticky (verdict SERVIS ratifié 1.C.5 §3.2).
   const futLiveNow = FUTURES_SYMBOLS.every((s) => Number.isFinite(quotes[s]?.price));
   const futSeenRef = useRef(false);
   if (futLiveNow) futSeenRef.current = true;
   const futServed = futSeenRef.current || forceFut;
 
-  // Sonde densité intraday (loi §2.5 : largeur max = pts × 6).
   const intradayPts = intraday['^SPX']?.prices?.length || 0;
 
   const common = {
@@ -634,23 +635,24 @@ export default function MarketLab() {
   return (
     <div className="lm-page">
       <header className="lm-head">
-        <h1 className="lm-title">LAB · MARKET III — FUSION, calibration finale (1.C.5)</h1>
+        <h1 className="lm-title">LAB · MARKET IV — LA FINALE, deux finitions (1.C.6)</h1>
         <p className="lm-sub">
-          A = témoin. Puis UN langage (tuiles vivantes × organes × discipline tabulaire) en trois
-          réglages : F1 serré · F2 équilibre · F3 courbes dominantes. Mêmes données vives partout.
+          A = témoin. Puis le dessin FINAL (blueprint Rafael 17.07) en deux finitions — seule
+          différence : le corps des tuiles d'indices. Ω1 = courbe seule · Ω2 = courbe + jauge de
+          range du jour.
         </p>
         <div className="lm-probes">
           <span className={`lm-probe${futServed ? ' is-ok' : ' is-ko'}`}>
-            FUT : {futServed ? 'SERVIS (verdict ratifié, sticky)' : 'en attente du 1er train…'}
+            FUT : {futServed ? 'SERVIS (ratifié, permanent)' : 'en attente du 1er train…'}
           </span>
           <span className={`lm-probe${intradayPts >= 20 ? ' is-ok' : ' is-ko'}`}>
-            Intraday 1d/5m : {intradayPts ? `${intradayPts} pts (largeur max ${intradayPts * 6} px)` : 'en attente…'}
+            Intraday 1d/5m : {intradayPts ? `${intradayPts} pts` : 'en attente…'}
           </span>
           <span className={`lm-probe${d5 != null ? ' is-ok' : ' is-ko'}`}>
             Δ5j VIX : {d5 != null ? 'dérivable (~)' : 'indérivable — omis'}
           </span>
           <span className="lm-probe is-ok">
-            Agenda : union {agendaStats.current.feed} Finnhub ∪ {agendaStats.current.local} local → {macros.length} macro + {earningsItems.length} earnings
+            Agenda : {agendaStats.current.feed} Finnhub ∪ {agendaStats.current.local} local → {macros.length} macro (héros + rangées) + {earningsItems.length} earn · timeline MORTE → chips J-x
           </span>
         </div>
         <button
@@ -670,10 +672,10 @@ export default function MarketLab() {
         </div>
       </section>
 
-      {CALS.map((cal) => (
-        <section className="lm-variant" key={cal.key}>
-          <div className="lm-variant__label">{cal.label}</div>
-          <FusionDeck cal={cal} {...common} />
+      {FINS.map((fin) => (
+        <section className="lm-variant" key={fin.key}>
+          <div className="lm-variant__label">{fin.label}</div>
+          <FinaleDeck fin={fin} {...common} />
         </section>
       ))}
     </div>
