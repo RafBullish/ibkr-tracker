@@ -1,21 +1,19 @@
 // ═══════════════════════════════════════════════════════════════
-//  MARKET LAB IV — /lab/market (1.C.6) · DEV-ONLY, ÉPHÉMÈRE
+//  MARKET LAB V — /lab/market (1.C.7) · DEV-ONLY, ÉPHÉMÈRE
 //
-//  LA FINALE : structure VERROUILLÉE par le blueprint Rafael
-//  (17.07) — 5 blocs : SESSION (anatomie témoin + progression) ·
-//  INDICES US (4 colonnes-tuiles BORNÉES + rangée FUT permanente) ·
-//  PILIER VOL+FX · MONDE ×10 (zéro graphe) · AGENDA héros
-//  (timeline MORTE → matrice de non-perte : l'info J-x vit dans
-//  les chips des rangées).
-//  Seul micro-axe ouvert : le corps des tuiles d'indices —
-//  Ω1 LIGNE (courbe 48) vs Ω2 INSTRUMENT (courbe 38 + barre
-//  d'amplitude du jour L—●—H). Tout le reste IDENTIQUE.
+//  REPRODUCTION AU PIXEL du croquis architecte validé par Rafael
+//  (docs/croquis/croquis-market-etage.html — LA vérité anatomique).
+//  Interdiction de réinterpréter. Deux calibrations :
+//    C1 · CROQUIS (262 px, tailles du fichier)
+//    C2 · CROQUIS AMPLIFIÉ (286 px, mêmes largeurs, un cran de force)
+//  Données vives via les flux existants (mapping 1.C.7 §3).
 //
-//  Lois de craft 1.C.5 §2 inchangées. Loi anti-vide DURCIE (1.C.6) :
-//  la clause « surplus en fin de zone » est abrogée — tout vide
-//  résiduel est bloquant ou signalé au STOP.
-//  Données : pollers partagés (tape + extras FUT) · intraday 1d/5m
-//  79 pts (ratifié) · agenda = 3 prochains macro (union ∪ local).
+//  Classes .k-* calquées 1:1 sur les classes du croquis (sstate,
+//  scd, sbar, ahero, tile/vsep, amp, futg, vscale, fxr, mr…) pour
+//  une boucle de fidélité diffable. Couleurs → tokens canoniques
+//  (#EF4444→--pnl-down · #10B981→--pnl-up · #8A8A92→--ink-mute ·
+//  #9A9AA2→--ink-soft · #FAFAFA→--ink-pure · #FFA028→--accent).
+//  Écarts tolérés : longueurs de chiffres réels uniquement.
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -46,10 +44,27 @@ const US_SYMBOLS = US.map((u) => u.sym);
 const PHASE_LABELS = { open: 'OUVERT', pre: 'PRÉ-MARCHÉ', after: 'AFTER', closed: 'FERMÉ' };
 const WINDOW_DAYS = 14;
 
-// ─── Décimales par classe (loi §2.4, étendue B4 : SILVER/COPPER/
-// NATGAS 2 · ETH 0) ──────────────────────────────────────────────
+// MONDE ×10 — table unique du croquis (5 actions·crypto ‖ 5 matières).
+const WORLD = [
+  { sym: '^GDAXI', label: 'DAX', cls: 'index' },
+  { sym: '^FTSE', label: 'FTSE', cls: 'index' },
+  { sym: '^N225', label: 'NIKKEI', cls: 'index' },
+  { sym: 'BTC-USD', label: 'BTC', cls: 'btc' },
+  { sym: 'ETH-USD', label: 'ETH', cls: 'btc' },
+  { sym: 'GC=F', label: 'GOLD', cls: 'cmdty', sep: true },
+  { sym: 'SI=F', label: 'SILVER', cls: 'cmdty' },
+  { sym: 'HG=F', label: 'COPPER', cls: 'cmdty' },
+  { sym: 'CL=F', label: 'CRUDE', cls: 'cmdty' },
+  { sym: 'NG=F', label: 'NATGAS', cls: 'cmdty' },
+];
+
+// ─── Décimales par classe (loi, croquis conforme) ───────────────
 const CHF = new Intl.NumberFormat('de-CH');
 const CHF2 = new Intl.NumberFormat('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// H/L à 0 = non servi (indices avant l'ouverture) — jamais « 0 ».
+function validHL(v) {
+  return Number.isFinite(v) && v > 0;
+}
 function fmtVal(v, cls) {
   if (v == null || !Number.isFinite(v)) return '—';
   switch (cls) {
@@ -72,12 +87,8 @@ function fmtNet(change, cls = 'index') {
   const sign = change > 0 ? '+' : change < 0 ? '−' : '';
   const abs = Math.abs(change);
   if (cls === 'index' || cls === 'btc') return `${sign}${CHF.format(Math.round(abs))}`;
+  if (cls === 'fx') return `${sign}${abs.toFixed(4)}`;
   return `${sign}${abs.toFixed(2)}`;
-}
-function fmtPct(pct) {
-  if (pct == null || !Number.isFinite(pct)) return '—';
-  const sign = pct > 0 ? '+' : pct < 0 ? '−' : '';
-  return `${sign}${Math.abs(pct).toFixed(2)}%`;
 }
 function dirOf(v) {
   if (v == null || !Number.isFinite(v) || v === 0) return 'flat';
@@ -111,32 +122,46 @@ function detailOf(name) {
   return paren ? paren[1] : null;
 }
 
-// ─── Atomes de craft (anatomies UNIQUES — loi §2.1) ─────────────
-function Pastille({ pct, size = 16 }) {
+// ─── Atomes du croquis ──────────────────────────────────────────
+// Pastille (pill) : mix 16 %, radius 4, PlexC 700, flèche + espace.
+function Pill({ pct, size }) {
   if (pct == null || !Number.isFinite(pct)) {
-    return <span className={`fz-pill fz-pill--${size} fz-pill--flat`}>—</span>;
+    return <span className="k-pill k-pill--flat" style={{ fontSize: size }}>—</span>;
   }
   const dir = dirOf(pct);
   const arrow = pct > 0 ? '▲' : pct < 0 ? '▼' : '';
   return (
-    <span className={`fz-pill fz-pill--${size} fz-pill--${dir}`}>
-      {arrow && <span className="fz-pill__arrow">{arrow}</span>}
-      {Math.abs(pct).toFixed(2)}%
+    <span className={`k-pill k-pill--${dir}`} style={{ fontSize: size }}>
+      {arrow ? `${arrow} ` : ''}{Math.abs(pct).toFixed(2)}%
     </span>
   );
 }
 
-function Chip({ children, tone = 'ink' }) {
-  return <span className={`fz-chip fz-chip--${tone}`}>{children}</span>;
-}
-
-function DeltaText({ v, size = 15 }) {
+// Δ% texte coloré avec flèche (croquis : signé en FX, non signé en
+// MONDE/FUT ; 0.00 % = NEUTRE mute SANS flèche).
+function DeltaArrow({ pct, size = 13.5, signed = false }) {
+  if (pct == null || !Number.isFinite(pct)) {
+    return <span className="k-da k-da--flat" style={{ fontSize: size }}>—</span>;
+  }
+  if (pct === 0) {
+    return <span className="k-da k-da--flat" style={{ fontSize: size }}>0.00%</span>;
+  }
+  const dir = dirOf(pct);
+  const arrow = pct > 0 ? '▲' : '▼';
+  const sign = signed ? (pct > 0 ? '+' : '−') : '';
   return (
-    <span className={`fz-delta fz-delta--${size} fz-delta--${dirOf(v)}`}>{fmtPct(v)}</span>
+    <span className={`k-da k-da--${dir}`} style={{ fontSize: size }}>
+      {arrow} {sign}{Math.abs(pct).toFixed(2)}%
+    </span>
   );
 }
 
-// ─── Courbe intraday — interpolation monotone (Fritsch–Carlson) ──
+// Chip reverse-video (croquis .chip : Plex 700, ls .06, radius 2).
+function KChip({ children }) {
+  return <span className="k-chip">{children}</span>;
+}
+
+// ─── Courbe intraday 79 pts — monotone, aire 12 %→0, stroke 1.5 ─
 function monotonePath(xs, ys) {
   const n = xs.length;
   if (n < 2) return '';
@@ -165,56 +190,74 @@ function monotonePath(xs, ys) {
 }
 
 let gradSeq = 0;
-function IntradaySpark({ prices, height }) {
+// Géométrie du croquis : x de 1 à 129, y de 3 à H−1, marge basse à H.
+function KCurve({ prices, height }) {
   const idRef = useRef(null);
   if (idRef.current == null) {
     gradSeq += 1;
-    idRef.current = `fngrad${gradSeq}`;
+    idRef.current = `kgrad${gradSeq}`;
   }
+  const W = 130;
   if (!prices || prices.length < 2) {
-    return <div className="fz-spark fz-spark--empty" style={{ height }} />;
+    return <div className="k-curve--empty" style={{ width: W, height }} />;
   }
-  const W = 120;
   const min = Math.min(...prices);
   const max = Math.max(...prices);
   const range = max - min || 1;
-  const xs = prices.map((_, i) => (i / (prices.length - 1)) * W);
-  const ys = prices.map((p) => height - 3 - ((p - min) / range) * (height - 6));
+  const xs = prices.map((_, i) => 1 + (i / (prices.length - 1)) * 128);
+  const ys = prices.map((p) => height - 1 - ((p - min) / range) * (height - 4));
   const line = monotonePath(xs, ys);
-  const area = `${line} L ${W},${height} L 0,${height} Z`;
+  const area = `${line} L 129,${height} L 1,${height} Z`;
   const up = prices[prices.length - 1] >= prices[0];
   const color = up ? 'var(--pnl-up)' : 'var(--pnl-down)';
   return (
-    <svg
-      className="fz-spark"
-      viewBox={`0 0 ${W} ${height}`}
-      preserveAspectRatio="none"
-      style={{ height }}
-      aria-hidden="true"
-    >
+    <svg width={W} height={height} viewBox={`0 0 ${W} ${height}`} aria-hidden="true">
       <defs>
         <linearGradient id={idRef.current} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.12" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
+          <stop offset="0" stopColor={color} stopOpacity="0.12" />
+          <stop offset="1" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
       <path d={area} fill={`url(#${idRef.current})`} stroke="none" />
-      <path d={line} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+      <path d={line} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 }
 
-// ─── Barre d'amplitude du jour (Ω2) : L—●—H, organe 8 px ────────
-function AmpBar({ low, high, price }) {
+// Jauge d'amplitude du croquis : L [track 94×5, cur 2×9] H.
+function Amp({ low, high, price }) {
   const ok = Number.isFinite(low) && Number.isFinite(high) && Number.isFinite(price) && high > low;
   const pct = ok ? Math.max(0, Math.min(100, ((price - low) / (high - low)) * 100)) : null;
   return (
-    <div className="fn-amp" role="img" aria-label={ok ? `Prix à ${Math.round(pct)} % du range du jour` : 'Range indisponible'}>
-      <span className="fn-amp__cap">L</span>
-      <span className="fn-amp__track">
-        {pct != null && <span className="fn-amp__cursor" style={{ left: `${pct}%` }} />}
-      </span>
-      <span className="fn-amp__cap">H</span>
+    <div className="k-amp" role="img" aria-label={ok ? `Prix à ${Math.round(pct)} % du range` : 'Range indisponible'}>
+      <span className="k-ampl">L</span>
+      <span className="k-track">{pct != null && <span className="k-cur" style={{ left: `${pct}%` }} />}</span>
+      <span className="k-ampl">H</span>
+    </div>
+  );
+}
+
+// Échelle VIX du croquis : SVG 188×33, LINÉAIRE x = 4 + (v−10)×6,
+// marques 10/15/20/27/40, curseur triangle ink (--accent si ≥20).
+const VIX_TICKS = [[4, '10'], [34, '15'], [64, '20'], [106, '27'], [184, '40']];
+function KScale({ vix }) {
+  if (!Number.isFinite(vix)) return null;
+  const x = Math.max(4, Math.min(184, 4 + (vix - 10) * 6));
+  const hot = vix >= 20;
+  return (
+    <div className="k-vscale">
+      <svg width="188" height="33" viewBox="0 0 188 33" aria-label={`VIX ${vix.toFixed(2)} sur l'échelle 10–40`}>
+        <rect x="4" y="11" width="180" height="7" rx="1" fill="rgba(255,255,255,.07)" />
+        {VIX_TICKS.map(([tx, label]) => (
+          <g key={label}>
+            <line x1={tx} y1="8" x2={tx} y2="20" stroke="rgba(255,255,255,.12)" strokeWidth="1" />
+            <text x={tx} y="31" fill="var(--ink-mute)" fontSize="10.5" textAnchor="middle" fontFamily="var(--qc-font-num)">
+              {label}
+            </text>
+          </g>
+        ))}
+        <path d={`M${x.toFixed(1)},9 l-5,-7 l10,0 Z`} fill={hot ? 'var(--accent)' : 'var(--ink-pure)'} />
+      </svg>
     </div>
   );
 }
@@ -233,8 +276,8 @@ function useSessionNow() {
   return now;
 }
 
-// ═══ B1 · SESSION — anatomie du témoin + progression de séance ══
-function SessionBlock() {
+// ═══ B1 · COMMANDEMENT (206) — session + agenda du croquis ══════
+function KSession({ macros, earnings }) {
   const now = useSessionNow();
   const { phase, targetKind, targetMs, phaseStartMs, nyLabel } = computeMarketPhase(now);
   const nowMs = now.getTime();
@@ -242,88 +285,131 @@ function SessionBlock() {
     phaseStartMs != null && targetMs != null && targetMs > phaseStartMs
       ? Math.max(0, Math.min(100, ((nowMs - phaseStartMs) / (targetMs - phaseStartMs)) * 100))
       : null;
+
+  const all = [
+    ...macros.map((m) => ({ ...m, k: 'M' })),
+    ...earnings.map((e) => ({ ...e, k: 'E' })),
+  ].sort((a, b) => a.date.localeCompare(b.date));
+  const hero = all[0] || null;
+  const rest = all.slice(1, 4);
+  const hasE = earnings.length > 0;
+  const heroD = hero ? daysUntil(hero.date) : null;
+  const heroHot = heroD != null && heroD <= 2;
+  const heroDetail = hero ? detailOf(hero.name) : null;
+
   return (
-    <div className="fn-b fn-session">
-      <div className="fn-title">SESSION</div>
-      <div className="fn-session__row">
-        <span className={`fz-dot${phase === 'open' ? ' fz-dot--live' : ''}`} aria-hidden="true" />
-        <span className="fn-session__phase">{PHASE_LABELS[phase]}</span>
+    <div className="k-blk" style={{ width: 206 }}>
+      <div className="k-ztitle">SESSION</div>
+      <div className="k-sesrow">
+        <span className={`k-sdot${phase === 'open' ? ' is-live' : ''}`} aria-hidden="true" />
+        <span className="k-sstate">{PHASE_LABELS[phase]}</span>
       </div>
-      <div className="fn-session__cdlabel">
-        {targetKind === 'close' ? 'CLÔTURE DANS' : 'OUVERTURE DANS'}
+      <div className="k-slbl">{targetKind === 'close' ? 'CLÔTURE DANS' : 'OUVERTURE DANS'}</div>
+      <div className="k-scd">{formatCountdown(targetMs != null ? targetMs - nowMs : null)}</div>
+      <div className="k-sbar">
+        {pct != null && <span className="k-sfill" style={{ width: `${pct}%` }} />}
       </div>
-      <div className="fn-session__cd">{formatCountdown(targetMs != null ? targetMs - nowMs : null)}</div>
-      {pct != null && (
-        <div className="fn-progress" role="img" aria-label={`Séance écoulée à ${Math.round(pct)} %`}>
-          <div className="fn-progress__track">
-            <div className="fn-progress__fill" style={{ width: `${pct}%` }} />
+      <div className="k-spct">
+        {pct != null && <><span className="k-spct__n">{Math.round(pct)} %</span> · </>}
+        NEW YORK <span className="k-spct__n">{nyLabel}</span>
+      </div>
+      <div className="k-hr" style={{ margin: '6px 0 5px' }} />
+      <div className="k-ztitle">PROCHAIN</div>
+      {hero ? (
+        <>
+          <div className="k-ahero">
+            <span className="k-am">{hero.k}</span>
+            <span className="k-ahname" title={hero.name}>{compactName(hero.name)}</span>
+            <span className={`k-ahj${heroHot ? ' is-hot' : ''}`}>{etaLabel(heroD)}</span>
           </div>
-          <span className="fn-progress__pct">{Math.round(pct)} %</span>
+          <div className="k-ahsub">
+            {heroDetail ? <>{heroDetail} · </> : null}
+            <span className="k-num">{shortDate(hero.date)}</span>
+          </div>
+        </>
+      ) : (
+        <div className="k-ahsub" style={{ marginLeft: 0 }}>— aucun événement</div>
+      )}
+      {rest.map((ev, i) => {
+        const d = daysUntil(ev.date);
+        const hot = d <= 2;
+        return (
+          <div className="k-agrow" key={i}>
+            <span className="k-am">{ev.k}</span>
+            <span className="k-aname" title={ev.name}>{compactName(ev.name)}</span>
+            <span className="k-adate">{shortDate(ev.date)}</span>
+            <span className={`k-aj${hot ? ' is-hot' : ''}`}>{etaLabel(d)}</span>
+          </div>
+        );
+      })}
+      {!hasE && (
+        <div className="k-agrow">
+          <span className="k-am k-am--empty">E</span>
+          <span className="k-aempty">— sous {WINDOW_DAYS} j</span>
         </div>
       )}
-      <div className="fn-session__ny">NEW YORK {nyLabel}</div>
     </div>
   );
 }
 
-// ═══ B2 · INDICES US — 4 colonnes-tuiles bornées + FUT ══════════
-function IndexTile({ label, quote, spark, fin }) {
+// ═══ B2 · INDICES US (622) — 4 tuiles 130 + vseps 24 + FUT ══════
+function KTile({ label, quote, spark, cal }) {
   return (
-    <div className="fn-tile">
-      <div className="fn-tile__head">
-        <span className="fn-tile__sym">{label}</span>
-        <Pastille pct={quote?.changePercent} size={16} />
-      </div>
-      <div className="fn-tile__pricerow">
-        <span className="fn-tile__price">{fmtVal(quote?.price, 'index')}</span>
-        <span className={`fz-delta fz-delta--15 fz-delta--${dirOf(quote?.change)}`}>
-          {fmtNet(quote?.change, 'index')}
-        </span>
-      </div>
-      <div className="fn-tile__body">
-        <IntradaySpark prices={spark?.prices} height={fin.curve} />
-        {fin.body === 'instrument' && (
-          <AmpBar low={quote?.low} high={quote?.high} price={quote?.price} />
-        )}
-      </div>
-      <div className="fn-tile__hl">
-        H <b>{fmtVal(quote?.high, 'index')}</b> · L <b>{fmtVal(quote?.low, 'index')}</b>
-      </div>
-    </div>
+    <span className="k-tile" style={{ width: 130 }}>
+      <span className="k-trow">
+        <span className="k-tisym">{label}</span>
+        <Pill pct={quote?.changePercent} size={cal.pillT} />
+      </span>
+      <span className="k-tipx" style={{ fontSize: cal.px }}>{fmtVal(quote?.price, 'index')}</span>
+      <span className={`k-tidd k-da--${dirOf(quote?.change)}`} style={{ fontSize: cal.dd }}>
+        {fmtNet(quote?.change, 'index')}
+      </span>
+      <span className="k-ticurve">
+        <KCurve prices={spark?.prices} height={cal.curve} />
+      </span>
+      <Amp
+        low={validHL(quote?.low) ? quote.low : null}
+        high={validHL(quote?.high) ? quote.high : null}
+        price={quote?.price}
+      />
+      <span className="k-tihl">
+        H {validHL(quote?.high) ? fmtVal(quote.high, 'index') : '—'} · L{' '}
+        {validHL(quote?.low) ? fmtVal(quote.low, 'index') : '—'}
+      </span>
+    </span>
   );
 }
 
-function IndicesBlock({ quotes, intraday, futServed, fin }) {
+function KIndices({ quotes, intraday, futServed, cal }) {
   return (
-    <div className="fn-b fn-indices">
-      <div className="fn-title">INDICES US</div>
-      <div className="fn-tiles">
-        {US.map(({ sym, label }) => (
-          <IndexTile key={sym} label={label} quote={quotes[sym]} spark={intraday[sym]} fin={fin} />
+    <div className="k-blk k-bl" style={{ width: 622 }}>
+      <div className="k-ztitle">INDICES US</div>
+      <div className="k-tilerow">
+        {US.map(({ sym, label }, i) => (
+          <span key={sym} style={{ display: 'contents' }}>
+            {i > 0 && <span className="k-vsep" style={{ width: 24, height: cal.vsepH }} />}
+            <KTile label={label} quote={quotes[sym]} spark={intraday[sym]} cal={cal} />
+          </span>
         ))}
       </div>
-      {/* Rangée FUT permanente — colonnes ALIGNÉES sous les tuiles
-          (les hairlines continuent : zéro vide, structure tenue). */}
-      <div className="fn-fut">
-        <div className="fn-fut__cell fn-fut__cell--label">
-          <span className="fn-fut__tag">FUT</span>
-          <span className="fn-fut__sub">RANGE O/N</span>
-        </div>
+      <div className="k-hr" style={{ margin: '8px 0 7px' }} />
+      <div className="k-futrow">
+        <span className="k-futlbl">FUT · O/N</span>
         {FUTURES.map(({ sym, label }) => {
           const q = quotes[sym];
           const range =
-            futServed && Number.isFinite(q?.low) && Number.isFinite(q?.high)
+            futServed && validHL(q?.low) && validHL(q?.high)
               ? `${fmtVal(q.low, 'index')}–${fmtVal(q.high, 'index')}`
               : '—';
           return (
-            <div className="fn-fut__cell" key={sym}>
-              <div className="fn-fut__line">
-                <span className="fn-fut__sym">{label}</span>
-                <span className="fn-fut__val">{futServed ? fmtVal(q?.price, 'index') : '—'}</span>
-                {futServed ? <DeltaText v={q?.changePercent} /> : <span className="fz-delta fz-delta--15 fz-delta--flat">—</span>}
-              </div>
-              <div className="fn-fut__range">{range}</div>
-            </div>
+            <span className="k-futg" key={sym}>
+              <span className="k-fsym">{label}</span>
+              <span className="k-fval" style={{ fontSize: cal.fval - 1 }}>
+                {futServed ? fmtVal(q?.price, 'index') : '—'}
+              </span>
+              <DeltaArrow pct={futServed ? q?.changePercent : null} size={12.5} />
+              <span className="k-frng">{range}</span>
+            </span>
           );
         })}
       </div>
@@ -331,15 +417,8 @@ function IndicesBlock({ quotes, intraday, futServed, fin }) {
   );
 }
 
-// ═══ B3 · PILIER VOL + FX ═══════════════════════════════════════
-const REGIMES = [
-  { to: 15, label: 'CALME' },
-  { to: 20, label: 'NORMAL' },
-  { to: 27, label: 'NERVEUX' },
-  { to: 40, label: 'STRESS' },
-];
-const REGIME_GRADS = [10, 15, 20, 27, 40];
-
+// ═══ B3 · VOL + FX (216) ════════════════════════════════════════
+const REGIME_LABELS = ['CALME', 'NORMAL', 'NERVEUX', 'STRESS'];
 function regimeOf(vix) {
   if (!Number.isFinite(vix)) return null;
   if (vix < 15) return 0;
@@ -348,200 +427,110 @@ function regimeOf(vix) {
   return 3;
 }
 
-// Anatomie RATIFIÉE (1.C.5, reconduite §1) : graduations numériques
-// 10/15/20/27/40 + chip de régime (les 4 noms à 11-12 px chevauchent
-// dans ~212 px : fallback chip du blueprint).
-function RegimeScale({ vix }) {
-  if (!Number.isFinite(vix)) return null;
-  const clamped = Math.max(10, Math.min(40, vix));
-  const idx = regimeOf(clamped);
-  const from = REGIME_GRADS[idx];
-  const to = REGIME_GRADS[idx + 1];
-  const pct = idx * 25 + ((clamped - from) / (to - from)) * 25;
-  const hot = vix >= 20;
-  return (
-    <div className="fn-scale" aria-label={`Régime VIX : ${REGIMES[idx].label}`}>
-      <div className="fn-scale__track">
-        {REGIMES.map((r, i) => (
-          <span className={`fn-scale__seg${i === idx ? ' is-active' : ''}`} key={r.label} title={r.label} />
-        ))}
-        <span className={`fn-scale__cursor${hot ? ' is-hot' : ''}`} style={{ left: `${pct}%` }} />
-      </div>
-      <div className="fn-scale__grads">
-        {REGIME_GRADS.map((g, i) => (
-          <span key={g} style={{ left: `${i * 25}%` }}>{g}</span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function PilierBlock({ quotes, rate, fxBadge, d5 }) {
+function KVolFx({ quotes, rate, fxBadge, d5, cal }) {
   const vix = quotes['^VIX'];
   const idx = regimeOf(vix?.price);
-  const hot = idx != null && idx >= 2;
   return (
-    <div className="fn-b fn-pilier">
-      <div className="fn-title">VOLATILITÉ</div>
-      <div className="fn-vol__hero">
-        <span className="fn-vol__val">{fmtVal(vix?.price, 'vix')}</span>
-        <Pastille pct={vix?.changePercent} size={18} />
-        {idx != null && <Chip tone={hot ? 'amber' : 'ink'}>{REGIMES[idx].label}</Chip>}
+    <div className="k-blk k-bl" style={{ width: 216 }}>
+      <div className="k-ztitle">VOLATILITÉ</div>
+      <div className="k-vrow">
+        <span className="k-vval" style={{ fontSize: cal.vix }}>{fmtVal(vix?.price, 'vix')}</span>
+        <Pill pct={vix?.changePercent} size={cal.pillV} />
+        {idx != null && <KChip>{REGIME_LABELS[idx]}</KChip>}
       </div>
-      <RegimeScale vix={vix?.price} />
-      <div className="fn-vol__hl">
-        H <b>{fmtVal(vix?.high, 'vix')}</b> · L <b>{fmtVal(vix?.low, 'vix')}</b>
-        {d5 != null && (
-          <>
-            {' '}· Δ5J <b>~{d5 >= 0 ? '+' : '−'}{Math.abs(d5).toFixed(1)}%</b>
-          </>
-        )}
+      <KScale vix={vix?.price} />
+      <div className="k-vhl">
+        H {fmtVal(vix?.high, 'vix')} · L {fmtVal(vix?.low, 'vix')}
+        {d5 != null && <> · Δ5J ~{d5 >= 0 ? '+' : '−'}{Math.abs(d5).toFixed(1)}%</>}
       </div>
-      <div className="fn-pilier__divider" />
-      <div className="fn-title fn-title--fx">
-        FX &amp; TAUX <Chip tone="ink">{fxBadge}</Chip>
+      <div className="k-hr" style={{ margin: '6px 0 5px' }} />
+      <div className="k-ztitle">FX &amp; TAUX</div>
+      <div className="k-fxhero">
+        <span className="k-fxsym2">USD/CHF</span>
+        <span className="k-fxval" style={{ fontSize: cal.fxval }}>
+          {Number.isFinite(rate) ? rate.toFixed(4) : '—'}
+        </span>
+        <KChip>{fxBadge}</KChip>
       </div>
-      <div className="fn-fx__hero">
-        <span className="fn-fx__herosym">USD/CHF</span>
-        <span className="fn-fx__heroval">{Number.isFinite(rate) ? rate.toFixed(4) : '—'}</span>
-      </div>
-      <div className="fn-fx__applied">APPLIQUÉ AU PORTEFEUILLE</div>
+      <div className="k-fxap">APPLIQUÉ AU PORTEFEUILLE</div>
       {[
         { label: 'EUR/USD', q: quotes['EURUSD=X'], cls: 'fx' },
         { label: 'US10Y', q: quotes['^TNX'], cls: 'rate' },
         { label: 'DXY', q: quotes['DX-Y.NYB'], cls: 'rate' },
       ].map(({ label, q, cls }) => (
-        <div className="fn-row" key={label}>
-          <span className="fn-row__sym">{label}</span>
-          <span className="fn-row__val">{fmtVal(q?.price, cls)}</span>
-          <DeltaText v={q?.changePercent} size={15} />
+        <div className="k-fxr" key={label} style={{ height: cal.fxr, lineHeight: `${cal.fxr}px` }}>
+          <span className="k-fxsym">{label}</span>
+          <span className="k-fxv">{fmtVal(q?.price, cls)}</span>
+          <DeltaArrow pct={q?.changePercent} size={13.5} signed />
         </div>
       ))}
     </div>
   );
 }
 
-// ═══ B4 · MONDE ×10 (zéro graphe) ═══════════════════════════════
-const WORLD_COLS = [
-  {
-    header: 'ACTIONS · CRYPTO',
-    items: [
-      { sym: '^GDAXI', label: 'DAX', cls: 'index' },
-      { sym: '^FTSE', label: 'FTSE', cls: 'index' },
-      { sym: '^N225', label: 'NIKKEI', cls: 'index' },
-      { sym: 'BTC-USD', label: 'BTC', cls: 'btc' },
-      { sym: 'ETH-USD', label: 'ETH', cls: 'btc' },
-    ],
-  },
-  {
-    header: 'MATIÈRES',
-    items: [
-      { sym: 'GC=F', label: 'GOLD', cls: 'cmdty' },
-      { sym: 'SI=F', label: 'SILVER', cls: 'cmdty' },
-      { sym: 'HG=F', label: 'COPPER', cls: 'cmdty' },
-      { sym: 'CL=F', label: 'CRUDE', cls: 'cmdty' },
-      { sym: 'NG=F', label: 'NATGAS', cls: 'cmdty' },
-    ],
-  },
-];
-
-function MondeBlock({ quotes }) {
+// ═══ B4 · MONDE (315) — table unique 10 rangées ═════════════════
+function KMonde({ quotes, cal }) {
   return (
-    <div className="fn-b fn-monde">
-      <div className="fn-title">MONDE</div>
-      <div className="fn-monde__cols">
-        {WORLD_COLS.map((col) => (
-          <div className="fn-monde__col" key={col.header}>
-            <div className="fn-microhead">{col.header}</div>
-            {col.items.map(({ sym, label, cls }) => (
-              <div className="fn-row" key={sym}>
-                <span className="fn-row__sym">{label}</span>
-                <span className="fn-row__val">{fmtVal(quotes[sym]?.price, cls)}</span>
-                <DeltaText v={quotes[sym]?.changePercent} size={14} />
-              </div>
-            ))}
-          </div>
-        ))}
+    <div className="k-blk k-bl" style={{ width: 315 }}>
+      <div className="k-ztitle">
+        MONDE <span className="k-zsub">ACTIONS · CRYPTO · MATIÈRES</span>
       </div>
-    </div>
-  );
-}
-
-// ═══ B5 · AGENDA — héros + rangées, SANS timeline ═══════════════
-// Matrice de non-perte : la timeline horizontale (lab III) est MORTE
-// (trou structurel : 3 événements / 27 j) ; l'information de distance
-// survit intégralement dans les chips J-x de chaque rangée.
-function AgendaBlock({ macros, earnings }) {
-  const all = [
-    ...macros.map((m) => ({ ...m, k: 'M' })),
-    ...earnings.map((e) => ({ ...e, k: 'E', armed: true })),
-  ].sort((a, b) => a.date.localeCompare(b.date));
-  const hero = all[0] || null;
-  const rest = all.slice(1, 4);
-  const hasE = earnings.length > 0;
-  const heroD = hero ? daysUntil(hero.date) : null;
-  const heroHot = heroD != null && heroD <= 2;
-  const heroDetail = hero ? detailOf(hero.name) : null;
-  return (
-    <div className="fn-b fn-agenda">
-      <div className="fn-title">AGENDA</div>
-      {hero ? (
-        <div className="fn-hero">
-          <div className="fn-hero__row">
-            <Chip tone="ink">{hero.k}</Chip>
-            <span className="fn-hero__name" title={hero.name}>{compactName(hero.name)}</span>
-          </div>
-          <div className="fn-hero__eta-row">
-            <span className={`fn-hero__eta${heroHot ? ' is-hot' : ''}`}>{etaLabel(heroD)}</span>
-            <span className="fn-hero__date">· {shortDate(hero.date)}</span>
-            {hero.k === 'E' && heroHot && <Chip tone="amber">ARMED</Chip>}
-          </div>
-          {heroDetail && <div className="fn-hero__detail">{heroDetail}</div>}
-        </div>
-      ) : (
-        <div className="fn-hero">
-          <div className="fn-hero__detail">— aucun événement sous {WINDOW_DAYS} j</div>
-        </div>
-      )}
-      <div className="fn-agenda__divider" />
-      {rest.map((ev, i) => {
-        const d = daysUntil(ev.date);
-        const hot = d <= 2;
+      {WORLD.map(({ sym, label, cls, sep }) => {
+        const q = quotes[sym];
         return (
-          <div className="fn-row fn-agenda__row" key={i}>
-            <Chip tone="ink">{ev.k}</Chip>
-            <span className="fn-agenda__name" title={ev.name}>{compactName(ev.name)}</span>
-            <span className="fn-agenda__date">{shortDate(ev.date)}</span>
-            <span className={`fn-agenda__eta${hot ? ' is-hot' : ''}`}>{etaLabel(d)}</span>
+          <div
+            className={`k-mr${sep ? ' k-mrh' : ''}`}
+            key={sym}
+            style={{ height: (sep ? 4 : 0) + cal.mr, lineHeight: `${cal.mr}px` }}
+          >
+            <span className="k-msym">{label}</span>
+            <span className="k-mv" style={{ fontSize: cal.mv }}>{fmtVal(q?.price, cls)}</span>
+            <span className="k-mpct">
+              <DeltaArrow pct={q?.changePercent} size={13.5} />
+            </span>
+            <span className={`k-mdd k-da--${dirOf(q?.change)}`}>
+              {fmtNet(q?.change, cls)}
+            </span>
           </div>
         );
       })}
-      {!hasE && (
-        <div className="fn-row fn-agenda__row">
-          <Chip tone="ink">E</Chip>
-          <span className="fn-agenda__empty">— sous {WINDOW_DAYS} j</span>
-        </div>
-      )}
     </div>
   );
 }
 
-// ═══ L'ÉTAGE FINALE (structure verrouillée, finition par props) ══
-function FinaleDeck({ fin, quotes, intraday, rate, fxBadge, macros, earnings, d5, futServed }) {
+// ═══ L'ÉTAGE (croquis, @1359) ═══════════════════════════════════
+function KEtage({ cal, quotes, intraday, rate, fxBadge, macros, earnings, d5, futServed }) {
   return (
-    <section className="fn" aria-label={`Finition ${fin.key}`}>
-      <SessionBlock />
-      <IndicesBlock quotes={quotes} intraday={intraday} futServed={futServed} fin={fin} />
-      <PilierBlock quotes={quotes} rate={rate} fxBadge={fxBadge} d5={d5} />
-      <MondeBlock quotes={quotes} />
-      <AgendaBlock macros={macros} earnings={earnings} />
-    </section>
+    <div className="k-cockpit">
+      <section
+        className="k-etage"
+        style={{ height: cal.h, '--k-state': `${cal.state}px`, '--k-cd': `${cal.cd}px` }}
+        aria-label={`Calibration ${cal.key}`}
+      >
+        <KSession macros={macros} earnings={earnings} />
+        <KIndices quotes={quotes} intraday={intraday} futServed={futServed} cal={cal} />
+        <KVolFx quotes={quotes} rate={rate} fxBadge={fxBadge} d5={d5} cal={cal} />
+        <KMonde quotes={quotes} cal={cal} />
+      </section>
+    </div>
   );
 }
 
-const FINS = [
-  { key: 'Ω1', label: 'Ω1 · LIGNE — la vie par la courbe (48 px, rien d\'autre)', body: 'line', curve: 48 },
-  { key: 'Ω2', label: 'Ω2 · INSTRUMENT — courbe 38 px + barre d\'amplitude du jour (L—●—H)', body: 'instrument', curve: 38 },
+// C1 = tailles EXACTES du croquis · C2 = un cran d'amplitude (§2).
+const CALS = [
+  // Hauteurs +20 vs ~262/~286 (adaptation déclarée : le contenu B1 du
+  // croquis mesure 319 px dans une boîte de 262 — défaut de la spec
+  // statique ; interlignes compressés, tailles de police intactes).
+  {
+    key: 'C1', label: 'C1 · CROQUIS — reproduction fidèle 1:1',
+    h: 274, state: 20, cd: 33, px: 28, dd: 14, curve: 44, pillT: 14, pillV: 15,
+    fval: 15, vix: 30, fxval: 23, fxr: 24, mv: 15, mr: 21, vsepH: 176,
+  },
+  {
+    key: 'C2', label: 'C2 · CROQUIS AMPLIFIÉ — un cran de force, mêmes largeurs',
+    h: 284, state: 22, cd: 36, px: 30, dd: 15, curve: 50, pillT: 15, pillV: 16,
+    fval: 16, vix: 34, fxval: 25, fxr: 25, mv: 16, mr: 23, vsepH: 190,
+  },
 ];
 
 // ═══ Page ═══════════════════════════════════════════════════════
@@ -575,8 +564,6 @@ export default function MarketLab() {
     minImpact: 'medium',
   });
 
-  // Agenda : UNION Finnhub ∪ local dédupliquée → 3 PROCHAINS macro
-  // (ratifié — sans borne haute) ; earnings de positions sous 14 j.
   const agendaStats = useRef({ feed: 0, local: 0 });
   const macros = useMemo(() => {
     const feed = (macro || [])
@@ -594,7 +581,7 @@ export default function MarketLab() {
       return true;
     });
     agendaStats.current = { feed: feed.length, local: local.length };
-    // 4 = héros + 3 rangées macro restantes (blueprint B5 : 3-4 rangées).
+    // héros + 3 rangées (croquis : PROCHAIN + 3 agrow).
     return union.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
   }, [macro, today, farHorizon]);
 
@@ -635,11 +622,11 @@ export default function MarketLab() {
   return (
     <div className="lm-page">
       <header className="lm-head">
-        <h1 className="lm-title">LAB · MARKET IV — LA FINALE, deux finitions (1.C.6)</h1>
+        <h1 className="lm-title">LAB · MARKET V — le croquis de l'architecte, vivant (1.C.7)</h1>
         <p className="lm-sub">
-          A = témoin. Puis le dessin FINAL (blueprint Rafael 17.07) en deux finitions — seule
-          différence : le corps des tuiles d'indices. Ω1 = courbe seule · Ω2 = courbe + jauge de
-          range du jour.
+          A = témoin. Puis le croquis validé (docs/croquis/) reproduit au pixel avec les données
+          vives, en deux forces : C1 fidèle · C2 amplifié. Largeur d'étage = 1359 px (cockpit réel,
+          sidebar déployée).
         </p>
         <div className="lm-probes">
           <span className={`lm-probe${futServed ? ' is-ok' : ' is-ko'}`}>
@@ -652,7 +639,7 @@ export default function MarketLab() {
             Δ5j VIX : {d5 != null ? 'dérivable (~)' : 'indérivable — omis'}
           </span>
           <span className="lm-probe is-ok">
-            Agenda : {agendaStats.current.feed} Finnhub ∪ {agendaStats.current.local} local → {macros.length} macro (héros + rangées) + {earningsItems.length} earn · timeline MORTE → chips J-x
+            Agenda : {agendaStats.current.feed} Finnhub ∪ {agendaStats.current.local} local → héros + {Math.max(0, macros.length - 1)} macro + {earningsItems.length} earn
           </span>
         </div>
         <button
@@ -672,10 +659,10 @@ export default function MarketLab() {
         </div>
       </section>
 
-      {FINS.map((fin) => (
-        <section className="lm-variant" key={fin.key}>
-          <div className="lm-variant__label">{fin.label}</div>
-          <FinaleDeck fin={fin} {...common} />
+      {CALS.map((cal) => (
+        <section className="lm-variant" key={cal.key}>
+          <div className="lm-variant__label">{cal.label}</div>
+          <KEtage cal={cal} {...common} />
         </section>
       ))}
     </div>

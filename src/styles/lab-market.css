@@ -1,11 +1,10 @@
 /* ════════════════════════════════════════════════════════════════
-   LAB-MARKET.CSS — /lab/market IV (1.C.6) · DEV-ONLY, ÉPHÉMÈRE
-   LA FINALE : structure verrouillée (blueprint Rafael 17.07),
-   deux finitions Ω1/Ω2 (corps des tuiles d'indices uniquement).
-   Lois de craft 1.C.5 §2 + anti-vide durcie (aucun gap mort >32 px).
-   Atomes uniques : .fz-pill (pastille tape), .fz-chip (reverse),
-   .fz-delta (Δ% texte coloré), .fz-dot, .fz-spark.
-   PURGÉ en L2.
+   LAB-MARKET.CSS — /lab/market V (1.C.7) · DEV-ONLY, ÉPHÉMÈRE
+   Transcription 1:1 de la CSS du croquis architecte
+   (docs/croquis/croquis-market-etage.html), couleurs → tokens :
+   #EF4444→--pnl-down · #10B981→--pnl-up · #8A8A92→--ink-mute ·
+   #9A9AA2→--ink-soft · #FAFAFA→--ink-pure · #FFA028→--accent ·
+   #0C0C0E→--depth-raised. PlexC→--qc-font-num. PURGÉ en L2.
    ════════════════════════════════════════════════════════════════ */
 
 .lm-page {
@@ -56,418 +55,283 @@
 }
 
 /* ════════════════════════════════════════════════════════════════
-   ATOMES DE CRAFT (anatomies UNIQUES — loi §2.1)
+   LE CROQUIS — conteneur cockpit @1359 (largeur réelle, sidebar
+   déployée) · étage à hauteur de calibration.
    ════════════════════════════════════════════════════════════════ */
-.fz-pill {
-  display: inline-flex; align-items: center;
-  font-family: var(--qc-font-mono);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700; line-height: 1;
-  border-radius: 4px; white-space: nowrap; width: fit-content;
+.k-cockpit {
+  width: 1359px;
+  margin: 0 40px;
+  background: var(--depth-raised);
+  border: 1px solid var(--hairline-rest);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
-.fz-pill--15 { font-size: 15px; padding: 2px 5px; }
-.fz-pill--16 { font-size: 16px; padding: 2px 6px; }
-.fz-pill--18 { font-size: 18px; padding: 3px 7px; }
-.fz-pill--up { color: var(--pnl-up); background: color-mix(in srgb, var(--pnl-up) 16%, transparent); }
-.fz-pill--down { color: var(--pnl-down); background: color-mix(in srgb, var(--pnl-down) 16%, transparent); }
-.fz-pill--flat { color: var(--ink-mute); background: color-mix(in srgb, var(--ink-mute) 10%, transparent); }
-.fz-pill__arrow { font-size: 0.7em; margin-right: 3px; }
 
-.fz-chip {
-  display: inline-flex; align-items: center; width: fit-content;
-  padding: 2px 6px; border-radius: 2px;
-  font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
-  text-transform: uppercase; line-height: 1.15;
+.k-etage {
   white-space: nowrap;
+  font-size: 0;
 }
-.fz-chip--ink { background: var(--ink-soft); color: var(--depth-void); }
-.fz-chip--amber { background: var(--accent); color: var(--depth-void); }
 
-.fz-delta {
-  font-family: var(--qc-font-num);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700; white-space: nowrap;
+/* .blk du croquis : inline-block, padding 11 14, font 13. */
+/* Comme le croquis : PAS d'overflow hidden (les micro-débords de
+   padding se comportent à l'identique du fichier). */
+.k-blk {
+  display: inline-block; vertical-align: top;
+  height: 100%;
+  padding: 11px 14px;
+  font-size: 13px;
+  font-family: var(--qc-font-mono);
+  white-space: normal;
 }
-.fz-delta--14 { font-size: 14px; }
-.fz-delta--15 { font-size: 15px; }
-.fz-delta--up { color: var(--pnl-up); }
-.fz-delta--down { color: var(--pnl-down); }
-.fz-delta--flat { color: var(--ink-mute); }
+.k-bl { border-left: 1px solid var(--line-emphasis); }
 
-.fz-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--ink-mute); flex: none;
+.k-hr { height: 1px; background: var(--hairline-rest); }
+
+.k-num, .k-spct__n {
+  font-family: var(--qc-font-num); font-weight: 600;
+  font-variant-numeric: tabular-nums; color: var(--ink-soft);
 }
-.fz-dot--live { background: var(--accent); animation: fz-breathe 2s ease-in-out infinite; }
 
-@keyframes fz-breathe {
+.k-ztitle {
+  font-size: 13px; font-weight: 600; letter-spacing: 0.1em;
+  color: var(--ink-mute); margin-bottom: 2px; line-height: 1.25;
+  text-transform: uppercase;
+}
+.k-zsub {
+  font-size: 10.5px; letter-spacing: 0.1em; color: var(--ink-mute);
+  opacity: 0.75; margin-left: 8px; font-weight: 500;
+}
+
+/* ── Atomes ─────────────────────────────────────────────────────
+   Pastille du croquis : radius 4, mix 16 %, PlexC 700. Padding
+   proportionnel (croquis : 1px 5px @14 · 1px 6px @15 · 2px 8px @20). */
+.k-pill {
+  display: inline-block; border-radius: 4px;
+  font-family: var(--qc-font-num); font-weight: 700;
+  font-variant-numeric: tabular-nums; letter-spacing: 0.01em;
+  padding: 1px 5px; line-height: 1.25; white-space: nowrap;
+  vertical-align: middle;
+}
+.k-pill--up { background: color-mix(in srgb, var(--pnl-up) 16%, transparent); color: var(--pnl-up); }
+.k-pill--down { background: color-mix(in srgb, var(--pnl-down) 16%, transparent); color: var(--pnl-down); }
+.k-pill--flat { background: color-mix(in srgb, var(--ink-mute) 10%, transparent); color: var(--ink-mute); }
+
+/* Δ% texte coloré avec flèche (700, PlexC) · 0.00 % = mute sans flèche. */
+.k-da {
+  font-family: var(--qc-font-num); font-weight: 700;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.k-da--up { color: var(--pnl-up); }
+.k-da--down { color: var(--pnl-down); }
+.k-da--flat { color: var(--ink-mute); font-weight: 600; }
+
+/* Chip reverse-video du croquis (.chip) : Plex, 700, ls .06. */
+.k-chip {
+  display: inline-block; background: var(--ink-soft); color: var(--depth-void);
+  font-weight: 700; letter-spacing: 0.06em; padding: 2px 6px;
+  border-radius: 2px; vertical-align: middle; font-size: 11px;
+  font-family: var(--qc-font-mono); text-transform: uppercase;
+}
+
+/* ── B1 · COMMANDEMENT ─────────────────────────────────────────── */
+.k-sesrow { margin: 0 0 2px; line-height: 1.2; }
+.k-sdot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ink-mute); margin-right: 8px; vertical-align: 2px;
+}
+.k-sdot.is-live { background: var(--accent); animation: k-breathe 2s ease-in-out infinite; }
+@keyframes k-breathe {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.45; }
 }
+.k-sstate {
+  font-size: var(--k-state, 20px); font-weight: 600; letter-spacing: 0.04em;
+  color: var(--ink-pure); text-transform: uppercase;
+}
+.k-slbl {
+  font-size: 11px; letter-spacing: 0.09em; color: var(--ink-mute);
+  margin: 3px 0 1px; line-height: 1.2; text-transform: uppercase;
+}
+.k-scd {
+  font-family: var(--qc-font-num); font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--k-cd, 33px); line-height: 1.03; letter-spacing: 0.01em;
+  color: var(--ink-pure);
+}
+.k-sbar {
+  position: relative; height: 8px; background: rgba(255, 255, 255, 0.08);
+  margin: 5px 0 3px; width: 178px;
+}
+.k-sfill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); }
+.k-spct { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.03em; line-height: 1.15; }
 
-.fz-spark { display: block; width: 100%; }
-.fz-spark--empty {
+/* Agenda du commandement. */
+.k-am {
+  display: inline-block; width: 15px; height: 15px;
+  background: var(--ink-soft); color: var(--depth-void);
+  font-size: 10.5px; font-weight: 700; text-align: center; line-height: 15px;
+  border-radius: 2px; margin-right: 8px; vertical-align: 1px;
+}
+.k-am--empty { opacity: 0.45; }
+.k-ahero { margin: 1px 0 1px; white-space: nowrap; line-height: 1.2; }
+.k-ahname {
+  font-size: 17px; font-weight: 700; color: var(--ink-pure);
+}
+.k-ahj {
+  font-family: var(--qc-font-num); font-variant-numeric: tabular-nums;
+  font-size: 16px; font-weight: 700; margin-left: 9px; color: var(--ink-pure);
+}
+.k-ahj.is-hot { color: var(--accent); }
+.k-ahsub {
+  font-size: 12px; color: var(--ink-mute); margin: 0 0 3px 23px;
+  line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.k-agrow { font-size: 13px; height: 17px; line-height: 17px; white-space: nowrap; }
+.k-aname {
+  display: inline-block; width: 40px; font-weight: 600; color: var(--ink-soft);
+  overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; white-space: nowrap;
+}
+.k-adate {
+  display: inline-block; width: 46px; color: var(--ink-mute); font-weight: 600;
+  font-size: 12.5px; font-family: var(--qc-font-num); font-variant-numeric: tabular-nums;
+}
+.k-aj {
+  color: var(--ink-soft); font-weight: 700; font-size: 12.5px;
+  font-family: var(--qc-font-num); font-variant-numeric: tabular-nums;
+}
+.k-aj.is-hot { color: var(--accent); }
+.k-aempty { color: var(--ink-mute); font-size: 12.5px; }
+
+/* ── B2 · INDICES ──────────────────────────────────────────────── */
+.k-tilerow { font-size: 0; white-space: nowrap; }
+.k-tile { display: inline-block; vertical-align: top; white-space: normal; }
+.k-vsep {
+  display: inline-block; vertical-align: top;
+  background: linear-gradient(var(--hairline-rest), var(--hairline-rest)) no-repeat center / 1px 100%;
+}
+.k-trow { display: block; margin-bottom: 2px; white-space: nowrap; }
+.k-tisym {
+  font-size: 15px; font-weight: 600; letter-spacing: 0.05em;
+  color: var(--ink-soft); margin-right: 8px;
+}
+.k-tipx {
+  display: block;
+  font-family: var(--qc-font-num); font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1; color: var(--ink-pure); white-space: nowrap;
+}
+.k-tidd {
+  display: block; margin: 0 0 4px;
+  font-family: var(--qc-font-num); font-weight: 700;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.k-ticurve { display: block; }
+.k-curve--empty {
   background:
     linear-gradient(to bottom, transparent calc(50% - 1px), var(--hairline-rest) calc(50% - 1px),
       var(--hairline-rest) 50%, transparent 50%);
 }
-
-/* ════════════════════════════════════════════════════════════════
-   L'ÉTAGE FINALE — 5 blocs, hairlines --line-emphasis, zéro radius
-   ════════════════════════════════════════════════════════════════ */
-.fn {
-  display: grid;
-  grid-template-columns: 170px 627px 248px 336px 1fr;
-  height: 246px;
-  background: var(--depth-raised);
-  border-top: 1px solid var(--hairline-rest);
-  border-bottom: 1px solid var(--hairline-rest);
+.k-amp { display: block; margin: 4px 0 3px; white-space: nowrap; }
+.k-ampl {
+  font-size: 10px; color: var(--ink-mute); vertical-align: 2px;
+  font-family: var(--qc-font-num); font-weight: 600;
+}
+.k-track {
+  display: inline-block; position: relative; width: 94px; height: 5px;
+  background: rgba(255, 255, 255, 0.08); margin: 0 5px; vertical-align: 3px;
+}
+.k-cur { position: absolute; top: -2px; width: 2px; height: 9px; background: var(--ink-pure); }
+.k-tihl {
+  display: block; font-size: 12px; color: var(--ink-mute); font-weight: 600;
+  font-family: var(--qc-font-num); font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 
-.fn-b {
-  border-left: 1px solid var(--line-emphasis);
-  padding: 8px 10px;
-  min-width: 0; overflow: hidden;
-  display: flex; flex-direction: column;
+/* ADAPTATION DÉCLARÉE (1.C.7) : dans le croquis, cette rangée
+   (contenu 751 px) déborde du bloc (594 px) et B3 écrase le range
+   du YM — défaut objectif de la spec statique. Compression douce
+   (tailles −0.5/−1, gaps resserrés) pour caser les 3 ranges DANS
+   le bloc, anatomie inchangée. */
+.k-futrow { white-space: nowrap; font-size: 13px; }
+.k-futlbl {
+  display: inline-block; width: 52px; font-size: 11px; letter-spacing: 0.04em;
+  color: var(--ink-mute); font-weight: 600;
 }
-.fn-b:first-child { border-left: none; }
-
-/* Titre de zone — IDENTIQUE partout (13 caps, .1em, mute, même y). */
-.fn-title {
-  height: 18px; display: flex; align-items: center; gap: 8px;
-  font-size: 13px; font-weight: 600; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--ink-mute);
-  flex: none; margin-bottom: 4px;
+.k-futg { display: inline-block; margin-right: 6px; white-space: nowrap; }
+.k-futg:last-child { margin-right: 0; }
+.k-fsym {
+  font-size: 12.5px; font-weight: 600; letter-spacing: 0.04em;
+  color: var(--ink-soft); margin-right: 3px;
 }
-
-/* Rangée tabulaire 24 px — [sym 13][valeur 16][Δ% texte coloré]. */
-.fn-row {
-  display: grid;
-  grid-template-columns: max-content 1fr auto;
-  column-gap: 4px;
-  align-items: baseline;
-  height: 24px;
-  flex: none; min-width: 0;
+.k-fval {
+  font-family: var(--qc-font-num); font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ink-pure); margin-right: 3px;
 }
-.fn-row__sym {
-  font-size: 13px; font-weight: 600; letter-spacing: 0.03em;
-  text-transform: uppercase; color: var(--ink-soft);
-}
-.fn-row__val {
-  font-family: var(--qc-font-num);
-  font-variant-numeric: tabular-nums;
-  font-size: 16px; font-weight: 700; color: var(--ink-pure);
-  text-align: right; white-space: nowrap; line-height: 1;
-}
-
-/* ── B1 · SESSION (anatomie témoin + progression) ──────────────
-   Le contenu se DISTRIBUE sur la hauteur (aucun trou unique >32 px). */
-.fn-session { justify-content: space-between; }
-
-.fn-session__row {
-  height: 24px; display: inline-flex; align-items: center; gap: 8px;
-}
-.fn-session__phase {
-  font-size: 16px; font-weight: 700; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--ink-pure);
-}
-
-.fn-session__cdlabel {
-  height: 16px; display: flex; align-items: center;
-  font-size: 13px; font-weight: 600; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--ink-mute);
-}
-
-.fn-session__cd {
-  font-family: var(--qc-font-num);
-  font-variant-numeric: tabular-nums;
-  font-size: 33px; font-weight: 700; color: var(--ink-pure);
-  line-height: 38px; height: 38px; white-space: nowrap;
-}
-
-.fn-progress { display: flex; align-items: center; gap: 8px; height: 16px; }
-.fn-progress__track {
-  flex: 1; height: 7px; background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-}
-.fn-progress__fill { height: 100%; background: var(--accent); }
-.fn-progress__pct {
-  flex: none;
+.k-frng {
+  font-size: 10.5px; color: var(--ink-mute); margin-left: 3px; font-weight: 600;
   font-family: var(--qc-font-num); font-variant-numeric: tabular-nums;
-  font-size: 13px; font-weight: 600; color: var(--ink-mute);
 }
 
-.fn-session__ny {
-  height: 20px; display: flex; align-items: center;
-  font-size: 15px; font-weight: 600; letter-spacing: 0.05em;
-  text-transform: uppercase; color: var(--ink-mute);
-  font-variant-numeric: tabular-nums; white-space: nowrap;
-}
-
-/* ── B2 · INDICES US — colonnes-tuiles BORNÉES + FUT ──────────── */
-.fn-indices { padding-left: 0; padding-right: 0; }
-.fn-indices .fn-title { padding: 0 12px; }
-
-.fn-tiles {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  flex: 1;
-}
-
-/* Hairline pleine hauteur + gouttières ≥20 px (padding 11×2 par
-   tuile) ; les courbes restent DANS le padding (inset ≥8 px) :
-   deux courbes voisines ne se prolongent jamais. */
-.fn-tile {
-  padding: 0 12px;
-  border-left: 1px solid var(--hairline-rest);
-  min-width: 0;
-  display: flex; flex-direction: column;
-}
-.fn-tile:first-child { border-left: none; }
-
-.fn-tile__head {
-  height: 24px; display: flex; align-items: center;
-  justify-content: space-between; gap: 6px;
-}
-.fn-tile__sym {
-  font-size: 15px; font-weight: 700; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--ink-soft);
-}
-
-.fn-tile__pricerow {
-  height: 34px; display: flex; align-items: baseline; gap: 6px;
-  white-space: nowrap;
-}
-.fn-tile__price {
-  font-family: var(--qc-font-num);
+/* ── B3 · VOL + FX ─────────────────────────────────────────────── */
+.k-vrow { white-space: nowrap; margin-bottom: 2px; line-height: 1.1; }
+.k-vrow .k-pill { margin-right: 5px; }
+.k-vrow .k-chip { font-size: 10.5px; }
+.k-vval {
+  font-family: var(--qc-font-num); font-weight: 700;
   font-variant-numeric: tabular-nums;
-  font-size: 28px; font-weight: 700; color: var(--ink-pure);
-  line-height: 1;
+  line-height: 1.07; margin-right: 6px; vertical-align: middle;
+  color: var(--ink-pure); display: inline-block;
 }
-
-.fn-tile__body { margin-top: 4px; }
-.fn-tile__body .fz-spark { width: 100%; }
-
-/* Barre d'amplitude Ω2 : L—●—H, organe 8 px, curseur 2 px. */
-.fn-amp {
-  display: flex; align-items: center; gap: 6px;
-  height: 14px; margin-top: 4px;
+.k-vscale { margin: 1px 0 0; }
+.k-vhl {
+  font-size: 12px; color: var(--ink-mute); font-weight: 600; line-height: 1.15;
+  font-family: var(--qc-font-num); font-variant-numeric: tabular-nums; white-space: nowrap;
 }
-.fn-amp__cap {
-  font-size: 12px; font-weight: 700; color: var(--ink-mute);
-  line-height: 1; flex: none;
+.k-fxhero { white-space: nowrap; margin: 1px 0 0; }
+.k-fxsym2 {
+  font-size: 12.5px; font-weight: 600; letter-spacing: 0.05em;
+  color: var(--ink-soft); margin-right: 8px;
 }
-.fn-amp__track {
-  position: relative; flex: 1; height: 8px;
-  background: rgba(255, 255, 255, 0.08);
-}
-.fn-amp__cursor {
-  position: absolute; top: -1px; bottom: -1px; width: 2px;
-  background: var(--ink-pure); transform: translateX(-1px);
-}
-
-.fn-tile__hl {
-  margin-top: auto;
-  height: 22px; display: flex; align-items: center; gap: 4px;
-  font-size: 14px; color: var(--ink-mute);
-  font-variant-numeric: tabular-nums; white-space: nowrap;
-}
-.fn-tile__hl b { color: var(--ink-soft); font-weight: 700; }
-
-/* FUT permanent — cellules ALIGNÉES sous les tuiles (hairlines
-   continues), 2 lignes : valeur+Δ% / range O/N. */
-.fn-fut {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-top: 1px solid var(--hairline-rest);
-  margin-top: 6px; padding-top: 6px;
-  flex: none;
-}
-.fn-fut__cell {
-  padding: 0 12px;
-  border-left: 1px solid var(--hairline-rest);
-  min-width: 0;
-}
-.fn-fut__cell:first-child { border-left: none; }
-.fn-fut__cell--label {
-  display: flex; flex-direction: column; justify-content: center; gap: 2px;
-}
-.fn-fut__tag {
-  font-size: 13px; font-weight: 700; letter-spacing: 0.1em;
-  color: var(--ink-soft);
-}
-.fn-fut__sub {
-  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
-  color: var(--ink-mute);
-}
-.fn-fut__line {
-  height: 22px; display: flex; align-items: baseline; gap: 6px;
-  white-space: nowrap;
-}
-.fn-fut__sym {
-  font-size: 14px; font-weight: 700; letter-spacing: 0.05em;
-  color: var(--ink-soft);
-}
-.fn-fut__val {
-  font-family: var(--qc-font-num); font-variant-numeric: tabular-nums;
-  font-size: 16px; font-weight: 700; color: var(--ink-pure); line-height: 1;
-}
-.fn-fut__range {
-  height: 18px; display: flex; align-items: center;
-  font-family: var(--qc-font-num); font-variant-numeric: tabular-nums;
-  font-size: 14px; font-weight: 600; color: var(--ink-mute);
-  white-space: nowrap;
-}
-
-/* ── B3 · PILIER VOL + FX ─────────────────────────────────────── */
-.fn-pilier { row-gap: 0; padding-left: 8px; padding-right: 8px; }
-
-.fn-vol__hero {
-  height: 32px; display: inline-flex; align-items: center; gap: 5px;
-}
-.fn-vol__val {
-  font-family: var(--qc-font-num);
+.k-fxval {
+  font-family: var(--qc-font-num); font-weight: 700;
   font-variant-numeric: tabular-nums;
-  font-size: 32px; font-weight: 700; color: var(--ink-pure);
-  line-height: 1;
+  margin-right: 8px; vertical-align: middle; color: var(--ink-pure);
+  display: inline-block; line-height: 1.1;
+}
+.k-fxap {
+  font-size: 10px; letter-spacing: 0.08em; color: var(--ink-mute);
+  margin: 1px 0 4px; line-height: 1.2; text-transform: uppercase;
+}
+.k-fxr { white-space: nowrap; }
+.k-fxsym {
+  display: inline-block; width: 66px; font-size: 12.5px; font-weight: 600;
+  letter-spacing: 0.04em; color: var(--ink-soft);
+}
+.k-fxv {
+  display: inline-block; width: 64px; font-size: 15px;
+  font-family: var(--qc-font-num); font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ink-pure);
 }
 
-.fn-scale { flex: none; margin-top: 2px; }
-.fn-scale__track {
-  position: relative; display: flex; gap: 2px; height: 10px;
+/* ── B4 · MONDE ────────────────────────────────────────────────── */
+.k-mr { white-space: nowrap; }
+.k-mrh { border-top: 1px solid var(--hairline-rest); padding-top: 3px; }
+.k-msym {
+  display: inline-block; width: 64px; font-size: 12.5px; font-weight: 600;
+  letter-spacing: 0.04em; color: var(--ink-soft);
 }
-.fn-scale__seg { flex: 1; background: rgba(255, 255, 255, 0.08); }
-.fn-scale__seg.is-active { background: rgba(255, 255, 255, 0.18); }
-.fn-scale__cursor {
-  position: absolute; top: -6px;
-  width: 0; height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 6px solid var(--ink-pure);
-  transform: translateX(-5px);
+.k-mv {
+  display: inline-block; width: 78px; text-align: right; margin-right: 12px;
+  font-family: var(--qc-font-num); font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ink-pure);
 }
-.fn-scale__cursor.is-hot { border-top-color: var(--accent); }
-.fn-scale__grads {
-  position: relative; height: 12px; margin-top: 2px;
-}
-.fn-scale__grads span {
-  position: absolute; transform: translateX(-50%);
-  font-size: 11px; font-weight: 600; color: var(--ink-mute);
-  font-variant-numeric: tabular-nums;
-}
-.fn-scale__grads span:first-child { transform: none; }
-.fn-scale__grads span:last-child { transform: translateX(-100%); }
-
-.fn-vol__hl {
-  height: 16px; display: flex; align-items: center; gap: 4px;
-  font-size: 14px; color: var(--ink-mute); font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.fn-vol__hl b { color: var(--ink-soft); font-weight: 700; }
-
-.fn-pilier__divider {
-  height: 1px; background: var(--hairline-rest);
-  margin: 4px -8px 4px;
-  flex: none;
-}
-
-.fn-title--fx { margin-bottom: 2px; }
-
-.fn-fx__hero {
-  height: 26px; display: flex; align-items: baseline; gap: 8px;
-  white-space: nowrap;
-}
-.fn-fx__herosym {
-  font-size: 14px; font-weight: 700; letter-spacing: 0.05em;
-  text-transform: uppercase; color: var(--ink-soft);
-}
-.fn-fx__heroval {
-  font-family: var(--qc-font-num);
-  font-variant-numeric: tabular-nums;
-  font-size: 24px; font-weight: 700; color: var(--ink-pure); line-height: 1;
-}
-.fn-fx__applied {
-  height: 12px; display: flex; align-items: center;
-  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
-  color: var(--ink-mute); margin-bottom: 2px;
-}
-
-/* ── B4 · MONDE ×10 ───────────────────────────────────────────── */
-.fn-monde__cols {
-  display: grid; grid-template-columns: 1fr 1fr; column-gap: 0;
-  flex: 1;
-}
-.fn-monde__col { min-width: 0; padding-right: 10px; }
-.fn-monde__col + .fn-monde__col {
-  border-left: 1px solid var(--hairline-rest);
-  padding-left: 10px; padding-right: 0;
-}
-
-.fn-microhead {
-  height: 20px; display: flex; align-items: center;
-  font-size: 11px; font-weight: 600; letter-spacing: 0.09em;
-  text-transform: uppercase; color: var(--ink-mute);
-  white-space: nowrap;
-}
-
-/* ── B5 · AGENDA héros ────────────────────────────────────────── */
-.fn-hero { flex: none; }
-.fn-hero__row {
-  height: 26px; display: flex; align-items: center; gap: 7px;
-  min-width: 0;
-}
-.fn-hero__name {
-  font-size: 17px; font-weight: 700; color: var(--ink-pure);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.fn-hero__eta-row {
-  height: 24px; display: flex; align-items: baseline; gap: 6px;
-  white-space: nowrap;
-}
-.fn-hero__eta {
+.k-mpct { display: inline-block; width: 64px; text-align: right; }
+.k-mdd {
+  display: inline-block; width: 56px; text-align: right; font-size: 13px;
+  opacity: 0.85; font-weight: 600;
   font-family: var(--qc-font-num); font-variant-numeric: tabular-nums;
-  font-size: 20px; font-weight: 700; color: var(--ink-pure); line-height: 1;
 }
-.fn-hero__eta.is-hot { color: var(--accent); }
-.fn-hero__date {
-  font-family: var(--qc-font-num); font-variant-numeric: tabular-nums;
-  font-size: 13px; font-weight: 600; color: var(--ink-mute);
-}
-.fn-hero__detail {
-  height: 18px; display: flex; align-items: center;
-  font-size: 13px; font-weight: 600; color: var(--ink-mute);
-  font-variant-numeric: tabular-nums;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-
-.fn-agenda__divider {
-  height: 1px; background: var(--hairline-rest);
-  margin: 6px -10px 6px;
-  flex: none;
-}
-
-.fn-agenda { justify-content: flex-start; }
-.fn-agenda .fn-agenda__row { margin-top: 2px; }
-
-.fn-agenda__row { grid-template-columns: 22px 1fr 36px 38px; column-gap: 6px; }
-.fn-agenda__row .fz-chip { font-size: 11px; padding: 1px 5px; }
-
-.fn-agenda__name {
-  font-size: 15px; font-weight: 600; color: var(--ink-pure);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
-}
-.fn-agenda__date {
-  font-family: var(--qc-font-num); font-variant-numeric: tabular-nums;
-  font-size: 13px; font-weight: 600; color: var(--ink-mute); text-align: right;
-}
-.fn-agenda__eta {
-  font-family: var(--qc-font-num); font-variant-numeric: tabular-nums;
-  font-size: 15px; font-weight: 700; color: var(--ink-soft); text-align: right;
-}
-.fn-agenda__eta.is-hot { color: var(--accent); }
-.fn-agenda__empty { font-size: 14px; color: var(--ink-mute); grid-column: 2 / -1; }
 
 /* ── Reduced motion ────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .fz-dot--live { animation: none; }
+  .k-sdot.is-live { animation: none; }
 }
