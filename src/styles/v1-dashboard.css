@@ -277,81 +277,154 @@
 }
 
 /* ════════════════════════════════════════════════════════════════
-   MARKET DECK v2 (1.C.2) — étage marché du cockpit, densité absolue.
-   Base <1440 : grille repliée 2 colonnes, séparateurs horizontaux.
-   Palier ≥1440 (c3-hires) : 1 rangée, 6 zones, hairlines verticales,
-   min-height ~150. Registre micro data-viz sanctionné (§0 1.C.2) :
-   valeurs secondaires / intérieurs de pastilles 13-16 ; labels de
-   lecture ≥17 (au palier).
+   MARKET DECK — D2-FINALE (1.C.10) : étage marché du cockpit.
+   Base <1440 : les rangées R1/R2 se replient en PILE PROPRE (grille
+   2 colonnes de zones, séparateurs horizontaux) — socle mobile,
+   jamais la cible de design. Le double étage (3 colonnes traversantes
+   × 2 rangées, hairlines de rails continues) vit dans c3-hires.css,
+   section ≥1440 — jamais de hack local.
+
+   Anatomies UNIQUES (harmonisation 1.C.10) : pastille mix 16 %
+   radius 4 · chip reverse-video · Δ% texte à flèche (0.00 % neutre
+   mute, sans flèche) · prix ink-pure · titres de zone 13 caps 0.1em.
+   Ambre = vivant/décision uniquement (dot session, ARMED, curseur
+   VIX ≥ 20, barre de progression).
    ════════════════════════════════════════════════════════════════ */
 .market-deck {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    'session vol'
+    'indices indices'
+    'agenda fut'
+    'fx fx'
+    'monde monde';
 }
 
-.market-deck__zone {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.mk-cell {
   min-width: 0;
-  padding: 12px 16px 12px;
-  border-top: 1px solid var(--hairline-rest);
+  padding: 12px 16px;
 }
 
-.market-deck__zone:first-child {
-  border-top: none;
-}
+.mk-session { grid-area: session; }
+.mk-vol { grid-area: vol; border-left: 1px solid var(--hairline-rest); }
+.mk-indices { grid-area: indices; border-top: 1px solid var(--hairline-rest); }
+.mk-agenda { grid-area: agenda; border-top: 1px solid var(--hairline-rest); }
+.mk-fut { grid-area: fut; border-top: 1px solid var(--hairline-rest); border-left: 1px solid var(--hairline-rest); }
+.mk-fx { grid-area: fx; border-top: 1px solid var(--hairline-rest); }
+.mk-monde { grid-area: monde; border-top: 1px solid var(--hairline-rest); }
 
-.market-deck__zone:nth-child(even) {
-  border-left: 1px solid var(--hairline-rest);
-  border-top: none;
-}
+/* La hairline horizontale R1/R2 n'existe qu'au palier ≥1440. */
+.mk-hr { display: none; }
 
-.market-deck__zone:nth-child(n + 3) {
-  border-top: 1px solid var(--hairline-rest);
-}
-
-.market-deck__label {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+/* ── Titres de zone (tous au même y de leur bloc) ───────────────── */
+.mk-title {
   font-size: 13px;
   font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--ink-soft);
+  color: var(--ink-mute);
+  line-height: 1.2;
+  margin-bottom: 2px;
   white-space: nowrap;
 }
 
-.market-deck__caption {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+.mk-tsub {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
   color: var(--ink-mute);
+  opacity: 0.75;
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+/* Badge LOCAL (fallback macro — Finnhub muet). */
+.mk-tbadge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 5px;
+  border: 1px solid var(--hairline-rest);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ink-mute);
+}
+
+/* ── Atomes ADN ─────────────────────────────────────────────────── */
+.mk-pill {
+  display: inline-block;
+  border-radius: 4px;
+  font-family: var(--qc-font-num);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  padding: 1px 5px;
+  line-height: 1.25;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.mk-pill--up { background: color-mix(in srgb, var(--pnl-up) 16%, transparent); color: var(--pnl-up); }
+.mk-pill--down { background: color-mix(in srgb, var(--pnl-down) 16%, transparent); color: var(--pnl-down); }
+.mk-pill--flat { background: color-mix(in srgb, var(--ink-mute) 10%, transparent); color: var(--ink-mute); }
+
+.mk-da {
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.mk-da--up { color: var(--pnl-up); }
+.mk-da--down { color: var(--pnl-down); }
+.mk-da--flat { color: var(--ink-mute); font-weight: 600; }
+
+.mk-chip {
+  display: inline-block;
+  background: var(--ink-soft);
+  color: var(--depth-void);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 2px;
+  vertical-align: middle;
+  font-size: 11px;
+  text-transform: uppercase;
 }
 
-/* ── Z1 SESSION ─────────────────────────────────────────────────── */
-.market-deck__session-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+.mk-num {
+  font-family: var(--qc-font-num);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
 }
 
-.market-deck__session-dot {
-  width: 6px;
-  height: 6px;
+.mk-curve { display: block; width: 100%; }
+.mk-curve--empty {
+  width: 100%;
+  background:
+    linear-gradient(
+      to bottom,
+      transparent calc(50% - 1px),
+      var(--hairline-rest) calc(50% - 1px),
+      var(--hairline-rest) 50%,
+      transparent 50%
+    );
+}
+
+/* ── R1 · SESSION ───────────────────────────────────────────────── */
+.mk-sesrow { margin: 0 0 2px; line-height: 1.2; }
+
+.mk-sdot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--ink-mute);
-  flex: none;
+  margin-right: 8px;
+  vertical-align: 2px;
 }
-
 /* OUVERT : dot ambre en respiration 2 s (le vivant, sanctionné). */
-.market-deck__session-dot--live {
-  background: var(--accent);
-  animation: market-deck-breathe 2s ease-in-out infinite;
-}
+.mk-sdot.is-live { background: var(--accent); animation: market-deck-breathe 2s ease-in-out infinite; }
 
 @keyframes market-deck-breathe {
   0%,
@@ -363,406 +436,364 @@
   }
 }
 
-.market-deck__session-phase {
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-pure);
-}
-
-.market-deck__countdown {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.market-deck__countdown-label {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: var(--ink-mute);
-  text-transform: uppercase;
-}
-
-.market-deck__countdown-value {
-  font-family: var(--qc-font-num);
-  font-variant-numeric: tabular-nums;
+.mk-sstate {
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: var(--ink-pure);
-  line-height: 1;
-}
-
-.market-deck__ny {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-mute);
-  font-variant-numeric: tabular-nums;
 }
 
-/* ── Pastilles Δ% (anatomie tape, 3 tailles du registre micro) ──── */
-.market-deck__pill {
-  display: inline-flex;
-  align-items: center;
-  font-family: var(--qc-font-mono);
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  line-height: 1;
-  padding: 1px 5px;
-  border-radius: 4px;
-  white-space: nowrap;
-  width: fit-content;
-}
-
-.market-deck__pill--xs {
+.mk-slbl {
   font-size: 11px;
-  padding: 1px 4px;
-}
-
-.market-deck__pill--sm {
-  font-size: 12px;
-}
-
-.market-deck__pill--md {
-  font-size: 14px;
-  padding: 1px 6px;
-}
-
-.market-deck__pill--up {
-  color: var(--pnl-up);
-  background: color-mix(in srgb, var(--pnl-up) 16%, transparent);
-}
-
-.market-deck__pill--down {
-  color: var(--pnl-down);
-  background: color-mix(in srgb, var(--pnl-down) 16%, transparent);
-}
-
-.market-deck__pill--flat,
-.market-deck__pill--mute {
+  letter-spacing: 0.09em;
   color: var(--ink-mute);
-  background: color-mix(in srgb, var(--ink-mute) 10%, transparent);
-}
-
-.market-deck__pill-arrow {
-  font-size: 0.72em;
-  margin-right: 2px;
-}
-
-/* ── Z2 INDICES US : grille 2×2 + sous-ligne FUTURES ────────────── */
-.market-deck__indices-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 16px;
-  min-width: 0;
-}
-
-.market-deck__index {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.market-deck__index-head {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.market-deck__index-body {
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 7px;
-}
-
-.market-deck__index-symbol {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  margin: 3px 0 1px;
+  line-height: 1.2;
   text-transform: uppercase;
-  color: var(--ink-soft);
-  line-height: 1;
 }
 
-.market-deck__index-price {
+.mk-scd {
   font-family: var(--qc-font-num);
-  font-variant-numeric: tabular-nums;
-  font-size: 17px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 33px;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
   color: var(--ink-pure);
-  line-height: 1;
   white-space: nowrap;
 }
 
-.market-deck__index-spark {
-  opacity: 0.95;
-  line-height: 0;
-}
+.mk-sesline { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
 
-.market-deck__futures {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
+.mk-sbar {
+  position: relative;
+  height: 8px;
+  flex: 1;
+  max-width: 220px;
+  background: color-mix(in srgb, var(--ink-pure) 8%, transparent);
+  display: block;
 }
+.mk-sfill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); }
 
-.market-deck__futures-tag {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--ink-mute);
-}
+.mk-spct { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.03em; white-space: nowrap; }
 
-.market-deck__future {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.market-deck__future-label {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: var(--ink-soft);
-}
-
-/* ── Z3 VOLATILITÉ ──────────────────────────────────────────────── */
-.market-deck__vix-row {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 7px;
-}
-
-.market-deck__vix-value {
-  font-family: var(--qc-font-num);
-  font-variant-numeric: tabular-nums;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--ink-pure);
-  line-height: 1;
-}
-
-.market-deck__regime {
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-  padding: 2px 8px;
-  border: 1px solid var(--hairline-rest);
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
-
-/* NERVEUX / STRESS : signal d'attention (ambre sanctionné). */
-.market-deck__regime--hot {
-  color: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
-}
-
-.market-deck__hl {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.market-deck__hl-bit {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-}
-
-.market-deck__hl-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: var(--ink-mute);
-}
-
-.market-deck__hl-value {
-  font-family: var(--qc-font-num);
-  font-variant-numeric: tabular-nums;
+.mk-ny {
   font-size: 13px;
-  font-weight: 700;
-  color: var(--ink-soft);
-}
-
-/* ── Z4 FX & TAUX ───────────────────────────────────────────────── */
-.market-deck__fx-mode {
-  display: inline-flex;
-  padding: 1px 5px;
-  border: 1px solid var(--hairline-rest);
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
   color: var(--ink-mute);
-}
-
-/* Rangée principale FX : alignée sur la grille des taux dessous
-   (USD/CHF = label de rangée, même colonne que EUR/USD·US10Y·DXY). */
-.market-deck__fx-row {
-  display: grid;
-  grid-template-columns: 58px 1fr;
-  align-items: baseline;
-  column-gap: 8px;
-  min-width: 0;
-}
-
-.market-deck__fx-value {
-  font-family: var(--qc-font-num);
-  font-variant-numeric: tabular-nums;
-  font-size: 19px;
-  font-weight: 700;
-  color: var(--ink-pure);
-  line-height: 1;
-}
-
-.market-deck__fx-caption {
-  font-size: 11px;
-  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--ink-mute);
+  margin-top: 4px;
+  line-height: 1.2;
 }
 
-.market-deck__rates {
+/* ── R1 · INDICES US — tuiles héros ─────────────────────────────── */
+.mk-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.mk-tile {
+  min-width: 0;
+  padding: 0 12px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  min-width: 0;
 }
+.mk-tile + .mk-tile { border-left: 1px solid var(--hairline-rest); }
+/* Base 2×2 : la 3e tuile recommence à gauche, filet horizontal. */
+.mk-tile:nth-child(odd) { border-left: none; }
+.mk-tile:nth-child(n + 3) { border-top: 1px solid var(--hairline-rest); padding-top: 6px; margin-top: 6px; }
 
-.market-deck__rate-row {
-  display: grid;
-  grid-template-columns: 58px 1fr auto;
-  align-items: baseline;
-  column-gap: 8px;
-  min-width: 0;
-}
+.mk-thead { display: block; white-space: nowrap; }
 
-.market-deck__rate-label {
-  font-size: 11px;
+.mk-tsym {
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  color: var(--ink-mute);
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  margin-right: 8px;
 }
 
-.market-deck__rate-value {
+.mk-tpxrow { display: block; white-space: nowrap; line-height: 1.1; margin-bottom: 1px; }
+
+.mk-tpx {
   font-family: var(--qc-font-num);
-  font-variant-numeric: tabular-nums;
-  font-size: 14px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 30px;
   color: var(--ink-pure);
   white-space: nowrap;
 }
 
-/* ── Z5 EUROPE · ASIE : pile serrée alignée en colonnes ─────────── */
-.market-deck__intl {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.market-deck__intl-row {
-  display: grid;
-  grid-template-columns: 48px 1fr auto;
-  align-items: baseline;
-  column-gap: 6px;
-  min-width: 0;
-}
-
-.market-deck__intl-symbol {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
-
-.market-deck__intl-price {
+.mk-tdd {
   font-family: var(--qc-font-num);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   font-size: 15px;
-  font-weight: 700;
-  color: var(--ink-pure);
+  margin-left: 6px;
   white-space: nowrap;
 }
 
-/* ── Z6 AGENDA 14 J — items empilés, un par ligne (1.C.2) ───────── */
-.market-deck__agenda {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
+.mk-tcurve { display: block; }
 
-.market-deck__agenda-line {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  min-width: 0;
-  font-size: 13px;
-}
-
-.market-deck__agenda-kind {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+.mk-thl {
+  display: block;
+  font-size: 12.5px;
   color: var(--ink-mute);
+  font-weight: 600;
+  font-family: var(--qc-font-num);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+/* Jauge d'amplitude fluide (piste 8 px, curseur position %). */
+.mk-amp { display: flex; align-items: center; gap: 5px; margin: 3px 0 2px; }
+.mk-ampl {
+  font-size: 10px;
+  color: var(--ink-mute);
+  font-family: var(--qc-font-num);
+  font-weight: 600;
   flex: none;
-  width: 64px;
 }
-
-.market-deck__agenda-sep {
-  color: var(--ink-mute);
-}
-
-.market-deck__agenda-name {
+.mk-track {
+  position: relative;
   flex: 1;
-  font-weight: 600;
+  background: color-mix(in srgb, var(--ink-pure) 8%, transparent);
+}
+.mk-ampcur { position: absolute; width: 2px; background: var(--ink-pure); transform: translateX(-50%); }
+
+/* ── R1 · VOLATILITÉ ────────────────────────────────────────────── */
+.mk-vrow { white-space: nowrap; margin-bottom: 1px; line-height: 1.1; }
+.mk-vrow .mk-pill { margin-right: 4px; }
+.mk-vrow .mk-chip { font-size: 10.5px; padding: 2px 5px; }
+
+.mk-vval {
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 32px;
+  line-height: 1.07;
+  margin-right: 5px;
+  vertical-align: middle;
   color: var(--ink-pure);
+  display: inline-block;
+}
+
+.mk-vcurve { display: block; margin: 1px 0; }
+
+.mk-vscale { margin: 0; display: block; width: 100%; }
+.mk-vtrack { fill: color-mix(in srgb, var(--ink-pure) 7%, transparent); }
+.mk-vmark { stroke: color-mix(in srgb, var(--ink-pure) 12%, transparent); }
+.mk-vnum { fill: var(--ink-mute); font-family: var(--qc-font-num); }
+.mk-vcur { fill: var(--ink-pure); }
+.mk-vcur.is-hot { fill: var(--accent); }
+
+.mk-vhl {
+  font-size: 12.5px;
+  color: var(--ink-mute);
+  font-weight: 600;
+  line-height: 1.15;
+  font-family: var(--qc-font-num);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ── R2 · AGENDA — héros + rangées serrées (rail du temps) ──────── */
+.mk-ak {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  background: var(--ink-soft);
+  color: var(--depth-void);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 15px;
+  border-radius: 2px;
+  margin-right: 8px;
+  vertical-align: 1px;
+}
+.mk-ak--row { width: 13px; height: 13px; font-size: 9.5px; line-height: 13px; margin-right: 7px; }
+.mk-ak--empty { opacity: 0.45; }
+
+.mk-ahero { margin: 1px 0 0; white-space: nowrap; line-height: 1.15; }
+.mk-ahname { font-size: 17.5px; font-weight: 700; color: var(--ink-pure); }
+.mk-ahj {
+  font-family: var(--qc-font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  font-weight: 700;
+  margin-left: 9px;
+  color: var(--ink-pure);
+}
+.mk-ahj.is-hot { color: var(--accent); }
+
+.mk-ahsub {
+  font-size: 12px;
+  color: var(--ink-mute);
+  margin: 1px 0 3px 23px;
+  line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  min-width: 0;
 }
+.mk-ahsub--none { margin-left: 0; }
 
-.market-deck__agenda-eta {
+/* Rangées serrées : colonnes FIXES (kind 20 · nom flex · date 48 ·
+   J-x 42 droite), zéro élastique. */
+.mk-arow {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 48px 42px;
+  align-items: baseline;
+  height: 16px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+.mk-aname {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mk-adate {
+  font-size: 12.5px;
+  color: var(--ink-mute);
+  font-weight: 600;
   font-family: var(--qc-font-num);
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
+  text-align: right;
+}
+.mk-aj {
   color: var(--ink-soft);
-  flex: none;
-}
-
-/* AUJ. / J-1 / J-2 : signal d'attention (ambre sanctionné). */
-.market-deck__agenda-eta--hot {
-  color: var(--accent);
-}
-
-.market-deck__agenda-empty {
-  color: var(--ink-mute);
-}
-
-/* ARMED ≤ J-2 : zone de décision Sniper (ambre sanctionné). */
-.market-deck__armed {
-  display: inline-flex;
-  padding: 1px 5px;
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
-  border-radius: 4px;
-  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--accent);
-  flex: none;
+  font-size: 12.5px;
+  font-family: var(--qc-font-num);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.mk-aj.is-hot { color: var(--accent); }
+.mk-aempty { color: var(--ink-mute); font-size: 12.5px; grid-column: 2 / -1; }
+
+/* ── R2 · FX & TAUX ─────────────────────────────────────────────── */
+.mk-fxhero { white-space: nowrap; margin: 1px 0 0; line-height: 1.15; }
+.mk-fxsym {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  margin-right: 8px;
+}
+.mk-fxval {
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 23.5px;
+  margin-right: 8px;
+  vertical-align: middle;
+  color: var(--ink-pure);
+  display: inline-block;
+  line-height: 1.05;
+}
+.mk-fxap {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--ink-mute);
+  margin: 1px 0 3px;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+/* 3 groupes serrés sur une ligne — gaps FIXES ; le repli en 2
+   rangées aux largeurs étroites est la réponse fluide déclarée
+   (précédent ratifié 1.C.8). */
+.mk-fxline {
+  display: flex;
+  gap: 10px;
+  row-gap: 2px;
+  flex-wrap: wrap;
+  white-space: nowrap;
+  line-height: 1.15;
+}
+.mk-fxg { white-space: nowrap; }
+.mk-fxgsym {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  margin-right: 4px;
+}
+.mk-fxgval {
+  font-size: 16px;
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-pure);
+  margin-right: 4px;
+}
+
+/* ── R2 · MONDE ×10 — 2 rangées × 5, colonnes réglées ───────────── */
+.mk-wgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  column-gap: 10px;
+  row-gap: 5px;
+  margin-top: 3px;
+}
+.mk-whr { display: none; }
+
+.mk-wcell { min-width: 0; white-space: nowrap; }
+.mk-wtop { display: block; line-height: 1.1; }
+.mk-wbot { display: block; line-height: 1.05; }
+.mk-wsym {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+  margin-right: 4px;
+}
+.mk-wval {
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-size: 15.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-pure);
+}
+.mk-wdd { font-size: 13px; opacity: 0.85; margin-left: 3px; }
+
+/* ── R2 · FUT · O/N — slot permanent (rail des entrailles) ──────── */
+.mk-futr {
+  display: grid;
+  grid-template-columns: 24px 52px 58px minmax(0, 1fr);
+  column-gap: 4px;
+  align-items: baseline;
+  height: 25px;
+  line-height: 25px;
+  white-space: nowrap;
+}
+.mk-fsym {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+.mk-fval {
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  color: var(--ink-pure);
+  text-align: right;
+}
+.mk-futr .mk-da { text-align: right; }
+.mk-frng {
+  font-size: 12px;
+  color: var(--ink-mute);
+  font-weight: 600;
+  font-family: var(--qc-font-num);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Reduced motion : respiration et transitions coupées ────────── */
@@ -773,7 +804,7 @@
   .command-deck__gauge-fill {
     transition: none;
   }
-  .market-deck__session-dot--live {
+  .mk-sdot.is-live {
     animation: none;
   }
 }
