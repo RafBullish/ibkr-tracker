@@ -148,9 +148,9 @@ un champ greek fait échouer le contrôle.
 ### PHASE FINALE v1.0
 
 **Phase finale v1.0 OUVERTE** — ligne de base v2.3.1 (ea64652 ; baseline
-effective 1254a34). Briques 1.A (1.0.0-rc.1) et **1.B mergée (1.0.0-rc.2)**.
-Prochaine brique : **1.C — Zone haute du Dashboard (Market Deck + Command
-Deck v2).**
+effective 1254a34). Briques 1.A (1.0.0-rc.1), 1.B (1.0.0-rc.2) et **1.C
+mergée (1.0.0-rc.3)** — étage marché D2-FINALE + tape LED Doto.
+Prochaine brique : **1.S — Sidebar v2.**
 
 Repères S2 toujours en vigueur : KPI 44, cellules `.v3-table` 20 (rowHeight 47),
 plancher caption 17, strip 21/16/18, ticks charts plafonnés 14, héros 56/64

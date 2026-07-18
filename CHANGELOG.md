@@ -6,6 +6,58 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0-rc.3] — 2026-07-18
+
+**Brique 1.C « Market Deck + Command Deck v2 »** — étage marché FINAL
+« D2-FINALE » (choix Rafael aux labs I-VI, amendé : agenda au rail du
+temps, futures au rail des entrailles), GO architecte avec correctif
+tape LED.
+
+### Ajouté
+- **Étage marché D2-FINALE** (`MarketDeck.jsx` réécrit, base
+  `v1-dashboard.css`, palier ≥1440 `c3-hires.css`) : double étage fluide
+  pleine largeur — 3 colonnes traversantes × 2 rangées (162/1/119),
+  hairlines de rails **continues R1→R2**, loi de fluidité (fr/minmax,
+  zéro px de largeur totale en dur), harmonisation totale (titres 13 caps
+  au même y, anatomies uniques pastille/chip, paddings uniformes).
+- **Indices US amplifiés D2×D4** : prix 30, Δ$ 15, courbes intraday
+  1d/5m 56 px fluides (interpolation monotone, cap pts×6), jauges
+  d'amplitude 8 px, H·L.
+- **Volatilité enrichie** : courbe intraday VIX 36 px (série 1d/5m
+  dédiée, +5 appels/5 min ratifiés), échelle graduée 10/15/20/27/40
+  retracée via ResizeObserver, curseur accent ≥ 20, Δ5J.
+- **Agenda héros** au rail du temps : nom 17.5 + J-x 16 (accent ≤ J-2),
+  sous-ligne détail·date, 3 rangées serrées colonnes fixes, union
+  Finnhub ∪ local (badge LOCAL en fallback), état E designé.
+- **FUT · O/N permanents** au rail des entrailles (même batch quotes,
+  range O/N conservé en RTH) · **MONDE ×10** (2 rangées × 5, colonnes
+  réglées, hairline interne) · **FX & TAUX** (USD/CHF appliqué 23.5 +
+  chip mode + EUR/USD·US10Y·DXY, repli fluide déclaré).
+- **Tape LED NYSE (1.C.10-bis, ordre architecte)** : police **Doto**
+  variable dot-matrix auto-hébergée (fontsource, SIL OFL) sur les textes
+  du bandeau (symbole/prix/Δ net) — graisse 850, axe ROND au max,
+  tracking +0.03em, phosphore text-shadow 30 % ; pastilles Δ%, flèches,
+  sparklines et hauteur strictement inchangées ; anti-jitter prouvé
+  (chiffres à largeur uniforme) ; glyphes suisses vérifiés.
+
+### Corrigé
+- **`useMarketQuotes` liste vide** : `''.split('|')` créait un poller
+  fetchant un ticker vide à chaque train (console « Ticker requis »,
+  visible en état vierge uniquement).
+
+### Retiré
+- **Labs I-VII purgés** : route `/lab/market`, `MarketLab.jsx` (939 l),
+  `lab-market.css` (400 l) — zéro trace au build ; `docs/croquis/`
+  conservé en archive de spec.
+
+### Vérifié
+- Gates 15/15 : build · color-law 0 · 233 tests · captures 12 pages
+  peuplées (`docs/captures/1c-market-deck-final/`) · overflow 48/48 ·
+  fluidité 1349/1517/1678/1846 · continuité hairlines au pixel · soudure
+  cockpit gap 0 · preuve réseau ~9 min (cadence inchangée, FUT au même
+  train, 0 429) · fallback macro réel · état vide 0 NaN · clavier ·
+  reduced-motion · a11y · console tolérés seuls.
+
 ## [1.0.0-rc.2] — 2026-07-15
 
 **Brique 1.B « Le Shell »** (+ correctifs 1.B.2 « niveau pro » et 1.B.3

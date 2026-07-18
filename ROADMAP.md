@@ -19,10 +19,14 @@ Objectif : **tag v1.0.0 au 01.09.2026**.
   marchés (92 px, barème calibré au lab /lab/tape — variante D choisie par
   Rafael —, pastilles Δ% + Δ$, flash au tick, fondus), halo résiduel
   /positions éliminé, 12 pages adaptées ; raccourcis ⌘1..9 conservés.
-- **1.C — Zone haute du Dashboard** : Market Deck (session RTH + countdown,
-  indices US + sparklines, VIX + régime, USD/CHF · DXY · US10Y, prochain
-  événement macro/earnings croisé aux positions ouvertes — feeds existants
-  uniquement) + Command Deck v2 densifié.
+- **1.C ✅ (1.0.0-rc.3)** — Zone haute du Dashboard : étage marché
+  **D2-FINALE** (double étage fluide 3 colonnes × 2 rangées, hairlines de
+  rails continues, indices D2×D4 à courbes intraday 1d/5m, volatilité +
+  courbe VIX + échelle graduée, agenda héros, FUT permanents, MONDE ×10,
+  FX & TAUX) + Command Deck v2 densifié (1.C.2) ; tape LED Doto
+  (1.C.10-bis) ; labs I-VII purgés ; choix Rafael au lab, amendé
+  architecte (agenda au rail du temps, futures au rail des entrailles).
+- **1.S — Sidebar v2** (insertion actée — prompt architecte à venir).
 - **1.D — Héros 1** : Equity/NLV pleine largeur, chart de trading détaillé
   (crosshair, périodes, toggle équité/drawdown, marqueurs de trades sur la
   courbe, pied de stats dense).
