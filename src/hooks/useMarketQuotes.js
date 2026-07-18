@@ -207,7 +207,9 @@ export default function useMarketQuotes(symbols, { refreshMs = DEFAULT_REFRESH_M
   useEffect(() => {
     let poller = pollers.get(pollerKey);
     if (!poller) {
-      poller = createPoller(symbolsKey.split('|'), refreshMs);
+      // Liste vide → ''.split('|') donnerait [''] : un poller qui tente
+      // de fetch un ticker VIDE à chaque train (bug 1.C.10, état vide).
+      poller = createPoller(symbolsKey ? symbolsKey.split('|') : [], refreshMs);
       pollers.set(pollerKey, poller);
     }
     poller.subscribers.add(setState);
