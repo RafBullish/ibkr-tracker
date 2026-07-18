@@ -937,11 +937,10 @@
     font-size: 15px;
   }
 
-  /* 1.B.3/L2 — TickerTape DÉFINITIF : variante D « Salle des marchés »
-     choisie par Rafael au lab /lab/tape. 92 px, prix 36 Plex 700,
-     symbole 19 caps, pastille Δ% 20 (mix 16 %) / Δ net 18, sparkline
-     84×46, padding 34. (Ces valeurs PRIMENT sur le barème strip D2.F
-     plus haut — ordre de source.) */
+  /* 1.B.3/L2 — TickerTape variante D « Salle des marchés » (92 px,
+     sparkline 84×46, padding 34) ; typo relevée en 1.C.10-ter (LED
+     Doto, ordre architecte) : prix 40, symbole 22, pastille 23,
+     Δ net 21 — hauteur 92 inchangée, centrage flex absorbe. */
   .ticker-tape {
     height: 92px;
   }
@@ -950,16 +949,16 @@
     gap: 16px;
   }
   .ticker-cell__symbol {
-    font-size: 19px;
+    font-size: 22px;
   }
   .ticker-cell__value {
-    font-size: 36px;
+    font-size: 40px;
   }
   .ticker-cell__change {
-    font-size: 20px;
+    font-size: 23px;
   }
   .ticker-cell__change-net {
-    font-size: 18px;
+    font-size: 21px;
   }
   .ticker-cell__sparkline,
   .ticker-cell__sparkline svg {

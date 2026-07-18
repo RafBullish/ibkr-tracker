@@ -518,22 +518,35 @@
   color: var(--pnl-down);
 }
 
-/* ── 1.C.10-bis — LED NYSE (ordre explicite architecte : gel du tape
-   levé pour la TYPO seule). Doto variable dot-matrix : graisse 850,
-   axe ROND au max (diodes rondes), tracking +0.03em, phosphore
-   text-shadow 30 %. Couleurs, tailles, hauteur du bandeau, pastilles
-   Δ%, flèches et sparklines STRICTEMENT inchangées. Fallback
-   par-glyphe natif → var(--qc-font-num) (alignement préservé). ──── */
+/* ── 1.C.10-ter — LED NYSE, uniformité TOTALE (ordre architecte,
+   annule la consigne « pastilles/flèches intactes » du -bis).
+   Doto variable dot-matrix sur TOUS les textes du bandeau (symbole,
+   prix, pastille Δ%, Δ net) : graisse 900, axe ROND, tracking réglé
+   au lab de fidélité, tailles +2/+4 (base 14/19/16/15, palier 1.B
+   22/40/23/21 dans c3-hires), hauteur 92 inchangée (le centrage flex
+   absorbe). Phosphore DOUBLE halo : 3px·55 % + 9px·25 % — la diode
+   bave, le trait épaissit. Flèches ▲▼ : glyphes absents de Doto →
+   fallback par-glyphe Plex (0.72em, harmonisé). Sparklines intactes.
+   Couleurs strictement inchangées (exception marché du bandeau). ── */
 .ticker-cell__symbol,
 .ticker-cell__value,
+.ticker-cell__change,
 .ticker-cell__change-net {
   font-family: 'Doto Variable', var(--qc-font-num);
-  font-weight: 850;
+  font-weight: 900;
   font-variation-settings: 'ROND' 100;
   letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 6px color-mix(in srgb, currentColor 30%, transparent);
+  text-shadow:
+    0 0 3px color-mix(in srgb, currentColor 55%, transparent),
+    0 0 9px color-mix(in srgb, currentColor 25%, transparent);
 }
+
+/* Tailles base <1440 (+2/+3 sur 12/16/14/13). */
+.ticker-cell__symbol { font-size: 14px; }
+.ticker-cell__value { font-size: 19px; }
+.ticker-cell__change { font-size: 16px; }
+.ticker-cell__change-net { font-size: 15px; }
 
 .ticker-cell__sparkline {
   display: inline-flex;
