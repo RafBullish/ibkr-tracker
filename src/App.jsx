@@ -25,11 +25,6 @@ const Chain = lazy(() => import('./pages/trading/Chain'));
 const Greeks = lazy(() => import('./pages/trading/Greeks'));
 const Analytics = lazy(() => import('./pages/insights/Analytics'));
 
-// LAB 1.C.3 — /lab/market, DEV-ONLY éphémère (calibration de l'étage
-// marché). Gardé par import.meta.env.DEV : élimination statique au
-// build prod. PURGÉ en L2. Hors AppShell, aucune entrée de nav.
-const MarketLab = import.meta.env.DEV ? lazy(() => import('./pages/lab/MarketLab')) : null;
-
 const Loader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
     <GlassCard style={{ padding: '40px 60px', textAlign: 'center' }}>
@@ -54,16 +49,6 @@ export default function App() {
           <FxInvalidBanner />
           <FxStaleBanner />
           <Routes>
-            {import.meta.env.DEV && MarketLab && (
-              <Route
-                path="/lab/market"
-                element={
-                  <Suspense fallback={<Loader />}>
-                    <MarketLab />
-                  </Suspense>
-                }
-              />
-            )}
             <Route element={<AppShell />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/premarket" element={<PreMarketBriefing />} />
