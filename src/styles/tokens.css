@@ -332,15 +332,8 @@
   --ring-stroke: 4px;
   --ring-track: var(--qc-border-default);
 
-  /* --- Orbs (AmbientBackground) --- */
-  --orb-1-color: var(--qc-accent);
-  --orb-1-opacity: 0.05;
-  --orb-2-color: var(--qc-profit);
-  --orb-2-opacity: 0.03;
-  --orb-3-color: var(--qc-info);
-  --orb-3-opacity: 0.04;
-  /* --orb-blue / --orb-violet retirés (1.A) — consommés uniquement par
-     l'AmbientBackground supprimé. */
+  /* --- Orbs : tokens retirés (1.A/1.C) — le layer ambient est mort
+     (AmbientBackground, body::before/::after, .ambient-orb*). --- */
 
   /* --- Charts / Greeks --- */
   --chart-tooltip-bg: var(--qc-bg-elevated);

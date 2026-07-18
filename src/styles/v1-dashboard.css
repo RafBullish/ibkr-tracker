@@ -13,12 +13,29 @@
    Chargée juste après pages-dashboard.css (main.jsx), avant c3-hires.
    ════════════════════════════════════════════════════════════════ */
 
-/* ── Panneau continu — la matière vient de .obs-panel (canonical) ── */
+/* ════════════════════════════════════════════════════════════════
+   LE COCKPIT (1.C.2) — chrome d'instrument continu, full-bleed.
+   UN panneau (fond raised, ZÉRO radius, pas de hover global), docké
+   sous la hairline du tape (gap 0 — la hairline du tape sert de bord
+   haut) et collé à la hairline droite de la sidebar. Séparation
+   interne = 1 hairline pleine largeur entre étage marché et étage
+   portefeuille (border-top du .command-deck).
+   ════════════════════════════════════════════════════════════════ */
+.cockpit {
+  background: var(--depth-raised);
+  border-bottom: 1px solid var(--hairline-rest);
+}
+
+/* Le puits de contenu reprend son padding SOUS le cockpit. */
+.cockpit + .dash-shell {
+  padding-top: 8px;
+}
+
+/* ── Étage portefeuille — grille (le chrome vient du .cockpit) ──── */
 .command-deck {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  border-radius: 2px;
-  margin-bottom: 8px;
+  border-top: 1px solid var(--hairline-rest); /* hairline interne du cockpit */
 }
 
 /* ── Zones — base : pile verticale, séparateurs horizontaux ─────── */
@@ -80,14 +97,12 @@
 }
 
 /* Loi de couleur : rouge/vert = argent réel uniquement (DAY /
-   UNREALIZED / REALIZED / MTD portent data-tone ; EXPOSURE, WR, PF
-   restent neutres — aucun data-tone posé). */
-.command-deck__value[data-tone='profit'],
-.command-deck__mtd-value[data-tone='profit'] {
+   UNREALIZED / REALIZED et leurs sous-lignes portent data-tone ;
+   EXPOSURE, WR, PF restent neutres — aucun data-tone posé). */
+.command-deck__value[data-tone='profit'] {
   color: var(--pnl-up);
 }
-.command-deck__value[data-tone='loss'],
-.command-deck__mtd-value[data-tone='loss'] {
+.command-deck__value[data-tone='loss'] {
   color: var(--pnl-down);
 }
 
@@ -96,26 +111,64 @@
   min-height: 0;
 }
 
-.command-deck__mtd {
-  display: inline-flex;
+/* ── Sous-lignes v2 (1.C) : R/U, ↑↓, MTD·YTD, n/N trades ─────────
+   (Les classes __mtd* de 1.A sont mortes — remplacées par __subline*.) */
+.command-deck__subline {
+  display: flex;
+  flex-wrap: wrap; /* zones étroites : les bits s'empilent, jamais de clip */
   align-items: baseline;
-  gap: 8px;
+  gap: 2px 6px;
+  min-width: 0;
 }
 
-.command-deck__mtd-label {
+.command-deck__subline-bit,
+.command-deck__subline-pct {
+  white-space: nowrap;
+}
+
+.command-deck__subline-bit {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.command-deck__subline-label {
   font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
   color: var(--ink-mute);
 }
 
-.command-deck__mtd-value {
+.command-deck__subline-value {
   font-family: var(--qc-font-num);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--ink-pure);
+}
+
+/* Loi de couleur : vert/rouge = argent réel (R, U, MTD, YTD, ↑↓). */
+.command-deck__subline-value[data-tone='profit'] {
+  color: var(--pnl-up);
+}
+
+.command-deck__subline-value[data-tone='loss'] {
+  color: var(--pnl-down);
+}
+
+.command-deck__subline-sep {
+  color: var(--ink-mute);
+  font-size: 13px;
+}
+
+.command-deck__subline-pct {
+  font-family: var(--qc-font-num);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-mute);
+  margin-left: 4px;
 }
 
 /* ── Captions (jauge, n < 10) ───────────────────────────────────── */
@@ -157,6 +210,12 @@
   background: var(--line-emphasis);
 }
 
+/* Second repère (1.C) : cap du tier Sniper actif — DYNAMIQUE (left posé
+   en inline). Un cran plus présent que le repère fixe 70 %. */
+.command-deck__gauge-marker--cap {
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
 /* ── Indicateur du vivant (NET LIQ) ─────────────────────────────── */
 .command-deck__live {
   display: inline-flex;
@@ -172,7 +231,7 @@
   color: var(--accent);
 }
 
-.command-deck__live[data-live='closed'] .command-deck__live-text {
+.command-deck__live[data-live='eod'] .command-deck__live-text {
   color: var(--ink-mute);
 }
 
@@ -217,6 +276,526 @@
   grid-column: 1 / -1;
 }
 
+/* ════════════════════════════════════════════════════════════════
+   MARKET DECK — D2-FINALE (1.C.10) : étage marché du cockpit.
+   Base <1440 : les rangées R1/R2 se replient en PILE PROPRE (grille
+   2 colonnes de zones, séparateurs horizontaux) — socle mobile,
+   jamais la cible de design. Le double étage (3 colonnes traversantes
+   × 2 rangées, hairlines de rails continues) vit dans c3-hires.css,
+   section ≥1440 — jamais de hack local.
+
+   Anatomies UNIQUES (harmonisation 1.C.10) : pastille mix 16 %
+   radius 4 · chip reverse-video · Δ% texte à flèche (0.00 % neutre
+   mute, sans flèche) · prix ink-pure · titres de zone 13 caps 0.1em.
+   Ambre = vivant/décision uniquement (dot session, ARMED, curseur
+   VIX ≥ 20, barre de progression).
+   ════════════════════════════════════════════════════════════════ */
+.market-deck {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    'session vol'
+    'indices indices'
+    'agenda fut'
+    'fx fx'
+    'monde monde';
+}
+
+.mk-cell {
+  min-width: 0;
+  padding: 12px 16px;
+}
+
+.mk-session { grid-area: session; }
+.mk-vol { grid-area: vol; border-left: 1px solid var(--hairline-rest); }
+.mk-indices { grid-area: indices; border-top: 1px solid var(--hairline-rest); }
+.mk-agenda { grid-area: agenda; border-top: 1px solid var(--hairline-rest); }
+.mk-fut { grid-area: fut; border-top: 1px solid var(--hairline-rest); border-left: 1px solid var(--hairline-rest); }
+.mk-fx { grid-area: fx; border-top: 1px solid var(--hairline-rest); }
+.mk-monde { grid-area: monde; border-top: 1px solid var(--hairline-rest); }
+
+/* La hairline horizontale R1/R2 n'existe qu'au palier ≥1440. */
+.mk-hr { display: none; }
+
+/* ── Titres de zone (tous au même y de leur bloc) ───────────────── */
+.mk-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  line-height: 1.2;
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+.mk-tsub {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--ink-mute);
+  opacity: 0.75;
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+/* Badge LOCAL (fallback macro — Finnhub muet). */
+.mk-tbadge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 5px;
+  border: 1px solid var(--hairline-rest);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ink-mute);
+}
+
+/* ── Atomes ADN ─────────────────────────────────────────────────── */
+.mk-pill {
+  display: inline-block;
+  border-radius: 4px;
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  padding: 1px 5px;
+  line-height: 1.25;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.mk-pill--up { background: color-mix(in srgb, var(--pnl-up) 16%, transparent); color: var(--pnl-up); }
+.mk-pill--down { background: color-mix(in srgb, var(--pnl-down) 16%, transparent); color: var(--pnl-down); }
+.mk-pill--flat { background: color-mix(in srgb, var(--ink-mute) 10%, transparent); color: var(--ink-mute); }
+
+.mk-da {
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.mk-da--up { color: var(--pnl-up); }
+.mk-da--down { color: var(--pnl-down); }
+.mk-da--flat { color: var(--ink-mute); font-weight: 600; }
+
+.mk-chip {
+  display: inline-block;
+  background: var(--ink-soft);
+  color: var(--depth-void);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 2px;
+  vertical-align: middle;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.mk-num {
+  font-family: var(--qc-font-num);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.mk-curve { display: block; width: 100%; }
+.mk-curve--empty {
+  width: 100%;
+  background:
+    linear-gradient(
+      to bottom,
+      transparent calc(50% - 1px),
+      var(--hairline-rest) calc(50% - 1px),
+      var(--hairline-rest) 50%,
+      transparent 50%
+    );
+}
+
+/* ── R1 · SESSION ───────────────────────────────────────────────── */
+.mk-sesrow { margin: 0 0 2px; line-height: 1.2; }
+
+.mk-sdot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-mute);
+  margin-right: 8px;
+  vertical-align: 2px;
+}
+/* OUVERT : dot ambre en respiration 2 s (le vivant, sanctionné). */
+.mk-sdot.is-live { background: var(--accent); animation: market-deck-breathe 2s ease-in-out infinite; }
+
+@keyframes market-deck-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.mk-sstate {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-pure);
+  text-transform: uppercase;
+}
+
+.mk-slbl {
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  color: var(--ink-mute);
+  margin: 3px 0 1px;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.mk-scd {
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 33px;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+  color: var(--ink-pure);
+  white-space: nowrap;
+}
+
+.mk-sesline { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+
+.mk-sbar {
+  position: relative;
+  height: 8px;
+  flex: 1;
+  max-width: 220px;
+  background: color-mix(in srgb, var(--ink-pure) 8%, transparent);
+  display: block;
+}
+.mk-sfill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); }
+
+.mk-spct { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.03em; white-space: nowrap; }
+
+.mk-ny {
+  font-size: 13px;
+  color: var(--ink-mute);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 4px;
+  line-height: 1.2;
+}
+
+/* ── R1 · INDICES US — tuiles héros ─────────────────────────────── */
+.mk-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.mk-tile {
+  min-width: 0;
+  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+}
+.mk-tile + .mk-tile { border-left: 1px solid var(--hairline-rest); }
+/* Base 2×2 : la 3e tuile recommence à gauche, filet horizontal. */
+.mk-tile:nth-child(odd) { border-left: none; }
+.mk-tile:nth-child(n + 3) { border-top: 1px solid var(--hairline-rest); padding-top: 6px; margin-top: 6px; }
+
+.mk-thead { display: block; white-space: nowrap; }
+
+.mk-tsym {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  margin-right: 8px;
+}
+
+.mk-tpxrow { display: block; white-space: nowrap; line-height: 1.1; margin-bottom: 1px; }
+
+.mk-tpx {
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 30px;
+  color: var(--ink-pure);
+  white-space: nowrap;
+}
+
+.mk-tdd {
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+.mk-tcurve { display: block; }
+
+.mk-thl {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink-mute);
+  font-weight: 600;
+  font-family: var(--qc-font-num);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+/* Jauge d'amplitude fluide (piste 8 px, curseur position %). */
+.mk-amp { display: flex; align-items: center; gap: 5px; margin: 3px 0 2px; }
+.mk-ampl {
+  font-size: 10px;
+  color: var(--ink-mute);
+  font-family: var(--qc-font-num);
+  font-weight: 600;
+  flex: none;
+}
+.mk-track {
+  position: relative;
+  flex: 1;
+  background: color-mix(in srgb, var(--ink-pure) 8%, transparent);
+}
+.mk-ampcur { position: absolute; width: 2px; background: var(--ink-pure); transform: translateX(-50%); }
+
+/* ── R1 · VOLATILITÉ ────────────────────────────────────────────── */
+.mk-vrow { white-space: nowrap; margin-bottom: 1px; line-height: 1.1; }
+.mk-vrow .mk-pill { margin-right: 4px; }
+.mk-vrow .mk-chip { font-size: 10.5px; padding: 2px 5px; }
+
+.mk-vval {
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 32px;
+  line-height: 1.07;
+  margin-right: 5px;
+  vertical-align: middle;
+  color: var(--ink-pure);
+  display: inline-block;
+}
+
+.mk-vcurve { display: block; margin: 1px 0; }
+
+.mk-vscale { margin: 0; display: block; width: 100%; }
+.mk-vtrack { fill: color-mix(in srgb, var(--ink-pure) 7%, transparent); }
+.mk-vmark { stroke: color-mix(in srgb, var(--ink-pure) 12%, transparent); }
+.mk-vnum { fill: var(--ink-mute); font-family: var(--qc-font-num); }
+.mk-vcur { fill: var(--ink-pure); }
+.mk-vcur.is-hot { fill: var(--accent); }
+
+.mk-vhl {
+  font-size: 12.5px;
+  color: var(--ink-mute);
+  font-weight: 600;
+  line-height: 1.15;
+  font-family: var(--qc-font-num);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ── R2 · AGENDA — héros + rangées serrées (rail du temps) ──────── */
+.mk-ak {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  background: var(--ink-soft);
+  color: var(--depth-void);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 15px;
+  border-radius: 2px;
+  margin-right: 8px;
+  vertical-align: 1px;
+}
+.mk-ak--row { width: 13px; height: 13px; font-size: 9.5px; line-height: 13px; margin-right: 7px; }
+.mk-ak--empty { opacity: 0.45; }
+
+.mk-ahero { margin: 1px 0 0; white-space: nowrap; line-height: 1.15; }
+.mk-ahname { font-size: 17.5px; font-weight: 700; color: var(--ink-pure); }
+.mk-ahj {
+  font-family: var(--qc-font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  font-weight: 700;
+  margin-left: 9px;
+  color: var(--ink-pure);
+}
+.mk-ahj.is-hot { color: var(--accent); }
+
+.mk-ahsub {
+  font-size: 12px;
+  color: var(--ink-mute);
+  margin: 1px 0 3px 23px;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mk-ahsub--none { margin-left: 0; }
+
+/* Rangées serrées : colonnes FIXES (kind 20 · nom flex · date 48 ·
+   J-x 42 droite), zéro élastique. */
+.mk-arow {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 48px 42px;
+  align-items: baseline;
+  height: 16px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+.mk-aname {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mk-adate {
+  font-size: 12.5px;
+  color: var(--ink-mute);
+  font-weight: 600;
+  font-family: var(--qc-font-num);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.mk-aj {
+  color: var(--ink-soft);
+  font-weight: 700;
+  font-size: 12.5px;
+  font-family: var(--qc-font-num);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.mk-aj.is-hot { color: var(--accent); }
+.mk-aempty { color: var(--ink-mute); font-size: 12.5px; grid-column: 2 / -1; }
+
+/* ── R2 · FX & TAUX ─────────────────────────────────────────────── */
+.mk-fxhero { white-space: nowrap; margin: 1px 0 0; line-height: 1.15; }
+.mk-fxsym {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  margin-right: 8px;
+}
+.mk-fxval {
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 23.5px;
+  margin-right: 8px;
+  vertical-align: middle;
+  color: var(--ink-pure);
+  display: inline-block;
+  line-height: 1.05;
+}
+.mk-fxap {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--ink-mute);
+  margin: 1px 0 3px;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+/* 3 groupes serrés sur une ligne — gaps FIXES ; le repli en 2
+   rangées aux largeurs étroites est la réponse fluide déclarée
+   (précédent ratifié 1.C.8). */
+.mk-fxline {
+  display: flex;
+  gap: 10px;
+  row-gap: 2px;
+  flex-wrap: wrap;
+  white-space: nowrap;
+  line-height: 1.15;
+}
+.mk-fxg { white-space: nowrap; }
+.mk-fxgsym {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  margin-right: 4px;
+}
+.mk-fxgval {
+  font-size: 16px;
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-pure);
+  margin-right: 4px;
+}
+
+/* ── R2 · MONDE ×10 — 2 rangées × 5, colonnes réglées ───────────── */
+.mk-wgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  column-gap: 10px;
+  row-gap: 5px;
+  margin-top: 3px;
+}
+.mk-whr { display: none; }
+
+.mk-wcell { min-width: 0; white-space: nowrap; }
+.mk-wtop { display: block; line-height: 1.1; }
+.mk-wbot { display: block; line-height: 1.05; }
+.mk-wsym {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+  margin-right: 4px;
+}
+.mk-wval {
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-size: 15.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-pure);
+}
+.mk-wdd { font-size: 13px; opacity: 0.85; margin-left: 3px; }
+
+/* ── R2 · FUT · O/N — slot permanent (rail des entrailles) ──────── */
+.mk-futr {
+  display: grid;
+  grid-template-columns: 24px 52px 58px minmax(0, 1fr);
+  column-gap: 4px;
+  align-items: baseline;
+  height: 25px;
+  line-height: 25px;
+  white-space: nowrap;
+}
+.mk-fsym {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+.mk-fval {
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  color: var(--ink-pure);
+  text-align: right;
+}
+.mk-futr .mk-da { text-align: right; }
+.mk-frng {
+  font-size: 12px;
+  color: var(--ink-mute);
+  font-weight: 600;
+  font-family: var(--qc-font-num);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ── Reduced motion : respiration et transitions coupées ────────── */
 @media (prefers-reduced-motion: reduce) {
   .command-deck__live[data-live='live'] {
@@ -224,5 +803,8 @@
   }
   .command-deck__gauge-fill {
     transition: none;
+  }
+  .mk-sdot.is-live {
+    animation: none;
   }
 }

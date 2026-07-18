@@ -1,7 +1,7 @@
 {
   "name": "quantumcall",
   "private": true,
-  "version": "1.0.0-rc.2",
+  "version": "1.0.0-rc.3",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,7 @@
     "audit:visual": "node scripts/visual-audit.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/doto": "^5.2.10",
     "@fontsource-variable/geist": "^5.2.9",
     "@fontsource-variable/geist-mono": "^5.2.8",
     "@fontsource/ibm-plex-sans-condensed": "^5.2.8",

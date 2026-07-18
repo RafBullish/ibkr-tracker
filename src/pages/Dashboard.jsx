@@ -7,7 +7,7 @@
 //    Row 2 (auto)  : LivePositions col 1-12 (19 cols Phase C.1 originale)
 //    Row 3 (480px) : TradeHistory col 1-12 (14 cols Phase C.2)
 //    Row 4 (180px) : Watchlist col 1-6 | CalendarMini col 7-12
-//    Row 5 (160px) : IVRankMovers col 1-4 | SectorHeatmap col 5-8 | AlertsFeed col 9-12
+//    Row 5 (160px) : AlertsFeed col 1-12 (1.C — stubs IVR/Sectors retirés)
 //
 //  Phase C.1 retire 4 modules du dashboard (leurs fichiers restent
 //  pour Greeks/Chain/Premarket) :
@@ -25,14 +25,13 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo, useState } from 'react';
+import MarketDeck from '../components/dashboard/MarketDeck';
 import CommandDeck from '../components/dashboard/CommandDeck';
 import EquityChart from '../components/charts/EquityChart';
 import DailyPnLChart from '../components/charts/DailyPnLChart';
 import RiskMatrix from '../components/dashboard/RiskMatrix';
 import LivePositions from '../components/dashboard/LivePositions';
 import Watchlist from '../components/dashboard/Watchlist';
-import SectorHeatmap from '../components/dashboard/SectorHeatmap';
-import IVRankMovers from '../components/dashboard/IVRankMovers';
 import AlertsFeed from '../components/dashboard/AlertsFeed';
 import TradeHistory from '../components/dashboard/TradeHistory';
 import CalendarMini from '../components/dashboard/CalendarMini';
@@ -42,8 +41,6 @@ import useGreeksAggregate from '../hooks/useGreeksAggregate';
 import useRiskMatrix from '../hooks/useRiskMatrix';
 import useLivePositions from '../hooks/useLivePositions';
 import useWatchlist from '../hooks/useWatchlist';
-import useSectorHeatmap from '../hooks/useSectorHeatmap';
-import useIVMovers from '../hooks/useIVMovers';
 import useAlertsFeed from '../hooks/useAlertsFeed';
 import useAvailableCapital from '../hooks/useAvailableCapital';
 import { usePortfolioMetrics, useKPIs } from '../hooks/usePortfolioMetrics';
@@ -116,8 +113,6 @@ export default function Dashboard() {
   const greeks = useGreeksAggregate();
   const positions = useLivePositions({ greeksMap: greeks.greeksMap });
   const watchlist = useWatchlist();
-  const sectors = useSectorHeatmap();
-  const ivMovers = useIVMovers();
   const alerts = useAlertsFeed();
 
   // Merge portfolioMetrics (sharpe/sortino/sqn/cagr/recovery/rMultiples/
@@ -139,9 +134,14 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-page">
-      <div className="dash-shell">
-        {/* v1.0 · 1.A — Ligne de commandement (remplace DashboardKPICards) */}
+      {/* v1.0 · 1.C.2 — LE COCKPIT : une seule pièce d'instrument soudée
+          (full-bleed, dockée sous la hairline du tape). Étage marché
+          (MarketDeck) + hairline interne + étage portefeuille (CommandDeck). */}
+      <section className="cockpit" aria-label="Cockpit — marché et portefeuille">
+        <MarketDeck />
         <CommandDeck />
+      </section>
+      <div className="dash-shell">
       <div className="dash-grid">
         <EquityChart
           data={equityHistory}
@@ -163,8 +163,6 @@ export default function Dashboard() {
         <TradeHistory data={closedTrades} liveRate={portfolioMetrics?.liveRate ?? 1} area="history" />
         <Watchlist data={watchlist} area="watch" />
         <CalendarMini area="calendar" />
-        <IVRankMovers data={ivMovers} area="ivr" />
-        <SectorHeatmap data={sectors} area="heat" />
         <AlertsFeed data={alerts} area="alert" />
       </div>
       </div>

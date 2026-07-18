@@ -36,7 +36,8 @@
   height: var(--shell-statusbar-h);
   padding: 0;
   gap: 0;
-  background: var(--bg-elev-1);
+  /* 1.C.2 §C1 — châssis continu (même plan que tape et sidebar). */
+  background: var(--depth-base);
   border-top: 1px solid var(--shell-hairline);
   flex-shrink: 0;
   font-family: var(--qc-font-mono);
@@ -297,7 +298,11 @@
 .ticker-tape {
   position: relative;
   height: var(--qc-ticker-h);
-  background: var(--qc-bg-surface);
+  /* 1.C.2 §C1 — châssis continu : le tape rejoint le plan --depth-base
+     (comme sidebar et StatusBar) ; le cockpit (raised) s'en détache.
+     Seul changement du tape gelé, ordonné explicitement par le
+     correctif ; anatomie/cellules/tailles STRICTEMENT intactes. */
+  background: var(--depth-base);
   border-bottom: 1px solid var(--line-hairline);
   overflow: hidden;
   /* Fade des 48 px aux extrémités — les cellules apparaissent/disparaissent
@@ -511,6 +516,23 @@
 
 .ticker-cell__change-net.qc-loss {
   color: var(--pnl-down);
+}
+
+/* ── 1.C.10-bis — LED NYSE (ordre explicite architecte : gel du tape
+   levé pour la TYPO seule). Doto variable dot-matrix : graisse 850,
+   axe ROND au max (diodes rondes), tracking +0.03em, phosphore
+   text-shadow 30 %. Couleurs, tailles, hauteur du bandeau, pastilles
+   Δ%, flèches et sparklines STRICTEMENT inchangées. Fallback
+   par-glyphe natif → var(--qc-font-num) (alignement préservé). ──── */
+.ticker-cell__symbol,
+.ticker-cell__value,
+.ticker-cell__change-net {
+  font-family: 'Doto Variable', var(--qc-font-num);
+  font-weight: 850;
+  font-variation-settings: 'ROND' 100;
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 6px color-mix(in srgb, currentColor 30%, transparent);
 }
 
 .ticker-cell__sparkline {

@@ -172,7 +172,7 @@
       "positions positions positions positions positions positions positions positions positions positions positions positions"
       "history history history history history history history history history history history history"
       "watch watch watch watch watch watch calendar calendar calendar calendar calendar calendar"
-      "ivr ivr ivr ivr heat heat heat heat alert alert alert alert";
+      "alert alert alert alert alert alert alert alert alert alert alert alert";
   }
   .dash-shell .dash-grid > [style*="grid-area: equity"],
   .dash-shell .dash-grid > [style*="grid-area: dailypnl"] {
@@ -797,9 +797,82 @@
     column-gap: 14px;
   }
 
+  /* ════════════════════════════════════════════════════════════════
+     V1.0 · 1.C.10 — MARKET DECK D2-FINALE, palier ≥1440.
+     DOUBLE ÉTAGE fluide pleine largeur : 3 colonnes traversantes
+     (rail gauche = LE TEMPS · centre = les héros · rail droit = LES
+     ENTRAILLES) × 2 rangées (R1 162 · hairline · R2 119, étage 282).
+     Hairlines de rails CONTINUES R1→R2 (--line-emphasis, posées sur
+     les MÊMES lignes de grille) — signature d'harmonie. Loi de
+     fluidité : fr/minmax, zéro px de largeur totale en dur.
+     ════════════════════════════════════════════════════════════════ */
+  .market-deck {
+    grid-template-columns:
+      minmax(200px, 0.75fr) minmax(356px, 1.42fr) minmax(526px, 2.5fr) minmax(256px, 1fr);
+    grid-template-rows: 162px 1px 119px;
+    grid-template-areas:
+      'session indices indices vol'
+      'hr      hr      hr      hr'
+      'agenda  fx      monde   fut';
+  }
+
+  .mk-cell {
+    padding: 11px 14px;
+    border-top: none;
+  }
+
+  .mk-hr {
+    display: block;
+    grid-area: hr;
+    background: var(--hairline-rest);
+  }
+
+  /* Frontière gauche|centre (ligne de grille 2) : R1 indices, R2 fx.
+     Frontière centre|droit (ligne 4) : R1 vol, R2 fut. CONTINUES. */
+  .mk-indices,
+  .mk-fx {
+    border-left: 1px solid var(--line-emphasis);
+  }
+  .mk-vol,
+  .mk-fut {
+    border-left: 1px solid var(--line-emphasis);
+    border-top: none;
+  }
+  /* Filet interne FX|MONDE — R2 uniquement (hairline murmurée). */
+  .mk-monde {
+    border-left: 1px solid var(--hairline-rest);
+    border-top: none;
+  }
+
+  /* R1 · INDICES : 4 tuiles bornées sur une seule rangée. */
+  .mk-tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .mk-tile:nth-child(odd) { border-left: 1px solid var(--hairline-rest); }
+  .mk-tile:first-child { border-left: none; }
+  .mk-tile:nth-child(n + 3) {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+  }
+
+  /* MONDE : colonnes réglées 5 × 2, hairline interne entre rangées. */
+  .mk-wgrid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    column-gap: 6px;
+    row-gap: 0;
+    margin-top: 2px;
+  }
+  .mk-whr {
+    display: block;
+    grid-column: 1 / -1;
+    height: 1px;
+    background: var(--hairline-rest);
+    margin: 3px 0 4px;
+  }
+
   .command-deck__label,
-  .command-deck__live-text,
-  .command-deck__mtd-label {
+  .command-deck__live-text {
     font-size: var(--type-caption); /* 17 — plancher S2 */
   }
 
@@ -815,8 +888,22 @@
     font-size: var(--fs-2xl); /* 23 */
   }
 
-  .command-deck__mtd-value {
-    font-size: var(--type-cell-value); /* 21 */
+  /* Sous-lignes v2 (1.C) : valeurs 17 (fourchette 17-18 du brief —
+     17 retenu pour la tenue des zones étroites), labels/percents 14. */
+  .command-deck__subline-value {
+    font-size: 17px;
+  }
+
+  .command-deck__subline-label {
+    font-size: 14px;
+  }
+
+  .command-deck__subline-sep {
+    font-size: 15px;
+  }
+
+  .command-deck__subline-pct {
+    font-size: 14px;
   }
 
   .command-deck__caption {

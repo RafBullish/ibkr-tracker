@@ -55,6 +55,9 @@ contexte_pour_gemini.md
 /font-*.png
 /c3-*.png
 /c3-*.zip
+/lab*.png
+/croquis-*.png
+/d2finale-*.png
 
 # Runs de audit:visual — régénérables via `npm run audit:visual` (docs/captures/c3/
 # reste traqué comme historique). On ne commite pas les 12 captures par run (bloat).
