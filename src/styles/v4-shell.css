@@ -518,6 +518,23 @@
   color: var(--pnl-down);
 }
 
+/* ── 1.C.10-bis — LED NYSE (ordre explicite architecte : gel du tape
+   levé pour la TYPO seule). Doto variable dot-matrix : graisse 850,
+   axe ROND au max (diodes rondes), tracking +0.03em, phosphore
+   text-shadow 30 %. Couleurs, tailles, hauteur du bandeau, pastilles
+   Δ%, flèches et sparklines STRICTEMENT inchangées. Fallback
+   par-glyphe natif → var(--qc-font-num) (alignement préservé). ──── */
+.ticker-cell__symbol,
+.ticker-cell__value,
+.ticker-cell__change-net {
+  font-family: 'Doto Variable', var(--qc-font-num);
+  font-weight: 850;
+  font-variation-settings: 'ROND' 100;
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 6px color-mix(in srgb, currentColor 30%, transparent);
+}
+
 .ticker-cell__sparkline {
   display: inline-flex;
   align-items: center;

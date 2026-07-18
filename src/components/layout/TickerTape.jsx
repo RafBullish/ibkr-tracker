@@ -16,6 +16,10 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo } from 'react';
+// 1.C.10-bis — LED NYSE (ordre architecte) : Doto variable dot-matrix,
+// auto-hébergée (fontsource, SIL OFL), variante `full` = axes wght+ROND.
+// Import scopé au bandeau : seul le tape consomme cette police.
+import '@fontsource-variable/doto/full.css';
 import useMarketQuotes from '../../hooks/useMarketQuotes';
 import { useMarketSparklines } from '../../hooks/useMarketSparklines';
 import usePriceFlash from '../../hooks/usePriceFlash';
