@@ -84,17 +84,21 @@ export function NlvHero({ nlv, rate, dayPnl, dayPct, spark, size = 'md' }) {
   );
 }
 
-// ── Cellule KPI (double devise) ─────────────────────────────────
+// ── Cellule KPI (double devise, dense, spark inline) ────────────
 export function KpiCell({ cell, rate }) {
   const showChf = cell.money && Number.isFinite(cell.usd) && Number.isFinite(rate) && rate > 0;
   const chf = showChf ? fmtChf(cell.usd, rate, isSigned(cell.value)) : null;
+  const spark = Array.isArray(cell.spark) && cell.spark.length >= 2 ? cell.spark : null;
   return (
     <div className="lh-kpi" title={cell.hint || undefined}>
       <span className="lh-kpi__label">
         {cell.label}
         {cell.est ? <span className="lh-kpi__est">est</span> : null}
       </span>
-      <span className={`lh-kpi__value${cell.tone ? ` lh-kpi__value--${cell.tone}` : ''}`}>{cell.value}</span>
+      <div className="lh-kpi__main">
+        <span className={`lh-kpi__value${cell.tone ? ` lh-kpi__value--${cell.tone}` : ''}`}>{cell.value}</span>
+        {spark ? <MiniSpark points={spark} w={48} h={18} /> : null}
+      </div>
       {chf ? <span className="lh-kpi__chf">{chf}</span> : null}
       {cell.sub != null ? <span className="lh-kpi__sub">{cell.sub}</span> : <span className="lh-kpi__sub lh-kpi__sub--empty" />}
     </div>

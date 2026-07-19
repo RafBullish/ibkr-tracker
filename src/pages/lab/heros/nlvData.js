@@ -123,6 +123,7 @@ export function buildNlvSeries({ snapshots, cashFlows, closedTrades, liveNlv, li
       tradeCount: close ? close.count : 0,
       live: Boolean(d.live),
       unrealized: Number.isFinite(d.unrealized) ? d.unrealized : null,
+      exposure: Number.isFinite(d.exposure) ? d.exposure : null,
     };
   });
 
