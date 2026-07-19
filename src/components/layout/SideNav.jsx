@@ -1,22 +1,26 @@
 // ═══════════════════════════════════════════════════════════════
-//  SIDE NAV — navigation verticale du Shell v1.0 (brique 1.B)
+//  SIDE NAV v2 — « Marge vive » (brique 1.S, direction D3 amendée)
 //
-//  Remplace la CommandBar horizontale. 232 px déployée / 64 px
-//  repliée (toggle bouton footer + ⌘B, état persisté
-//  localStorage `qc:sidenav:collapsed`, géré par AppShell).
+//  220 px déployée / 64 px repliée (toggle footer + ⌘B, état persisté
+//  `qc:sidenav:collapsed`, géré par AppShell). Verdict architecte
+//  STOP 1 : témoins d'état NEUTRES à droite des rangées (jamais une
+//  couleur P&L), keycaps ⌘x retirés des rangées (les raccourcis
+//  restent câblés — documentés palette ⌘K, cheatsheet ⌘/ et tooltips
+//  du replié), badge REAL/LIVE supprimé du header, groupes silencieux
+//  (hairlines sans titres), rangées = vrais liens routeur (Ctrl+clic).
 //
-//  Structure : header (logomark QC + wordmark + badge REAL/LIVE
-//  migré à l'identique de la CommandBar) · recherche ⌘K (ouvre la
-//  CommandPalette existante) · navigation groupée OVERVIEW/TRADING/
-//  INSIGHTS/SYSTÈME (icônes lucide IDENTIQUES aux onglets, hints des
-//  raccourcis RÉELS ⌘1..9 — mapping AppShell inchangé) · footer
-//  (aide ⌘/ + repli ⌘B).
+//  Témoins (sources réelles uniquement, masqués à zéro) :
+//    Positions  → nombre de positions ouvertes (store)
+//    Historique → trades clôturés AUJOURD'HUI (store, champ do)
+//    Pré-marché → dot AMBRE pendant la fenêtre pré-marché NY
+//                 (computeMarketPhase, re-évalué 60 s), éteint sinon
 //
 //  Chrome structurel : fond --depth-base, bord droit hairline —
 //  PAS un .obs-panel. Styles : v1-shell.css (+ palier c3-hires.css).
 // ═══════════════════════════════════════════════════════════════
 
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Search,
   LayoutDashboard,
@@ -34,48 +38,45 @@ import {
   ChevronsRight,
 } from 'lucide-react';
 import Tooltip from '../ui/Tooltip';
-import { useOpenPositions, useSettings } from '../../store/useStore';
-import { FRESHNESS } from '../../constants/timing';
+import { useOpenPositions, useClosedTrades } from '../../store/useStore';
+import { computeMarketPhase } from '../../utils/marketPhase';
 import { FEATURE_GREEK_CENTER } from '../../constants/featureFlags';
 
-// Groupes de navigation (regroupement 1.B.2, décision architecte).
-// `shortcut` = chip keycap du raccourci RÉEL câblé dans AppShell
-// (NAV_PATHS ⌘1..9) — affiché même non séquentiel, JAMAIS remappé.
-// « Options Live » = ancien « Chain » renommé (ROUTE INCHANGÉE
-// /trading/chain, Chain.jsx inchangé).
+// Groupes de navigation (regroupement 1.B.2 conservé, titres morts en
+// 1.S — groupes silencieux). Labels UNIFIÉS EN FRANÇAIS (dette №10).
+// `shortcut` = raccourci RÉEL câblé dans AppShell (NAV_PATHS ⌘1..9),
+// affiché UNIQUEMENT dans les tooltips du replié — JAMAIS remappé.
+// Vérité ⌘9 (dette №3) : ⌘9 cible /settings/import, l'entrée Réglages
+// (clic → /settings/general) n'affiche donc AUCUNE touche.
+// `witness` = clé du témoin d'état (D3 « Marge vive »).
 const GROUPS = [
   {
     title: 'OVERVIEW',
     items: [
-      { label: 'Dashboard', aria: 'Tableau de bord', path: '/dashboard', shortcut: '⌘1', icon: LayoutDashboard },
-      { label: 'Premarket', aria: 'Pré-marché', path: '/premarket', shortcut: '', icon: Sunrise },
-      { label: 'Calendar', aria: 'Calendrier', path: '/insights/calendar', shortcut: '⌘7', icon: Calendar },
-      { label: 'Options Live', aria: 'Options Live', path: '/trading/chain', shortcut: '⌘5', icon: Link2 },
+      { label: 'Tableau de bord', path: '/dashboard', shortcut: '⌘1', icon: LayoutDashboard },
+      { label: 'Pré-marché', path: '/premarket', shortcut: '', icon: Sunrise, witness: 'premarket' },
+      { label: 'Calendrier', path: '/insights/calendar', shortcut: '⌘7', icon: Calendar },
+      { label: 'Options Live', path: '/trading/chain', shortcut: '⌘5', icon: Link2 },
     ],
   },
   {
     title: 'TRADING',
     items: [
-      { label: 'Positions', aria: 'Positions', path: '/trading/positions', shortcut: '⌘2', icon: Layers },
-      { label: 'History', aria: 'Historique', path: '/trading/history', shortcut: '⌘3', icon: History },
-      { label: 'Greeks', aria: 'Greeks Center', path: '/trading/greeks', shortcut: '⌘4', icon: Sigma, flag: 'GREEK_CENTER' },
+      { label: 'Positions', path: '/trading/positions', shortcut: '⌘2', icon: Layers, witness: 'positions' },
+      { label: 'Historique', path: '/trading/history', shortcut: '⌘3', icon: History, witness: 'closedToday' },
+      { label: 'Greeks', path: '/trading/greeks', shortcut: '⌘4', icon: Sigma, flag: 'GREEK_CENTER' },
     ],
   },
   {
     title: 'INSIGHTS',
     items: [
-      { label: 'Analytics', aria: 'Analytics', path: '/insights/analytics', shortcut: '⌘6', icon: BarChart3 },
-      { label: 'Journal', aria: 'Journal', path: '/insights/journal', shortcut: '⌘8', icon: BookOpen },
+      { label: 'Analytics', path: '/insights/analytics', shortcut: '⌘6', icon: BarChart3 },
+      { label: 'Journal', path: '/insights/journal', shortcut: '⌘8', icon: BookOpen },
     ],
   },
   {
     title: 'SYSTÈME',
-    items: [
-      // ⌘9 réel (AppShell) cible /settings/import — le clic sur l'item va
-      // sur /settings/general comme l'ancien onglet. Chip conservé tel quel
-      // (cf. cheatsheet « ⌘9 — Import / Settings »).
-      { label: 'Settings', aria: 'Réglages', path: '/settings/general', shortcut: '⌘9', icon: Settings },
-    ],
+    items: [{ label: 'Réglages', path: '/settings/general', shortcut: '', icon: Settings }],
   },
 ];
 
@@ -88,91 +89,93 @@ function isActive(navPath, pathname) {
   return pathname === navPath || pathname.startsWith(navPath);
 }
 
-// Badge REAL/LIVE/PAPER — logique de la CommandBar reprise à l'IDENTIQUE
-// (fraîcheur settings.ibkrLiveData vs FRESHNESS, sinon positions → real).
-function useModeVariant() {
-  const openPositions = useOpenPositions();
-  const settings = useSettings();
-  const live = settings?.ibkrLiveData;
-  // eslint-disable-next-line react-hooks/purity
-  const nowMs = Date.now();
-  const useLive =
-    live?.timestamp && nowMs - new Date(live.timestamp).getTime() < FRESHNESS.LIVE_DATA_MAX_AGE_MS;
-  const hasPositions = (openPositions || []).length > 0;
-  return useLive ? 'live' : hasPositions ? 'real' : 'paper';
+// Phase de session NY, ré-évaluée toutes les 60 s (le dot Pré-marché
+// s'allume/s'éteint sans re-mount ; le tick re-rend aussi le compteur
+// « clôturés aujourd'hui » au passage de minuit).
+function useSessionPhase() {
+  const [phase, setPhase] = useState(() => computeMarketPhase(new Date()).phase);
+  useEffect(() => {
+    const id = setInterval(() => setPhase(computeMarketPhase(new Date()).phase), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  return phase;
 }
 
-const MODE_LABELS = { live: 'LIVE', real: 'REAL', paper: 'PAPER' };
-const MODE_TITLES = {
-  live: 'Données IBKR temps réel actives',
-  real: 'Positions réelles · données stockées localement',
-  paper: 'Mode paper — aucune position réelle',
-};
+// Témoins d'état — sources RÉELLES uniquement, null = rien d'affiché.
+function useWitnesses() {
+  const openPositions = useOpenPositions();
+  const closedTrades = useClosedTrades();
+  const phase = useSessionPhase();
 
-function ModePill({ variant, collapsed }) {
-  const pill = (
-    <span
-      className={`side-nav__mode-pill${collapsed ? ' side-nav__mode-pill--dot' : ''}`}
-      data-mode={variant}
-      role="status"
-      title={collapsed ? undefined : MODE_TITLES[variant] || ''}
-    >
+  const positions = (openPositions || []).length;
+  const closedToday = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return (closedTrades || []).filter((t) => t?.do === today).length;
+  }, [closedTrades, phase]);
+
+  return {
+    positions: positions > 0 ? String(positions) : null,
+    closedToday: closedToday > 0 ? String(closedToday) : null,
+    premarket: phase === 'pre' ? 'dot' : null,
+  };
+}
+
+function Witness({ value, collapsed }) {
+  if (!value) return null;
+  if (value === 'dot') {
+    return (
       <span
-        className={`side-nav__mode-dot${variant === 'live' ? ' side-nav__mode-dot--pulse' : ''}`}
-        aria-hidden="true"
+        className={`side-nav__dot${collapsed ? ' side-nav__dot--perched' : ''}`}
+        role="status"
+        aria-label="Fenêtre pré-marché en cours"
       />
-      {!collapsed && <span>{MODE_LABELS[variant] || variant?.toUpperCase()}</span>}
+    );
+  }
+  return (
+    <span className={`side-nav__witness${collapsed ? ' side-nav__witness--perched' : ''}`}>
+      {value}
     </span>
   );
-  if (!collapsed) return pill;
-  return (
-    <Tooltip content={`${MODE_LABELS[variant]} — ${MODE_TITLES[variant]}`} side="right">
-      {pill}
-    </Tooltip>
-  );
 }
 
-function NavItem({ item, active, collapsed, onNavigate }) {
+function NavItem({ item, active, collapsed, witnessValue }) {
   const Icon = item.icon;
-  const btn = (
-    <button
-      type="button"
+  const link = (
+    <Link
+      to={item.path}
       className="side-nav__item"
       data-active={active || undefined}
       aria-current={active ? 'page' : undefined}
-      aria-label={item.aria}
-      onClick={() => onNavigate(item.path)}
+      aria-label={item.label}
     >
-      <Icon
-        size={collapsed ? 20 : 18}
-        strokeWidth={1.75}
-        className="side-nav__item-icon"
-        aria-hidden="true"
-      />
+      <span className="side-nav__item-ic">
+        <Icon
+          size={collapsed ? 20 : 18}
+          strokeWidth={1.75}
+          className="side-nav__item-icon"
+          aria-hidden="true"
+        />
+        {collapsed && <Witness value={witnessValue} collapsed />}
+      </span>
       {!collapsed && (
         <>
           <span className="side-nav__item-label">{item.label}</span>
-          {item.shortcut ? (
-            <kbd className="side-nav__key" aria-hidden="true">
-              {item.shortcut}
-            </kbd>
-          ) : null}
+          <Witness value={witnessValue} collapsed={false} />
         </>
       )}
-    </button>
+    </Link>
   );
-  if (!collapsed) return btn;
+  if (!collapsed) return link;
   return (
-    <Tooltip content={item.shortcut ? `${item.aria} (${item.shortcut})` : item.aria} side="right">
-      {btn}
+    <Tooltip content={item.shortcut ? `${item.label} (${item.shortcut})` : item.label} side="right">
+      {link}
     </Tooltip>
   );
 }
 
 export default function SideNav({ collapsed, onToggle, onOpenCommand }) {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
-  const modeVariant = useModeVariant();
+  const witnesses = useWitnesses();
 
   const openCheatsheet = () => window.dispatchEvent(new CustomEvent('qc:open-cheatsheet'));
 
@@ -217,7 +220,7 @@ export default function SideNav({ collapsed, onToggle, onOpenCommand }) {
   const toggleBtn = (
     <button
       type="button"
-      className="side-nav__foot-btn side-nav__toggle"
+      className="side-nav__foot-btn"
       onClick={onToggle}
       aria-expanded={!collapsed}
       aria-label={collapsed ? 'Déployer la navigation' : 'Replier la navigation'}
@@ -240,23 +243,17 @@ export default function SideNav({ collapsed, onToggle, onOpenCommand }) {
 
   return (
     <aside className={`side-nav${collapsed ? ' side-nav--collapsed' : ''}`}>
-      {/* Header — logomark + wordmark + badge REAL/LIVE */}
+      {/* Header — logomark + wordmark (le badge REAL/LIVE est mort en 1.S). */}
       <div className="side-nav__header">
-        <button
-          type="button"
-          className="side-nav__logo"
-          onClick={() => navigate('/dashboard')}
-          aria-label="QuantumCall — accueil"
-        >
+        <Link to="/dashboard" className="side-nav__logo" aria-label="QuantumCall — accueil">
           <span className="side-nav__logo-mark" aria-hidden="true">
             QC
           </span>
           {!collapsed && <span className="side-nav__logo-name">QUANTUMCALL</span>}
-        </button>
-        <ModePill variant={modeVariant} collapsed={collapsed} />
+        </Link>
       </div>
 
-      {/* Recherche ⌘K */}
+      {/* Recherche ⌘K (seul chip conservé en déployée). */}
       <div className="side-nav__search-row">
         {collapsed ? (
           <Tooltip content="Rechercher (⌘K)" side="right">
@@ -267,27 +264,23 @@ export default function SideNav({ collapsed, onToggle, onOpenCommand }) {
         )}
       </div>
 
-      {/* Navigation groupée */}
+      {/* Navigation — groupes SILENCIEUX (hairlines, sans titres). */}
       <nav className="side-nav__nav" aria-label="Navigation principale">
-        {GROUPS.map((group) => {
+        {GROUPS.map((group, gi) => {
           const items = group.items.filter(
             (i) => !i.flag || (i.flag === 'GREEK_CENTER' && FEATURE_GREEK_CENTER)
           );
           if (items.length === 0) return null;
           return (
             <div className="side-nav__group" key={group.title}>
-              {collapsed ? (
-                <div className="side-nav__group-rule" aria-hidden="true" />
-              ) : (
-                <div className="side-nav__group-title">{group.title}</div>
-              )}
+              {gi > 0 && <div className="side-nav__group-rule" aria-hidden="true" />}
               {items.map((item) => (
                 <NavItem
                   key={item.path}
                   item={item}
                   active={isActive(item.path, pathname)}
                   collapsed={collapsed}
-                  onNavigate={navigate}
+                  witnessValue={item.witness ? witnesses[item.witness] : null}
                 />
               ))}
             </div>
