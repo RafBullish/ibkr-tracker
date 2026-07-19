@@ -54,7 +54,7 @@ const GROUPS = [
     title: 'OVERVIEW',
     items: [
       { label: 'Tableau de bord', path: '/dashboard', shortcut: '⌘1', icon: LayoutDashboard },
-      { label: 'Pré-marché', path: '/premarket', shortcut: '', icon: Sunrise, witness: 'premarket' },
+      { label: 'Pré-marché', path: '/premarket', shortcut: '⌘0', icon: Sunrise, witness: 'premarket' },
       { label: 'Calendrier', path: '/insights/calendar', shortcut: '⌘7', icon: Calendar },
       { label: 'Options Live', path: '/trading/chain', shortcut: '⌘5', icon: Link2 },
     ],

@@ -18,7 +18,7 @@ import Icons from './Icons';
 // Réglages — API (dette №4), doublon Options Live purgé (dette №10).
 const navItems = [
   { label: 'Tableau de bord', shortcut: '⌘1', path: '/dashboard', icon: 'grid' },
-  { label: 'Pré-marché', shortcut: '', path: '/premarket', icon: 'gauge' },
+  { label: 'Pré-marché', shortcut: '⌘0', path: '/premarket', icon: 'gauge' },
   { label: 'Positions', shortcut: '⌘2', path: '/trading/positions', icon: 'trending' },
   { label: 'Historique', shortcut: '⌘3', path: '/trading/history', icon: 'list' },
   ...(FEATURE_GREEK_CENTER

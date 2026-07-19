@@ -168,6 +168,13 @@ export default function AppShell() {
         toggleSideNav();
         return;
       }
+      // 1.S dette №2 : ⌘0 → Pré-marché (EXTENSION de carte, jamais un
+      // remap — ⌘1..9 restent strictement intacts).
+      if ((e.metaKey || e.ctrlKey) && e.key === '0') {
+        e.preventDefault();
+        navigate('/premarket');
+        return;
+      }
       if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '9') {
         e.preventDefault();
         const target = NAV_PATHS[parseInt(e.key, 10) - 1];

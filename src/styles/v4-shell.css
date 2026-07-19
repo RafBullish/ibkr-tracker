@@ -179,6 +179,21 @@
   color: var(--qc-loss);
 }
 
+/* ── Marqueur de mode (1.S) — près du bloc IBKR·FNHB. Registre
+   STRICTEMENT NEUTRE : un mode n'est ni gain ni perte, jamais une
+   couleur du registre P&L. Chip discret bordé, encre secondaire. ── */
+.statusbar__mode-tag {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--qc-text-secondary);
+  border: 1px solid var(--qc-border-subtle);
+  border-radius: 3px;
+  padding: 2px 6px;
+  line-height: 1;
+}
+
 /* ── Horloges fuseaux ─────────────────────────────────────────── */
 
 .statusbar__clock {
