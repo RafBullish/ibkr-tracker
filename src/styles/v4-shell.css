@@ -518,27 +518,53 @@
   color: var(--pnl-down);
 }
 
-/* ── 1.C.10-ter — LED NYSE, uniformité TOTALE (ordre architecte,
-   annule la consigne « pastilles/flèches intactes » du -bis).
-   Doto variable dot-matrix sur TOUS les textes du bandeau (symbole,
-   prix, pastille Δ%, Δ net) : graisse 900, axe ROND, tracking réglé
-   au lab de fidélité, tailles +2/+4 (base 14/19/16/15, palier 1.B
-   22/40/23/21 dans c3-hires), hauteur 92 inchangée (le centrage flex
-   absorbe). Phosphore DOUBLE halo : 3px·55 % + 9px·25 % — la diode
-   bave, le trait épaissit. Flèches ▲▼ : glyphes absents de Doto →
-   fallback par-glyphe Plex (0.72em, harmonisé). Sparklines intactes.
-   Couleurs strictement inchangées (exception marché du bandeau). ── */
+/* ── 1.C.10-quater — ZÉRO PLEIN + POINT DÉCIMAL NET : le zéro Doto
+   est BARRÉ (diagonale qui encrasse l'œil à 900 + halo) et son period
+   est un amas de 5 points descendant sous la baseline (−95) — quasi
+   identique à la virgule (4 points, mêmes bounds). Le subset Doto n'a
+   ni GSUB ni glyphes alternatifs (diagnostic fonttools) ; Handjet
+   écarté sur mesures (chasse 0.41em vs 0.60 → hauteur +37 % ou
+   jitter). Solution : MICRO-FONT dérivé de Doto même (1 024 octets,
+   fonttools sur @fontsource-variable/doto, SIL OFL) —
+   · U+0030 → glyphe « O » de Doto : chasse (600), bounds et axes
+     wght+ROND IDENTIQUES aux chiffres → fusion parfaite, jitter nul ;
+   · U+002E → « periodcentered » (seule diode isolée de la fonte)
+     translaté sur la ligne de base, chasse du period conservée →
+     point rond net, jamais confondu avec une virgule.
+   Les données restent « 0 » et « . » (aucune substitution). ───────── */
+@font-face {
+  font-family: 'Doto Zero Plein';
+  src: url('../assets/fonts/doto-zero-plein.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0030, U+002E;
+}
+
+/* ── 1.C.10-ter/quater — LED NYSE, uniformité TOTALE (ordre
+   architecte). Doto dot-matrix sur TOUS les textes du bandeau
+   (symbole, prix, pastille Δ%, Δ net) : graisse 900, ROND 100 (A/B
+   vs 80 : diodes rondes distinctes retenues), tracking 0.03em,
+   tailles base 14/19/16/15 / palier 22/40/23/21 (c3-hires), hauteur
+   92 inchangée. Zéro PLEIN via 'Doto Zero Plein' (unicode-range).
+   Diodes épaissies : text-stroke currentColor (calibré au lab quater
+   avant fusion des points) + halo interne resserré 2px·67 % + bave
+   9px·25 %. Flèches ▲▼ : glyphes absents de Doto → fallback Plex
+   par-glyphe (0.72em, blocs pleins). Sparklines intactes. Couleurs
+   strictement inchangées (exception marché du bandeau). ──────────── */
 .ticker-cell__symbol,
 .ticker-cell__value,
 .ticker-cell__change,
 .ticker-cell__change-net {
-  font-family: 'Doto Variable', var(--qc-font-num);
+  font-family: 'Doto Zero Plein', 'Doto Variable', var(--qc-font-num);
   font-weight: 900;
   font-variation-settings: 'ROND' 100;
   letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
+  /* 0.015em ≡ 0.6px au prix 40 (le plus dense avant fusion, A/B
+     0.3/0.45/0.6) ; proportionnel → jamais de pâté aux petits corps. */
+  -webkit-text-stroke: 0.015em currentColor;
   text-shadow:
-    0 0 3px color-mix(in srgb, currentColor 55%, transparent),
+    0 0 2px color-mix(in srgb, currentColor 67%, transparent),
     0 0 9px color-mix(in srgb, currentColor 25%, transparent);
 }
 
