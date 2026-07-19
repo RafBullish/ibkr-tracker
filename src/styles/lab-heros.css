@@ -1,0 +1,457 @@
+/* ════════════════════════════════════════════════════════════════
+   LAB-HEROS.CSS — Brique 1.D « Héros 1 » (DEV-only, PURGÉ fin 1.D).
+   Aucune règle scopée hors `.lh-*` → zéro fuite dans l'app. Fidélité
+   DS : Plex (--qc-font-num) sur les chiffres, mono sur les labels,
+   hairlines --hairline-rest, ambre = actif/décision, encre neutre par
+   défaut, aucun accent nouveau.
+   ════════════════════════════════════════════════════════════════ */
+
+.lh-lab {
+  min-height: 100vh;
+  background: var(--depth-void);
+  color: var(--ink-soft);
+  font-family: var(--qc-font-mono);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Barre de contrôle ──────────────────────────────────────────── */
+.lh-lab__bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  padding: 12px 20px;
+  background: var(--depth-raised);
+  border-bottom: 1px solid var(--hairline-rest);
+}
+
+.lh-lab__brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.lh-lab__brand-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--accent-amber);
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 40%, transparent);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.lh-lab__brand-name {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--ink-pure);
+}
+
+.lh-lab__group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lh-lab__group-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-mute);
+}
+
+.lh-lab__seg {
+  display: inline-flex;
+  gap: 1px;
+  background: color-mix(in srgb, var(--ink-pure) 4%, transparent);
+  padding: 2px;
+  border-radius: 4px;
+}
+.lh-lab__seg-btn {
+  font-family: var(--qc-font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.03em;
+  color: var(--ink-mute);
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  padding: 4px 9px;
+  cursor: pointer;
+  transition: color 120ms ease, background-color 120ms ease;
+  white-space: nowrap;
+}
+.lh-lab__seg-btn:hover {
+  color: var(--ink-soft);
+}
+.lh-lab__seg-btn[data-active] {
+  color: var(--accent-amber);
+  background: color-mix(in srgb, var(--accent-amber) 12%, transparent);
+}
+
+.lh-lab__hint {
+  font-size: 11.5px;
+  color: var(--ink-mute);
+  letter-spacing: 0.02em;
+  flex-basis: 100%;
+}
+
+/* ── Scène ──────────────────────────────────────────────────────── */
+.lh-lab__stage {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.lh-lab__slot-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.lh-lab__slot-key {
+  font-family: var(--qc-font-num);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-amber);
+  line-height: 1;
+}
+.lh-lab__slot-name {
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+}
+
+.lh-lab__legend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--hairline-rest);
+  border-radius: 6px;
+  background: var(--depth-raised);
+  font-size: 11.5px;
+  color: var(--ink-mute);
+}
+.lh-lab__legend b {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   HÉROS — coque commune
+   ════════════════════════════════════════════════════════════════ */
+.lh-hero {
+  display: flex;
+  flex-direction: column;
+  background: var(--depth-raised);
+  border: 1px solid var(--hairline-rest);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.lh-hero__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 40px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--hairline-rest);
+  background: color-mix(in srgb, var(--depth-base) 50%, transparent);
+}
+
+.lh-hero__titlewrap {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+}
+.lh-hero__title {
+  font-family: var(--qc-font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-pure);
+  white-space: nowrap;
+}
+.lh-hero__sub {
+  font-size: 11.5px;
+  color: var(--ink-mute);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.lh-hero__hero-inline {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  min-width: 0;
+}
+.lh-hero__bignum {
+  font-family: var(--qc-font-num);
+  font-size: 30px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums slashed-zero;
+  color: var(--ink-pure);
+  line-height: 1;
+  white-space: nowrap;
+}
+.lh-hero__deltapill {
+  font-family: var(--qc-font-num);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--ink-pure) 5%, transparent);
+}
+.lh-hero__deltapill--profit { color: var(--pnl-up); background: color-mix(in srgb, var(--pnl-up) 10%, transparent); }
+.lh-hero__deltapill--loss { color: var(--pnl-down); background: color-mix(in srgb, var(--pnl-down) 10%, transparent); }
+.lh-hero__deltapill--mute { color: var(--ink-mute); }
+
+.lh-hero__ddchip {
+  font-family: var(--qc-font-num);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-mute);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.lh-hero__controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* ── Contrôles (période + toggle) ───────────────────────────────── */
+.lh-range,
+.lh-toggle {
+  display: inline-flex;
+  gap: 1px;
+  background: color-mix(in srgb, var(--ink-pure) 4%, transparent);
+  padding: 2px;
+  border-radius: 3px;
+}
+.lh-range__btn,
+.lh-toggle__btn {
+  font-family: var(--qc-font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--ink-mute);
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: color 120ms ease, background-color 120ms ease;
+  line-height: 1;
+}
+.lh-range__btn:hover,
+.lh-toggle__btn:hover { color: var(--ink-soft); }
+.lh-range__btn[data-active],
+.lh-toggle__btn[data-active] {
+  color: var(--accent-amber);
+  background: color-mix(in srgb, var(--accent-amber) 12%, transparent);
+}
+.lh-range__btn:focus-visible,
+.lh-toggle__btn:focus-visible {
+  outline: 1px solid var(--accent-amber);
+  outline-offset: -1px;
+}
+
+/* ── Corps ──────────────────────────────────────────────────────── */
+.lh-hero__bodywrap {
+  height: 300px;
+  padding: 6px 8px 2px;
+}
+.lh-hero__bodywrap--rail {
+  display: flex;
+  gap: 0;
+  padding: 0;
+  height: 360px;
+}
+.lh-hero__bodywrap--rail .lh-canvas {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 4px 2px 8px;
+}
+
+.lh-canvas {
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+.lh-canvas--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-mute);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+/* ── Rail de stats (Direction A) ────────────────────────────────── */
+.lh-rail {
+  width: 224px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--hairline-rest);
+  display: flex;
+  flex-direction: column;
+  background: color-mix(in srgb, var(--depth-base) 30%, transparent);
+}
+.lh-rail__hero {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--hairline-rest);
+}
+.lh-rail__hero-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-mute);
+}
+.lh-rail__hero-value {
+  font-family: var(--qc-font-num);
+  font-size: 30px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums slashed-zero;
+  color: var(--ink-pure);
+  line-height: 1.02;
+}
+.lh-rail__hero-sub {
+  font-size: 11px;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+.lh-rail__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 1;
+}
+.lh-rail__grid .lh-stat {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--hairline-rest);
+  border-right: 1px solid var(--hairline-rest);
+}
+.lh-rail__grid .lh-stat:nth-child(2n) { border-right: none; }
+
+/* ── Cellule de stat ────────────────────────────────────────────── */
+.lh-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.lh-stat__label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-mute);
+  white-space: nowrap;
+}
+.lh-stat__value {
+  font-family: var(--qc-font-num);
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums slashed-zero;
+  color: var(--ink-pure);
+  line-height: 1.05;
+  white-space: nowrap;
+}
+.lh-stat__value--profit { color: var(--pnl-up); }
+.lh-stat__value--loss { color: var(--pnl-down); }
+.lh-stat__value--mute { color: var(--ink-mute); }
+.lh-stat__sub {
+  font-size: 11px;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ── Ruban de pied (Directions B / C) ───────────────────────────── */
+.lh-ribbon {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  border-top: 1px solid var(--hairline-rest);
+  background: color-mix(in srgb, var(--depth-base) 40%, transparent);
+}
+.lh-ribbon--c { grid-template-columns: repeat(5, 1fr); }
+.lh-ribbon .lh-stat {
+  padding: 10px 14px;
+  border-right: 1px solid var(--hairline-rest);
+}
+.lh-ribbon .lh-stat:last-child { border-right: none; }
+
+/* ── Diptyque (Direction C) ─────────────────────────────────────── */
+.lh-hero__bodywrap--diptych {
+  display: flex;
+  flex-direction: column;
+  height: 360px;
+  padding: 0;
+  gap: 0;
+}
+.lh-pane {
+  position: relative;
+  min-height: 0;
+  padding: 4px 8px 0;
+  transition: flex-basis 160ms ease;
+}
+.lh-pane--tall { flex: 1 1 auto; }
+.lh-pane--short { flex: 0 0 34%; }
+.lh-pane--under {
+  border-top: 1px solid var(--hairline-rest);
+  background: color-mix(in srgb, var(--depth-base) 22%, transparent);
+}
+.lh-pane__tag {
+  position: absolute;
+  top: 4px;
+  right: 14px; /* côté opposé à l'axe Y (gauche) → aucun chevauchement de tick */
+  z-index: 2;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--ink-mute);
+  text-transform: uppercase;
+  pointer-events: none;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--depth-void) 72%, transparent);
+}
+
+/* ── Tooltip crosshair ──────────────────────────────────────────── */
+.lh-tip {
+  min-width: 132px;
+  background: var(--depth-base);
+  border: 1px solid var(--hairline-rest);
+  border-radius: 4px;
+  padding: 7px 10px;
+  font-family: var(--qc-font-mono);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+}
+.lh-tip__date {
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+  margin-bottom: 5px;
+}
+.lh-tip__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+}
+.lh-tip__row > span:first-child {
+  color: var(--ink-mute);
+  letter-spacing: 0.06em;
+}
+.lh-tip__row > span:last-child { color: var(--ink-pure); }
