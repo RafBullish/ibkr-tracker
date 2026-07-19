@@ -28,7 +28,7 @@ const NAVIGATION = [
   { keys: ['⌘ 6'], desc: 'Aller à Analytics' },
   { keys: ['⌘ 7'], desc: 'Aller à Calendrier' },
   { keys: ['⌘ 8'], desc: 'Aller à Journal' },
-  { keys: ['⌘ 9'], desc: 'Aller à Import / Settings' },
+  { keys: ['⌘ 9'], desc: 'Aller à Import' },
   { keys: ['Esc'], desc: 'Fermer une modal ou annuler la palette' },
 ];
 

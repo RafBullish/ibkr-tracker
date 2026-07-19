@@ -20,7 +20,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useOpenPositions, useClosedTrades, useSettings } from '../../store/useStore';
 import { tradePnlUsd } from '../../utils/calculations';
 import { formatPnlUsd } from '../../utils/format';
@@ -771,9 +771,11 @@ export default function Calendar() {
             content = (
               <span>
                 Clé Finnhub non configurée ·{' '}
-                <a href="#/settings/api" className="calendar-page__api-banner-link">
+                {/* 1.S dette №4 — lien routeur réel (l'ancien href="#/…"
+                    était une syntaxe HashRouter, mort sous BrowserRouter). */}
+                <Link to="/settings/api" className="calendar-page__api-banner-link">
                   Réglages → API
-                </a>
+                </Link>
               </span>
             );
           } else if (apiDown && fallbackActive) {
