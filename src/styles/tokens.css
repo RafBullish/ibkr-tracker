@@ -253,12 +253,6 @@
   --shell-tickertape-h: 40px;
   --shell-hairline: 1px solid var(--qc-border-subtle);
 
-  /* --- Sidebar (dead code mais référencé) --- */
-  --sidebar-active-bg: color-mix(in srgb, var(--qc-accent) 10%, transparent);
-  --sidebar-active-indicator: var(--qc-accent);
-  --sidebar-collapsed: 56px;
-  --sidebar-hover-bg: var(--qc-bg-elevated);
-  --sidebar-width: 240px;
 
   /* --- Spacing hors-grille 4px --- */
   --space-0-5: 2px;
