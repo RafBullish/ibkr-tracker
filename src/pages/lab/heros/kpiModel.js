@@ -17,19 +17,15 @@
 
 import { fmtUsd, fmtUsdSigned, fmtUsdCompact, toneSign } from './kit';
 
-// deltaMode : 'dollar' (exposition $) | 'shares' (équivalent actions).
-export function toKpiCells(v, deltaMode = 'dollar') {
+// Δ net : actions-équiv PRIMAIRE (glanceable) + $-exposition en sous-ligne
+// (le $-exposition brut écrasait la lecture). Promu du cockpit Σ.
+export function toKpiCells(v) {
   const c = (id, label, opts = {}) => ({ id, label, ...opts });
-  const deltaCell =
-    deltaMode === 'shares'
-      ? c('delta', 'Δ NET', {
-          value: v.netDeltaShares == null ? '—' : (v.netDeltaShares >= 0 ? '+' : '−') + Math.abs(Math.round(v.netDeltaShares)).toLocaleString('de-CH'),
-          sub: 'actions-équiv', hint: 'Δ net en actions-équivalent — promu du cockpit Σ',
-        })
-      : c('delta', 'Δ NET', {
-          value: v.netDeltaDollar == null ? '—' : fmtUsdSigned(v.netDeltaDollar), usd: v.netDeltaDollar, money: true,
-          sub: 'exposition $', hint: 'Δ-dollar (exposition directionnelle) — promu du cockpit Σ',
-        });
+  const deltaCell = c('delta', 'Δ NET', {
+    value: v.netDeltaShares == null ? '—' : (v.netDeltaShares >= 0 ? '+' : '−') + Math.abs(Math.round(v.netDeltaShares)).toLocaleString('de-CH'),
+    sub: v.netDeltaDollar == null ? 'actions-équiv' : `exp. ${fmtUsdSigned(v.netDeltaDollar)}`,
+    hint: 'Δ net en actions-équivalent (primaire) · $-exposition en sous-ligne — promu du cockpit Σ',
+  });
   return [
     c('day', 'DAY P&L', { value: v.dayPnl == null ? '—' : fmtUsdSigned(v.dayPnl), usd: v.dayPnl, money: true, tone: toneSign(v.dayPnl), sub: v.dayPct != null ? `${v.dayPct >= 0 ? '+' : '−'}${Math.abs(v.dayPct).toFixed(2)} %` : null }),
     c('unreal', 'UNREALIZED', { value: v.unrealized == null ? '—' : fmtUsdSigned(v.unrealized), usd: v.unrealized, money: true, tone: toneSign(v.unrealized), sub: v.upDown }),

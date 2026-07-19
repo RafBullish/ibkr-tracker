@@ -294,72 +294,59 @@ export function makeDemoInputs(variant = 'nominal') {
   return { snapshots, intradaySnapshots, cashFlows, closedTrades, liveNlv, today };
 }
 
-// Perf DE LA FENÊTRE (recalculée par période) — sur la série resamplée.
-// Rendements flow-neutral (ΔFN / NLV veille) → dépôts neutralisés.
+// Perf DE LA FENÊTRE affichée — métriques CONCRÈTES « sur cette période,
+// voilà ». P&L flow-neutral (dépôts neutralisés), extrêmes NLV de la
+// fenêtre, max DD de la fenêtre, clôtures + win rate de la fenêtre.
 export function deriveWindowStats(series) {
   if (!Array.isArray(series) || series.length < 2) return { empty: true };
   const first = series[0];
   const last = series[series.length - 1];
-  const deltaFN = last.flowNeutral - first.flowNeutral;
+  const pnl = last.flowNeutral - first.flowNeutral; // P&L de la période
   const startCapital = first.nlv || 1;
-  const deltaPct = startCapital > 0 ? (deltaFN / startCapital) * 100 : null;
+  const pnlPct = startCapital > 0 ? (pnl / startCapital) * 100 : null;
 
-  const returns = [];
+  const nlvs = series.map((p) => p.nlv);
+  const high = Math.max(...nlvs);
+  const low = Math.min(...nlvs);
+
+  // Meilleur / pire jour (Δ flow-neutral quotidien) + séances ↑/↓.
+  let bestDay = null;
+  let worstDay = null;
   let up = 0;
   let down = 0;
   for (let i = 1; i < series.length; i++) {
-    const dFN = series[i].flowNeutral - series[i - 1].flowNeutral;
-    const base = series[i - 1].nlv || startCapital;
-    if (base > 0) returns.push(dFN / base);
-    if (dFN > 0) up++;
-    else if (dFN < 0) down++;
+    const d = series[i].flowNeutral - series[i - 1].flowNeutral;
+    if (bestDay == null || d > bestDay) bestDay = d;
+    if (worstDay == null || d < worstDay) worstDay = d;
+    if (d > 0) up++;
+    else if (d < 0) down++;
   }
-  const n = returns.length;
-  const mean = n ? returns.reduce((a, b) => a + b, 0) / n : 0;
-  const variance = n ? returns.reduce((a, b) => a + (b - mean) ** 2, 0) / n : 0;
-  const sd = Math.sqrt(variance);
-  const PERIODS = 252; // séances/an (approx, sur base quotidienne)
-  const volAnn = sd * Math.sqrt(PERIODS) * 100;
-  const sharpe = sd > 0 ? (mean / sd) * Math.sqrt(PERIODS) : null;
 
-  const spanDays = Math.max(1, Math.round((Date.parse(last.date) - Date.parse(first.date)) / DAY_MS));
-  const endEq = startCapital + deltaFN;
-  const cagr =
-    startCapital > 0 && endEq > 0 && spanDays >= 7
-      ? (Math.pow(endEq / startCapital, 365 / spanDays) - 1) * 100
-      : null;
-
-  // Momentum (hypothèse B) : pente récente + distance au pic + série.
-  const tail = series.slice(-Math.min(10, series.length));
-  const slopePerDay =
-    tail.length >= 2
-      ? (tail[tail.length - 1].flowNeutral - tail[0].flowNeutral) / Math.max(1, tail.length - 1)
-      : 0;
-  const peak = Math.max(...series.map((p) => p.nlv));
-  const vsPeak = last.nlv - peak; // ≤ 0
-  // Série en cours = jours consécutifs de même signe depuis la fin.
-  let streak = 0;
-  for (let i = series.length - 1; i >= 1; i--) {
-    const s = Math.sign(series[i].flowNeutral - series[i - 1].flowNeutral);
-    if (s === 0) break;
-    if (streak === 0) streak = s;
-    else if (Math.sign(streak) === s) streak += s;
-    else break;
+  // Max drawdown DE LA FENÊTRE (recalculé flow-neutral sur la fenêtre).
+  let peakFN = series[0].flowNeutral;
+  let hwmNlv = series[0].nlv;
+  let maxDDUsd = 0;
+  let maxDDPct = 0;
+  for (const p of series) {
+    if (p.flowNeutral > peakFN) { peakFN = p.flowNeutral; hwmNlv = p.nlv; }
+    const dd = peakFN - p.flowNeutral;
+    if (dd > maxDDUsd) maxDDUsd = dd;
+    if (hwmNlv > 0) { const ddp = (dd / hwmNlv) * 100; if (ddp > maxDDPct) maxDDPct = ddp; }
   }
+
+  // Clôtures de la fenêtre + win rate de la fenêtre.
+  const closes = series.filter((p) => p.dayPnl != null);
+  const wins = closes.filter((p) => p.dayPnl > 0).length;
+  const winRate = closes.length ? (wins / closes.length) * 100 : null;
 
   return {
     empty: false,
-    deltaFN,
-    deltaPct,
-    cagr,
-    volAnn,
-    sharpe,
-    up,
-    down,
-    slopePerDay,
-    vsPeak,
-    streak,
-    spanDays,
+    pnl, pnlPct,
+    high, low,
+    bestDay, worstDay,
+    maxDDUsd, maxDDPct: -maxDDPct,
+    closeCount: closes.length, winRate,
+    up, down,
   };
 }
 
@@ -381,22 +368,43 @@ export function deriveSeriesStats(series) {
   const best = dayPnls.length ? Math.max(...dayPnls) : null;
   const worst = dayPnls.length ? Math.min(...dayPnls) : null;
   const spanDays = Math.round((Date.parse(last.date) - Date.parse(series[0].date)) / DAY_MS);
+
+  // Enrichissements (bande stats du bas) — clôtures = argent réel.
+  const winsArr = dayPnls.filter((v) => v > 0);
+  const lossArr = dayPnls.filter((v) => v < 0);
+  const avgWin = winsArr.length ? winsArr.reduce((a, b) => a + b, 0) / winsArr.length : null;
+  const avgLoss = lossArr.length ? lossArr.reduce((a, b) => a + b, 0) / lossArr.length : null;
+  const expectancy = dayPnls.length ? dayPnls.reduce((a, b) => a + b, 0) / dayPnls.length : null;
+  const netProfit = last.flowNeutral - series[0].flowNeutral;
+  const recoveryFactor = maxDDUsd > 0 ? netProfit / maxDDUsd : null;
+
+  // Jours ↑ / plus longues séries (Δ flow-neutral quotidien).
+  let upDays = 0;
+  let dayCount = 0;
+  let longWin = 0;
+  let longLoss = 0;
+  let curWin = 0;
+  let curLoss = 0;
+  for (let i = 1; i < series.length; i++) {
+    const d = series[i].flowNeutral - series[i - 1].flowNeutral;
+    if (d === 0) continue;
+    dayCount++;
+    if (d > 0) { upDays++; curWin++; curLoss = 0; if (curWin > longWin) longWin = curWin; }
+    else { curLoss++; curWin = 0; if (curLoss > longLoss) longLoss = curLoss; }
+  }
+  const pctWinDays = dayCount ? (upDays / dayCount) * 100 : null;
+
   return {
     empty: false,
-    high,
-    low,
-    peak: high,
-    maxDDUsd,
-    maxDDPct: -maxDDPct,
-    currentDDUsd: last.drawdownUsd,
-    currentDDPct: last.drawdownPct,
-    best,
-    worst,
-    spanDays,
+    high, low, peak: high,
+    maxDDUsd, maxDDPct: -maxDDPct,
+    currentDDUsd: last.drawdownUsd, currentDDPct: last.drawdownPct,
+    best, worst, spanDays,
     points: series.length,
     closeCount: closes.length,
-    firstDate: series[0].date,
-    lastDate: last.date,
+    avgWin, avgLoss, expectancy, recoveryFactor,
+    pctWinDays, longWin, longLoss,
+    firstDate: series[0].date, lastDate: last.date,
   };
 }
 

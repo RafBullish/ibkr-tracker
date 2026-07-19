@@ -1,20 +1,22 @@
 // ═══════════════════════════════════════════════════════════════
-//  LAB /lab/heros — PerfBand : bande AU-DESSUS du graphe, PARTIE du
-//  graphe. Se RECALCULE au changement de période (perf de la FENÊTRE).
-//  DEV-only, purgé 1.D.
+//  LAB /lab/heros — PerfBand : bande AU-DESSUS du graphe qui se
+//  RECALCULE par période. « Sur cette période, voilà. » DEV-only.
 //
-//  2 HYPOTHÈSES à tester (Rafael tranche) :
-//    A « Quant »    — Δ période · CAGR · σ ann. · Sharpe · séances ↑/↓
-//    B « Momentum » — Δ fenêtre (grand) · momentum · vs pic · série
-//  Δ période / CAGR COLORÉS (perf réelle → loi de couleur). σ, Sharpe,
-//  momentum, vs-pic, série = NEUTRES.
+//  Présentation PROPRE et UNIFORME : période en tête de bande, chaque
+//  cellule = libellé court + valeur (± sous-ligne). Métriques concrètes
+//  liées à la fenêtre. P&L période COLORÉ (perf réelle → loi de couleur) ;
+//  extrêmes / DD / trades = neutres.
 // ═══════════════════════════════════════════════════════════════
 
 import { fmtUsd, fmtChf } from './kit';
 
-function Cell({ label, value, sub, tone, big }) {
+const signPct = (v, d = 1) => (v == null || !Number.isFinite(v) ? '—' : `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(d)}%`);
+const signUsd = (v) => (v == null || !Number.isFinite(v) ? '—' : `${v >= 0 ? '+' : '−'}$${Math.abs(Math.round(v)).toLocaleString('de-CH')}`);
+const tone3 = (v) => (v == null || v === 0 ? undefined : v > 0 ? 'profit' : 'loss');
+
+function Cell({ label, value, sub, tone }) {
   return (
-    <div className={`lh-perf__cell${big ? ' lh-perf__cell--big' : ''}`}>
+    <div className="lh-perf__cell">
       <span className="lh-perf__label">{label}</span>
       <span className={`lh-perf__value${tone ? ` lh-perf__value--${tone}` : ''}`}>{value}</span>
       {sub != null ? <span className="lh-perf__sub">{sub}</span> : <span className="lh-perf__sub lh-perf__sub--empty" />}
@@ -22,43 +24,27 @@ function Cell({ label, value, sub, tone, big }) {
   );
 }
 
-const signPct = (v, d = 1) => (v == null || !Number.isFinite(v) ? '—' : `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(d)}%`);
-const signUsd = (v) => (v == null || !Number.isFinite(v) ? '—' : `${v >= 0 ? '+' : '−'}$${Math.abs(Math.round(v)).toLocaleString('de-CH')}`);
-const tone3 = (v) => (v == null || v === 0 ? 'mute' : v > 0 ? 'profit' : 'loss');
-
-export default function PerfBand({ w, range, hypothesis = 'A', rate }) {
+export default function PerfBand({ w, range, rate, showDays = false }) {
   if (!w || w.empty) {
     return (
-      <div className="lh-perf lh-perf--empty">
-        <span className="lh-perf__title">PERF · {range}</span>
+      <div className="lh-perf">
+        <span className="lh-perf__head">SUR CETTE PÉRIODE · {range}</span>
         <span className="lh-perf__none">fenêtre trop courte</span>
       </div>
     );
   }
-  const dChf = fmtChf(w.deltaFN, rate, true);
-
-  if (hypothesis === 'B') {
-    // Momentum / compact : le Δ fenêtre en grand + signaux de tendance.
-    return (
-      <div className="lh-perf lh-perf--b">
-        <span className="lh-perf__title">PERF · {range}</span>
-        <Cell big label="Δ FENÊTRE" value={signUsd(w.deltaFN)} sub={`${signPct(w.deltaPct)}${dChf ? ` · ${dChf}` : ''}`} tone={tone3(w.deltaFN)} />
-        <Cell label="MOMENTUM" value={`${w.slopePerDay >= 0 ? '↑' : '↓'} ${signUsd(w.slopePerDay)}`} sub="/ jour (10 pts)" />
-        <Cell label="VS PIC" value={w.vsPeak >= 0 ? 'au pic' : signUsd(w.vsPeak)} sub="high-water" />
-        <Cell label="SÉRIE" value={w.streak === 0 ? '—' : `${Math.abs(w.streak)} ${w.streak > 0 ? '↑' : '↓'}`} sub="séances consécutives" />
-      </div>
-    );
-  }
-
-  // A « Quant » (défaut)
+  const chf = fmtChf(w.pnl, rate, true);
   return (
-    <div className="lh-perf lh-perf--a">
-      <span className="lh-perf__title">PERF · {range}</span>
-      <Cell label="Δ PÉRIODE" value={signUsd(w.deltaFN)} sub={`${signPct(w.deltaPct)}${dChf ? ` · ${dChf}` : ''}`} tone={tone3(w.deltaFN)} />
-      <Cell label="CAGR" value={w.cagr == null ? '—' : signPct(w.cagr, 1)} sub="annualisé" tone={w.cagr == null ? undefined : tone3(w.cagr)} />
-      <Cell label="σ ANN." value={w.volAnn == null ? '—' : `${w.volAnn.toFixed(1)}%`} sub="volatilité" />
-      <Cell label="SHARPE" value={w.sharpe == null ? '—' : w.sharpe.toFixed(2)} sub="période" />
-      <Cell label="SÉANCES" value={`${w.up}↑ · ${w.down}↓`} sub="hauts / bas" />
+    <div className="lh-perf">
+      <span className="lh-perf__head">SUR CETTE PÉRIODE · {range}</span>
+      <Cell label="P&L PÉRIODE" value={signUsd(w.pnl)} sub={`${signPct(w.pnlPct)}${chf ? ` · ${chf}` : ''}`} tone={tone3(w.pnl)} />
+      <Cell label="PLUS HAUT" value={fmtUsd(w.high)} />
+      <Cell label="PLUS BAS" value={fmtUsd(w.low)} />
+      <Cell label="MEILLEUR J." value={signUsd(w.bestDay)} />
+      <Cell label="PIRE J." value={signUsd(w.worstDay)} />
+      <Cell label="MAX DD" value={fmtUsd(-w.maxDDUsd)} sub={signPct(w.maxDDPct)} />
+      <Cell label="TRADES" value={`${w.closeCount}`} sub={w.winRate != null ? `${w.winRate.toFixed(0)}% win` : `${w.up}↑ ${w.down}↓`} />
+      {showDays ? <Cell label="SÉANCES" value={`${w.up}↑ · ${w.down}↓`} sub="hauts / bas" /> : null}
     </div>
   );
 }

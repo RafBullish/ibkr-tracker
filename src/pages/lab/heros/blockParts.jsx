@@ -60,7 +60,7 @@ export function MiniSpark({ points, w = 110, h = 34 }) {
 }
 
 // ── HÉROS NLV — le plus gros et le plus soigné du bloc ──────────
-export function NlvHero({ nlv, rate, dayPnl, dayPct, spark }) {
+export function NlvHero({ nlv, rate, dayPnl, dayPct, spark, size = 'md' }) {
   const tone = dayPnl == null || dayPnl === 0 ? 'mute' : dayPnl > 0 ? 'profit' : 'loss';
   const chf = fmtChf(nlv, rate);
   const pill =
@@ -68,21 +68,18 @@ export function NlvHero({ nlv, rate, dayPnl, dayPct, spark }) {
       ? null
       : `${dayPnl >= 0 ? '+' : '−'}$${Math.abs(Math.round(dayPnl)).toLocaleString('de-CH')}${dayPct != null ? ` · ${dayPct >= 0 ? '+' : '−'}${Math.abs(dayPct).toFixed(2)}%` : ''}`;
   return (
-    <div className="lh-hero">
+    <div className={`lh-hero lh-hero--${size}`}>
       <div className="lh-hero__head">
         <span className="lh-hero__label">NET LIQUIDATION</span>
         <span className="lh-hero__live"><span className="lh-hero__live-dot" aria-hidden="true" />LIVE</span>
       </div>
+      {/* Montant + sparkline COLLÉE + pill à proximité (une ligne). */}
       <div className="lh-hero__row">
-        <div className="lh-hero__figure">
-          <span className="lh-hero__usd">{nlv == null ? '—' : fmtUsd(nlv)}</span>
-          {chf ? <span className="lh-hero__chf">{chf}</span> : null}
-        </div>
-        <div className="lh-hero__aside">
-          {pill ? <span className={`lh-hero__pill lh-hero__pill--${tone}`}>{pill}<span className="lh-hero__pill-cap"> jour</span></span> : null}
-          <MiniSpark points={spark} w={150} h={40} />
-        </div>
+        <span className="lh-hero__usd">{nlv == null ? '—' : fmtUsd(nlv)}</span>
+        <MiniSpark points={spark} w={132} h={38} />
+        {pill ? <span className={`lh-hero__pill lh-hero__pill--${tone}`}>{pill}<span className="lh-hero__pill-cap"> jour</span></span> : null}
       </div>
+      {chf ? <span className="lh-hero__chf">{chf}</span> : null}
     </div>
   );
 }
@@ -104,9 +101,9 @@ export function KpiCell({ cell, rate }) {
   );
 }
 
-export function KpiBelt({ cells, rate }) {
+export function KpiBelt({ cells, rate, layout = 'row' }) {
   return (
-    <div className="lh-belt">
+    <div className={`lh-belt lh-belt--${layout}`}>
       {cells.map((c) => (
         <KpiCell key={c.id} cell={c} rate={rate} />
       ))}
@@ -139,23 +136,29 @@ export function ViewToggle({ view, setView }) {
   );
 }
 
-// ── Pied de stats dense (extrêmes & drawdown) — agrandi, blanc,
-//    double devise sur les valeurs $. INDÉPENDANT de la bande perf. ──
-export function ChartFooter({ stats, rate }) {
+// ── Bande stats du bas (extrêmes · drawdown · référence) — AGRANDIE,
+//    blanche, double devise sur les $, densifiée. Indépendante de la
+//    bande perf du haut. `dense` → grille resserrée (modèle C). ──
+export function ChartFooter({ stats, rate, dense = false }) {
   if (stats.empty) return <div className="lh-cfoot lh-cfoot--empty">Série NLV vide</div>;
+  const sf = (v) => (v == null ? '—' : `${v >= 0 ? '+' : '−'}$${Math.abs(Math.round(v)).toLocaleString('de-CH')}`);
   // [label, value, sub, usdForChf]
   const cells = [
     ['PEAK', fmtUsd(stats.peak), null, stats.peak],
     ['HAUT / BAS', fmtUsd(stats.high), `bas ${fmtUsd(stats.low)}`, stats.high],
     ['MAX DD', fmtUsd(-stats.maxDDUsd), fmtPct(stats.maxDDPct), -stats.maxDDUsd],
     ['DD COURANT', fmtUsd(-stats.currentDDUsd), fmtPct(stats.currentDDPct), -stats.currentDDUsd],
-    ['MEILLEUR J.', stats.best != null ? fmtUsd(stats.best) : '—', null, stats.best],
-    ['PIRE J.', stats.worst != null ? fmtUsd(stats.worst) : '—', null, stats.worst],
-    ['FENÊTRE', `${stats.spanDays} j`, `${stats.points} pts`, null],
-    ['CLÔTURES', `${stats.closeCount}`, 'marqueurs', null],
+    ['RECOVERY', stats.recoveryFactor == null ? '—' : `${stats.recoveryFactor.toFixed(2)}×`, 'profit / DD', null],
+    ['MEILLEUR J.', sf(stats.best), null, stats.best],
+    ['PIRE J.', sf(stats.worst), null, stats.worst],
+    ['GAIN MOY.', sf(stats.avgWin), 'par gain', stats.avgWin],
+    ['PERTE MOY.', sf(stats.avgLoss), 'par perte', stats.avgLoss],
+    ['EXPECTANCY', sf(stats.expectancy), 'par clôture', stats.expectancy],
+    ['% J. GAGN.', stats.pctWinDays == null ? '—' : `${stats.pctWinDays.toFixed(0)}%`, `${stats.longWin}↑ / ${stats.longLoss}↓ max`, null],
+    ['CLÔTURES', `${stats.closeCount}`, `${stats.points} pts · ${stats.spanDays} j`, null],
   ];
   return (
-    <div className="lh-cfoot">
+    <div className={`lh-cfoot${dense ? ' lh-cfoot--dense' : ''}`}>
       {cells.map(([label, value, sub, usd]) => {
         const chf = Number.isFinite(usd) && Number.isFinite(rate) && rate > 0 ? fmtChf(usd, rate, isSigned(value)) : null;
         return (
