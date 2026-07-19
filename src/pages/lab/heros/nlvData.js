@@ -61,6 +61,10 @@ export function buildNlvSeries({ snapshots, cashFlows, closedTrades, liveNlv, li
   // Flux de financement (dépôts/retraits) en USD, triés.
   const flows = extractFundingFlows(cashFlows, liveRate);
   const depositDates = new Set(flows.filter((f) => f.netUsd > 0).map((f) => f.date));
+  const depositAmountByDate = new Map();
+  for (const f of flows) {
+    if (f.netUsd > 0) depositAmountByDate.set(f.date, (depositAmountByDate.get(f.date) || 0) + f.netUsd);
+  }
 
   // Clôtures par date (P&L net du jour + compte) pour les marqueurs.
   const closesByDate = new Map();
@@ -85,13 +89,18 @@ export function buildNlvSeries({ snapshots, cashFlows, closedTrades, liveNlv, li
 
   let peakFN = -Infinity;
   let hwmNlv = 0; // NLV au high-water mark flow-neutral (base capital honnête)
+  let prevFN = null;
   const out = days.map((d, idx) => {
     const dep = cumDepositsAt(d.date);
     const flowNeutral = d.nlv - dep;
+    const chg = prevFN == null ? 0 : Math.round(flowNeutral - prevFN); // Δ jour flow-neutral
+    prevFN = flowNeutral;
     if (flowNeutral > peakFN) {
       peakFN = flowNeutral;
       hwmNlv = d.nlv;
     }
+    // Clé de dépôt : jour (l'intraday utilise la date jour du préfixe).
+    const dayKey = d.date.slice(0, 10);
     const drawdownUsd = Math.max(0, peakFN - flowNeutral); // ≥ 0, deposit-neutral
     const underwater = -Math.round(drawdownUsd); // ≤ 0 $ (tracé)
     // % rapporté au HWM ajusté des flux → base capital réelle, honnête.
@@ -104,10 +113,12 @@ export function buildNlvSeries({ snapshots, cashFlows, closedTrades, liveNlv, li
       underwater,
       drawdownUsd: Math.round(drawdownUsd),
       drawdownPct: Number(drawdownPct.toFixed(2)),
+      chg,
       // Le financement initial (1er point) n'est PAS un « apport en cours »
       // → on ne marque que les dépôts postérieurs (ceux qui « guérissent »
       // un drawdown, le vrai gotcha à expliquer).
-      deposit: idx > 0 && depositDates.has(d.date),
+      deposit: idx > 0 && depositDates.has(dayKey),
+      depositAmount: idx > 0 ? depositAmountByDate.get(dayKey) || 0 : 0,
       dayPnl: close ? Math.round(close.pnl) : null,
       tradeCount: close ? close.count : 0,
       live: Boolean(d.live),
@@ -258,8 +269,98 @@ export function makeDemoInputs(variant = 'nominal') {
     });
   }
 
+  // ── Intraday (5 derniers jours, ~7 pts/séance) — DÉMO uniquement.
+  //    L'infra réelle n'existe pas (snapshots quotidiens seuls) → ceci
+  //    MONTRE la cible ; le câblage intraday réel est un TODO app-side.
+  const intradaySnapshots = [];
+  if (variant !== 'empty' && snapshots.length >= 5) {
+    const hours = ['09:30', '10:30', '11:30', '12:30', '13:30', '14:30', '15:00', '16:00'];
+    for (let dOff = 4; dOff >= 0; dOff--) {
+      const dayIdx = snapshots.length - 1 - dOff;
+      if (dayIdx < 1) continue;
+      const prevClose = snapshots[dayIdx - 1].nlv;
+      const close = snapshots[dayIdx].nlv;
+      const dayDate = snapshots[dayIdx].date;
+      for (let h = 0; h < hours.length; h++) {
+        const frac = h / (hours.length - 1);
+        // Interpole prevClose→close + bruit intraday.
+        const v = prevClose + (close - prevClose) * frac + (rnd() - 0.5) * 2 * 55;
+        intradaySnapshots.push({ date: `${dayDate}T${hours[h]}`, nlv: Math.max(1, Math.round(v)) });
+      }
+    }
+  }
+
   const liveNlv = snapshots[snapshots.length - 1]?.nlv ?? null;
-  return { snapshots, cashFlows, closedTrades, liveNlv, today };
+  return { snapshots, intradaySnapshots, cashFlows, closedTrades, liveNlv, today };
+}
+
+// Perf DE LA FENÊTRE (recalculée par période) — sur la série resamplée.
+// Rendements flow-neutral (ΔFN / NLV veille) → dépôts neutralisés.
+export function deriveWindowStats(series) {
+  if (!Array.isArray(series) || series.length < 2) return { empty: true };
+  const first = series[0];
+  const last = series[series.length - 1];
+  const deltaFN = last.flowNeutral - first.flowNeutral;
+  const startCapital = first.nlv || 1;
+  const deltaPct = startCapital > 0 ? (deltaFN / startCapital) * 100 : null;
+
+  const returns = [];
+  let up = 0;
+  let down = 0;
+  for (let i = 1; i < series.length; i++) {
+    const dFN = series[i].flowNeutral - series[i - 1].flowNeutral;
+    const base = series[i - 1].nlv || startCapital;
+    if (base > 0) returns.push(dFN / base);
+    if (dFN > 0) up++;
+    else if (dFN < 0) down++;
+  }
+  const n = returns.length;
+  const mean = n ? returns.reduce((a, b) => a + b, 0) / n : 0;
+  const variance = n ? returns.reduce((a, b) => a + (b - mean) ** 2, 0) / n : 0;
+  const sd = Math.sqrt(variance);
+  const PERIODS = 252; // séances/an (approx, sur base quotidienne)
+  const volAnn = sd * Math.sqrt(PERIODS) * 100;
+  const sharpe = sd > 0 ? (mean / sd) * Math.sqrt(PERIODS) : null;
+
+  const spanDays = Math.max(1, Math.round((Date.parse(last.date) - Date.parse(first.date)) / DAY_MS));
+  const endEq = startCapital + deltaFN;
+  const cagr =
+    startCapital > 0 && endEq > 0 && spanDays >= 7
+      ? (Math.pow(endEq / startCapital, 365 / spanDays) - 1) * 100
+      : null;
+
+  // Momentum (hypothèse B) : pente récente + distance au pic + série.
+  const tail = series.slice(-Math.min(10, series.length));
+  const slopePerDay =
+    tail.length >= 2
+      ? (tail[tail.length - 1].flowNeutral - tail[0].flowNeutral) / Math.max(1, tail.length - 1)
+      : 0;
+  const peak = Math.max(...series.map((p) => p.nlv));
+  const vsPeak = last.nlv - peak; // ≤ 0
+  // Série en cours = jours consécutifs de même signe depuis la fin.
+  let streak = 0;
+  for (let i = series.length - 1; i >= 1; i--) {
+    const s = Math.sign(series[i].flowNeutral - series[i - 1].flowNeutral);
+    if (s === 0) break;
+    if (streak === 0) streak = s;
+    else if (Math.sign(streak) === s) streak += s;
+    else break;
+  }
+
+  return {
+    empty: false,
+    deltaFN,
+    deltaPct,
+    cagr,
+    volAnn,
+    sharpe,
+    up,
+    down,
+    slopePerDay,
+    vsPeak,
+    streak,
+    spanDays,
+  };
 }
 
 // Stats denses du pied de graphe, dérivées de la série (annotée).

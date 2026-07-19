@@ -1,36 +1,30 @@
 // ═══════════════════════════════════════════════════════════════
-//  LAB /lab/heros — parts du BLOC portefeuille (DEV-only, purgé 1.D).
-//  Frontière marché/portefeuille · bande KPI · sparkline · contrôles ·
-//  pied de graphe. DS strict : Plex chiffres, mono labels, hairlines,
-//  ambre = actif/décision, encre neutre.
+//  LAB /lab/heros — parts du Cartouche (DEV-only, purgé 1.D).
+//  Héros NLV · bande KPI double-devise · frontières · pied stats.
+//  DS strict : Plex chiffres, mono labels, hairlines, ambre = actif,
+//  encre neutre, valeurs monétaires blanches + CHF au FX live.
 // ═══════════════════════════════════════════════════════════════
 
 import { TIMEFRAMES } from './nlvData';
-import { fmtUsd, fmtPct } from './kit';
+import { fmtUsd, fmtPct, fmtChf } from './kit';
 
-// ── Frontière marché / portefeuille (identité de la zone basse) ──
-// STRUCTURELLE uniquement — jamais une couleur du registre P&L.
-export function Frontier({ variant = 'rule' }) {
-  if (variant === 'gutter') {
-    return (
-      <div className="lh-frontier lh-frontier--gutter">
-        <span className="lh-frontier__ctx">↑ marché · 1.C</span>
-        <span className="lh-frontier__zone">PORTEFEUILLE</span>
-      </div>
-    );
-  }
-  if (variant === 'step') {
-    return (
-      <div className="lh-frontier lh-frontier--step">
-        <span className="lh-frontier__zone">PORTEFEUILLE</span>
-        <span className="lh-frontier__sep" aria-hidden="true" />
-        <span className="lh-frontier__ctx">mon argent</span>
-      </div>
-    );
-  }
-  // 'rule' — barre pleine largeur, filet franc, libellé à gauche.
+const isSigned = (s) => typeof s === 'string' && (s[0] === '+' || s[0] === '−' || s[0] === '-');
+
+// ── Double devise : USD (grand) + CHF (petit, converti FX live) ──
+export function MoneyDual({ usdText, usd, rate, size = 'md', tone }) {
+  const chf = fmtChf(usd, rate, isSigned(usdText));
   return (
-    <div className="lh-frontier lh-frontier--rule">
+    <span className={`lh-money lh-money--${size}`}>
+      <span className={`lh-money__usd${tone ? ` lh-money__usd--${tone}` : ''}`}>{usdText}</span>
+      {chf ? <span className="lh-money__chf">{chf}</span> : null}
+    </span>
+  );
+}
+
+// ── Frontière marché / portefeuille (sommet du bloc, structurelle) ─
+export function Frontier() {
+  return (
+    <div className="lh-frontier">
       <span className="lh-frontier__zone">PORTEFEUILLE</span>
       <span className="lh-frontier__rule" aria-hidden="true" />
       <span className="lh-frontier__ctx">↑ marché · 1.C intangible</span>
@@ -38,8 +32,18 @@ export function Frontier({ variant = 'rule' }) {
   );
 }
 
-// ── Sparkline neutre (NET LIQ) — SVG pur, sans axe ──────────────
-export function MiniSpark({ points, w = 96, h = 26 }) {
+// ── Séparation FORTE données / graphe (Zone 2) ──────────────────
+export function ZoneSep({ label = 'GRAPHIQUE' }) {
+  return (
+    <div className="lh-zonesep">
+      <span className="lh-zonesep__label">{label}</span>
+      <span className="lh-zonesep__hint">réglable par période ↓</span>
+    </div>
+  );
+}
+
+// ── Sparkline neutre (SVG pur) ──────────────────────────────────
+export function MiniSpark({ points, w = 110, h = 34 }) {
   if (!Array.isArray(points) || points.length < 2) return null;
   const min = Math.min(...points);
   const max = Math.max(...points);
@@ -50,85 +54,72 @@ export function MiniSpark({ points, w = 96, h = 26 }) {
     .join(' ');
   return (
     <svg className="lh-spark" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
-      <path d={d} fill="none" stroke="var(--ink-mute)" strokeWidth="1.2" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={d} fill="none" stroke="var(--ink-mute)" strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 }
 
-// ── Cellule KPI ─────────────────────────────────────────────────
-export function KpiCell({ cell, size = 'md' }) {
+// ── HÉROS NLV — le plus gros et le plus soigné du bloc ──────────
+export function NlvHero({ nlv, rate, dayPnl, dayPct, spark }) {
+  const tone = dayPnl == null || dayPnl === 0 ? 'mute' : dayPnl > 0 ? 'profit' : 'loss';
+  const chf = fmtChf(nlv, rate);
+  const pill =
+    dayPnl == null
+      ? null
+      : `${dayPnl >= 0 ? '+' : '−'}$${Math.abs(Math.round(dayPnl)).toLocaleString('de-CH')}${dayPct != null ? ` · ${dayPct >= 0 ? '+' : '−'}${Math.abs(dayPct).toFixed(2)}%` : ''}`;
   return (
-    <div className={`lh-kpi lh-kpi--${size}${cell.head ? ' lh-kpi--head' : ''}`} title={cell.hint || undefined}>
-      <span className="lh-kpi__label">
-        {cell.label}
-        {cell.est ? <span className="lh-kpi__est" title="Estimation (pas la Buying Power IBKR réelle — Sprint C non câblé)">est</span> : null}
-      </span>
-      <span className={`lh-kpi__value${cell.tone ? ` lh-kpi__value--${cell.tone}` : ''}`}>{cell.value}</span>
-      {cell.sub != null || cell.spark ? (
-        <span className="lh-kpi__sub">
-          {cell.spark ? <MiniSpark points={cell.spark} /> : null}
-          {cell.sub != null ? <span>{cell.sub}</span> : null}
-        </span>
-      ) : (
-        <span className="lh-kpi__sub lh-kpi__sub--empty" />
-      )}
+    <div className="lh-hero">
+      <div className="lh-hero__head">
+        <span className="lh-hero__label">NET LIQUIDATION</span>
+        <span className="lh-hero__live"><span className="lh-hero__live-dot" aria-hidden="true" />LIVE</span>
+      </div>
+      <div className="lh-hero__row">
+        <div className="lh-hero__figure">
+          <span className="lh-hero__usd">{nlv == null ? '—' : fmtUsd(nlv)}</span>
+          {chf ? <span className="lh-hero__chf">{chf}</span> : null}
+        </div>
+        <div className="lh-hero__aside">
+          {pill ? <span className={`lh-hero__pill lh-hero__pill--${tone}`}>{pill}<span className="lh-hero__pill-cap"> jour</span></span> : null}
+          <MiniSpark points={spark} w={150} h={40} />
+        </div>
+      </div>
     </div>
   );
 }
 
-// ── Bande KPI — layouts : 'row' | 'twoTier' | 'belt' ────────────
-export function KpiBand({ cells, layout = 'row' }) {
-  if (layout === 'twoTier') {
-    const head = cells.filter((c) => c.head);
-    const rest = cells.filter((c) => !c.head);
-    return (
-      <div className="lh-band lh-band--twotier">
-        <div className="lh-band__tier lh-band__tier--primary">
-          {head.map((c) => (
-            <KpiCell key={c.id} cell={c} size="lg" />
-          ))}
-        </div>
-        <div className="lh-band__tier lh-band__tier--context">
-          {rest.map((c) => (
-            <KpiCell key={c.id} cell={c} size="sm" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-  if (layout === 'belt') {
-    return (
-      <div className="lh-band lh-band--belt">
-        {cells.map((c) => (
-          <KpiCell key={c.id} cell={c} size="sm" />
-        ))}
-      </div>
-    );
-  }
-  // 'row' — une rangée dense ; NET LIQ (hero) en tête plus large.
+// ── Cellule KPI (double devise) ─────────────────────────────────
+export function KpiCell({ cell, rate }) {
+  const showChf = cell.money && Number.isFinite(cell.usd) && Number.isFinite(rate) && rate > 0;
+  const chf = showChf ? fmtChf(cell.usd, rate, isSigned(cell.value)) : null;
   return (
-    <div className="lh-band lh-band--row">
+    <div className="lh-kpi" title={cell.hint || undefined}>
+      <span className="lh-kpi__label">
+        {cell.label}
+        {cell.est ? <span className="lh-kpi__est">est</span> : null}
+      </span>
+      <span className={`lh-kpi__value${cell.tone ? ` lh-kpi__value--${cell.tone}` : ''}`}>{cell.value}</span>
+      {chf ? <span className="lh-kpi__chf">{chf}</span> : null}
+      {cell.sub != null ? <span className="lh-kpi__sub">{cell.sub}</span> : <span className="lh-kpi__sub lh-kpi__sub--empty" />}
+    </div>
+  );
+}
+
+export function KpiBelt({ cells, rate }) {
+  return (
+    <div className="lh-belt">
       {cells.map((c) => (
-        <KpiCell key={c.id} cell={c} size={c.hero ? 'lg' : 'md'} />
+        <KpiCell key={c.id} cell={c} rate={rate} />
       ))}
     </div>
   );
 }
 
-// ── Contrôles chart ─────────────────────────────────────────────
+// ── Contrôles graphe ────────────────────────────────────────────
 export function RangeSelector({ range, setRange }) {
   return (
     <div className="lh-range" role="tablist" aria-label="Période">
       {TIMEFRAMES.map((tf) => (
-        <button
-          key={tf}
-          type="button"
-          role="tab"
-          className="lh-range__btn"
-          data-active={range === tf || undefined}
-          aria-pressed={range === tf}
-          onClick={() => setRange(tf)}
-        >
+        <button key={tf} type="button" role="tab" className="lh-range__btn" data-active={range === tf || undefined} aria-pressed={range === tf} onClick={() => setRange(tf)}>
           {tf}
         </button>
       ))}
@@ -138,20 +129,9 @@ export function RangeSelector({ range, setRange }) {
 
 export function ViewToggle({ view, setView }) {
   return (
-    <div className="lh-toggle" role="tablist" aria-label="Vue équité ou drawdown">
-      {[
-        ['equity', 'NLV'],
-        ['drawdown', 'DRAWDOWN'],
-      ].map(([k, lbl]) => (
-        <button
-          key={k}
-          type="button"
-          role="tab"
-          className="lh-toggle__btn"
-          data-active={view === k || undefined}
-          aria-pressed={view === k}
-          onClick={() => setView(k)}
-        >
+    <div className="lh-toggle" role="tablist" aria-label="Vue NLV ou drawdown">
+      {[['equity', 'NLV'], ['drawdown', 'DRAWDOWN']].map(([k, lbl]) => (
+        <button key={k} type="button" role="tab" className="lh-toggle__btn" data-active={view === k || undefined} aria-pressed={view === k} onClick={() => setView(k)}>
           {lbl}
         </button>
       ))}
@@ -159,30 +139,34 @@ export function ViewToggle({ view, setView }) {
   );
 }
 
-// ── Pied de stats dense du graphe ───────────────────────────────
-export function ChartFooter({ stats, columns = 6 }) {
-  if (stats.empty) {
-    return <div className="lh-cfoot lh-cfoot--empty">Série NLV vide</div>;
-  }
-  const all = [
-    ['PEAK', fmtUsd(stats.peak), null],
-    ['HAUT / BAS', fmtUsd(stats.high), `bas ${fmtUsd(stats.low)}`],
-    ['MAX DD', fmtUsd(-stats.maxDDUsd), fmtPct(stats.maxDDPct)],
-    ['DD COURANT', fmtUsd(-stats.currentDDUsd), fmtPct(stats.currentDDPct)],
-    ['MEILLEUR J.', stats.best != null ? fmtUsd(stats.best) : '—', null],
-    ['PIRE J.', stats.worst != null ? fmtUsd(stats.worst) : '—', null],
-    ['FENÊTRE', `${stats.spanDays} j`, `${stats.points} pts`],
-    ['CLÔTURES', `${stats.closeCount}`, 'marqueurs'],
+// ── Pied de stats dense (extrêmes & drawdown) — agrandi, blanc,
+//    double devise sur les valeurs $. INDÉPENDANT de la bande perf. ──
+export function ChartFooter({ stats, rate }) {
+  if (stats.empty) return <div className="lh-cfoot lh-cfoot--empty">Série NLV vide</div>;
+  // [label, value, sub, usdForChf]
+  const cells = [
+    ['PEAK', fmtUsd(stats.peak), null, stats.peak],
+    ['HAUT / BAS', fmtUsd(stats.high), `bas ${fmtUsd(stats.low)}`, stats.high],
+    ['MAX DD', fmtUsd(-stats.maxDDUsd), fmtPct(stats.maxDDPct), -stats.maxDDUsd],
+    ['DD COURANT', fmtUsd(-stats.currentDDUsd), fmtPct(stats.currentDDPct), -stats.currentDDUsd],
+    ['MEILLEUR J.', stats.best != null ? fmtUsd(stats.best) : '—', null, stats.best],
+    ['PIRE J.', stats.worst != null ? fmtUsd(stats.worst) : '—', null, stats.worst],
+    ['FENÊTRE', `${stats.spanDays} j`, `${stats.points} pts`, null],
+    ['CLÔTURES', `${stats.closeCount}`, 'marqueurs', null],
   ];
   return (
-    <div className="lh-cfoot" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
-      {all.slice(0, columns).map(([label, value, sub]) => (
-        <div className="lh-cfoot__cell" key={label}>
-          <span className="lh-cfoot__label">{label}</span>
-          <span className="lh-cfoot__value">{value}</span>
-          {sub != null ? <span className="lh-cfoot__sub">{sub}</span> : null}
-        </div>
-      ))}
+    <div className="lh-cfoot">
+      {cells.map(([label, value, sub, usd]) => {
+        const chf = Number.isFinite(usd) && Number.isFinite(rate) && rate > 0 ? fmtChf(usd, rate, isSigned(value)) : null;
+        return (
+          <div className="lh-cfoot__cell" key={label}>
+            <span className="lh-cfoot__label">{label}</span>
+            <span className="lh-cfoot__value">{value}</span>
+            {chf ? <span className="lh-cfoot__chf">{chf}</span> : null}
+            {sub != null ? <span className="lh-cfoot__sub">{sub}</span> : <span className="lh-cfoot__sub lh-cfoot__sub--empty" />}
+          </div>
+        );
+      })}
     </div>
   );
 }

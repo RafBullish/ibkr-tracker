@@ -32,16 +32,35 @@ export const fmtPct = (v, digits = 1) => {
 
 export const fmtAxisDate = (isoStr) => {
   if (!isoStr || typeof isoStr !== 'string') return '';
+  // Intraday : 'YYYY-MM-DDTHH:mm' → HH:mm (périodes courtes).
+  if (isoStr.includes('T')) {
+    const [d, t] = isoStr.split('T');
+    return t ? t.slice(0, 5) : d;
+  }
   const p = isoStr.split('-');
   if (p.length !== 3) return isoStr;
   return `${p[2]}/${p[1]}`;
+};
+
+// ── Double devise : USD (principal) + CHF (converti au FX live) ──
+// liveRate = CHF par USD (settings.liveRate). Pas de CHF sur les ratios.
+export const fmtChf = (usd, rate, signed = false) => {
+  if (usd == null || !Number.isFinite(usd) || !Number.isFinite(rate) || rate <= 0) return null;
+  const chf = usd * rate;
+  const abs = Math.abs(chf);
+  const body = abs >= 100 ? Math.round(abs).toLocaleString('de-CH') : abs.toFixed(2);
+  if (chf === 0) return 'CHF 0';
+  if (signed) return `CHF ${chf < 0 ? '−' : '+'}${body}`;
+  return `CHF ${chf < 0 ? '−' : ''}${body}`;
 };
 
 export const fmtAxisUsd = (v) => {
   if (!Number.isFinite(v)) return '';
   const sign = v < 0 ? '-' : '';
   const abs = Math.abs(v);
-  if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(abs >= 10000 ? 0 : 1)}k`;
+  // 1 décimale toujours en k → plages étroites (intraday ~$11.9k) lisibles,
+  // sans écraser tous les ticks à « $12k ».
+  if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(1)}k`;
   return `${sign}$${Math.round(abs)}`;
 };
 
