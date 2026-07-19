@@ -25,6 +25,11 @@ const Chain = lazy(() => import('./pages/trading/Chain'));
 const Greeks = lazy(() => import('./pages/trading/Greeks'));
 const Analytics = lazy(() => import('./pages/insights/Analytics'));
 
+// LAB 1.S.2 — /lab/sidebar, DEV-ONLY éphémère (trois directions
+// Sidebar v2). Gardé par import.meta.env.DEV : élimination statique
+// au build prod. PURGÉ en fin de brique 1.S. Hors AppShell.
+const SidebarLab = import.meta.env.DEV ? lazy(() => import('./pages/lab/SidebarLab')) : null;
+
 const Loader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
     <GlassCard style={{ padding: '40px 60px', textAlign: 'center' }}>
@@ -49,6 +54,16 @@ export default function App() {
           <FxInvalidBanner />
           <FxStaleBanner />
           <Routes>
+            {import.meta.env.DEV && SidebarLab && (
+              <Route
+                path="/lab/sidebar"
+                element={
+                  <Suspense fallback={<Loader />}>
+                    <SidebarLab />
+                  </Suspense>
+                }
+              />
+            )}
             <Route element={<AppShell />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/premarket" element={<PreMarketBriefing />} />
