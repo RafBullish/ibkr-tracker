@@ -34,9 +34,15 @@ Objectif : **tag v1.0.0 au 01.09.2026**.
   (neutre, réactif) ; dettes de nav soldées (Pré-marché désenclavée,
   vérité ⌘9, /settings/api en nav, gardes clavier, ~340 l CSS morte
   purgées) ; choix Rafael au lab, amendé architecte.
-- **1.D — Héros 1** : Equity/NLV pleine largeur, chart de trading détaillé
-  (crosshair, périodes, toggle équité/drawdown, marqueurs de trades sur la
-  courbe, pied de stats dense).
+- **1.D ✅ (1.0.0-rc.5, GO Rafael attendu)** — Héros 1 : bloc Equity/NLV
+  pleine largeur, structure **« Bi-héros »** (LIQUIDITÉ DISPO + DAY P&L en
+  gros + support KPI), sur **donnée NLV dense** (snapshots quotidiens + live,
+  drawdown flow-neutral). **Graphe terminal** (lightweight-charts, code-split)
+  : auto-échelle serrée, axe Y + ligne de prix, crosshair natif, apport
+  annoté, toggle NLV/drawdown, marqueurs de clôture, bande perf par période,
+  bande stats enrichie. CommandDeck migré dans la zone haute ; EquityChart
+  remplacé. TODO : Buying Power IBKR réelle (`api/account-summary/sync.js`),
+  writer intraday.
 - **1.E — Héros 2** : Realized pleine largeur (cumulé/quotidien/distribution)
   + consolidation des doublons avec matrice de non-perte.
 - **1.F — Bande décision** (ATTENTION/FORME/CAPITAL) + micro-mouvement +

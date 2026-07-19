@@ -6,6 +6,53 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0-rc.5] — 2026-07-19
+
+**Brique 1.D « Héros 1 »** — Equity/NLV pleine largeur, structure
+« Bi-héros » (choix Rafael parmi 2 structures de zone haute, après une
+exploration en 6 tours au lab : périmètre → audit → directions → Cartouche
+→ 3 modèles → 2 structures). Le premier héros du Dashboard passe d'une
+tuile demi-largeur à un **bloc portefeuille pleine largeur** sur donnée
+**NLV dense**.
+
+### Ajouté
+- **Bloc Héros 1** (`components/dashboard/Hero1.jsx` + `hero1/*`,
+  `styles/v1-heros.css`) — 3 zones : (1) **frontière** Marché/Portefeuille
+  (structurelle) ; (2) **zone haute KPI « Bi-héros »** : 2 gros chiffres
+  d'ancrage — **LIQUIDITÉ DISPO** (le manque n°1) + **DAY P&L** — puis une
+  rangée de support (UNREALIZED · REALIZED · EXPOSURE · CAP. RISQUE · Θ/jour
+  · Δ net actions-équiv+$ · WIN · PF · DTE · POSITIONS), double devise
+  USD/CHF ; (3) **zone graphe** : **NLV géant en overlay** sur un **graphe
+  terminal** + bande perf par période + bande stats enrichie.
+- **Graphe terminal** (`hero1/TvChart.jsx`, dépendance **lightweight-charts**
+  v5 Apache-2.0, **code-split** → chunk propre, hors bundle index) :
+  auto-échelle Y serrée par période, axe Y à droite + ligne de prix,
+  crosshair canvas natif + boîte (date/NLV/Δ), remplissage dégradé neutre,
+  apport annoté en événement, toggle NLV/Drawdown, marqueurs de clôture
+  vert/rouge.
+- **Pipeline NLV dense** (`utils/nlvSeries.js`) : série 1 pt/jour depuis
+  `settings.dailySnapshots` + point live ; **drawdown flow-neutral** (un
+  apport ne guérit pas un drawdown) ; rééchantillonnage réel par période ;
+  stats de fenêtre + de référence (recovery, expectancy, % jours gagnants…).
+
+### Modifié
+- **CommandDeck** retiré du cockpit : la bande KPI portefeuille migre dans
+  la zone haute du bloc Héros 1. Le cockpit ne porte plus que le **MarketDeck**
+  (étage marché, 1.C, intangible).
+- **EquityChart** (tuile demi-largeur, source cumPnL par trade) remplacé par
+  le bloc Héros 1 (pleine largeur, source NLV dense). Grille Dashboard :
+  hero1 pleine largeur en tête, DailyPnL (Héros 2, 1.E) en pleine largeur en
+  dessous (interim jusqu'à 1.E).
+
+### Signalé (TODO)
+- **LIQUIDITÉ DISPO = estimation** (`availableUsd` cash-A) tant que la vraie
+  **Buying Power / Excess Liquidity IBKR** n'est pas câblée — endpoint
+  `api/account-summary/sync.js` **à créer** (priorité post-1.D).
+- **Intraday** : seuls des snapshots quotidiens sont persistés ; un **writer
+  intraday** (échantillon NLV en séance) densifiera 5D/1D.
+
+---
+
 ## [1.0.0-rc.4] — 2026-07-19
 
 **Brique 1.S « Sidebar v2 »** — direction « Marge vive » (choix

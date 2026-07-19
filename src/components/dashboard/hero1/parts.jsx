@@ -1,11 +1,10 @@
 // ═══════════════════════════════════════════════════════════════
-//  LAB /lab/heros — parts du Cartouche (DEV-only, purgé 1.D).
-//  Héros NLV · bande KPI double-devise · frontières · pied stats.
-//  DS strict : Plex chiffres, mono labels, hairlines, ambre = actif,
-//  encre neutre, valeurs monétaires blanches + CHF au FX live.
+//  HÉROS 1 (brique 1.D) — parts : Héros NLV · frontières · contrôles ·
+//  bande perf/stats. DS strict : Plex chiffres, mono labels, hairlines,
+//  ambre = actif, encre neutre, valeurs monétaires blanches + CHF live.
 // ═══════════════════════════════════════════════════════════════
 
-import { TIMEFRAMES } from './nlvData';
+import { TIMEFRAMES } from '../../../utils/nlvSeries';
 import { fmtUsd, fmtPct, fmtChf } from './kit';
 
 const isSigned = (s) => typeof s === 'string' && (s[0] === '+' || s[0] === '−' || s[0] === '-');
