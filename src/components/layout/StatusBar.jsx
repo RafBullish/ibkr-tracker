@@ -23,6 +23,19 @@ import { useOpenPositions, useSettings } from '../../store/useStore';
 import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
 import useApiStatus from '../../hooks/useApiStatus';
 import ThemeSwitcher from '../ui/ThemeSwitcher';
+import { FRESHNESS } from '../../constants/timing';
+
+// 1.S — marqueur de mode relogé ici (seul point de l'app affichant le
+// mode ; l'ancien badge SideNav est mort en 1.S). Registre NEUTRE :
+// un mode n'est ni gain ni perte, JAMAIS une couleur du registre P&L.
+// RÉACTIF : recalculé à chaque tick `now` (dette de réactivité №7
+// soldée — plus aucun Date.now() figé au render).
+const MODE_LABELS = { live: 'LIVE', real: 'REAL', paper: 'PAPER' };
+const MODE_TITLES = {
+  live: 'Données IBKR temps réel actives',
+  real: 'Positions réelles · données stockées localement',
+  paper: 'Mode paper — aucune position réelle',
+};
 
 // Mapping useApiStatus().status → data-status sémantique pour le CSS.
 const API_TO_STATE = {
@@ -135,6 +148,16 @@ export default function StatusBar() {
   const positionsCount = (openPositions || []).length;
   const liveRate = settings?.liveRate;
   const realizedUsd = metrics?.realizedPnlUsd;
+
+  // Mode réactif : dérivé du tick `now` (jamais de Date.now() au render).
+  const ibkrLive = settings?.ibkrLiveData;
+  const modeVariant = (() => {
+    const fresh =
+      ibkrLive?.timestamp &&
+      now.getTime() - new Date(ibkrLive.timestamp).getTime() < FRESHNESS.LIVE_DATA_MAX_AGE_MS;
+    if (fresh) return 'live';
+    return positionsCount > 0 ? 'real' : 'paper';
+  })();
   const pnlTone =
     realizedUsd == null || !Number.isFinite(realizedUsd) || realizedUsd === 0
       ? 'mute'
@@ -149,6 +172,13 @@ export default function StatusBar() {
         <FeedCell apiStatus={api.flex} label="IBKR" featured />
         <FeedCell apiStatus={api.finnhub} label="FNHB" />
         <FeedCell apiStatus={api.chart} label="CHART" />
+        <div
+          className="statusbar__cell statusbar__mode"
+          data-mode={modeVariant}
+          title={MODE_TITLES[modeVariant]}
+        >
+          <span className="statusbar__mode-tag" role="status">{MODE_LABELS[modeVariant]}</span>
+        </div>
         <div className="statusbar__cell statusbar__pos" title="Positions ouvertes">
           <span className="statusbar__label">POS</span>
           <span className="statusbar__value statusbar__value--strong">{positionsCount}</span>

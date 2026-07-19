@@ -12,9 +12,13 @@ import T from '../../theme/tokens';
 import Icons from './Icons';
 
 // 1.C — hints alignés sur le mapping RÉEL ⌘1..9 (AppShell NAV_PATHS).
-// Affichage seulement : rien n'est remappé ici.
+// Affichage seulement : rien n'est remappé ici. 1.S : vérité ⌘9 (la
+// cible réelle est /settings/import → chip sur l'entrée Import,
+// Réglages sans touche), Pré-marché désenclavée (dette №2), entrée
+// Réglages — API (dette №4), doublon Options Live purgé (dette №10).
 const navItems = [
   { label: 'Tableau de bord', shortcut: '⌘1', path: '/dashboard', icon: 'grid' },
+  { label: 'Pré-marché', shortcut: '⌘0', path: '/premarket', icon: 'gauge' },
   { label: 'Positions', shortcut: '⌘2', path: '/trading/positions', icon: 'trending' },
   { label: 'Historique', shortcut: '⌘3', path: '/trading/history', icon: 'list' },
   ...(FEATURE_GREEK_CENTER
@@ -22,14 +26,15 @@ const navItems = [
     : []),
   { label: 'Options Live', shortcut: '⌘5', path: '/trading/chain', icon: 'layers' },
   { label: 'Analytics', shortcut: '⌘6', path: '/insights/analytics', icon: 'bar' },
-  { label: 'Journal', shortcut: '⌘8', path: '/insights/journal', icon: 'book' },
   { label: 'Calendrier', shortcut: '⌘7', path: '/insights/calendar', icon: 'cal' },
-  { label: 'Réglages', shortcut: '⌘9', path: '/settings/general', icon: 'settings' },
+  { label: 'Journal', shortcut: '⌘8', path: '/insights/journal', icon: 'book' },
+  { label: 'Import', shortcut: '⌘9', path: '/settings/import', icon: 'upload' },
+  { label: 'Réglages', shortcut: '', path: '/settings/general', icon: 'settings' },
+  { label: 'Réglages — API', shortcut: '', path: '/settings/api', icon: 'shield' },
 ];
 
 const quickActions = [
   { label: 'Synchroniser (Flex)', icon: 'refresh', path: '/settings/import' },
-  { label: 'Options Live', icon: 'layers', path: '/trading/chain' },
   { label: 'Purge des données', icon: 'settings', path: '/settings/import' },
 ];
 

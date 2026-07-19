@@ -6,6 +6,53 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0-rc.4] — 2026-07-19
+
+**Brique 1.S « Sidebar v2 »** — direction « Marge vive » (choix
+architecte parmi 3 directions au lab, amendée). La navigation
+verticale devient un instrument : les entrées portent l'état du
+système, pas des raccourcis.
+
+### Ajouté
+- **SideNav v2 « Marge vive »** (`SideNav.jsx` réécrit, `v1-shell.css`,
+  palier `c3-hires.css`) : témoins d'état **neutres** à droite des
+  rangées (jamais une couleur P&L) — Positions = positions ouvertes,
+  Historique = trades clôturés du jour (masqués à zéro), point ambre
+  Pré-marché pendant la fenêtre pré-marché NY (phase re-évaluée 60 s) ;
+  badges perchés sur les icônes en replié.
+- **Raccourci ⌘0 → Pré-marché** : extension de carte (⌘1..9 intacts),
+  câblé handler + tooltip replié + palette ⌘K + cheatsheet.
+- **Marqueur de mode REAL/PAPER/LIVE** relogé dans la StatusBar (près
+  du bloc IBKR·FNHB) : registre neutre, réactif au tick 1 s (fin du
+  `Date.now()` figé au render).
+
+### Modifié
+- Rangées de nav en **vrais liens routeur** (`<Link>`, Ctrl+clic
+  nouvel onglet) ; largeur resserrée à 220 px (mesurée) ; groupes
+  silencieux (filets sans titres) ; header sans badge REAL ; keycaps
+  ⌘x retirés des rangées (raccourcis documentés palette/cheatsheet/
+  tooltips) ; nav défilable ; labels unifiés en français.
+- **Gardes clavier** : les raccourcis globaux n'agissent plus depuis
+  un champ de saisie, et Shift/Alt sont filtrés.
+- **Pré-marché désenclavée** (palette, SubNav, BottomNav) ; vérité ⌘9
+  (cible /settings/import alignée partout) ; `/settings/api` en nav
+  (palette + lien Calendar réparé en `<Link>`) ; « Chain » → « Options
+  Live » côté mobile ; défaut sidebar ré-évalué au resize.
+
+### Retiré
+- **~340 lignes de CSS morte** : bloc SIDEBAR Aura (`components.css`),
+  `.sidebar*` + BOTTOM NAV Aura (`aura-boost.css`), 5 tokens
+  `--sidebar-*` (`tokens.css`). Le conflit `.bottom-nav` est résolu en
+  faveur de la v6/DS (l'indigo hors design system meurt).
+- **Lab `/lab/sidebar`** (route, composant, CSS) — dev-only, purgé.
+
+### Vérifié
+- Gates : build · color-law 0 (marqueur de mode neutre au computed
+  style) · 233 tests · overflow 48/48 · clavier ⌘0..9/⌘K/⌘//⌘B +
+  gardes anti-input/Shift-Alt · a11y · reduced-motion · console
+  tolérés seuls · anti-régression bandeau LED Doto 92 px + cockpit 1.C
+  en Plex (computed styles).
+
 ## [1.0.0-rc.3] — 2026-07-18
 
 **Brique 1.C « Market Deck + Command Deck v2 »** — étage marché FINAL

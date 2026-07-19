@@ -915,26 +915,31 @@
   }
 
   /* ════════════════════════════════════════════════════════════════
-     V1.0 · 1.B — LE SHELL, palier ≥1440.
-     SideNav : labels d'item 17 ; headers de groupe 13 / hints 14 =
-     micro-signalétique chrome (même famille que ticks 14 / strip 16 —
-     décision architecte, exemptée du plancher 17).
-     TickerTape : 52 px, padding horizontal généreux ; barème S2 du
-     strip CONSERVÉ (21/16/18, réglé plus haut section D2.F).
+     V1.0 · 1.B → 1.S — LE SHELL, palier ≥1440.
+     SideNav v2 : labels d'item 17 (plancher S2) ; hints/keycaps 12 =
+     micro-signalétique chrome (exemptée du plancher 17, décision 1.B) ;
+     témoins 13.5 (micro data-viz). Titres de groupes morts en 1.S
+     (groupes silencieux).
+     TickerTape : barème S2 du strip CONSERVÉ (section D2.F plus haut).
      ════════════════════════════════════════════════════════════════ */
   .side-nav__item,
   .side-nav__foot-btn {
     font-size: 17px;
+  }
+  .side-nav__item {
     height: 38px;
   }
-  .side-nav__group-title {
-    font-size: 13px;
+  .side-nav__foot-btn {
+    height: 32px;
+  }
+  .side-nav__item-label {
+    font-size: 17px;
   }
   .side-nav__key {
     font-size: 12px; /* keycap chrome, taille fixe (spec 1.B.2) */
   }
-  .side-nav__search {
-    font-size: 15px;
+  .side-nav__witness {
+    font-size: 13.5px;
   }
 
   /* 1.B.3/L2 — TickerTape variante D « Salle des marchés » (92 px,

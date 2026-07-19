@@ -26,7 +26,14 @@ Objectif : **tag v1.0.0 au 01.09.2026**.
   FX & TAUX) + Command Deck v2 densifié (1.C.2) ; tape LED Doto
   (1.C.10-bis) ; labs I-VII purgés ; choix Rafael au lab, amendé
   architecte (agenda au rail du temps, futures au rail des entrailles).
-- **1.S — Sidebar v2** (insertion actée — prompt architecte à venir).
+- **1.S ✅ (1.0.0-rc.4)** — Sidebar v2 « Marge vive » : témoins d'état
+  neutres par entrée (positions ouvertes, clôturés du jour, dot
+  pré-marché ambre), rangées en liens routeur, largeur 220, groupes
+  silencieux, header sans badge REAL ; raccourci ⌘0 → Pré-marché
+  (⌘1..9 intacts) ; marqueur de mode REAL/PAPER relogé en StatusBar
+  (neutre, réactif) ; dettes de nav soldées (Pré-marché désenclavée,
+  vérité ⌘9, /settings/api en nav, gardes clavier, ~340 l CSS morte
+  purgées) ; choix Rafael au lab, amendé architecte.
 - **1.D — Héros 1** : Equity/NLV pleine largeur, chart de trading détaillé
   (crosshair, périodes, toggle équité/drawdown, marqueurs de trades sur la
   courbe, pied de stats dense).

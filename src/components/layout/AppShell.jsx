@@ -71,7 +71,14 @@ function SubNav({ pathname, navigate }) {
       { path: '/trading/positions', label: 'Positions' },
       { path: '/trading/history', label: 'Historique' },
       ...(FEATURE_GREEK_CENTER ? [{ path: '/trading/greeks', label: 'Greeks' }] : []),
-      { path: '/trading/chain', label: 'Chain' },
+      { path: '/trading/chain', label: 'Options Live' },
+    ];
+  } else if (pathname === '/premarket') {
+    // 1.S dette №2 — Pré-marché désenclavée : contexte OVERVIEW mobile.
+    tabs = [
+      { path: '/dashboard', label: 'Tableau' },
+      { path: '/premarket', label: 'Pré-marché' },
+      { path: '/insights/calendar', label: 'Calendrier' },
     ];
   } else if (pathname.startsWith('/insights')) {
     tabs = [
@@ -96,6 +103,7 @@ function SubNav({ pathname, navigate }) {
           type="button"
           className="sub-nav__tab"
           data-active={pathname === tab.path || undefined}
+          aria-current={pathname === tab.path ? 'page' : undefined}
           onClick={() => navigate(tab.path)}
         >
           {tab.label}
@@ -132,6 +140,17 @@ export default function AppShell() {
 
   useEffect(() => {
     const handler = (e) => {
+      // 1.S dette №5 — garde anti-input : les raccourcis globaux ne
+      // tirent JAMAIS depuis un champ de saisie, et les modificateurs
+      // Shift/Alt sont filtrés (Ctrl+Shift+B, Ctrl+Alt+1… = no-op).
+      const t = e.target;
+      if (
+        t &&
+        (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)
+      ) {
+        return;
+      }
+      if (e.shiftKey || e.altKey) return;
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setCmdOpen((prev) => !prev);
@@ -144,9 +163,16 @@ export default function AppShell() {
         return;
       }
       // 1.B : ⌘B / Ctrl+B replie/déploie la SideNav.
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'B')) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
         e.preventDefault();
         toggleSideNav();
+        return;
+      }
+      // 1.S dette №2 : ⌘0 → Pré-marché (EXTENSION de carte, jamais un
+      // remap — ⌘1..9 restent strictement intacts).
+      if ((e.metaKey || e.ctrlKey) && e.key === '0') {
+        e.preventDefault();
+        navigate('/premarket');
         return;
       }
       if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '9') {
@@ -158,6 +184,24 @@ export default function AppShell() {
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [navigate]);
+
+  // 1.S dette №10 — sans préférence stockée, le défaut suit le palier
+  // au resize (déployée ≥1440 / repliée <1440) au lieu de rester figé
+  // sur l'état du mount. Une préférence explicite (⌘B) fige l'état.
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1440px)');
+    const onChange = () => {
+      try {
+        const saved = window.localStorage.getItem(SIDENAV_COLLAPSED_KEY);
+        if (saved === '1' || saved === '0') return;
+      } catch {
+        /* storage indisponible → on suit le palier */
+      }
+      setNavCollapsed(!mq.matches);
+    };
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   // Open the command palette from anywhere (e.g. legacy CockpitHeader
   // search button still dispatches this event).

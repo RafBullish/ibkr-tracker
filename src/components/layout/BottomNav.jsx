@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { MoreHorizontal, X } from 'lucide-react';
+import { MoreHorizontal, Sunrise, X } from 'lucide-react';
 import Icons from '../ui/Icons';
 import { FEATURE_GREEK_CENTER } from '../../constants/featureFlags';
 
@@ -42,10 +42,13 @@ const mainTabs = [
   { key: 'calendar', path: '/insights/calendar', label: 'Calendrier', icon: 'cal', ready: true },
 ];
 
+// 1.S dette №2 — Pré-marché désenclavée (mobile) ; dette №10 —
+// « Chain » renommé « Options Live » comme partout ailleurs.
 const moreTabs = [
+  { path: '/premarket', label: 'Pré-marché', icon: 'sunrise' },
   { path: '/insights/analytics', label: 'Analytics', icon: 'bar' },
   { path: '/insights/journal', label: 'Journal', icon: 'book' },
-  { path: '/trading/chain', label: 'Chain', icon: 'layers' },
+  { path: '/trading/chain', label: 'Options Live', icon: 'layers' },
   { path: '/trading/history', label: 'Historique', icon: 'list' },
   { path: '/settings/import', label: 'Import', icon: 'upload' },
   { path: '/settings/api', label: 'API', icon: 'settings' },
@@ -60,10 +63,10 @@ function isTabActive(key, pathname) {
   if (key === 'more') {
     return (
       pathname.startsWith('/settings') ||
+      pathname === '/premarket' ||
       pathname === '/insights/analytics' ||
       pathname === '/insights/journal' ||
       pathname === '/trading/history' ||
-      pathname === '/trading/orders' ||
       pathname === '/trading/chain'
     );
   }
@@ -72,6 +75,7 @@ function isTabActive(key, pathname) {
 
 function renderIcon(iconKey, size = 20) {
   if (iconKey === 'sigma') return <SigmaIcon size={size} />;
+  if (iconKey === 'sunrise') return <Sunrise size={size} strokeWidth={1.75} aria-hidden="true" />;
   return Icons[iconKey]?.('currentColor', size);
 }
 

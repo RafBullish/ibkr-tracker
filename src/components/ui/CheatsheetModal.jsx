@@ -20,6 +20,7 @@ const NAVIGATION = [
   { keys: ['⌘ K', 'Ctrl K'], desc: 'Ouvrir la palette de commandes (recherche globale)' },
   { keys: ['⌘ /', 'Ctrl /'], desc: 'Ouvrir cette aide-mémoire' },
   { keys: ['⌘ B', 'Ctrl B'], desc: 'Replier / déployer la navigation' },
+  { keys: ['⌘ 0'], desc: 'Aller à Pré-marché' },
   { keys: ['⌘ 1'], desc: 'Aller à Tableau de bord' },
   { keys: ['⌘ 2'], desc: 'Aller à Positions' },
   { keys: ['⌘ 3'], desc: 'Aller à Historique' },
@@ -28,7 +29,7 @@ const NAVIGATION = [
   { keys: ['⌘ 6'], desc: 'Aller à Analytics' },
   { keys: ['⌘ 7'], desc: 'Aller à Calendrier' },
   { keys: ['⌘ 8'], desc: 'Aller à Journal' },
-  { keys: ['⌘ 9'], desc: 'Aller à Import / Settings' },
+  { keys: ['⌘ 9'], desc: 'Aller à Import' },
   { keys: ['Esc'], desc: 'Fermer une modal ou annuler la palette' },
 ];
 
