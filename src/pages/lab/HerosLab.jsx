@@ -90,12 +90,19 @@ export default function HerosLab() {
       </div>
 
       <div className="lh-lab__stage">
-        <FinalBlock {...shared} />
+        <div className="lh-lab__slot">
+          <div className="lh-lab__slot-head"><span className="lh-lab__slot-key">A</span><span className="lh-lab__slot-name">Zone haute « Terminal packé » — panneau dense façon résumé de compte</span></div>
+          <FinalBlock {...shared} topStructure="A" />
+        </div>
+        <div className="lh-lab__slot">
+          <div className="lh-lab__slot-head"><span className="lh-lab__slot-key">B</span><span className="lh-lab__slot-name">Zone haute « Bi-héros » — LIQUIDITÉ DISPO + DAY P&amp;L en grand + support</span></div>
+          <FinalBlock {...shared} topStructure="B" />
+        </div>
         <div className="lh-lab__legend">
-          <span><b>Bande KPI générale</b> (haut, état live) : 12 cellules riches, valeurs blanches + CHF agrandi, micro-contexte + micro-sparklines, packing serré 2 rangs. Δ net en actions-équiv (primaire) + $-exposition en sub. NLV EXCLU (héros du graphe).</span>
-          <span><b>Zone graphe</b> : NLV GÉANT en overlay sur le graphe terminal (concept B) · bande perf par période (SUR CETTE PÉRIODE) · auto-échelle Y serrée · axe Y à droite + ligne de prix · crosshair natif + boîte · apport annoté · intraday 5D.</span>
-          <span><b>Bande stats</b> (bas, enrichie) : recovery, gain/perte moy., expectancy, % jours gagnants, séries. Double devise.</span>
-          <span><b>Loi de couleur</b> : P&L période / clôtures colorés (argent réel) ; NLV / courbe / Θ / Δ / référence = neutres. Drawdown flow-neutral. Poudre sèche = <i>est.</i> (Buying Power IBKR = TODO Sprint C).</span>
+          <span><b>Zone haute — 2 structures à comparer</b> (le RESTE du bloc est identique dans les deux) : <b>A « Terminal packé »</b> = ledger dense façon résumé de compte IBKR, liquidité en tête ; <b>B « Bi-héros »</b> = LIQUIDITÉ DISPO + DAY P&amp;L en gros + rangée de support.</span>
+          <span><b>LIQUIDITÉ DISPONIBLE</b> = chiffre de premier plan (manque n°1 de Rafael). Marquée <i>est.</i> — la vraie Buying Power / Excess Liquidity IBKR (api/account-summary/sync.js) = 1re tâche d'implémentation après GO.</span>
+          <span><b>Inchangé</b> : header + frontière · séparation forte · zone graphe (NLV géant overlay + terminal lightweight-charts + bande perf par période + toggles) · bande stats enrichie du bas. Aucune sparkline dans la zone haute (celle du héros NLV reste).</span>
+          <span><b>Loi de couleur</b> : DAY/UNREALIZED/REALIZED + P&L période/clôtures colorés (argent réel) ; liquidité / NLV / courbe / Θ / Δ / référence = neutres. Drawdown flow-neutral.</span>
         </div>
       </div>
     </div>

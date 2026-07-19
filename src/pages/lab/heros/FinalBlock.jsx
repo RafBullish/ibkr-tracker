@@ -13,17 +13,18 @@
 //    5. BANDE STATS enrichie (indépendante)
 // ═══════════════════════════════════════════════════════════════
 
-import { Frontier, NlvHero, KpiBelt, ZoneSep, RangeSelector, ViewToggle, ChartFooter } from './blockParts';
+import { Frontier, NlvHero, ZoneSep, RangeSelector, ViewToggle, ChartFooter } from './blockParts';
+import { KpiTerminal, KpiBiHero } from './KpiZones';
 import PerfBand from './PerfBand';
 import TvChart from './TvChart';
 
-export default function FinalBlock({ series, windowStats, stats, cells, kpi, rate, range, setRange, view, setView, lineMode, intraday }) {
+export default function FinalBlock({ series, windowStats, stats, cells, kpi, rate, range, setRange, view, setView, lineMode, intraday, topStructure = 'A' }) {
   return (
     <section className="lh-final">
       <Frontier />
 
-      {/* 2 · BANDE KPI GÉNÉRALE (état live) — grande, dense, enrichie */}
-      <KpiBelt cells={cells} rate={rate} layout="grid2" />
+      {/* 2 · ZONE HAUTE KPI (état live) — 2 structures au choix */}
+      {topStructure === 'B' ? <KpiBiHero cells={cells} rate={rate} /> : <KpiTerminal cells={cells} rate={rate} />}
 
       {/* 3 · Séparation forte */}
       <ZoneSep label="GRAPHIQUE" />
