@@ -16,6 +16,14 @@ export const fmtUsdSigned = (v) => {
   return `${sign}$${Math.round(Math.abs(v)).toLocaleString('de-CH')}`;
 };
 
+// NLV / gros montants : de-CH plein (l'argent se lit exactement) —
+// cohérent avec le NET LIQ du CommandDeck actuel.
+export const fmtUsdCompact = (v) => fmtUsd(v);
+
+// tone loi de couleur : profit/loss UNIQUEMENT sur de l'argent réel.
+export const toneSign = (v) =>
+  !Number.isFinite(v) || v === 0 ? undefined : v > 0 ? 'profit' : 'loss';
+
 export const fmtPct = (v, digits = 1) => {
   if (v == null || !Number.isFinite(v)) return '—';
   const sign = v > 0 ? '+' : v < 0 ? '−' : '';
