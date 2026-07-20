@@ -33,11 +33,15 @@ import useDailyPnL from '../../hooks/useDailyPnL';
 import useGreeksAggregate from '../../hooks/useGreeksAggregate';
 import useAvailableCapital from '../../hooks/useAvailableCapital';
 import { useOpenPositions, useClosedTrades, useCashFlows, useSettings } from '../../store/useStore';
-import { totalSlDollar } from '../../utils/risk';
+import { totalSlDollar, totalNotional } from '../../utils/risk';
 
 export default function Hero1({ area = 'hero1' }) {
   const [range, setRange] = useState('ALL');
   const [view, setView] = useState('equity');
+  // Traitement de densité du PortfolioDeck — ?pf=A|B|C (aide de choix,
+  // temporaire jusqu'au GO ; défaut A). Retiré après le choix de Rafael.
+  const treatment =
+    (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pf')) || 'A';
 
   const metrics = usePortfolioMetrics();
   const greeks = useGreeksAggregate();
@@ -51,12 +55,25 @@ export default function Hero1({ area = 'hero1' }) {
   const today = new Date().toISOString().slice(0, 10);
   const rate = metrics?.liveRate || null;
 
-  // YTD = somme des clôtures de l'année (même dérivation que l'ex-CommandDeck).
-  const ytd = useMemo(() => {
-    if (!Array.isArray(dailyPnL) || dailyPnL.length === 0) return null;
-    const yearStart = `${new Date().getFullYear()}-01-01`;
-    return dailyPnL.filter((d) => d.date >= yearStart).reduce((s, d) => s + (d.dailyPnl || 0), 0);
+  // WTD / YTD = sommes des clôtures (semaine / année) via useDailyPnL.
+  const { wtd, ytd } = useMemo(() => {
+    if (!Array.isArray(dailyPnL) || dailyPnL.length === 0) return { wtd: null, ytd: null };
+    const now = new Date();
+    const yearStart = `${now.getFullYear()}-01-01`;
+    // Début de semaine (lundi) en ISO.
+    const dow = (now.getDay() + 6) % 7;
+    const weekStart = new Date(now.getTime() - dow * 86_400_000).toISOString().slice(0, 10);
+    let w = 0;
+    let y = 0;
+    for (const d of dailyPnL) {
+      const v = d.dailyPnl || 0;
+      if (d.date >= yearStart) y += v;
+      if (d.date >= weekStart) w += v;
+    }
+    return { wtd: w, ytd: y };
   }, [dailyPnL]);
+
+  const notional = useMemo(() => totalNotional(openPositions), [openPositions]);
 
   const dailyFull = useMemo(
     () =>
@@ -87,17 +104,20 @@ export default function Hero1({ area = 'hero1' }) {
         profitFactor: trading?.profitFactor,
         expectancy: trading?.expectancy,
         tradesCount: trading?.totalPnlCount ?? (closedTrades || []).length,
+        trading,
+        notional,
         mtd: metrics?.monthlyPnlUsd,
         ytd,
+        wtd,
         today,
       }),
-    [metrics, greeks, avail, openPositions, dailyFull, trading, closedTrades, ytd, today]
+    [metrics, greeks, avail, openPositions, dailyFull, trading, notional, closedTrades, ytd, wtd, today]
   );
 
   return (
     <section className="lh-final" style={{ gridArea: area }}>
       <Frontier />
-      <PortfolioDeck kpi={kpi} rate={rate} />
+      <PortfolioDeck kpi={kpi} rate={rate} treatment={treatment} />
       <ZoneSep label="GRAPHIQUE" />
       <div className="lh-graphzone">
         <div className="lh-graphzone__bar">

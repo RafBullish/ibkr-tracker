@@ -13,9 +13,11 @@ const sparkFrom = (series, key, n = 30) =>
 export function deriveKpisReal(ctx) {
   const {
     metrics, greeks, availableUsd, riskDollar, positions, series,
-    winRate, profitFactor, expectancy, tradesCount, mtd, ytd, today,
+    winRate, profitFactor, expectancy, tradesCount, mtd, ytd, wtd,
+    trading, notional, today,
   } = ctx;
   const nlv = metrics?.netLiquidationValueUsd ?? null;
+  const num = (x) => (Number.isFinite(x) ? x : null);
   const last = series && series.length ? series[series.length - 1] : null;
   const prev = series && series.length > 1 ? series[series.length - 2] : null;
   const dayPnl = last && prev ? last.flowNeutral - prev.flowNeutral : null;
@@ -41,23 +43,32 @@ export function deriveKpisReal(ctx) {
     expoPct: metrics?.totalExposure != null && nlv > 0 ? (metrics.totalExposure / nlv) * 100 : null,
     positionsCount: Array.isArray(positions) ? positions.length : null,
     dte, dteTicker,
+    notional: num(notional),
+    nlvAtRiskPct: riskDollar != null && nlv > 0 ? (riskDollar / nlv) * 100 : null,
     // P&L
     dayPnl, dayPct,
+    wtd: num(wtd),
     unrealized: metrics?.unrealizedPnlUsd ?? null,
     realized: metrics?.realizedPnlUsd ?? null,
-    mtd: Number.isFinite(mtd) ? mtd : (Number.isFinite(metrics?.monthlyPnlUsd) ? metrics.monthlyPnlUsd : null),
-    ytd: Number.isFinite(ytd) ? ytd : null,
+    mtd: num(mtd) ?? num(metrics?.monthlyPnlUsd),
+    ytd: num(ytd),
     // RISQUE & GREEKS
     riskDollar: riskDollar ?? null,
-    thetaDay: Number.isFinite(greeks?.thetaDaily) ? greeks.thetaDaily : null,
-    netDeltaShares: Number.isFinite(greeks?.sumDelta) ? greeks.sumDelta : null,
-    netDeltaDollar: Number.isFinite(greeks?.notionalDelta) ? greeks.notionalDelta : null,
-    gamma: Number.isFinite(greeks?.sumGamma) ? greeks.sumGamma : null,
-    vega: Number.isFinite(greeks?.sumVega) ? greeks.sumVega : null,
+    thetaDay: num(greeks?.thetaDaily),
+    netDeltaShares: num(greeks?.sumDelta),
+    netDeltaDollar: num(greeks?.notionalDelta),
+    gamma: num(greeks?.sumGamma),
+    vega: num(greeks?.sumVega),
     // PERFORMANCE
     winRate: winRate ?? null,
     profitFactor: profitFactor ?? null,
-    expectancy: Number.isFinite(expectancy) ? expectancy : null,
-    tradesCount: Number.isFinite(tradesCount) ? tradesCount : null,
+    expectancy: num(expectancy),
+    tradesCount: num(tradesCount),
+    sharpe: num(metrics?.sharpeRatio),
+    sortino: num(metrics?.sortinoRatio),
+    bestTrade: num(trading?.bestTrade),
+    worstTrade: num(trading?.worstTrade),
+    avgWin: num(trading?.avgWin) ?? num(metrics?.averageWin),
+    avgLoss: num(trading?.avgLoss) ?? num(metrics?.averageLoss),
   };
 }

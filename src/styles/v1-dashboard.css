@@ -14,16 +14,19 @@
    ════════════════════════════════════════════════════════════════ */
 
 /* ════════════════════════════════════════════════════════════════
-   LE COCKPIT (1.C.2) — chrome d'instrument continu, full-bleed.
-   UN panneau (fond raised, ZÉRO radius, pas de hover global), docké
-   sous la hairline du tape (gap 0 — la hairline du tape sert de bord
-   haut) et collé à la hairline droite de la sidebar. Séparation
-   interne = 1 hairline pleine largeur entre étage marché et étage
-   portefeuille (border-top du .command-deck).
+   LE COCKPIT (1.C.2) — chrome d'instrument continu (MarketDeck).
+   1.D : ENCADRÉ (cadre gris + radius) pour HARMONISER avec le bloc
+   Héros 1 en dessous → un seul cockpit continu. Le CONTENU du
+   MarketDeck (1.C) est INTACT — seul le cadre du conteneur change
+   (demande explicite de Rafael). Inset 4px = alignement sur le bloc
+   (dash-grid padding 0 4px).
    ════════════════════════════════════════════════════════════════ */
 .cockpit {
   background: var(--depth-raised);
-  border-bottom: 1px solid var(--hairline-rest);
+  margin: 0 4px;
+  border: 1px solid var(--hairline-rest);
+  border-radius: 7px;
+  overflow: hidden;
 }
 
 /* Le puits de contenu reprend son padding SOUS le cockpit. */
