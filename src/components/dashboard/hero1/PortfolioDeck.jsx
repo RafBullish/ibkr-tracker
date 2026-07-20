@@ -28,18 +28,18 @@ function AllocBar({ pct, mark }) {
   );
 }
 
-// Cellule compacte (MONDE-style). `value` null → cellule ignorée.
+// Cellule compacte (MONDE-style), STRUCTURE UNIFORME (label · grosse
+// valeur · meta · barre) — chaque slot réservé → grille alignée au
+// cordeau. `value` null → cellule ignorée (aucune ligne « — » nue).
 function Cell({ label, value, chf, sub, tone, bar }) {
   if (value == null) return null;
   const meta = [chf, sub].filter(Boolean).join(' · ');
   return (
     <div className="pf-c">
-      <div className="pf-c__top">
-        <span className="pf-c__label">{label}</span>
-        <span className={`pf-c__val${tone ? ` pf-c__val--${tone}` : ''}`}>{value}</span>
-      </div>
-      {meta ? <span className="pf-c__meta">{meta}</span> : null}
-      {bar ? <AllocBar pct={bar.pct} mark={bar.mark} /> : null}
+      <span className="pf-c__label">{label}</span>
+      <span className={`pf-c__val${tone ? ` pf-c__val--${tone}` : ''}`}>{value}</span>
+      <span className="pf-c__meta">{meta || ' '}</span>
+      <span className="pf-c__barslot">{bar ? <AllocBar pct={bar.pct} mark={bar.mark} /> : null}</span>
     </div>
   );
 }
@@ -63,20 +63,19 @@ export default function PortfolioDeck({ kpi, rate }) {
     { label: 'UNREALIZED', value: k.unrealized == null ? null : fmtUsdSigned(k.unrealized), chf: chf(k.unrealized, true), tone: toneSign(k.unrealized) },
     { label: 'REALIZED', value: k.realized == null ? null : fmtUsdSigned(k.realized), chf: chf(k.realized, true), tone: toneSign(k.realized) },
   ];
+  // Ordre : CAP. RISQUE → Δ → Γ → Θ → V (greeks Δ Γ Θ V). Δ$-exposition
+  // repliée en meta de Δ NET (pas de cellule séparée).
   const greeks = [
     { label: 'CAP. RISQUE', value: k.riskDollar == null ? null : fmtUsd(k.riskDollar), chf: chf(k.riskDollar), sub: k.nlvAtRiskPct != null ? `${k.nlvAtRiskPct.toFixed(1)} % NLV` : null, bar: k.nlvAtRiskPct != null ? { pct: k.nlvAtRiskPct } : null },
-    { label: 'Θ / JOUR', value: k.thetaDay == null ? null : fmtUsdSigned(k.thetaDay), chf: chf(k.thetaDay, true), sub: 'carry' },
-    { label: 'Δ NET', value: sharesSigned(k.netDeltaShares), sub: 'actions-éq.' },
-    { label: 'Δ$ EXP.', value: k.netDeltaDollar == null ? null : fmtUsdSigned(k.netDeltaDollar), chf: chf(k.netDeltaDollar, true) },
+    { label: 'Δ NET', value: sharesSigned(k.netDeltaShares), sub: k.netDeltaDollar != null ? `exp. ${fmtUsdSigned(k.netDeltaDollar)}` : 'actions-éq.' },
     { label: 'Γ NET', value: num2(k.gamma), sub: 'gamma' },
+    { label: 'Θ / JOUR', value: k.thetaDay == null ? null : fmtUsdSigned(k.thetaDay), chf: chf(k.thetaDay, true), sub: 'carry' },
     { label: 'V NET', value: k.vega == null ? null : fmtUsdSigned(k.vega), chf: chf(k.vega, true), sub: '/1 % IV' },
   ];
   const perf = [
     { label: 'WIN RATE', value: k.winRate == null ? null : `${k.winRate.toFixed(0)} %`, sub: k.tradesCount != null ? `${k.tradesCount} clôt.` : null },
-    { label: 'PROFIT F.', value: k.profitFactor == null ? null : (Number.isFinite(k.profitFactor) ? k.profitFactor.toFixed(2) : '∞') },
+    { label: 'PROFIT FACTOR', value: k.profitFactor == null ? null : (Number.isFinite(k.profitFactor) ? k.profitFactor.toFixed(2) : '∞') },
     { label: 'EXPECTANCY', value: k.expectancy == null ? null : fmtUsdSigned(k.expectancy), chf: chf(k.expectancy, true), sub: '/ clôt.' },
-    { label: 'SHARPE', value: num2(k.sharpe) },
-    { label: 'SORTINO', value: num2(k.sortino) },
     { label: 'GAIN MOY.', value: k.avgWin == null ? null : fmtUsdSigned(Math.abs(k.avgWin)), chf: chf(Math.abs(k.avgWin), true), tone: k.avgWin ? 'profit' : undefined },
     { label: 'PERTE MOY.', value: k.avgLoss == null ? null : fmtUsdSigned(-Math.abs(k.avgLoss)), chf: chf(-Math.abs(k.avgLoss), true), tone: k.avgLoss ? 'loss' : undefined },
     { label: 'CLÔTURES', value: k.tradesCount == null ? null : `${k.tradesCount}`, sub: 'total' },

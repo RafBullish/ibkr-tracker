@@ -51,18 +51,22 @@
 .pf-hero__meta { font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; margin-top: 2px; }
 
 /* Grille 2 colonnes de cellules compactes (densité MONDE) */
-.pf-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px; row-gap: 6px; align-content: start; }
-.pf-c { display: flex; flex-direction: column; gap: 0; min-width: 0; }
-.pf-c__top { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; min-width: 0; }
-.pf-c__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-mute); white-space: nowrap; }
-.pf-c__val { font-family: var(--qc-font-num); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); line-height: 1.06; white-space: nowrap; }
+/* Grille ALIGNÉE AU CORDEAU : colonnes fixes, gouttières constantes,
+   RANGÉES à hauteur uniforme (grid-auto-rows) → cellules jamais décalées.
+   Chaque cellule a une STRUCTURE UNIFORME (label · valeur · meta · barre)
+   → baselines alignées d'une colonne à l'autre. */
+.pf-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; row-gap: 5px; grid-auto-rows: 55px; align-content: start; }
+.pf-c { display: flex; flex-direction: column; gap: 0; min-width: 0; overflow: hidden; }
+.pf-c__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 13px; }
+.pf-c__val { font-family: var(--qc-font-num); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); line-height: 24px; white-space: nowrap; }
 .pf-c__val--profit { color: var(--pnl-up); }
 .pf-c__val--loss { color: var(--pnl-down); }
-.pf-c__meta { font-size: 10px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; margin-top: -1px; }
+.pf-c__meta { font-size: 10px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 12px; line-height: 12px; }
+.pf-c__barslot { height: 7px; display: flex; align-items: center; }
 
 /* Mini-barre d'allocation — style MarketDeck (piste + remplissage
    neutre + repère ambre à 70 %). Jamais une couleur P&L. */
-.pf-bar { position: relative; width: 100%; height: 4px; margin-top: 3px; border-radius: 2px; background: color-mix(in srgb, var(--ink-pure) 9%, transparent); }
+.pf-bar { position: relative; width: 100%; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--ink-pure) 9%, transparent); }
 .pf-bar__fill { position: absolute; left: 0; top: 0; bottom: 0; background: color-mix(in srgb, var(--ink-soft) 50%, transparent); border-radius: 2px; }
 .pf-bar__mark { position: absolute; top: -1px; bottom: -1px; width: 1px; background: var(--accent-amber); }
 

@@ -149,10 +149,14 @@ un champ greek fait échouer le contrôle.
 
 **Phase finale v1.0 OUVERTE** — ligne de base v2.3.1 (ea64652 ; baseline
 effective 1254a34). Briques 1.A (1.0.0-rc.1), 1.B (1.0.0-rc.2), 1.C
-(1.0.0-rc.3, étage D2-FINALE + tape LED Doto) et **1.S mergée
-(1.0.0-rc.4)** — SideNav v2 « Marge vive » (témoins d'état neutres,
-liens routeur, dettes de nav soldées, marqueur de mode relogé en
-StatusBar). Prochaine brique : **1.D — Héros 1 (Equity/NLV).**
+(1.0.0-rc.3, étage D2-FINALE + tape LED Doto), 1.S (1.0.0-rc.4) et **1.D
+mergée (1.0.0-rc.5)** — Héros 1 : bloc Equity/NLV pleine largeur sur
+donnée NLV dense (snapshots quotidiens + live, drawdown flow-neutral) ;
+zone haute PORTEFEUILLE à l'image du MarketDeck (sous-panneaux denses
+CAPITAL & LIQUIDITÉ · P&L · RISQUE & GREEKS · PERFORMANCE, cellules-MONDE
+alignées, cadre harmonisé cockpit encadré) ; graphe terminal
+(lightweight-charts, code-split) ; CommandDeck migré ; EquityChart
+remplacé. Prochaine brique : **1.E — Héros 2 (Realized pleine largeur).**
 
 Repères S2 toujours en vigueur : KPI 44, cellules `.v3-table` 20 (rowHeight 47),
 plancher caption 17, strip 21/16/18, ticks charts plafonnés 14, héros 56/64

@@ -6,7 +6,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
-## [1.0.0-rc.5] — 2026-07-19
+## [1.0.0-rc.5] — 2026-07-20
 
 **Brique 1.D « Héros 1 »** — Equity/NLV pleine largeur. Le premier héros
 du Dashboard passe d'une tuile demi-largeur à un **bloc portefeuille pleine
@@ -37,6 +37,12 @@ refondue À L'IMAGE DU MARKETDECK** (sous-panneaux denses, choix Rafael).
   stats de fenêtre + de référence (recovery, expectancy, % jours gagnants…).
 
 ### Modifié
+- **Cockpit ENCADRÉ** — le conteneur du MarketDeck (1.C) reçoit le même
+  cadre gris + radius que le bloc Héros 1 (harmonie : un seul cockpit
+  continu). **Seul le cadre du conteneur change ; le contenu 1.C est
+  intact.** La zone haute portefeuille (`PortfolioDeck`) reprend le
+  langage du MarketDeck : cellules-MONDE (libellé + grosse valeur + CHF
+  collés, zéro trou central), grille 2 colonnes alignée au cordeau.
 - **CommandDeck** retiré du cockpit : la bande KPI portefeuille migre dans
   la zone haute du bloc Héros 1. Le cockpit ne porte plus que le **MarketDeck**
   (étage marché, 1.C, intangible).
