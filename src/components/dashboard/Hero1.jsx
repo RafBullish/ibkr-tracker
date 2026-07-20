@@ -13,9 +13,10 @@
 //  live du jour), jamais le cumPnL par trade. Drawdown flow-neutral
 //  (un apport ne guérit pas un drawdown). Loi de couleur respectée.
 //
-//  ⚠ LIQUIDITÉ DISPO = estimation `est.` (availableUsd cash-A) tant
-//  que la vraie Buying Power / Excess Liquidity IBKR n'est pas câblée
-//  (endpoint api/account-summary/sync.js à créer — TODO priorité).
+//  LIQUIDITÉ DISPO = VRAIE Available Funds IBKR (settings.ibkrLiveData,
+//  bridge local) quand le snapshot est frais → chiffre réel, marqueur
+//  « IBKR ». Sinon → estimation cash-A + marqueur « est. » (fast-follow
+//  1/5). Le Flex EOD n'expose pas la Buying Power ; seul le bridge le fait.
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo, useState, lazy, Suspense } from 'react';
@@ -31,7 +32,7 @@ import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
 import { useTradingMetrics } from '../../hooks/useTradingMetrics';
 import useDailyPnL from '../../hooks/useDailyPnL';
 import useGreeksAggregate from '../../hooks/useGreeksAggregate';
-import useAvailableCapital from '../../hooks/useAvailableCapital';
+import useAvailableCapital, { resolveLiveAvailableUsd } from '../../hooks/useAvailableCapital';
 import { useOpenPositions, useClosedTrades, useCashFlows, useSettings } from '../../store/useStore';
 import { totalSlDollar, totalNotional } from '../../utils/risk';
 
@@ -71,6 +72,14 @@ export default function Hero1({ area = 'hero1' }) {
 
   const notional = useMemo(() => totalNotional(openPositions), [openPositions]);
 
+  // Fast-follow 1/5 — VRAIE liquidité déployable : Available Funds IBKR
+  // (bridge live) si le snapshot est frais, sinon `null` → on retombe sur
+  // l'estimation cash-A (avail.availableUsd) et le marqueur « est. ».
+  const realAvailableUsd = useMemo(
+    () => resolveLiveAvailableUsd(settings?.ibkrLiveData, metrics?.liveRate),
+    [settings?.ibkrLiveData, metrics?.liveRate]
+  );
+
   const dailyFull = useMemo(
     () =>
       buildNlvSeries({
@@ -92,7 +101,8 @@ export default function Hero1({ area = 'hero1' }) {
       deriveKpisReal({
         metrics,
         greeks,
-        availableUsd: avail?.availableUsd,
+        availableUsd: realAvailableUsd ?? avail?.availableUsd,
+        availableIsReal: realAvailableUsd != null,
         riskDollar: totalSlDollar(openPositions),
         positions: openPositions,
         series: dailyFull,
@@ -107,7 +117,7 @@ export default function Hero1({ area = 'hero1' }) {
         wtd,
         today,
       }),
-    [metrics, greeks, avail, openPositions, dailyFull, trading, notional, closedTrades, ytd, wtd, today]
+    [metrics, greeks, avail, realAvailableUsd, openPositions, dailyFull, trading, notional, closedTrades, ytd, wtd, today]
   );
 
   return (

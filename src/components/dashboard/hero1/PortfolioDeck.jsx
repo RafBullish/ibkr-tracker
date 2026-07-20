@@ -8,7 +8,8 @@
 //
 //  Loi de couleur : rouge/vert = argent réel (P&L) ; liquidité / Θ / Δ /
 //  Γ / V / notionnel / ratios / barres = NEUTRES. LIQUIDITÉ DISPO =
-//  héros `est.` (jusqu'au câblage Buying Power IBKR).
+//  Available Funds RÉEL IBKR (marqueur neutre « IBKR ») quand le bridge
+//  est frais, sinon estimation cash-A (marqueur « est. »).
 // ═══════════════════════════════════════════════════════════════
 
 import { fmtUsd, fmtUsdSigned, fmtUsdCompact, fmtChf, toneSign } from './kit';
@@ -96,7 +97,12 @@ export default function PortfolioDeck({ kpi, rate }) {
           {p.hero ? (
             <div className="pf-hero">
               <div className="pf-hero__lbl">
-                LIQUIDITÉ DISPO<span className="pf-est" title="Estimation (availableUsd cash-A) — vraie Buying Power/Excess Liquidity IBKR à câbler">est.</span>
+                LIQUIDITÉ DISPO
+                {k.powderIsReal ? (
+                  <span className="pf-real" title="Available Funds réel — bridge IBKR (snapshot frais)">IBKR</span>
+                ) : (
+                  <span className="pf-est" title="Estimation cash-A — bridge IBKR hors ligne ou snapshot périmé">est.</span>
+                )}
               </div>
               <div className="pf-hero__val">{k.powder == null ? '—' : fmtUsd(k.powder)}</div>
               <div className="pf-hero__meta">

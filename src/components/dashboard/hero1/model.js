@@ -12,7 +12,7 @@ const sparkFrom = (series, key, n = 30) =>
 
 export function deriveKpisReal(ctx) {
   const {
-    metrics, greeks, availableUsd, riskDollar, positions, series,
+    metrics, greeks, availableUsd, availableIsReal, riskDollar, positions, series,
     winRate, profitFactor, expectancy, tradesCount, mtd, ytd, wtd,
     trading, notional, today,
   } = ctx;
@@ -36,8 +36,10 @@ export function deriveKpisReal(ctx) {
   return {
     // graphe (overlay) — inchangé
     nlv, nlvSpark: sparkFrom(series, 'nlv', 30),
-    // CAPITAL & LIQUIDITÉ
+    // CAPITAL & LIQUIDITÉ — powder = liquidité déployable (réelle IBKR ou
+    // estimation cash-A). powderIsReal pilote le marqueur IBKR / est.
     powder: availableUsd ?? null,
+    powderIsReal: availableIsReal === true && availableUsd != null,
     powderPct: availableUsd != null && nlv > 0 ? (availableUsd / nlv) * 100 : null,
     exposure: metrics?.totalExposure ?? null,
     expoPct: metrics?.totalExposure != null && nlv > 0 ? (metrics.totalExposure / nlv) * 100 : null,

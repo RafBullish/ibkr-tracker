@@ -43,8 +43,43 @@ import { useMemo } from 'react';
 import { useOpenPositions } from '../store/useStore';
 import { usePortfolioMetrics } from './usePortfolioMetrics';
 import { toFloat, ensurePositive } from '../utils/math';
+import { FRESHNESS } from '../constants/timing';
 
 const FORMULA = 'cash-A';
+
+/**
+ * Résout la VRAIE liquidité déployable en USD depuis le snapshot live du
+ * bridge IBKR (settings.ibkrLiveData → tag AvailableFunds de
+ * ib.accountSummary(), cf. bridge/ibkr_poller.py). C'est la seule source
+ * réelle de Buying Power / Available Funds du projet : le Flex (EOD) ne
+ * l'expose pas, seul le bridge local le fait.
+ *
+ * Retourne un nombre USD fini UNIQUEMENT si le snapshot est FRAIS
+ * (< FRESHNESS.LIVE_DATA_MAX_AGE_MS, même seuil que le badge LIVE et que
+ * l'override NLV de calculations.js) ET porte un AvailableFunds exploitable
+ * dans une devise convertible en USD (USD direct, CHF via liveRate — même
+ * cascade que l'override NLV bridge). Sinon `null` → l'appelant retombe sur
+ * l'estimation cash-A et GARDE le marqueur « est. ». Ne fabrique jamais un
+ * chiffre : une devise inattendue ou un snapshot périmé rend `null`.
+ *
+ * @param {Object|null|undefined} liveData  settings.ibkrLiveData
+ * @param {number}                liveRate  taux CHF/USD (settings.liveRate)
+ * @param {number}                [nowMs]   horloge injectable (tests)
+ * @returns {number|null} liquidité réelle en USD, ou null si non fiable
+ */
+export function resolveLiveAvailableUsd(liveData, liveRate, nowMs = Date.now()) {
+  if (!liveData || !liveData.timestamp) return null;
+  const ageMs = nowMs - new Date(liveData.timestamp).getTime();
+  if (!Number.isFinite(ageMs) || ageMs < 0 || ageMs >= FRESHNESS.LIVE_DATA_MAX_AGE_MS) {
+    return null;
+  }
+  const af = liveData.availableFunds;
+  if (typeof af !== 'number' || !Number.isFinite(af) || af < 0) return null;
+  const ccy = liveData.currency;
+  if (ccy === 'USD') return af;
+  if (ccy === 'CHF' && Number.isFinite(liveRate) && liveRate > 0) return af / liveRate;
+  return null; // devise inattendue → pas de conversion fiable → estimation
+}
 
 /**
  * Compute the USD notional for a single position. Dispatches by type :
