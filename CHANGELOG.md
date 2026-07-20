@@ -8,22 +8,23 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ## [1.0.0-rc.5] — 2026-07-19
 
-**Brique 1.D « Héros 1 »** — Equity/NLV pleine largeur, structure
-« Bi-héros » (choix Rafael parmi 2 structures de zone haute, après une
-exploration en 6 tours au lab : périmètre → audit → directions → Cartouche
-→ 3 modèles → 2 structures). Le premier héros du Dashboard passe d'une
-tuile demi-largeur à un **bloc portefeuille pleine largeur** sur donnée
-**NLV dense**.
+**Brique 1.D « Héros 1 »** — Equity/NLV pleine largeur. Le premier héros
+du Dashboard passe d'une tuile demi-largeur à un **bloc portefeuille pleine
+largeur** sur donnée **NLV dense**, avec une **zone haute portefeuille
+refondue À L'IMAGE DU MARKETDECK** (sous-panneaux denses, choix Rafael).
 
 ### Ajouté
 - **Bloc Héros 1** (`components/dashboard/Hero1.jsx` + `hero1/*`,
   `styles/v1-heros.css`) — 3 zones : (1) **frontière** Marché/Portefeuille
-  (structurelle) ; (2) **zone haute KPI « Bi-héros »** : 2 gros chiffres
-  d'ancrage — **LIQUIDITÉ DISPO** (le manque n°1) + **DAY P&L** — puis une
-  rangée de support (UNREALIZED · REALIZED · EXPOSURE · CAP. RISQUE · Θ/jour
-  · Δ net actions-équiv+$ · WIN · PF · DTE · POSITIONS), double devise
-  USD/CHF ; (3) **zone graphe** : **NLV géant en overlay** sur un **graphe
-  terminal** + bande perf par période + bande stats enrichie.
+  (structurelle) ; (2) **zone haute PORTEFEUILLE** (`PortfolioDeck`) — 4
+  sous-panneaux denses étiquetés dans le langage visuel du MarketDeck
+  (mêmes `.mk-cell`/`.mk-title`, rails, densité, typo) : **CAPITAL &
+  LIQUIDITÉ** (LIQUIDITÉ DISPO prominente `est.` · EXPOSURE · POSITIONS ·
+  DTE) · **P&L** (DAY · UNREALIZED · REALIZED · **MTD** · **YTD**) ·
+  **RISQUE & GREEKS** (CAP. RISQUE · Θ/jour · Δ net · **Γ** · **V**) ·
+  **PERFORMANCE** (WIN RATE · PROFIT FACTOR · EXPECTANCY · CLÔTURES),
+  double devise USD/CHF ; (3) **zone graphe** : **NLV géant en overlay** sur
+  un **graphe terminal** + bande perf par période + bande stats enrichie.
 - **Graphe terminal** (`hero1/TvChart.jsx`, dépendance **lightweight-charts**
   v5 Apache-2.0, **code-split** → chunk propre, hors bundle index) :
   auto-échelle Y serrée par période, axe Y à droite + ligne de prix,
@@ -44,10 +45,12 @@ tuile demi-largeur à un **bloc portefeuille pleine largeur** sur donnée
   hero1 pleine largeur en tête, DailyPnL (Héros 2, 1.E) en pleine largeur en
   dessous (interim jusqu'à 1.E).
 
-### Signalé (TODO)
+### Signalé (TODO fast-follow)
 - **LIQUIDITÉ DISPO = estimation** (`availableUsd` cash-A) tant que la vraie
   **Buying Power / Excess Liquidity IBKR** n'est pas câblée — endpoint
-  `api/account-summary/sync.js` **à créer** (priorité post-1.D).
+  `api/account-summary/sync.js` **à créer** (priorité). Idem cash / marge BP.
+- **Rétention NLV** : `dailySnapshots` est capé **FIFO 60 jours** → l'historique
+  du graphe est ≤ 60 j (1Y/ALL montrent ≤ 60 j). Augmenter la rétention.
 - **Intraday** : seuls des snapshots quotidiens sont persistés ; un **writer
   intraday** (échantillon NLV en séance) densifiera 5D/1D.
 

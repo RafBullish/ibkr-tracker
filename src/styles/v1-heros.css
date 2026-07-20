@@ -33,44 +33,33 @@
 .lh-kpi__sub { font-size: 11px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 14px; }
 .lh-kpi__sub--empty { min-height: 14px; }
 
-/* ── 2 · ZONE HAUTE — chiffre d'ancrage partagé (BigStat) ───────── */
-.lh-bigstat { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.lh-bigstat__label { display: flex; align-items: center; gap: 7px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-mute); white-space: nowrap; }
-.lh-bigstat__est { font-size: 9px; letter-spacing: 0.04em; color: var(--accent-amber); border: 1px solid color-mix(in srgb, var(--accent-amber) 45%, transparent); border-radius: 2px; padding: 0 4px; text-transform: none; }
-.lh-bigstat__value { font-family: var(--qc-font-num); font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); line-height: 0.98; letter-spacing: -0.01em; white-space: nowrap; }
-.lh-bigstat__value--profit { color: var(--pnl-up); }
-.lh-bigstat__value--loss { color: var(--pnl-down); }
-.lh-bigstat__chf { font-family: var(--qc-font-num); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-soft); white-space: nowrap; }
-.lh-bigstat__sub { font-size: 11px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.lh-bigstat--lead .lh-bigstat__value { font-size: 42px; }
-.lh-bigstat--lead .lh-bigstat__chf { font-size: 16px; }
-.lh-bigstat--anchor .lh-bigstat__value { font-size: 50px; }
-.lh-bigstat--anchor .lh-bigstat__chf { font-size: 18px; }
+/* ── 2 · ZONE HAUTE — PORTFOLIO DECK (à l'image du MarketDeck) ────
+   Sous-panneaux denses étiquetés. Réutilise `.mk-cell` (padding) et
+   `.mk-title` (label) du MarketDeck → transition invisible. Rails de
+   colonnes `--line-emphasis` comme les frontières majeures du MarketDeck. */
+.pf-deck { display: grid; grid-template-columns: 1.28fr 1fr 1.12fr 0.82fr; border-bottom: 1px solid var(--hairline-rest); }
+.pf-cell { display: flex; flex-direction: column; min-width: 0; }
+.pf-cell + .pf-cell { border-left: 1px solid var(--line-emphasis); }
+.pf-cell .mk-title { margin-bottom: 7px; }
 
-/* ── STRUCTURE A · « Terminal packé » (ledger dense) ────────────── */
-.lh-term__ledger { column-count: 3; column-gap: 0; column-rule: 1px solid var(--hairline-rest); }
-.lh-term .lh-bigstat--lead { padding: 14px 20px 12px; border-bottom: 1px solid var(--hairline-rest); background: color-mix(in srgb, var(--depth-base) 35%, transparent); }
-.lh-trow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 16px; border-bottom: 1px solid var(--hairline-rest); break-inside: avoid; }
-.lh-trow__label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lh-trow__nums { display: flex; align-items: baseline; gap: 8px; flex-shrink: 0; }
-.lh-trow__val { font-family: var(--qc-font-num); font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); white-space: nowrap; }
-.lh-trow__val--profit { color: var(--pnl-up); }
-.lh-trow__val--loss { color: var(--pnl-down); }
-.lh-trow__chf { font-family: var(--qc-font-num); font-size: 11px; font-weight: 500; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Héros LIQUIDITÉ DISPO — prominent (registre du héros FX/VOL du MarketDeck) */
+.pf-hero { display: flex; flex-direction: column; gap: 1px; margin-bottom: 8px; padding-bottom: 9px; border-bottom: 1px solid var(--hairline-rest); }
+.pf-hero__lbl { display: flex; align-items: center; gap: 7px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-mute); }
+.pf-est { font-size: 8.5px; letter-spacing: 0.04em; color: var(--accent-amber); border: 1px solid color-mix(in srgb, var(--accent-amber) 45%, transparent); border-radius: 2px; padding: 0 4px; text-transform: none; }
+.pf-hero__val { font-family: var(--qc-font-num); font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); line-height: 1.0; letter-spacing: -0.01em; }
+.pf-hero__chf { font-family: var(--qc-font-num); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+.pf-hero__sub { font-size: 10.5px; color: var(--ink-mute); }
 
-/* ── STRUCTURE B · « Bi-héros hiérarchique » ────────────────────── */
-.lh-bihero__anchors { display: flex; align-items: stretch; padding: 18px 26px; border-bottom: 1px solid var(--hairline-rest); }
-.lh-bihero__anchors .lh-bigstat { flex: 1; }
-.lh-bihero__rule { width: 1px; background: var(--hairline-rest); margin: 2px 30px; flex-shrink: 0; }
-.lh-bihero__support { display: flex; flex-wrap: wrap; }
-.lh-scell { flex: 1 1 0; min-width: 128px; display: flex; flex-direction: column; gap: 2px; padding: 10px 15px; border-right: 1px solid var(--hairline-rest); border-top: 1px solid transparent; min-height: 0; }
-.lh-scell:last-child { border-right: none; }
-.lh-scell__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lh-scell__val { font-family: var(--qc-font-num); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); white-space: nowrap; }
-.lh-scell__val--profit { color: var(--pnl-up); }
-.lh-scell__val--loss { color: var(--pnl-down); }
-.lh-scell__chf { font-family: var(--qc-font-num); font-size: 11px; font-weight: 500; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; min-height: 13px; }
-.lh-scell__chf--empty { min-height: 13px; }
+/* Rangées denses label → valeur (registre des rangées FUT/MONDE) */
+.pf-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 4px 0; min-width: 0; }
+.pf-row + .pf-row { border-top: 1px solid color-mix(in srgb, var(--hairline-rest) 55%, transparent); }
+.pf-row__label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-row__nums { display: flex; align-items: baseline; gap: 7px; flex-shrink: 0; white-space: nowrap; }
+.pf-row__val { font-family: var(--qc-font-num); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); }
+.pf-row__val--profit { color: var(--pnl-up); }
+.pf-row__val--loss { color: var(--pnl-down); }
+.pf-row__chf { font-family: var(--qc-font-num); font-size: 11px; font-weight: 500; color: var(--ink-mute); font-variant-numeric: tabular-nums; }
+.pf-row__sub { font-size: 9.5px; color: var(--ink-mute); letter-spacing: 0.02em; }
 
 /* ── 3 · Séparation forte données / graphe ──────────────────────── */
 .lh-zonesep { display: flex; align-items: center; gap: 12px; padding: 9px 22px; background: color-mix(in srgb, var(--depth-void) 78%, transparent); border-top: 2px solid color-mix(in srgb, var(--ink-mute) 42%, transparent); border-bottom: 1px solid var(--hairline-rest); }

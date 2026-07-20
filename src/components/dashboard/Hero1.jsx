@@ -19,16 +19,17 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo, useState, lazy, Suspense } from 'react';
-import { Frontier, NlvHero, ZoneSep, RangeSelector, ViewToggle, ChartFooter } from './hero1/parts';
-import { KpiBiHero } from './hero1/KpiZones';
+import { Frontier, ZoneSep, RangeSelector, ViewToggle, ChartFooter, NlvHero } from './hero1/parts';
+import PortfolioDeck from './hero1/PortfolioDeck';
 import PerfBand from './hero1/PerfBand';
 // Le graphe terminal (lightweight-charts, ~canvas) est code-split : la
 // dépendance ne pèse QUE sur son propre chunk, hors bundle index.
 const TvChart = lazy(() => import('./hero1/TvChart'));
-import { toKpiCells, deriveKpisReal } from './hero1/model';
+import { deriveKpisReal } from './hero1/model';
 import { buildNlvSeries, resampleSeries, deriveSeriesStats, deriveWindowStats } from '../../utils/nlvSeries';
 import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
 import { useTradingMetrics } from '../../hooks/useTradingMetrics';
+import useDailyPnL from '../../hooks/useDailyPnL';
 import useGreeksAggregate from '../../hooks/useGreeksAggregate';
 import useAvailableCapital from '../../hooks/useAvailableCapital';
 import { useOpenPositions, useClosedTrades, useCashFlows, useSettings } from '../../store/useStore';
@@ -46,8 +47,16 @@ export default function Hero1({ area = 'hero1' }) {
   const cashFlows = useCashFlows();
   const settings = useSettings();
   const trading = useTradingMetrics(closedTrades, metrics?.liveRate || 1);
+  const dailyPnL = useDailyPnL();
   const today = new Date().toISOString().slice(0, 10);
   const rate = metrics?.liveRate || null;
+
+  // YTD = somme des clôtures de l'année (même dérivation que l'ex-CommandDeck).
+  const ytd = useMemo(() => {
+    if (!Array.isArray(dailyPnL) || dailyPnL.length === 0) return null;
+    const yearStart = `${new Date().getFullYear()}-01-01`;
+    return dailyPnL.filter((d) => d.date >= yearStart).reduce((s, d) => s + (d.dailyPnl || 0), 0);
+  }, [dailyPnL]);
 
   const dailyFull = useMemo(
     () =>
@@ -76,16 +85,19 @@ export default function Hero1({ area = 'hero1' }) {
         series: dailyFull,
         winRate: trading?.winRate,
         profitFactor: trading?.profitFactor,
+        expectancy: trading?.expectancy,
+        tradesCount: trading?.totalPnlCount ?? (closedTrades || []).length,
+        mtd: metrics?.monthlyPnlUsd,
+        ytd,
         today,
       }),
-    [metrics, greeks, avail, openPositions, dailyFull, trading, today]
+    [metrics, greeks, avail, openPositions, dailyFull, trading, closedTrades, ytd, today]
   );
-  const cells = useMemo(() => toKpiCells(kpi), [kpi]);
 
   return (
     <section className="lh-final" style={{ gridArea: area }}>
       <Frontier />
-      <KpiBiHero cells={cells} rate={rate} />
+      <PortfolioDeck kpi={kpi} rate={rate} />
       <ZoneSep label="GRAPHIQUE" />
       <div className="lh-graphzone">
         <div className="lh-graphzone__bar">
