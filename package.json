@@ -1,7 +1,7 @@
 {
   "name": "quantumcall",
   "private": true,
-  "version": "1.0.0-rc.4",
+  "version": "1.0.0-rc.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -29,6 +29,7 @@
     "@vercel/speed-insights": "^2.0.0",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.38.0",
+    "lightweight-charts": "^5.2.0",
     "lucide-react": "^0.577.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

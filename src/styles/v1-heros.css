@@ -1,0 +1,150 @@
+/* ════════════════════════════════════════════════════════════════
+   V1-HEROS.CSS — Brique 1.D « Héros 1 » (Equity/NLV pleine largeur).
+   Bloc du Dashboard : frontière · zone haute KPI « Bi-héros » · graphe
+   terminal (lightweight-charts) · bande stats. Classes .lh-* scopées
+   au bloc. Tokens canoniques. Chargé avant c3-hires.css.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════════
+   BLOC FINAL
+   ════════════════════════════════════════════════════════════════ */
+.lh-final { background: var(--depth-raised); border: 1px solid var(--hairline-rest); border-radius: 7px; overflow: hidden; }
+
+/* ── 1 · Frontière marché / portefeuille ────────────────────────── */
+.lh-frontier { display: flex; align-items: center; gap: 14px; padding: 8px 18px; background: linear-gradient(180deg, color-mix(in srgb, var(--depth-void) 55%, transparent), transparent); border-bottom: 1px solid var(--hairline-rest); }
+.lh-frontier__zone { font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+.lh-frontier__rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--ink-mute), var(--hairline-rest) 45%, transparent); opacity: 0.45; }
+.lh-frontier__ctx { font-size: 10px; letter-spacing: 0.06em; color: var(--ink-mute); white-space: nowrap; }
+
+/* ── 2 · BANDE KPI GÉNÉRALE — grande, dense, enrichie, 2 rangs ──── */
+.lh-belt--grid2 { display: grid; grid-template-columns: repeat(6, 1fr); }
+.lh-belt--grid2 .lh-kpi { border-right: 1px solid var(--hairline-rest); border-top: 1px solid var(--hairline-rest); }
+.lh-belt--grid2 .lh-kpi:nth-child(6n) { border-right: none; }
+.lh-belt--grid2 .lh-kpi:nth-child(-n + 6) { border-top: none; }
+.lh-kpi { display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; min-width: 0; }
+.lh-kpi__label { display: flex; align-items: center; gap: 6px; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lh-kpi__est { font-size: 8.5px; letter-spacing: 0.03em; color: var(--ink-mute); border: 1px solid var(--hairline-rest); border-radius: 2px; padding: 0 3px; text-transform: none; }
+.lh-kpi__main { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.lh-kpi__value { font-family: var(--qc-font-num); font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); line-height: 1.04; white-space: nowrap; }
+.lh-kpi__value--profit { color: var(--pnl-up); }
+.lh-kpi__value--loss { color: var(--pnl-down); }
+.lh-kpi__main .lh-spark { flex-shrink: 0; opacity: 0.8; }
+.lh-kpi__chf { font-family: var(--qc-font-num); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-soft); white-space: nowrap; }
+.lh-kpi__sub { font-size: 11px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 14px; }
+.lh-kpi__sub--empty { min-height: 14px; }
+
+/* ── 2 · ZONE HAUTE — PORTFOLIO DECK (version finale) ────────────
+   À l'image du MarketDeck. Réutilise `.mk-cell` (padding) + `.mk-title`.
+   Cellules COMPACTES style MONDE : libellé (petit) + GROSSE valeur +
+   CHF/contexte GROUPÉS et COLLÉS À GAUCHE (zéro trou central), en
+   GRILLE 2 COLONNES par panneau (densité MONDE). Rails `--line-emphasis`. */
+.pf-deck { display: grid; grid-template-columns: 1.2fr 1fr 1.08fr 0.92fr; border-bottom: 1px solid var(--hairline-rest); }
+.pf-cell { display: flex; flex-direction: column; min-width: 0; }
+.pf-cell + .pf-cell { border-left: 1px solid var(--line-emphasis); }
+.pf-cell .mk-title { margin-bottom: 7px; }
+
+/* Héros LIQUIDITÉ DISPO — prominent (registre du héros FX/VOL) */
+.pf-hero { display: flex; flex-direction: column; gap: 0; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--hairline-rest); }
+.pf-hero__lbl { display: flex; align-items: center; gap: 7px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-mute); }
+.pf-est { font-size: 8.5px; letter-spacing: 0.04em; color: var(--accent-amber); border: 1px solid color-mix(in srgb, var(--accent-amber) 45%, transparent); border-radius: 2px; padding: 0 4px; text-transform: none; }
+.pf-hero__val { font-family: var(--qc-font-num); font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); line-height: 1.0; letter-spacing: -0.01em; }
+.pf-hero__meta { font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; margin-top: 2px; }
+
+/* Grille 2 colonnes de cellules compactes (densité MONDE) */
+/* Grille ALIGNÉE AU CORDEAU : colonnes fixes, gouttières constantes,
+   RANGÉES à hauteur uniforme (grid-auto-rows) → cellules jamais décalées.
+   Chaque cellule a une STRUCTURE UNIFORME (label · valeur · meta · barre)
+   → baselines alignées d'une colonne à l'autre. */
+.pf-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; row-gap: 5px; grid-auto-rows: 55px; align-content: start; }
+.pf-c { display: flex; flex-direction: column; gap: 0; min-width: 0; overflow: hidden; }
+.pf-c__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 13px; }
+.pf-c__val { font-family: var(--qc-font-num); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); line-height: 24px; white-space: nowrap; }
+.pf-c__val--profit { color: var(--pnl-up); }
+.pf-c__val--loss { color: var(--pnl-down); }
+.pf-c__meta { font-size: 10px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 12px; line-height: 12px; }
+.pf-c__barslot { height: 7px; display: flex; align-items: center; }
+
+/* Mini-barre d'allocation — style MarketDeck (piste + remplissage
+   neutre + repère ambre à 70 %). Jamais une couleur P&L. */
+.pf-bar { position: relative; width: 100%; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--ink-pure) 9%, transparent); }
+.pf-bar__fill { position: absolute; left: 0; top: 0; bottom: 0; background: color-mix(in srgb, var(--ink-soft) 50%, transparent); border-radius: 2px; }
+.pf-bar__mark { position: absolute; top: -1px; bottom: -1px; width: 1px; background: var(--accent-amber); }
+
+/* ── 3 · Séparation forte données / graphe ──────────────────────── */
+.lh-zonesep { display: flex; align-items: center; gap: 12px; padding: 9px 22px; background: color-mix(in srgb, var(--depth-void) 78%, transparent); border-top: 2px solid color-mix(in srgb, var(--ink-mute) 42%, transparent); border-bottom: 1px solid var(--hairline-rest); }
+.lh-zonesep__label { font-size: 12px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-soft); }
+.lh-zonesep__hint { font-size: 10.5px; letter-spacing: 0.05em; color: var(--ink-mute); }
+
+/* ── 4 · ZONE GRAPHE (concept B : NLV géant en overlay) ─────────── */
+.lh-graphzone { background: color-mix(in srgb, var(--depth-void) 40%, transparent); }
+.lh-graphzone__bar { display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 22px; border-bottom: 1px solid var(--hairline-rest); }
+.lh-chart__title { font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-pure); white-space: nowrap; }
+.lh-chart__controls { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+/* Bande perf (par période) */
+.lh-perf { display: flex; align-items: stretch; gap: 0; padding: 0 6px; border-bottom: 1px solid var(--hairline-rest); background: color-mix(in srgb, var(--depth-base) 30%, transparent); flex-wrap: wrap; }
+.lh-perf__head { align-self: center; font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; color: var(--accent-amber); text-transform: uppercase; padding: 0 14px 0 10px; white-space: nowrap; }
+.lh-perf__cell { display: flex; flex-direction: column; gap: 2px; padding: 9px 16px; border-left: 1px solid var(--hairline-rest); min-width: 0; justify-content: center; }
+.lh-perf__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-mute); white-space: nowrap; }
+.lh-perf__value { font-family: var(--qc-font-num); font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); line-height: 1.05; white-space: nowrap; }
+.lh-perf__value--profit { color: var(--pnl-up); }
+.lh-perf__value--loss { color: var(--pnl-down); }
+.lh-perf__sub { font-size: 10px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; min-height: 12px; }
+.lh-perf__sub--empty { min-height: 12px; }
+.lh-perf__none { align-self: center; font-size: 11px; color: var(--ink-mute); letter-spacing: 0.03em; padding-left: 6px; }
+
+/* Étage graphe : overlay héros + canvas */
+.lh-fuse__stage { position: relative; height: 460px; padding: 6px 6px 4px; }
+.lh-fuse__chart { position: absolute; inset: 6px 6px 4px; }
+.lh-fuse__overlay { position: absolute; top: 12px; left: 16px; z-index: 3; pointer-events: none; padding: 8px 18px 10px 8px; border-radius: 8px; background: linear-gradient(108deg, color-mix(in srgb, var(--depth-void) 62%, transparent) 0%, color-mix(in srgb, var(--depth-void) 34%, transparent) 55%, transparent 82%); }
+.lh-fuse__overlay .lh-hero { padding: 0; }
+
+/* Héros NLV (overlay) — le plus gros et le plus soigné */
+.lh-hero__head { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.lh-hero__label { font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); }
+.lh-hero__live { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; letter-spacing: 0.12em; color: var(--ink-soft); }
+.lh-hero__live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-amber); animation: lh-pulse 2.4s ease-in-out infinite; }
+@keyframes lh-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+.lh-hero__row { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.lh-hero__usd { font-family: var(--qc-font-num); font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); line-height: 0.95; letter-spacing: -0.01em; }
+.lh-hero__chf { display: block; margin-top: 3px; font-family: var(--qc-font-num); font-weight: 500; font-variant-numeric: tabular-nums; color: var(--ink-soft); letter-spacing: 0.01em; }
+.lh-hero__pill { font-family: var(--qc-font-num); font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; padding: 3px 10px; border-radius: 4px; white-space: nowrap; color: var(--ink-soft); background: color-mix(in srgb, var(--depth-base) 70%, transparent); margin-bottom: 4px; }
+.lh-hero__pill--profit { color: var(--pnl-up); background: color-mix(in srgb, var(--pnl-up) 14%, transparent); }
+.lh-hero__pill--loss { color: var(--pnl-down); background: color-mix(in srgb, var(--pnl-down) 14%, transparent); }
+.lh-hero__pill-cap { font-size: 11px; color: var(--ink-mute); font-weight: 400; letter-spacing: 0.05em; }
+.lh-hero__row .lh-spark { margin-bottom: 6px; }
+.lh-hero--lg .lh-hero__usd { font-size: 72px; }
+.lh-hero--lg .lh-hero__chf { font-size: 22px; }
+
+/* Contrôles */
+.lh-range, .lh-toggle { display: inline-flex; gap: 1px; background: color-mix(in srgb, var(--ink-pure) 4%, transparent); padding: 2px; border-radius: 3px; }
+.lh-range__btn, .lh-toggle__btn { font-family: var(--qc-font-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--ink-mute); background: transparent; border: none; border-radius: 2px; padding: 3px 9px; cursor: pointer; line-height: 1; transition: color 120ms ease, background-color 120ms ease; }
+.lh-range__btn:hover, .lh-toggle__btn:hover { color: var(--ink-soft); }
+.lh-range__btn[data-active], .lh-toggle__btn[data-active] { color: var(--accent-amber); background: color-mix(in srgb, var(--accent-amber) 12%, transparent); }
+
+/* Graphe canvas + boîte crosshair */
+.lh-tv { position: relative; width: 100%; height: 100%; }
+.lh-tv__canvas { position: absolute; inset: 0; }
+.lh-tv__tip { position: absolute; top: 0; left: 0; z-index: 4; min-width: 150px; opacity: 0; pointer-events: none; transition: opacity 90ms ease; background: color-mix(in srgb, var(--depth-base) 94%, transparent); border: 1px solid var(--hairline-rest); border-radius: 4px; padding: 7px 10px; font-family: var(--qc-font-mono); box-shadow: 0 6px 20px rgba(0,0,0,0.6); }
+.lh-tv__tdate { font-size: 11px; color: var(--ink-soft); letter-spacing: 0.04em; margin-bottom: 5px; }
+.lh-tv__trow { display: flex; justify-content: space-between; gap: 18px; font-size: 12px; font-variant-numeric: tabular-nums; line-height: 1.55; }
+.lh-tv__trow > span:first-child { color: var(--ink-mute); letter-spacing: 0.06em; }
+.lh-tv__trow > span:last-child { color: var(--ink-pure); }
+.lh-tv__d { color: var(--ink-pure); }
+.lh-tv__d.up { color: var(--pnl-up); }
+.lh-tv__d.down { color: var(--pnl-down); }
+.lh-canvas { width: 100%; height: 100%; cursor: crosshair; }
+.lh-canvas--empty { display: flex; align-items: center; justify-content: center; color: var(--ink-mute); font-size: 12px; letter-spacing: 0.04em; }
+
+/* ── 5 · BANDE STATS enrichie (indépendante) ────────────────────── */
+.lh-cfoot { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); border-top: 1px solid var(--hairline-rest); background: color-mix(in srgb, var(--depth-base) 45%, transparent); }
+.lh-cfoot--dense { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
+.lh-cfoot--empty { padding: 12px 22px; color: var(--ink-mute); font-size: 12px; }
+.lh-cfoot__cell { display: flex; flex-direction: column; gap: 2px; padding: 10px 16px; border-right: 1px solid var(--hairline-rest); border-top: 1px solid var(--hairline-rest); min-width: 0; }
+.lh-cfoot__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-mute); white-space: nowrap; }
+.lh-cfoot__value { font-family: var(--qc-font-num); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); white-space: nowrap; }
+.lh-cfoot__chf { font-family: var(--qc-font-num); font-size: 11px; font-weight: 500; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lh-cfoot__sub { font-size: 10px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; min-height: 12px; }
+.lh-cfoot__sub--empty { min-height: 12px; }
+
+.lh-spark { display: block; }

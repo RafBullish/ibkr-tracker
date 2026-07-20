@@ -6,6 +6,62 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0-rc.5] — 2026-07-20
+
+**Brique 1.D « Héros 1 »** — Equity/NLV pleine largeur. Le premier héros
+du Dashboard passe d'une tuile demi-largeur à un **bloc portefeuille pleine
+largeur** sur donnée **NLV dense**, avec une **zone haute portefeuille
+refondue À L'IMAGE DU MARKETDECK** (sous-panneaux denses, choix Rafael).
+
+### Ajouté
+- **Bloc Héros 1** (`components/dashboard/Hero1.jsx` + `hero1/*`,
+  `styles/v1-heros.css`) — 3 zones : (1) **frontière** Marché/Portefeuille
+  (structurelle) ; (2) **zone haute PORTEFEUILLE** (`PortfolioDeck`) — 4
+  sous-panneaux denses étiquetés dans le langage visuel du MarketDeck
+  (mêmes `.mk-cell`/`.mk-title`, rails, densité, typo) : **CAPITAL &
+  LIQUIDITÉ** (LIQUIDITÉ DISPO prominente `est.` · EXPOSURE · POSITIONS ·
+  DTE) · **P&L** (DAY · UNREALIZED · REALIZED · **MTD** · **YTD**) ·
+  **RISQUE & GREEKS** (CAP. RISQUE · Θ/jour · Δ net · **Γ** · **V**) ·
+  **PERFORMANCE** (WIN RATE · PROFIT FACTOR · EXPECTANCY · CLÔTURES),
+  double devise USD/CHF ; (3) **zone graphe** : **NLV géant en overlay** sur
+  un **graphe terminal** + bande perf par période + bande stats enrichie.
+- **Graphe terminal** (`hero1/TvChart.jsx`, dépendance **lightweight-charts**
+  v5 Apache-2.0, **code-split** → chunk propre, hors bundle index) :
+  auto-échelle Y serrée par période, axe Y à droite + ligne de prix,
+  crosshair canvas natif + boîte (date/NLV/Δ), remplissage dégradé neutre,
+  apport annoté en événement, toggle NLV/Drawdown, marqueurs de clôture
+  vert/rouge.
+- **Pipeline NLV dense** (`utils/nlvSeries.js`) : série 1 pt/jour depuis
+  `settings.dailySnapshots` + point live ; **drawdown flow-neutral** (un
+  apport ne guérit pas un drawdown) ; rééchantillonnage réel par période ;
+  stats de fenêtre + de référence (recovery, expectancy, % jours gagnants…).
+
+### Modifié
+- **Cockpit ENCADRÉ** — le conteneur du MarketDeck (1.C) reçoit le même
+  cadre gris + radius que le bloc Héros 1 (harmonie : un seul cockpit
+  continu). **Seul le cadre du conteneur change ; le contenu 1.C est
+  intact.** La zone haute portefeuille (`PortfolioDeck`) reprend le
+  langage du MarketDeck : cellules-MONDE (libellé + grosse valeur + CHF
+  collés, zéro trou central), grille 2 colonnes alignée au cordeau.
+- **CommandDeck** retiré du cockpit : la bande KPI portefeuille migre dans
+  la zone haute du bloc Héros 1. Le cockpit ne porte plus que le **MarketDeck**
+  (étage marché, 1.C, intangible).
+- **EquityChart** (tuile demi-largeur, source cumPnL par trade) remplacé par
+  le bloc Héros 1 (pleine largeur, source NLV dense). Grille Dashboard :
+  hero1 pleine largeur en tête, DailyPnL (Héros 2, 1.E) en pleine largeur en
+  dessous (interim jusqu'à 1.E).
+
+### Signalé (TODO fast-follow)
+- **LIQUIDITÉ DISPO = estimation** (`availableUsd` cash-A) tant que la vraie
+  **Buying Power / Excess Liquidity IBKR** n'est pas câblée — endpoint
+  `api/account-summary/sync.js` **à créer** (priorité). Idem cash / marge BP.
+- **Rétention NLV** : `dailySnapshots` est capé **FIFO 60 jours** → l'historique
+  du graphe est ≤ 60 j (1Y/ALL montrent ≤ 60 j). Augmenter la rétention.
+- **Intraday** : seuls des snapshots quotidiens sont persistés ; un **writer
+  intraday** (échantillon NLV en séance) densifiera 5D/1D.
+
+---
+
 ## [1.0.0-rc.4] — 2026-07-19
 
 **Brique 1.S « Sidebar v2 »** — direction « Marge vive » (choix

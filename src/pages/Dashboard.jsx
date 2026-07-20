@@ -26,8 +26,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import MarketDeck from '../components/dashboard/MarketDeck';
-import CommandDeck from '../components/dashboard/CommandDeck';
-import EquityChart from '../components/charts/EquityChart';
+import Hero1 from '../components/dashboard/Hero1';
 import DailyPnLChart from '../components/charts/DailyPnLChart';
 import RiskMatrix from '../components/dashboard/RiskMatrix';
 import LivePositions from '../components/dashboard/LivePositions';
@@ -137,18 +136,16 @@ export default function Dashboard() {
       {/* v1.0 · 1.C.2 — LE COCKPIT : une seule pièce d'instrument soudée
           (full-bleed, dockée sous la hairline du tape). Étage marché
           (MarketDeck) + hairline interne + étage portefeuille (CommandDeck). */}
-      <section className="cockpit" aria-label="Cockpit — marché et portefeuille">
+      {/* 1.C — étage marché (intangible). Le CommandDeck (KPI portefeuille)
+          a migré dans le bloc Héros 1 (zone haute KPI « Bi-héros »). */}
+      <section className="cockpit" aria-label="Cockpit — marché">
         <MarketDeck />
-        <CommandDeck />
       </section>
       <div className="dash-shell">
       <div className="dash-grid">
-        <EquityChart
-          data={equityHistory}
-          range={chartRange}
-          onRangeChange={setChartRange}
-          area="equity"
-        />
+        {/* 1.D — Héros 1 : Equity/NLV pleine largeur (frontière + KPI
+            Bi-héros + graphe terminal + stats). Remplace EquityChart. */}
+        <Hero1 area="hero1" />
         <DailyPnLChart
           data={equityHistory}
           dailyPnL={dailyPnL}

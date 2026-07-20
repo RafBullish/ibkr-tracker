@@ -37,7 +37,9 @@
   /* 1.C — stubs IVRankMovers/SectorHeatmap retirés (hooks vides) :
      AlertsFeed prend la Row 5 pleine largeur. */
   grid-template-areas:
-    "equity equity equity dailypnl dailypnl dailypnl risk risk risk risk risk risk"
+    "hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1"
+    "dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl"
+    "risk risk risk risk risk risk risk risk risk risk risk risk"
     "positions positions positions positions positions positions positions positions positions positions positions positions"
     "history history history history history history history history history history history history"
     "watch watch watch watch watch watch calendar calendar calendar calendar calendar calendar"
@@ -54,8 +56,9 @@
 /* Heights par grid-area — Phase D polish : equity + dailypnl
    passent à 580 px (+60) pour donner du canvas aux courbes hero
    sans changer la grille 3/3/6. Risk reste à 520. */
-.dash-grid > [style*="grid-area: equity"] {
-  height: 580px;
+/* 1.D — Héros 1 : hauteur AUTO (le bloc dimensionne ses zones). */
+.dash-grid > [style*="grid-area: hero1"] {
+  height: auto;
 }
 .dash-grid > [style*="grid-area: dailypnl"] {
   height: 580px;

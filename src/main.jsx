@@ -83,6 +83,10 @@ import './styles/pages-calendar.css';
 // (TickerTape pleine largeur · SideNav+main · StatusBar) + SideNav base.
 // Juste avant c3-hires.css (qui reste dernier).
 import './styles/v1-shell.css';
+// v1-heros.css — Bloc Héros 1 (brique 1.D) : Equity/NLV pleine largeur
+// (frontière + zone KPI Bi-héros + graphe terminal lightweight-charts +
+// stats). Scopé .lh-* au bloc. Avant c3-hires.css.
+import './styles/v1-heros.css';
 // c3-hires.css — PALIER HAUTE RÉSOLUTION C.3.0 (≥1440px). Importé EN
 // DERNIER pour gagner par ordre de source. Densifie l'usage fenêtré
 // ~1591 px / dpr 1.35 ; n'affecte pas le mobile (<1440).

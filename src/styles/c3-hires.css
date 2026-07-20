@@ -166,22 +166,26 @@
      Spécificité .dash-shell .dash-grid (0,2,0) > v4 .dash-grid
      (0,1,0). */
   .dash-shell .dash-grid {
+    /* 1.D — Héros 1 pleine largeur en tête (bloc auto-height). DailyPnL
+       (Héros 2, 1.E) passe en pleine largeur en dessous (interim). */
     grid-template-areas:
-      "equity equity equity equity equity equity dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl"
+      "hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1"
+      "dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl"
       "risk risk risk risk risk risk risk risk risk risk risk risk"
       "positions positions positions positions positions positions positions positions positions positions positions positions"
       "history history history history history history history history history history history history"
       "watch watch watch watch watch watch calendar calendar calendar calendar calendar calendar"
       "alert alert alert alert alert alert alert alert alert alert alert alert";
   }
-  .dash-shell .dash-grid > [style*="grid-area: equity"],
+  /* Héros 1 : hauteur AUTO (le bloc dimensionne ses zones ; le graphe
+     terminal a une hauteur interne fixe via .lh-fuse__stage). */
+  .dash-shell .dash-grid > [style*="grid-area: hero1"] {
+    height: auto;
+  }
   .dash-shell .dash-grid > [style*="grid-area: dailypnl"] {
-    /* paysage : 783×440, courbe ~165px après header/kpi/footer */
     height: 440px;
   }
   .dash-shell .dash-grid > [style*="grid-area: risk"] {
-    /* pleine largeur (1573) → contenu reflow horizontal, moins de
-       hauteur. 360 à vérifier (ajuster si overflow vertical). */
     height: 360px;
   }
 
