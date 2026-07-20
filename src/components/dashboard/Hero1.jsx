@@ -38,10 +38,6 @@ import { totalSlDollar, totalNotional } from '../../utils/risk';
 export default function Hero1({ area = 'hero1' }) {
   const [range, setRange] = useState('ALL');
   const [view, setView] = useState('equity');
-  // Traitement de densité du PortfolioDeck — ?pf=A|B|C (aide de choix,
-  // temporaire jusqu'au GO ; défaut A). Retiré après le choix de Rafael.
-  const treatment =
-    (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pf')) || 'A';
 
   const metrics = usePortfolioMetrics();
   const greeks = useGreeksAggregate();
@@ -117,7 +113,7 @@ export default function Hero1({ area = 'hero1' }) {
   return (
     <section className="lh-final" style={{ gridArea: area }}>
       <Frontier />
-      <PortfolioDeck kpi={kpi} rate={rate} treatment={treatment} />
+      <PortfolioDeck kpi={kpi} rate={rate} />
       <ZoneSep label="GRAPHIQUE" />
       <div className="lh-graphzone">
         <div className="lh-graphzone__bar">

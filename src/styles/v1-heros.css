@@ -33,61 +33,38 @@
 .lh-kpi__sub { font-size: 11px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 14px; }
 .lh-kpi__sub--empty { min-height: 14px; }
 
-/* ── 2 · ZONE HAUTE — PORTFOLIO DECK (à l'image du MarketDeck) ────
-   Sous-panneaux denses étiquetés. Réutilise `.mk-cell` (padding) et
-   `.mk-title` (label) du MarketDeck → transition invisible. Rails de
-   colonnes `--line-emphasis` comme les frontières majeures du MarketDeck. */
-.pf-deck { display: grid; grid-template-columns: 1.22fr 1fr 1.04fr 0.9fr; border-bottom: 1px solid var(--hairline-rest); }
+/* ── 2 · ZONE HAUTE — PORTFOLIO DECK (version finale) ────────────
+   À l'image du MarketDeck. Réutilise `.mk-cell` (padding) + `.mk-title`.
+   Cellules COMPACTES style MONDE : libellé (petit) + GROSSE valeur +
+   CHF/contexte GROUPÉS et COLLÉS À GAUCHE (zéro trou central), en
+   GRILLE 2 COLONNES par panneau (densité MONDE). Rails `--line-emphasis`. */
+.pf-deck { display: grid; grid-template-columns: 1.2fr 1fr 1.08fr 0.92fr; border-bottom: 1px solid var(--hairline-rest); }
 .pf-cell { display: flex; flex-direction: column; min-width: 0; }
 .pf-cell + .pf-cell { border-left: 1px solid var(--line-emphasis); }
-.pf-cell .mk-title { margin-bottom: 6px; }
-.pf-rows { display: flex; flex-direction: column; }
-.pf-rows--grid2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px; }
+.pf-cell .mk-title { margin-bottom: 7px; }
 
-/* Héros LIQUIDITÉ DISPO — prominent (registre du héros FX/VOL du MarketDeck) */
-.pf-hero { display: flex; flex-direction: column; gap: 0; margin-bottom: 6px; padding-bottom: 7px; border-bottom: 1px solid var(--hairline-rest); }
+/* Héros LIQUIDITÉ DISPO — prominent (registre du héros FX/VOL) */
+.pf-hero { display: flex; flex-direction: column; gap: 0; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--hairline-rest); }
 .pf-hero__lbl { display: flex; align-items: center; gap: 7px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-mute); }
 .pf-est { font-size: 8.5px; letter-spacing: 0.04em; color: var(--accent-amber); border: 1px solid color-mix(in srgb, var(--accent-amber) 45%, transparent); border-radius: 2px; padding: 0 4px; text-transform: none; }
-.pf-hero__val { font-family: var(--qc-font-num); font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); line-height: 1.0; letter-spacing: -0.01em; }
-.pf-hero__chf { font-family: var(--qc-font-num); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-soft); }
-.pf-hero__sub { font-size: 10px; color: var(--ink-mute); margin-top: 1px; }
+.pf-hero__val { font-family: var(--qc-font-num); font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); line-height: 1.0; letter-spacing: -0.01em; }
+.pf-hero__meta { font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; margin-top: 2px; }
 
-/* Rangées denses label → valeur (registre des rangées FUT/MONDE) —
-   valeurs GROSSES + rythme RESSERRÉ (densité MarketDeck). */
-.pf-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 2.5px 0; min-width: 0; flex-wrap: wrap; }
-.pf-rows:not(.pf-rows--grid2) .pf-row + .pf-row { border-top: 1px solid color-mix(in srgb, var(--hairline-rest) 45%, transparent); }
-.pf-row__label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pf-row__nums { display: flex; align-items: baseline; gap: 6px; flex-shrink: 0; white-space: nowrap; }
-.pf-row__val { font-family: var(--qc-font-num); font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); }
-.pf-row__val--profit { color: var(--pnl-up); }
-.pf-row__val--loss { color: var(--pnl-down); }
-.pf-row__chf { font-family: var(--qc-font-num); font-size: 11px; font-weight: 500; color: var(--ink-mute); font-variant-numeric: tabular-nums; }
-.pf-row__sub { font-size: 9.5px; color: var(--ink-mute); letter-spacing: 0.02em; }
+/* Grille 2 colonnes de cellules compactes (densité MONDE) */
+.pf-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px; row-gap: 6px; align-content: start; }
+.pf-c { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.pf-c__top { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.pf-c__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-mute); white-space: nowrap; }
+.pf-c__val { font-family: var(--qc-font-num); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); line-height: 1.06; white-space: nowrap; }
+.pf-c__val--profit { color: var(--pnl-up); }
+.pf-c__val--loss { color: var(--pnl-down); }
+.pf-c__meta { font-size: 10px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; margin-top: -1px; }
 
-/* Mini-barre d'allocation (traitement C) — style MarketDeck (piste +
-   remplissage neutre + repère ambre). Jamais une couleur P&L. */
-.pf-bar { position: relative; flex-basis: 100%; height: 4px; margin-top: 3px; border-radius: 2px; background: color-mix(in srgb, var(--ink-pure) 9%, transparent); }
+/* Mini-barre d'allocation — style MarketDeck (piste + remplissage
+   neutre + repère ambre à 70 %). Jamais une couleur P&L. */
+.pf-bar { position: relative; width: 100%; height: 4px; margin-top: 3px; border-radius: 2px; background: color-mix(in srgb, var(--ink-pure) 9%, transparent); }
 .pf-bar__fill { position: absolute; left: 0; top: 0; bottom: 0; background: color-mix(in srgb, var(--ink-soft) 50%, transparent); border-radius: 2px; }
 .pf-bar__mark { position: absolute; top: -1px; bottom: -1px; width: 1px; background: var(--accent-amber); }
-
-/* ── Traitements de densité ─────────────────────────────────────── */
-/* A « Serré » + C « Visuel » : valeurs grosses (calibre indices). */
-.pf-deck--a .pf-hero__val, .pf-deck--c .pf-hero__val { font-size: 33px; }
-.pf-deck--a .pf-hero__chf, .pf-deck--c .pf-hero__chf { font-size: 15px; }
-.pf-deck--a .pf-row__val, .pf-deck--c .pf-row__val { font-size: 22px; line-height: 1.12; }
-/* B « Bi-colonne » : mini-cellules EMPILÉES (label au-dessus, valeur +
-   CHF dessous), 2 colonnes → packing horizontal propre, double devise
-   conservée, valeurs alignées. */
-.pf-deck--b .pf-hero__val { font-size: 30px; }
-.pf-deck--b .pf-hero__chf { font-size: 14px; }
-.pf-deck--b .pf-rows--grid2 { column-gap: 16px; row-gap: 3px; }
-.pf-deck--b .pf-row { flex-direction: column; align-items: flex-start; gap: 0; padding: 2px 0; }
-.pf-deck--b .pf-row + .pf-row { border-top: none; }
-.pf-deck--b .pf-row__label { font-size: 9.5px; letter-spacing: 0.03em; }
-.pf-deck--b .pf-row__nums { gap: 5px; }
-.pf-deck--b .pf-row__val { font-size: 18px; line-height: 1.15; }
-.pf-deck--b .pf-row__chf { font-size: 10px; }
-.pf-deck--b .pf-row__sub { display: none; }
 
 /* ── 3 · Séparation forte données / graphe ──────────────────────── */
 .lh-zonesep { display: flex; align-items: center; gap: 12px; padding: 9px 22px; background: color-mix(in srgb, var(--depth-void) 78%, transparent); border-top: 2px solid color-mix(in srgb, var(--ink-mute) 42%, transparent); border-bottom: 1px solid var(--hairline-rest); }
