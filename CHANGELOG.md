@@ -6,6 +6,56 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0-rc.7] — 2026-07-21
+
+**Brique 1.E « Héros 2 — Réalisé » (LA FUSION).** Le second héros du
+Dashboard devient le **jumeau de Héros 1** et la **maison PURE du RÉALISÉ** :
+il remplace l'ancien `DailyPnLChart` (hybride confus qui mêlait un gros
+chiffre UNREALIZED à une courbe réalisée). L'UNREALIZED reste désormais en
+Héros 1 ; Héros 2 ne parle que d'argent **encaissé**. Contient **les 3 vues
+roadmap** (cumulé / quotidien / distribution) + la **matrice de non-perte**.
+
+### Ajouté
+- **Bloc Héros 2** (`components/dashboard/Hero2.jsx` + `hero2/*`,
+  `styles/v1-heros2.css`) — même cadre gris (`.lh-final`), frontière,
+  cellules-MONDE et double devise USD/CHF que Héros 1. Trois zones :
+  - **DECK RÉALISÉ** (`RealizedDeck.jsx`) — 4 panneaux : **RÉALISÉ TOTAL**
+    (cumulé + gross gains/pertes) · **MATRICE DE NON-PERTE** proéminente (3×2 :
+    win rate · profit factor · payoff · expectancy · max DD cumul · recovery)
+    · **EXTRÊMES** (meilleure/pire · gain/perte moy.) · **RYTHME** (clôtures ·
+    gagnantes/perdantes · jours actifs).
+  - **Graphe HÉROS terminal** (`TvChartRealized.jsx`, lightweight-charts,
+    code-split) avec **toggle CUMULÉ ↔ QUOTIDIEN** (exactement comme le toggle
+    NLV/Drawdown de Héros 1) : aire de la trajectoire cumulée (ligne neutre,
+    axe Y + ligne de prix, crosshair natif, **géant réalisé en overlay**,
+    marqueurs de clôture vert/rouge) ↔ **histogramme des barres jour**
+    (vert/rouge = argent réel).
+  - **Panneau DISTRIBUTION** (`Distribution.jsx`, Recharts) — histogramme des
+    issues par-trade par bucket $ (vert/rouge = argent réalisé), **toujours
+    visible**, réglable par période.
+- **Modèle réalisé** (`hero2/model.js`) — dérivations pures depuis
+  `closedTrades` réels (via `useDailyPnL`) : séries cumulée/quotidienne,
+  distribution, matrice de non-perte, stats jour. Fenêtrage cohérent 5D→ALL.
+
+### Modifié
+- **Dashboard** — `Hero2` remplace `DailyPnLChart` à la 2ᵉ rangée (grille
+  `dailypnl` → `hero2`, hauteur auto). Deux étages pleine largeur du même
+  cockpit (Héros 1 = latent, Héros 2 = réalisé). État `chartRange` local retiré.
+- **Footer référence dédupliqué** — aucune métrique n'apparaît deux fois : le
+  deck porte matrice/extrêmes/rythme (niveau trade), le footer porte le détail
+  **jour + distribution** (meilleur/pire jour · % jours gagnants · mode · pas
+  de bucket · fenêtre).
+
+### Retiré
+- **`DailyPnLChart.jsx`** (remplacé, mort) et le **lab d'arbitrage**
+  `/lab/heros2` (`src/lab/*`, `lab-heros2.css`, route DEV) — purgés.
+
+### Intangibles préservés
+- Héros 1 (1.D), MarketDeck (1.C), Sidebar (1.S) inchangés — vérifié au
+  computed style (géant 72px, cadre `.lh-final`, 7 `.mk-cell`, SideNav 219px).
+  Loi de couleur **0** (réalisé $ = rouge/vert ; courbe cumulée + ratios/comptes
+  neutres). Aucune dépendance nouvelle (lightweight-charts déjà ratifié en 1.D).
+
 ## [1.0.0-rc.6] — 2026-07-21
 
 **Fast-follow 1.D (1/5) — LIQUIDITÉ DISPO = Available Funds IBKR réelle.**

@@ -24,10 +24,10 @@
 //  RiskMatrix lui-même.
 // ═══════════════════════════════════════════════════════════════
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import MarketDeck from '../components/dashboard/MarketDeck';
 import Hero1 from '../components/dashboard/Hero1';
-import DailyPnLChart from '../components/charts/DailyPnLChart';
+import Hero2 from '../components/dashboard/Hero2';
 import RiskMatrix from '../components/dashboard/RiskMatrix';
 import LivePositions from '../components/dashboard/LivePositions';
 import Watchlist from '../components/dashboard/Watchlist';
@@ -35,7 +35,6 @@ import AlertsFeed from '../components/dashboard/AlertsFeed';
 import TradeHistory from '../components/dashboard/TradeHistory';
 import CalendarMini from '../components/dashboard/CalendarMini';
 import useEquityHistory from '../hooks/useEquityHistory';
-import useDailyPnL from '../hooks/useDailyPnL';
 import useGreeksAggregate from '../hooks/useGreeksAggregate';
 import useRiskMatrix from '../hooks/useRiskMatrix';
 import useLivePositions from '../hooks/useLivePositions';
@@ -100,7 +99,6 @@ function useDailySnapshotWriter() {
 
 export default function Dashboard() {
   const equityHistory = useEquityHistory();
-  const dailyPnL = useDailyPnL();
   const closedTrades = useClosedTrades();
   const portfolioMetrics = usePortfolioMetrics();
   const riskMatrixData = useRiskMatrix();
@@ -127,10 +125,6 @@ export default function Dashboard() {
   // Persiste un snapshot quotidien des métriques (cf. useDailySnapshot.js).
   useDailySnapshotWriter();
 
-  // B3 — timeframe partagé entre Equity Curve et Cumulative P&L (lift state).
-  // Cliquer un timeframe sur l'un synchronise l'autre.
-  const [chartRange, setChartRange] = useState('ALL');
-
   return (
     <div className="dashboard-page">
       {/* v1.0 · 1.C.2 — LE COCKPIT : une seule pièce d'instrument soudée
@@ -146,15 +140,9 @@ export default function Dashboard() {
         {/* 1.D — Héros 1 : Equity/NLV pleine largeur (frontière + KPI
             Bi-héros + graphe terminal + stats). Remplace EquityChart. */}
         <Hero1 area="hero1" />
-        <DailyPnLChart
-          data={equityHistory}
-          dailyPnL={dailyPnL}
-          closedTrades={closedTrades}
-          liveRate={portfolioMetrics?.liveRate}
-          range={chartRange}
-          onRangeChange={setChartRange}
-          area="dailypnl"
-        />
+        {/* 1.E — Héros 2 : Réalisé pleine largeur (cumulé/quotidien/
+            distribution + matrice de non-perte). Remplace DailyPnLChart. */}
+        <Hero2 area="hero2" />
         <RiskMatrix metrics={riskMetrics} area="risk" />
         <LivePositions data={positions} area="positions" />
         <TradeHistory data={closedTrades} liveRate={portfolioMetrics?.liveRate ?? 1} area="history" />

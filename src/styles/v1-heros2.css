@@ -1,0 +1,44 @@
+/* ════════════════════════════════════════════════════════════════
+   V1-HEROS2.CSS — Brique 1.E « Héros 2 · Réalisé » (LA FUSION).
+   JUMEAU de Héros 1 : réutilise le langage .lh- / .pf- / .mk- (1.D,
+   intangible — NON modifié ici) et n'ajoute que les classes .h2-
+   propres au bloc réalisé (deck 4 col + matrice proéminente, split
+   graphe terminal / distribution, teintes réalisé). Chargé APRÈS
+   v1-heros.css, avant c3-hires.css. Tokens canoniques uniquement.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Teinte du RÉALISÉ (argent réel → loi de couleur OK) — deck hero,
+      géant du graphe, valeurs footer jour. Courbe cumulée = neutre. ── */
+.h2-giant--profit { color: var(--pnl-up); }
+.h2-giant--loss { color: var(--pnl-down); }
+.h2-giant--mute { color: var(--ink-pure); }
+.h2-cfoot--profit { color: var(--pnl-up); }
+.h2-cfoot--loss { color: var(--pnl-down); }
+
+/* ── DECK RÉALISÉ — 4 panneaux, MATRICE (col 2) la plus large. ────── */
+.h2-deck { display: grid; grid-template-columns: 1.1fr 1.5fr 1fr 0.9fr; border-bottom: 1px solid var(--hairline-rest); }
+/* .pf-cell (générique 1.D) porte déjà flex-col + border-left entre cellules. */
+/* Sous-grille gross gains/pertes — hérite les rangées 55px de .pf-grid
+   (pas d'override serré : évite le rognage label/meta des cellules). */
+.h2-grid2 { row-gap: 5px; }
+
+/* MATRICE DE NON-PERTE — proéminente : 3 colonnes (3×2), léger relief. */
+.h2-cell--matrix { background: color-mix(in srgb, var(--depth-base) 20%, transparent); }
+.h2-cell--matrix .mk-title { color: var(--ink-soft); }
+.h2-matrix { grid-template-columns: 1fr 1fr 1fr; column-gap: 16px; }
+
+/* ── ZONE GRAPHE — split : graphe terminal HÉROS | DISTRIBUTION ───── */
+.h2-graphrow { display: grid; grid-template-columns: 1.62fr 1fr; height: 460px; }
+.h2-fuse { position: relative; height: 100%; }
+/* .lh-fuse__overlay / .lh-fuse__chart (1.D) se positionnent sur .h2-fuse
+   (position:relative) — réutilisés tels quels pour le géant + le canvas. */
+
+/* ── PANNEAU DISTRIBUTION (3ᵉ vue, sa propre place) ───────────────── */
+.h2-dist { display: flex; flex-direction: column; min-width: 0; border-left: 1px solid var(--hairline-rest); padding: 8px 12px 6px; background: color-mix(in srgb, var(--depth-void) 22%, transparent); }
+.h2-dist__head { display: flex; align-items: baseline; gap: 10px; padding: 2px 4px 8px; }
+.h2-dist__title { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); }
+.h2-dist__ctx { font-size: 10px; letter-spacing: 0.04em; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.h2-dist__body { flex: 1; min-height: 0; }
+
+/* Pill « mute » du géant (Héros 1 ne définit que profit/loss). */
+.lh-hero__pill--mute { color: var(--ink-soft); }

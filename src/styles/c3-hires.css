@@ -166,11 +166,11 @@
      Spécificité .dash-shell .dash-grid (0,2,0) > v4 .dash-grid
      (0,1,0). */
   .dash-shell .dash-grid {
-    /* 1.D — Héros 1 pleine largeur en tête (bloc auto-height). DailyPnL
-       (Héros 2, 1.E) passe en pleine largeur en dessous (interim). */
+    /* 1.D/1.E — Héros 1 puis Héros 2, deux étages pleine largeur du même
+       cockpit (blocs auto-height, graphes terminaux à hauteur interne fixe). */
     grid-template-areas:
       "hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1"
-      "dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl"
+      "hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2"
       "risk risk risk risk risk risk risk risk risk risk risk risk"
       "positions positions positions positions positions positions positions positions positions positions positions positions"
       "history history history history history history history history history history history history"
@@ -179,11 +179,9 @@
   }
   /* Héros 1 : hauteur AUTO (le bloc dimensionne ses zones ; le graphe
      terminal a une hauteur interne fixe via .lh-fuse__stage). */
-  .dash-shell .dash-grid > [style*="grid-area: hero1"] {
+  .dash-shell .dash-grid > [style*="grid-area: hero1"],
+  .dash-shell .dash-grid > [style*="grid-area: hero2"] {
     height: auto;
-  }
-  .dash-shell .dash-grid > [style*="grid-area: dailypnl"] {
-    height: 440px;
   }
   .dash-shell .dash-grid > [style*="grid-area: risk"] {
     height: 360px;
