@@ -38,7 +38,7 @@
      AlertsFeed prend la Row 5 pleine largeur. */
   grid-template-areas:
     "hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1"
-    "dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl dailypnl"
+    "hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2"
     "risk risk risk risk risk risk risk risk risk risk risk risk"
     "positions positions positions positions positions positions positions positions positions positions positions positions"
     "history history history history history history history history history history history history"
@@ -56,12 +56,11 @@
 /* Heights par grid-area — Phase D polish : equity + dailypnl
    passent à 580 px (+60) pour donner du canvas aux courbes hero
    sans changer la grille 3/3/6. Risk reste à 520. */
-/* 1.D — Héros 1 : hauteur AUTO (le bloc dimensionne ses zones). */
-.dash-grid > [style*="grid-area: hero1"] {
+/* 1.D/1.E — Héros 1 & Héros 2 : hauteur AUTO (chaque bloc dimensionne ses
+   zones ; le graphe terminal a une hauteur interne fixe). */
+.dash-grid > [style*="grid-area: hero1"],
+.dash-grid > [style*="grid-area: hero2"] {
   height: auto;
-}
-.dash-grid > [style*="grid-area: dailypnl"] {
-  height: 580px;
 }
 .dash-grid > [style*="grid-area: risk"] {
   height: 520px;

@@ -25,11 +25,6 @@ const Chain = lazy(() => import('./pages/trading/Chain'));
 const Greeks = lazy(() => import('./pages/trading/Greeks'));
 const Analytics = lazy(() => import('./pages/insights/Analytics'));
 
-// Brique 1.E — lab d'arbitrage « Héros 2 · Realized ». DEV-ONLY : le
-// dynamic import est mort en prod (import.meta.env.DEV → false), donc le
-// chunk lab (+ lightweight-charts qu'il réutilise) est tree-shaken du build.
-const Heros2Lab = import.meta.env.DEV ? lazy(() => import('./lab/Heros2Lab')) : null;
-
 const Loader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
     <GlassCard style={{ padding: '40px 60px', textAlign: 'center' }}>
@@ -54,19 +49,6 @@ export default function App() {
           <FxInvalidBanner />
           <FxStaleBanner />
           <Routes>
-            {/* Lab 1.E HORS AppShell (pas de TickerTape/SideNav) — DEV-only. */}
-            {import.meta.env.DEV && Heros2Lab && (
-              <Route
-                path="/lab/heros2"
-                element={
-                  <ErrorBoundary>
-                    <Suspense fallback={<Loader />}>
-                      <Heros2Lab />
-                    </Suspense>
-                  </ErrorBoundary>
-                }
-              />
-            )}
             <Route element={<AppShell />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/premarket" element={<PreMarketBriefing />} />
