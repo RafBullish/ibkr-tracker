@@ -6,6 +6,35 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0-rc.6] — 2026-07-21
+
+**Fast-follow 1.D (1/5) — LIQUIDITÉ DISPO = Available Funds IBKR réelle.**
+La carte **CAPITAL & LIQUIDITÉ** du bloc Héros 1 abandonne l'estimation
+`est.` dès que le bridge IBKR local fournit un snapshot **frais** : elle
+affiche alors la **vraie Buying Power / Available Funds** avec le marqueur
+**« IBKR »**. Aucune fabrication de chiffre — snapshot périmé ou devise
+non convertible ⇒ retombée transparente sur l'estimation cash-A + `est.`.
+
+### Ajouté
+- **`resolveLiveAvailableUsd(liveData, liveRate, nowMs?)`**
+  (`hooks/useAvailableCapital.js`) — lit `settings.ibkrLiveData.availableFunds`
+  (tag `AvailableFunds` de `ib.accountSummary()`, cf. `bridge/ibkr_poller.py`).
+  Ne renvoie un USD fini **que si** le snapshot est frais
+  (`FRESHNESS.LIVE_DATA_MAX_AGE_MS`, même seuil que le badge LIVE et l'override
+  NLV) **et** porte une devise convertible (USD direct, CHF via `liveRate`) ;
+  sinon `null`. Testé — **10 cas** (`__tests__/resolveLiveAvailableUsd.test.js`).
+
+### Modifié
+- **`Hero1.jsx`** câble `resolveLiveAvailableUsd` : `availableUsd` réel
+  prioritaire, sinon estimation cash-A ; passe `availableIsReal` au modèle.
+- **`hero1/model.js`** expose `powderIsReal` ; **`PortfolioDeck.jsx`** bascule
+  le marqueur **IBKR / est.** selon la fraîcheur (loi de couleur intacte,
+  neutre). Le Flex EOD n'expose pas la Buying Power ; seul le bridge le fait.
+
+### Signalé (fast-follow restants 2..5/5)
+- Rétention NLV > 60 j (FIFO actuel), writer intraday, `api/account-summary/sync.js`
+  côté serveur, cleanup résidus 1.D.
+
 ## [1.0.0-rc.5] — 2026-07-20
 
 **Brique 1.D « Héros 1 »** — Equity/NLV pleine largeur. Le premier héros

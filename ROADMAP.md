@@ -38,13 +38,16 @@ Objectif : **tag v1.0.0 au 01.09.2026**.
   pleine largeur sur **donnée NLV dense** (snapshots quotidiens + live,
   drawdown flow-neutral). **Zone haute PORTEFEUILLE refondue à l'image du
   MarketDeck** (4 sous-panneaux denses : CAPITAL & LIQUIDITÉ · P&L +MTD/YTD ·
-  RISQUE & GREEKS +Γ/V · PERFORMANCE), LIQUIDITÉ DISPO prominente `est.`.
+  RISQUE & GREEKS +Γ/V · PERFORMANCE), LIQUIDITÉ DISPO prominente.
   **Graphe terminal** (lightweight-charts, code-split) : auto-échelle serrée,
   axe Y + ligne de prix, crosshair natif, apport annoté, toggle NLV/drawdown,
   marqueurs de clôture, bande perf par période, bande stats enrichie.
-  CommandDeck migré dans la zone haute ; EquityChart remplacé. TODO fast-
-  follow : Buying Power IBKR (`api/account-summary/sync.js`), rétention NLV
-  (>60 j), writer intraday.
+  CommandDeck migré dans la zone haute ; EquityChart remplacé.
+  - **Fast-follow 1/5 ✅ (1.0.0-rc.6)** — LIQUIDITÉ DISPO = **vraie Available
+    Funds IBKR** (bridge live, marqueur « IBKR ») quand le snapshot est frais,
+    sinon estimation cash-A + `est.` (`resolveLiveAvailableUsd`, 10 tests).
+  - Fast-follow restants : rétention NLV (>60 j), writer intraday,
+    `api/account-summary/sync.js` serveur, cleanup résidus 1.D.
 - **1.E — Héros 2** : Realized pleine largeur (cumulé/quotidien/distribution)
   + consolidation des doublons avec matrice de non-perte.
 - **1.F — Bande décision** (ATTENTION/FORME/CAPITAL) + micro-mouvement +
