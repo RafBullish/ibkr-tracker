@@ -48,8 +48,17 @@ Objectif : **tag v1.0.0 au 01.09.2026**.
     sinon estimation cash-A + `est.` (`resolveLiveAvailableUsd`, 10 tests).
   - Fast-follow restants : rétention NLV (>60 j), writer intraday,
     `api/account-summary/sync.js` serveur, cleanup résidus 1.D.
-- **1.E — Héros 2** : Realized pleine largeur (cumulé/quotidien/distribution)
-  + consolidation des doublons avec matrice de non-perte.
+- **1.E ✅ (1.0.0-rc.7)** — Héros 2 « Réalisé » (LA FUSION) : bloc RÉALISÉ
+  pleine largeur, **jumeau de Héros 1** (cadre gris, cellules-MONDE, graphe
+  terminal, double devise). **Maison PURE du réalisé** — l'UNREALIZED reste
+  en Héros 1 (corrige le doublon de l'ancien DailyPnLChart). Contient **les 3
+  vues roadmap** : DECK RÉALISÉ (cumulé + gross) + **MATRICE DE NON-PERTE**
+  proéminente 3×2 (win rate · profit factor · payoff · expectancy · max DD
+  cumul · recovery) · EXTRÊMES · RYTHME ; **graphe terminal** avec toggle
+  **CUMULÉ ↔ QUOTIDIEN** (comme NLV/Drawdown) + géant réalisé en overlay +
+  marqueurs de clôture ; panneau **DISTRIBUTION** (histogramme par bucket $,
+  toujours visible) ; footer référence dédupliqué (détail jour + distribution).
+  Remplace DailyPnLChart ; lab d'arbitrage purgé.
 - **1.F — Bande décision** (ATTENTION/FORME/CAPITAL) + micro-mouvement +
   polissage — clôt le Dashboard.
 
