@@ -8,11 +8,12 @@
 //  Architecture du système de snapshots (Phase B, 4K refonte) :
 //
 //    1. Le store maintient `settings.dailySnapshots` : un array de
-//       60 lignes max, chaque ligne = { date, nlv, availCapital,
+//       DAILY_SNAPSHOT_MAX_DAYS lignes max (3650 depuis FF-données ;
+//       60 avant), chaque ligne = { date, nlv, availCapital,
 //       unrealized, exposure, openPositionsCount, realized,
 //       winRate, profitFactor }.
 //    2. Le reducer expose `UPDATE_DAILY_SNAPSHOT` (idempotent par
-//       date — overwrite si la date existe, FIFO 60 sinon).
+//       date — overwrite si la date existe, FIFO au-delà du cap sinon).
 //    3. Le Dashboard dispatche un snapshot du jour au mount et à
 //       chaque changement de métriques clés ; le reducer no-op si
 //       les valeurs sont identiques à celles déjà persistées.

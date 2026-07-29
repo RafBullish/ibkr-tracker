@@ -9,6 +9,11 @@ import { sanitizeTier } from '../utils/sniperMeta';
 
 const normalizeStrike = (s) => String(parseFloat(s) || 0);
 
+// Rétention des snapshots NLV quotidiens (FF-données). Exportée pour les
+// tests. ~10 ans : le localStorage reste borné (≈ 0.5 Mo au pire) et la
+// série 1Y/ALL du Héros 1 ne perd plus d'historique.
+export const DAILY_SNAPSHOT_MAX_DAYS = 3650;
+
 export function applyAction(state, action) {
   switch (action.type) {
     case 'SET_LIVE_RATE':
@@ -72,9 +77,13 @@ export function applyAction(state, action) {
       // valeurs renvoie la même référence d'état (pas de re-render storm,
       // pas de write localStorage inutile).
       //
-      // FIFO 60 jours — au-delà, on drop le plus ancien après tri par date
-      // pour conserver les 60 derniers points (≈ 3 mois ouvrés, suffisant
-      // pour sparklines 30 j et marge confortable).
+      // FF-données : rétention LONGUE (3650 j ≈ 10 ans). L'ancien cap 60
+      // effaçait l'historique NLV du Héros 1 au-delà de 3 mois — la série
+      // 1Y/ALL lit désormais tout l'historique. Un snapshot ≈ 150 octets
+      // JSON → 3650 points ≈ 0.5 Mo au pire, borné bien sous le quota
+      // localStorage ; le graphe rééchantillonne à 190 pts (resampleSeries).
+      // Au-delà du cap : drop du plus ancien après tri par date (FIFO).
+      // Aucune migration nécessaire : lever un cap préserve l'existant.
       const snap = action.payload;
       if (!snap || !snap.date) return state;
       const list = Array.isArray(state.settings.dailySnapshots)
@@ -90,11 +99,11 @@ export function applyAction(state, action) {
         return { ...state, settings: { ...state.settings, dailySnapshots: merged } };
       }
       let appended = [...list, snap];
-      if (appended.length > 60) {
+      if (appended.length > DAILY_SNAPSHOT_MAX_DAYS) {
         appended = appended
           .slice()
           .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
-          .slice(appended.length - 60);
+          .slice(appended.length - DAILY_SNAPSHOT_MAX_DAYS);
       }
       return { ...state, settings: { ...state.settings, dailySnapshots: appended } };
     }

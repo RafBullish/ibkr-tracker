@@ -6,6 +6,60 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0-rc.8] — 2026-07-29
+
+**Micro-brique FF-données (fast-follows données 1.D).** Zéro refonte
+visuelle : la donnée NLV du Héros 1 devient **longue** (l'historique ne
+s'efface plus) et **dense** (échantillons intraday ~5 min en séance).
+
+### Corrigé
+- **Rétention NLV longue** — le cap FIFO **60 jours** de
+  `settings.dailySnapshots` (reducer `UPDATE_DAILY_SNAPSHOT`) **effaçait
+  l'historique NLV au-delà de 3 mois, chaque jour**. Cap levé à
+  **`DAILY_SNAPSHOT_MAX_DAYS = 3650`** (~10 ans, exporté pour les tests) :
+  les ranges 1Y/ALL lisent désormais tout l'historique. Aucune migration
+  nécessaire (lever un cap préserve l'existant — prouvé par test) ;
+  localStorage borné (~0,5 Mo au pire) ; le graphe rééchantillonne déjà à
+  190 points (`resampleSeries`, bucketing semaine/mois) — perf inchangée.
+
+### Ajouté
+- **Writer snapshots intraday** — `utils/nlvIntraday.js` (pur) : buffer
+  roulant compact **`qc:nlvIntraday`** `{v:1, days:[{d, pts:[[epochSec,
+  nlv]]}]}`, **~5 jours de séance**, garde de cadence 4,5 min, écriture
+  sûre, événement de changement. Hook `hooks/useIntradayNlv.js` :
+  `useIntradayNlvWriter` monté dans l'AppShell (composant nul isolé —
+  le tick minute ne re-rend pas l'arbre), gaté **RTH NY** par
+  `useMarketSession` (hook ressuscité — recadré FF-données) : AUCUNE
+  écriture hors séance, **zéro requête réseau** (NLV lue du store,
+  `usePortfolioMetrics`, override bridge < 1 h compris), clés `ibkr_u_*`
+  jamais touchées.
+- **Graphe Héros 1 : 1D/5D denses** — nouveau range **1D** (liste
+  `TIMEFRAMES_HERO1`, propre au Héros 1 — le sélecteur de Héros 2 garde la
+  liste partagée sans 1D via la prop `options` de `RangeSelector`) ;
+  `buildIntradaySeries` (`utils/nlvSeries.js`) déplie le buffer en série
+  terminale : **drawdown flow-neutral préservé** (dépôts soustraits, peak
+  seedé de tout l'historique quotidien antérieur à la fenêtre), point live
+  du store en fin de courbe, axe temps en heure locale (`t` epoch décalée,
+  `timeVisible`). 1D/5D basculent en intraday dès que le buffer couvre la
+  fenêtre (1D : ≥ 2 points ; 5D : ≥ 2 séances) — **fallback quotidien
+  honnête sinon** (rendu identique à rc.7). Bandes perf/stats restent
+  calculées sur la série quotidienne fenêtrée (sémantique « par jour »).
+- **Tests** (+24, total 267) — `store/__tests__/reducer.dailySnapshots`
+  (idempotence, préservation > 60 j, FIFO au cap long),
+  `utils/__tests__/nlvIntraday` (cadence, buffer roulant, lecture
+  défensive, clés), `utils/__tests__/nlvSeries` (**verrou anti-régression
+  du drawdown flow-neutral quotidien**, jusqu'ici non testé + série
+  intraday complète).
+
+### Vérifié
+- Build vert · color-law 0 · 267 tests verts · @1591×900 : 1D/5D denses
+  (2 séances, crosshair heure locale), drawdown intraday, ALL 120 jours
+  avec apport annoté, writer live prouvé en séance (échantillon écrit au
+  mount), 121 snapshots quotidiens après passage app (zéro troncature),
+  Héros 2 / MarketDeck / Sidebar intacts, 0 overflow, console propre
+  (seuls 500 finnhub / 429 dev tolérés). Captures :
+  `docs/captures/ff-donnees/`.
+
 ## [1.0.0-rc.7] — 2026-07-21
 
 **Brique 1.E « Héros 2 — Réalisé » (LA FUSION).** Le second héros du

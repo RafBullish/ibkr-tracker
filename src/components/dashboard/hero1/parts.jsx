@@ -115,10 +115,13 @@ export function KpiBelt({ cells, rate, layout = 'row' }) {
 }
 
 // ── Contrôles graphe ────────────────────────────────────────────
-export function RangeSelector({ range, setRange }) {
+// `options` : liste de ranges à afficher (défaut = TIMEFRAMES partagés).
+// Héros 1 passe TIMEFRAMES_HERO1 (avec 1D intraday) ; Héros 2 garde le
+// défaut — « 1D » n'a pas de sens sur le réalisé quotidien.
+export function RangeSelector({ range, setRange, options = TIMEFRAMES }) {
   return (
     <div className="lh-range" role="tablist" aria-label="Période">
-      {TIMEFRAMES.map((tf) => (
+      {options.map((tf) => (
         <button key={tf} type="button" role="tab" className="lh-range__btn" data-active={range === tf || undefined} aria-pressed={range === tf} onClick={() => setRange(tf)}>
           {tf}
         </button>
