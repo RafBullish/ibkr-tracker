@@ -34,7 +34,7 @@ Objectif : **tag v1.0.0 au 01.09.2026**.
   (neutre, réactif) ; dettes de nav soldées (Pré-marché désenclavée,
   vérité ⌘9, /settings/api en nav, gardes clavier, ~340 l CSS morte
   purgées) ; choix Rafael au lab, amendé architecte.
-- **1.D ✅ (1.0.0-rc.5, GO Rafael attendu)** — Héros 1 : bloc Equity/NLV
+- **1.D ✅ (1.0.0-rc.5)** — Héros 1 : bloc Equity/NLV
   pleine largeur sur **donnée NLV dense** (snapshots quotidiens + live,
   drawdown flow-neutral). **Zone haute PORTEFEUILLE refondue à l'image du
   MarketDeck** (4 sous-panneaux denses : CAPITAL & LIQUIDITÉ · P&L +MTD/YTD ·

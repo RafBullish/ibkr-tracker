@@ -1,5 +1,7 @@
 # ÉTAT DU SITE — QuantumCall v2.3.1 (ligne de base)
 
+> **Baseline v2.3.1 (13.07.2026) — état courant : voir [ETAT-DU-SITE-V1.md](./ETAT-DU-SITE-V1.md).**
+
 Cartographie factuelle du repo à l'état `ea64652` (clôture du 13.07.2026).
 Destinataire : l'architecte de la phase finale, sans accès direct au code.
 Chaque affirmation a été vérifiée dans le code au moment de la rédaction ;
