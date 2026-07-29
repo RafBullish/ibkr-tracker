@@ -40,7 +40,11 @@ export default function TvChart({ data, view = 'equity', line = 'neutral', intra
 
     const isDD = view === 'drawdown';
     const col = line === 'amber' ? OBS.color.hero : OBS.color.context;
-    const toTime = (p) => (intraday ? Math.floor(Date.parse(p.date) / 1000) : p.date.slice(0, 10));
+    // Intraday (FF-données) : les points portent `t` = epoch décalée à
+    // l'heure locale (buildIntradaySeries) — l'axe temps affiche l'heure
+    // murale. Fallback parse pour toute série intraday sans `t`.
+    const toTime = (p) =>
+      intraday ? (p.t ?? Math.floor(Date.parse(p.date) / 1000)) : p.date.slice(0, 10);
 
     const chart = createChart(el, {
       width: el.clientWidth,

@@ -103,8 +103,11 @@ export function buildNlvSeries({ snapshots, cashFlows, closedTrades, liveNlv, li
 }
 
 // ─── Rééchantillonnage RÉEL par période ─────────────────────────
-const TF_DAYS = { '5D': 5, '1M': 31, '3M': 92, '1Y': 366 };
+const TF_DAYS = { '1D': 1, '5D': 5, '1M': 31, '3M': 92, '1Y': 366 };
 export const TIMEFRAMES = ['5D', '1M', '3M', 'YTD', '1Y', 'ALL'];
+// FF-données : « 1D » n'existe QUE sur Héros 1 (série NLV, densifiable en
+// intraday). TIMEFRAMES reste la liste partagée (Héros 2 réalisé inclus).
+export const TIMEFRAMES_HERO1 = ['1D', ...TIMEFRAMES];
 
 function bucketKey(dateMs, mode) {
   const d = new Date(dateMs);
@@ -151,6 +154,91 @@ export function resampleSeries(series, range) {
     }
   }
   return Array.from(buckets.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// ─── Série INTRADAY (FF-données) ────────────────────────────────
+// Déplie le buffer qc:nlvIntraday (échantillons ~5 min en séance RTH)
+// en série TvChart pour les ranges 1D/5D. Même sémantique honnête que
+// la série quotidienne : flowNeutral = nlv − dépôts cumulés du jour
+// (dérivés du daily annoté : dep = nlv − flowNeutral), et le drawdown
+// est mesuré contre le HIGH-WATER MARK flow-neutral SEEDÉ de tout
+// l'historique quotidien antérieur à la fenêtre — jamais contre le
+// début de fenêtre. Un apport intraday ne « guérit » donc rien.
+//
+// Chaque point porte `t` = epoch décalée à l'heure LOCALE (l'axe temps
+// de lightweight-charts affiche l'UTC de l'epoch reçue : le décalage
+// rend l'axe et le crosshair lisibles en heure murale locale).
+export function buildIntradaySeries({ dailySeries, intradayDays, liveNlv = null, sessionDays = 5, nowMs = Date.now() }) {
+  const days = (Array.isArray(intradayDays) ? intradayDays : [])
+    .filter((d) => d && typeof d.d === 'string' && Array.isArray(d.pts) && d.pts.length > 0)
+    .slice(-Math.max(1, sessionDays));
+  if (days.length === 0) return [];
+
+  const daily = Array.isArray(dailySeries) ? dailySeries : [];
+  const depByDate = new Map();
+  for (const p of daily) depByDate.set(p.date.slice(0, 10), p.nlv - p.flowNeutral);
+  const depFor = (day) => {
+    if (depByDate.has(day)) return depByDate.get(day);
+    let dep = 0;
+    for (const p of daily) {
+      if (p.date.slice(0, 10) <= day) dep = p.nlv - p.flowNeutral;
+      else break;
+    }
+    return dep;
+  };
+
+  const firstDay = days[0].d;
+  let peakFN = -Infinity;
+  let hwmNlv = 0;
+  for (const p of daily) {
+    if (p.date.slice(0, 10) >= firstDay) break;
+    if (p.flowNeutral > peakFN) { peakFN = p.flowNeutral; hwmNlv = p.nlv; }
+  }
+
+  const toPoint = (tsSec, nlv, day, live) => {
+    const dep = depFor(day);
+    const flowNeutral = nlv - dep;
+    if (flowNeutral > peakFN) { peakFN = flowNeutral; hwmNlv = nlv; }
+    const drawdownUsd = Math.max(0, peakFN - flowNeutral);
+    const dt = new Date(tsSec * 1000);
+    return {
+      date: `${day}T${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`,
+      t: tsSec - dt.getTimezoneOffset() * 60,
+      nlv: Math.round(nlv),
+      flowNeutral: Math.round(flowNeutral),
+      underwater: -Math.round(drawdownUsd),
+      drawdownUsd: Math.round(drawdownUsd),
+      drawdownPct: hwmNlv > 0 ? Number((-(drawdownUsd / hwmNlv) * 100).toFixed(2)) : 0,
+      chg: 0,
+      deposit: false,
+      depositAmount: 0,
+      dayPnl: null,
+      tradeCount: 0,
+      live: Boolean(live),
+    };
+  };
+
+  const out = [];
+  for (const d of days) {
+    for (const [ts, nlv] of d.pts) {
+      if (!Number.isFinite(ts) || !Number.isFinite(nlv) || nlv <= 0) continue;
+      out.push(toPoint(ts, nlv, d.d));
+    }
+  }
+  // Point live : la NLV courante du store, plus fraîche que le dernier
+  // échantillon 5 min (même rôle que le point live de la série quotidienne).
+  if (Number.isFinite(liveNlv) && liveNlv > 0 && out.length > 0) {
+    const nowSec = Math.floor(nowMs / 1000);
+    const lastTs = days[days.length - 1].pts[days[days.length - 1].pts.length - 1][0];
+    if (nowSec > lastTs) out.push(toPoint(nowSec, liveNlv, new Date(nowMs).toISOString().slice(0, 10), true));
+  }
+
+  let prevFN = null;
+  for (const p of out) {
+    p.chg = prevFN == null ? 0 : Math.round(p.flowNeutral - prevFN);
+    prevFN = p.flowNeutral;
+  }
+  return out;
 }
 
 // ─── Stats de la fenêtre affichée (bande perf) ──────────────────

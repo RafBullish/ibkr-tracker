@@ -27,7 +27,8 @@ import PerfBand from './hero1/PerfBand';
 // dépendance ne pèse QUE sur son propre chunk, hors bundle index.
 const TvChart = lazy(() => import('./hero1/TvChart'));
 import { deriveKpisReal } from './hero1/model';
-import { buildNlvSeries, resampleSeries, deriveSeriesStats, deriveWindowStats } from '../../utils/nlvSeries';
+import { buildNlvSeries, buildIntradaySeries, resampleSeries, deriveSeriesStats, deriveWindowStats, TIMEFRAMES_HERO1 } from '../../utils/nlvSeries';
+import { useIntradayNlvDays } from '../../hooks/useIntradayNlv';
 import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
 import { useTradingMetrics } from '../../hooks/useTradingMetrics';
 import useDailyPnL from '../../hooks/useDailyPnL';
@@ -94,6 +95,26 @@ export default function Hero1({ area = 'hero1' }) {
   );
 
   const series = useMemo(() => resampleSeries(dailyFull, range), [dailyFull, range]);
+
+  // FF-données — 1D/5D denses : le buffer intraday (échantillons ~5 min
+  // en séance, qc:nlvIntraday) remplace la série quotidienne SUR LE GRAPHE
+  // quand il couvre la fenêtre (1D : ≥ 2 points ; 5D : ≥ 2 séances).
+  // Bandes perf/stats restent calculées sur la série QUOTIDIENNE fenêtrée
+  // (sémantique « par jour » préservée). Fallback honnête : sans buffer,
+  // 1D/5D montrent les points quotidiens comme avant.
+  const intradayDays = useIntradayNlvDays();
+  const intradaySeries = useMemo(() => {
+    if (range !== '1D' && range !== '5D') return null;
+    if (range === '5D' && intradayDays.length < 2) return null;
+    const s = buildIntradaySeries({
+      dailySeries: dailyFull,
+      intradayDays,
+      liveNlv: metrics?.netLiquidationValueUsd ?? null,
+      sessionDays: range === '1D' ? 1 : 5,
+    });
+    return s.length >= 2 ? s : null;
+  }, [range, intradayDays, dailyFull, metrics]);
+
   const stats = useMemo(() => deriveSeriesStats(series), [series]);
   const windowStats = useMemo(() => deriveWindowStats(series), [series]);
   const kpi = useMemo(
@@ -130,7 +151,7 @@ export default function Hero1({ area = 'hero1' }) {
           <span className="lh-chart__title">EQUITY / NLV</span>
           <div className="lh-chart__controls">
             <ViewToggle view={view} setView={setView} />
-            <RangeSelector range={range} setRange={setRange} />
+            <RangeSelector range={range} setRange={setRange} options={TIMEFRAMES_HERO1} />
           </div>
         </div>
         {view === 'drawdown' ? (
@@ -147,7 +168,7 @@ export default function Hero1({ area = 'hero1' }) {
           </div>
           <div className="lh-fuse__chart">
             <Suspense fallback={<div className="lh-canvas lh-canvas--empty">Chargement…</div>}>
-              <TvChart data={series} view={view} line="neutral" intraday={false} />
+              <TvChart data={intradaySeries || series} view={view} line="neutral" intraday={Boolean(intradaySeries)} />
             </Suspense>
           </div>
         </div>

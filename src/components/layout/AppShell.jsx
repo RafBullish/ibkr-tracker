@@ -31,6 +31,7 @@ import CommandPalette from '../ui/CommandPalette';
 import CheatsheetModal from '../ui/CheatsheetModal';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import useIbkrLive from '../../hooks/useIbkrLive';
+import { useIntradayNlvWriter } from '../../hooks/useIntradayNlv';
 import { FEATURE_GREEK_CENTER } from '../../constants/featureFlags';
 
 // Persistance du repli SideNav — pattern qc:* (PAS une slice du store).
@@ -63,6 +64,17 @@ const NAV_PATHS = [
   '/insights/journal',
   '/settings/import',
 ];
+
+// FF-données — writer NLV intraday : échantillonne la NLV du store vers
+// qc:nlvIntraday (~5 min, séance RTH NY uniquement, zéro réseau). Monté
+// dans l'AppShell (et pas dans Dashboard) pour échantillonner quelle que
+// soit la page ouverte, comme useIbkrLive — mais ISOLÉ dans un composant
+// nul : le tick minute de useMarketSession re-rend ce seul composant,
+// jamais l'arbre AppShell (SideNav/tape/page routée intacts).
+function IntradayNlvWriter() {
+  useIntradayNlvWriter();
+  return null;
+}
 
 function SubNav({ pathname, navigate }) {
   let tabs = [];
@@ -245,6 +257,7 @@ export default function AppShell() {
       {isMobile && <BottomNav />}
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
       <CheatsheetModal open={cheatOpen} onClose={() => setCheatOpen(false)} />
+      <IntradayNlvWriter />
     </div>
   );
 }

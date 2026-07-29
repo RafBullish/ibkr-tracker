@@ -4,8 +4,9 @@
 //  Hook minimaliste pour savoir si le marché US est ouvert maintenant
 //  et calculer le délai jusqu'au prochain open. Pas de gestion des
 //  holidays NYSE (jours fériés US) — c'est une approximation week-day
-//  based. Suffisant pour le bloc "MARKET CLOSED · NEXT OPEN" du
-//  Day P&L (4K refonte Phase B.4).
+//  based. Consommateur actuel : useIntradayNlvWriter (FF-données —
+//  gating RTH de l'échantillonnage NLV intraday ; un jour férié US
+//  échantillonne une NLV plate, sans conséquence).
 //
 //  Retourne :
 //    {

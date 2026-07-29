@@ -46,8 +46,14 @@ Objectif : **tag v1.0.0 au 01.09.2026**.
   - **Fast-follow 1/5 ✅ (1.0.0-rc.6)** — LIQUIDITÉ DISPO = **vraie Available
     Funds IBKR** (bridge live, marqueur « IBKR ») quand le snapshot est frais,
     sinon estimation cash-A + `est.` (`resolveLiveAvailableUsd`, 10 tests).
-  - Fast-follow restants : rétention NLV (>60 j), writer intraday,
-    `api/account-summary/sync.js` serveur, cleanup résidus 1.D.
+  - **FF-données ✅ (1.0.0-rc.8, 29.07.2026)** — rétention NLV **longue**
+    (cap FIFO 60 j → 3650, l'historique ne s'efface plus ; migration = no-op
+    prouvé par test) + **writer intraday** (échantillons NLV ~5 min en séance
+    RTH NY, buffer roulant `qc:nlvIntraday` ~5 séances, zéro réseau) +
+    graphe Héros 1 **1D/5D denses** (nouveau range 1D propre au Héros 1,
+    drawdown flow-neutral préservé, fallback quotidien honnête).
+  - Fast-follow restants : `api/account-summary/sync.js` serveur,
+    cleanup résidus 1.D.
 - **1.E ✅ (1.0.0-rc.7)** — Héros 2 « Réalisé » (LA FUSION) : bloc RÉALISÉ
   pleine largeur, **jumeau de Héros 1** (cadre gris, cellules-MONDE, graphe
   terminal, double devise). **Maison PURE du réalisé** — l'UNREALIZED reste
