@@ -91,6 +91,11 @@ import './styles/v1-heros.css';
 // classes .h2-* (deck réalisé + matrice de non-perte, split graphe terminal /
 // distribution). Après v1-heros.css (réutilise .lh-*), avant c3-hires.css.
 import './styles/v1-heros2.css';
+// v1-decision.css — Bande décision (brique 1.F) : étage DÉCISION du
+// Dashboard (ATTENTION · FORME · CAPITAL) + harmonisation veille
+// (Watchlist/CalendarMini). Classes .db-* ; réutilise .mk-title/.pf-c
+// (v1-heros.css). Après v1-heros2.css, avant c3-hires.css.
+import './styles/v1-decision.css';
 // c3-hires.css — PALIER HAUTE RÉSOLUTION C.3.0 (≥1440px). Importé EN
 // DERNIER pour gagner par ordre de source. Densifie l'usage fenêtré
 // ~1591 px / dpr 1.35 ; n'affecte pas le mobile (<1440).

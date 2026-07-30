@@ -1,37 +1,31 @@
 // ═══════════════════════════════════════════════════════════════
-//  DASHBOARD v6 — 4K refonte Phase C.1 / C.2 — Bloomberg-dense bento
+//  DASHBOARD — page reine v1.0 (architecture finale brique 1.F).
 //
-//  Grid 5 rows (Phase C.2.10 — SniperGate retiré, reconstruction
-//  ultérieure) :
-//    Row 1 (520px) : Equity col 1-3 | Cumul P&L col 4-6 | RiskMatrix col 7-12
-//    Row 2 (auto)  : LivePositions col 1-12 (19 cols Phase C.1 originale)
-//    Row 3 (480px) : TradeHistory col 1-12 (14 cols Phase C.2)
-//    Row 4 (180px) : Watchlist col 1-6 | CalendarMini col 7-12
-//    Row 5 (160px) : AlertsFeed col 1-12 (1.C — stubs IVR/Sectors retirés)
+//  Ordre vertical (DA Obsidienne §7) :
+//    1. Cockpit MarketDeck (hors grille — ligne de commandement)
+//    2. Héros 1 — Equity/NLV pleine largeur (1.D)
+//    3. Héros 2 — Réalisé pleine largeur (1.E)
+//    4. BANDE DÉCISION — ATTENTION · FORME · CAPITAL (1.F ;
+//       absorbe AlertsFeed, mort en 1.F)
+//    5. RiskMatrix pleine largeur (vue détaillée)
+//    6. LivePositions · 7. TradeHistory (pleine largeur)
+//    8. Rangée de clôture « veille » : Watchlist | CalendarMini
 //
-//  Phase C.1 retire 4 modules du dashboard (leurs fichiers restent
-//  pour Greeks/Chain/Premarket) :
-//    GreeksAggregate · EarningsCalendar · MarketInternals · VolatilitySkew
-//
-//  Phase C.2.10 retire SniperGateMonitor du dashboard. Le composant
-//  reste sur disque pour reconstruction Phase C.3+ (hook + JSX
-//  pourront être ré-introduits sans dépendances cassées).
-//
-//  RiskMatrix reçoit maintenant un objet metrics fusionné :
-//    { ...usePortfolioMetrics(), ...useRiskMatrix(), equityHistory }
+//  RiskMatrix reçoit un objet metrics fusionné :
+//    { ...usePortfolioMetrics(), ...useRiskMatrix(), equityHistory, greeks }
 //  afin d'accéder à toutes les métriques (sharpe, sortino, sqn, cagr,
-//  rMultiples, currentStreak…) sans dupliquer les hook-calls dans
-//  RiskMatrix lui-même.
+//  rMultiples, currentStreak…) sans dupliquer les hook-calls.
+//  DecisionBand reçoit metrics + greeks par le même pattern.
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo } from 'react';
 import MarketDeck from '../components/dashboard/MarketDeck';
 import Hero1 from '../components/dashboard/Hero1';
 import Hero2 from '../components/dashboard/Hero2';
+import DecisionBand from '../components/dashboard/decision/DecisionBand';
 import RiskMatrix from '../components/dashboard/RiskMatrix';
 import LivePositions from '../components/dashboard/LivePositions';
 import Watchlist from '../components/dashboard/Watchlist';
-import AlertsFeed from '../components/dashboard/AlertsFeed';
 import TradeHistory from '../components/dashboard/TradeHistory';
 import CalendarMini from '../components/dashboard/CalendarMini';
 import useEquityHistory from '../hooks/useEquityHistory';
@@ -39,7 +33,6 @@ import useGreeksAggregate from '../hooks/useGreeksAggregate';
 import useRiskMatrix from '../hooks/useRiskMatrix';
 import useLivePositions from '../hooks/useLivePositions';
 import useWatchlist from '../hooks/useWatchlist';
-import useAlertsFeed from '../hooks/useAlertsFeed';
 import useAvailableCapital from '../hooks/useAvailableCapital';
 import { usePortfolioMetrics, useKPIs } from '../hooks/usePortfolioMetrics';
 import { useOpenPositions, useDispatch, useClosedTrades } from '../store/useStore';
@@ -110,7 +103,6 @@ export default function Dashboard() {
   const greeks = useGreeksAggregate();
   const positions = useLivePositions({ greeksMap: greeks.greeksMap });
   const watchlist = useWatchlist();
-  const alerts = useAlertsFeed();
 
   // Merge portfolioMetrics (sharpe/sortino/sqn/cagr/recovery/rMultiples/
   // streaks/breakEven/fees/fxImpact/monthly) + riskMatrixData
@@ -143,12 +135,15 @@ export default function Dashboard() {
         {/* 1.E — Héros 2 : Réalisé pleine largeur (cumulé/quotidien/
             distribution + matrice de non-perte). Remplace DailyPnLChart. */}
         <Hero2 area="hero2" />
+        {/* 1.F — BANDE DÉCISION : étage DÉCISION (ATTENTION · FORME ·
+            CAPITAL). Absorbe AlertsFeed (fusion U7 → ATTENTION). */}
+        <DecisionBand metrics={portfolioMetrics} greeks={greeks} area="decision" />
         <RiskMatrix metrics={riskMetrics} area="risk" />
         <LivePositions data={positions} area="positions" />
         <TradeHistory data={closedTrades} liveRate={portfolioMetrics?.liveRate ?? 1} area="history" />
+        {/* 1.F — rangée de clôture « veille » : Watchlist | CalendarMini. */}
         <Watchlist data={watchlist} area="watch" />
         <CalendarMini area="calendar" />
-        <AlertsFeed data={alerts} area="alert" />
       </div>
       </div>
     </div>
