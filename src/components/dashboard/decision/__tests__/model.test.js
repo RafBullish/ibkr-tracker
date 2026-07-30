@@ -123,6 +123,17 @@ describe('deriveAttention — dédup, tri, débordement, état vide', () => {
     expect(a.lines[0].others).toBeGreaterThan(0);
   });
 
+  it('même sujet, même sévérité → le vocabulaire doctrine (gate) est affiché', () => {
+    // DTE 29 : DTE_CRITICAL (fill 161) ET gate SL35 (doctrine, fill 106),
+    // tous deux critiques → la métrique affichée parle « gate 35 ».
+    const a = deriveAttention({
+      alerts: [alert({ type: 'DTE_CRITICAL', value: 29 })],
+      gateRows: [gateRow({ dte: 29 })],
+    });
+    expect(a.lines[0].severity).toBe('critique');
+    expect(a.lines[0].metric).toBe('DTE 29 j ≤ gate 35');
+  });
+
   it('tri : critique avant armé ; à sévérité égale, proximité du seuil', () => {
     const a = deriveAttention({
       alerts: [
