@@ -10,6 +10,8 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { fmtUsd, fmtUsdSigned, fmtChf, toneSign } from '../hero1/kit';
+// 1.F — tick au changement de valeur (cf. PortfolioDeck, même portée).
+import { TickValue } from '../decision/parts';
 
 // Cellule-MONDE (identique 1.D) — value null → cellule ignorée.
 function Cell({ label, value, chf, sub, tone, bar }) {
@@ -18,7 +20,7 @@ function Cell({ label, value, chf, sub, tone, bar }) {
   return (
     <div className="pf-c">
       <span className="pf-c__label">{label}</span>
-      <span className={`pf-c__val${tone ? ` pf-c__val--${tone}` : ''}`}>{value}</span>
+      <TickValue text={value} className={`pf-c__val${tone ? ` pf-c__val--${tone}` : ''}`} />
       <span className="pf-c__meta">{meta || ' '}</span>
       <span className="pf-c__barslot">
         {bar && Number.isFinite(bar.pct) ? (
@@ -64,7 +66,7 @@ export default function RealizedDeck({ m, rate, range }) {
         <div className="pf-hero">
           <div className="pf-hero__lbl">CUMULÉ · {range}</div>
           <div className={`pf-hero__val h2-giant--${toneSign(mx.realizedTotal) || 'mute'}`}>
-            {mx.n ? fmtUsdSigned(mx.realizedTotal) : '—'}
+            <TickValue text={mx.n ? fmtUsdSigned(mx.realizedTotal) : '—'} />
           </div>
           <div className="pf-hero__meta">
             {chf(mx.realizedTotal, true) || ''}

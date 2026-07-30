@@ -77,6 +77,34 @@
 .db-gauge__grad { position: absolute; top: 0; bottom: 0; width: 1px; background: color-mix(in srgb, var(--depth-void) 65%, transparent); }
 .db-gauge__mark { position: absolute; top: -1px; bottom: -1px; width: 2px; background: var(--accent-amber); }
 
+/* ── Stagger de montage (1.F §4.6) — fondu + montée 8 px, 150 ms,
+   30 ms par étage (cockpit → héros 1 → héros 2 → bande → suites),
+   UNE FOIS au premier mount de la page (animation d'insertion DOM :
+   un refresh de données ne remonte pas les étages). CSS plutôt que
+   wrappers Framer : les étages sont des enfants directs de .dash-grid
+   (les envelopper casserait les grid-areas). `backwards` masque
+   l'étage pendant son délai. Coupé sous prefers-reduced-motion
+   (media guard ici + kill-switch global animations.css). ── */
+@media (prefers-reduced-motion: no-preference) {
+  .dashboard-page .cockpit,
+  .dashboard-page .dash-grid > * {
+    animation: db-rise 150ms ease-out backwards;
+  }
+  .dashboard-page .cockpit { animation-delay: 0ms; }
+  .dashboard-page .dash-grid > [style*="grid-area: hero1"] { animation-delay: 30ms; }
+  .dashboard-page .dash-grid > [style*="grid-area: hero2"] { animation-delay: 60ms; }
+  .dashboard-page .dash-grid > [style*="grid-area: decision"] { animation-delay: 90ms; }
+  .dashboard-page .dash-grid > [style*="grid-area: risk"] { animation-delay: 120ms; }
+  .dashboard-page .dash-grid > [style*="grid-area: positions"] { animation-delay: 150ms; }
+  .dashboard-page .dash-grid > [style*="grid-area: history"] { animation-delay: 180ms; }
+  .dashboard-page .dash-grid > [style*="grid-area: watch"],
+  .dashboard-page .dash-grid > [style*="grid-area: calendar"] { animation-delay: 210ms; }
+}
+@keyframes db-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
 /* ── Mobile <768 — zones empilées, rail devient hairline horizontale ── */
 @media (max-width: 767px) {
   .db-grid { grid-template-columns: 1fr; }
