@@ -147,16 +147,20 @@ un champ greek fait échouer le contrôle.
 
 ### PHASE FINALE v1.0
 
-**Phase finale v1.0 OUVERTE** — ligne de base v2.3.1 (ea64652 ; baseline
-effective 1254a34). Briques 1.A (1.0.0-rc.1), 1.B (1.0.0-rc.2), 1.C
-(1.0.0-rc.3, étage D2-FINALE + tape LED Doto), 1.S (1.0.0-rc.4) et **1.D
-mergée (1.0.0-rc.5)** — Héros 1 : bloc Equity/NLV pleine largeur sur
-donnée NLV dense (snapshots quotidiens + live, drawdown flow-neutral) ;
-zone haute PORTEFEUILLE à l'image du MarketDeck (sous-panneaux denses
-CAPITAL & LIQUIDITÉ · P&L · RISQUE & GREEKS · PERFORMANCE, cellules-MONDE
-alignées, cadre harmonisé cockpit encadré) ; graphe terminal
-(lightweight-charts, code-split) ; CommandDeck migré ; EquityChart
-remplacé. Prochaine brique : **1.E — Héros 2 (Realized pleine largeur).**
+**Phase finale v1.0 — ÉTAPE 1 (Dashboard) CLOSE** — ligne de base v2.3.1
+(ea64652 ; baseline effective 1254a34). Briques livrées : 1.A (rc.1),
+1.B (rc.2), 1.C (rc.3), 1.S (rc.4), 1.D (rc.5, + liquidité IBKR rc.6,
++ FF-données rc.8), 1.E (rc.7) et **1.F mergée (1.0.0-rc.9)** — bande
+décision : étage DÉCISION pleine largeur entre Héros 2 et RiskMatrix
+(un panneau cockpit, 3 zones aux rails verticaux : ATTENTION fusionnant
+generateAlerts + gates doctrine DTE 45/50 + kill switch, badges
+ARMED/CRITICAL ; FORME = pastilles 18 clôtures + streak neutre + MTD +
+expectancy gatée 10 décisifs, modèle Héros 2 ; CAPITAL = jauge de
+déploiement acier→ambre au cap 70 % + cellules miroir Héros 1) ;
+AlertsFeed MORT (fusion) ; micro-mouvement (ticks 180 ms decks héros +
+bande, stagger 30 ms/étage, reduced-motion) ; veille
+Watchlist/CalendarMini harmonisée ; garde-fous overlap PortfolioDeck.
+Prochaine brique : **2.A — Tables (Positions · History), Étape 2.**
 
 Repères S2 toujours en vigueur : KPI 44, cellules `.v3-table` 20 (rowHeight 47),
 plancher caption 17, strip 21/16/18, ticks charts plafonnés 14, héros 56/64

@@ -17,7 +17,7 @@ import { useOpenPositions } from '../../store/useStore';
 
 const DAYS_FR = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 const MONTHS_FR_SHORT = [
-  'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jui', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc',
+  'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc',
 ];
 const TYPE_LABEL = { earn: 'Résultats', macro: 'Macro', exp: 'Expiration' };
 
@@ -87,7 +87,7 @@ export default function CalendarMini({ area = 'calendar' }) {
   const isEmpty = events.length === 0;
 
   return (
-    <section className="module" style={{ gridArea: area }}>
+    <section className="module db-veille" style={{ gridArea: area }}>
       <header className="module-header">
         <span className="module-header__title">Calendrier · 7 j</span>
         <span className="module-header__hint">{events.length} évt</span>
@@ -113,13 +113,15 @@ export default function CalendarMini({ area = 'calendar' }) {
                   onClick={() => navigate('/insights/calendar')}
                   title="Ouvrir le calendrier"
                 >
+                  {/* 1.F §4.7 — cellules GROUPÉES à gauche (date · tag ·
+                      label), le surplus vit en fin de ligne (anti-vide). */}
                   <td className="calmini__date">{fmtShort(ev.date)}</td>
-                  <td className="calmini__label">{ev.label}</td>
                   <td className="calmini__type">
                     <span className={`calmini__tag calmini__tag--${ev.type}`}>
                       {TYPE_LABEL[ev.type] || ev.type}
                     </span>
                   </td>
+                  <td className="calmini__label">{ev.label}</td>
                 </tr>
               ))}
             </tbody>

@@ -128,9 +128,6 @@
   .live-pos__type-pill,
   .live-pos__gate-pill-sub,
   .live-pos__ctx-badge,
-  .alerts-feed__level,
-  .alerts-feed__sep,
-  .alerts-feed__msg,
   .risk-matrix__cell--right,
   .risk-matrix__cell--loss,
   .risk-matrix__cell--profit,
@@ -168,19 +165,22 @@
   .dash-shell .dash-grid {
     /* 1.D/1.E — Héros 1 puis Héros 2, deux étages pleine largeur du même
        cockpit (blocs auto-height, graphes terminaux à hauteur interne fixe). */
+    /* 1.F — étage DECISION entre hero2 et risk ; area alert morte
+       (AlertsFeed fusionné dans la bande décision). */
     grid-template-areas:
       "hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1"
       "hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2"
+      "decision decision decision decision decision decision decision decision decision decision decision decision"
       "risk risk risk risk risk risk risk risk risk risk risk risk"
       "positions positions positions positions positions positions positions positions positions positions positions positions"
       "history history history history history history history history history history history history"
-      "watch watch watch watch watch watch calendar calendar calendar calendar calendar calendar"
-      "alert alert alert alert alert alert alert alert alert alert alert alert";
+      "watch watch watch watch watch watch calendar calendar calendar calendar calendar calendar";
   }
   /* Héros 1 : hauteur AUTO (le bloc dimensionne ses zones ; le graphe
      terminal a une hauteur interne fixe via .lh-fuse__stage). */
   .dash-shell .dash-grid > [style*="grid-area: hero1"],
-  .dash-shell .dash-grid > [style*="grid-area: hero2"] {
+  .dash-shell .dash-grid > [style*="grid-area: hero2"],
+  .dash-shell .dash-grid > [style*="grid-area: decision"] {
     height: auto;
   }
   .dash-shell .dash-grid > [style*="grid-area: risk"] {

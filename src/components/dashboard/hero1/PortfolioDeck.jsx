@@ -13,6 +13,10 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { fmtUsd, fmtUsdSigned, fmtUsdCompact, fmtChf, toneSign } from './kit';
+// 1.F — tick au changement de valeur LIVE (fondu + 2 px, 180 ms,
+// coupé sous prefers-reduced-motion). Portée sanctionnée : cellules
+// des decks Héros 1/2 + bande décision. MarketDeck : NON (gelé).
+import { TickValue } from '../decision/parts';
 
 const sharesSigned = (v) => (v == null || !Number.isFinite(v) ? null : `${v >= 0 ? '+' : '−'}${Math.abs(Math.round(v)).toLocaleString('de-CH')}`);
 const num2 = (v) => (v == null || !Number.isFinite(v) ? null : v.toFixed(2));
@@ -34,11 +38,12 @@ function AllocBar({ pct, mark }) {
 // cordeau. `value` null → cellule ignorée (aucune ligne « — » nue).
 function Cell({ label, value, chf, sub, tone, bar }) {
   if (value == null) return null;
-  const meta = [chf, sub].filter(Boolean).join(' · ');
+  // 1.F — pas de « · » devant un sub qui commence par « / ».
+  const meta = [chf, sub].filter(Boolean).join(sub && sub.startsWith('/') ? ' ' : ' · ');
   return (
     <div className="pf-c">
       <span className="pf-c__label">{label}</span>
-      <span className={`pf-c__val${tone ? ` pf-c__val--${tone}` : ''}`}>{value}</span>
+      <TickValue text={value} className={`pf-c__val${tone ? ` pf-c__val--${tone}` : ''}`} />
       <span className="pf-c__meta">{meta || ' '}</span>
       <span className="pf-c__barslot">{bar ? <AllocBar pct={bar.pct} mark={bar.mark} /> : null}</span>
     </div>
@@ -104,7 +109,9 @@ export default function PortfolioDeck({ kpi, rate }) {
                   <span className="pf-est" title="Estimation cash-A — bridge IBKR hors ligne ou snapshot périmé">est.</span>
                 )}
               </div>
-              <div className="pf-hero__val">{k.powder == null ? '—' : fmtUsd(k.powder)}</div>
+              <div className="pf-hero__val">
+                <TickValue text={k.powder == null ? '—' : fmtUsd(k.powder)} />
+              </div>
               <div className="pf-hero__meta">
                 {fmtChf(k.powder, rate) || ''}
                 {k.powderPct != null ? ` · ${Math.round(k.powderPct)} % déployable` : ''}

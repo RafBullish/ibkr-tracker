@@ -68,3 +68,5 @@ scripts/iosevka-source/
 
 # Artefacts de verification brique-par-brique (screenshots, scripts jetables)
 /.checkpoints/
+/1f-*.png
+/critique/

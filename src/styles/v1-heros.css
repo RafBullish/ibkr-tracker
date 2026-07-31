@@ -39,9 +39,14 @@
    CHF/contexte GROUPÉS et COLLÉS À GAUCHE (zéro trou central), en
    GRILLE 2 COLONNES par panneau (densité MONDE). Rails `--line-emphasis`. */
 .pf-deck { display: grid; grid-template-columns: 1.2fr 1fr 1.08fr 0.92fr; border-bottom: 1px solid var(--hairline-rest); }
-.pf-cell { display: flex; flex-direction: column; min-width: 0; }
+/* 1.F §4.8 — garde-fous racine anti-chevauchement (résidu live 1.E) :
+   un panneau CLIPPE son contenu (une valeur longue ne peint jamais
+   par-dessus le rail du voisin), et les slots nowrap portent une
+   ellipse honnête au lieu d'une coupe en plein glyphe. Aucun effet
+   au rendu nominal (vérifié seed standard + seed de stress @1591). */
+.pf-cell { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 .pf-cell + .pf-cell { border-left: 1px solid var(--line-emphasis); }
-.pf-cell .mk-title { margin-bottom: 7px; }
+.pf-cell .mk-title { margin-bottom: 7px; overflow: hidden; text-overflow: ellipsis; }
 
 /* Héros LIQUIDITÉ DISPO — prominent (registre du héros FX/VOL) */
 .pf-hero { display: flex; flex-direction: column; gap: 0; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--hairline-rest); }
@@ -50,15 +55,21 @@
 /* Marqueur « donnée réelle IBKR » — NEUTRE (loi de couleur : ce n'est pas
    un P&L, jamais vert/rouge). Encre sourde + filet murmuré. */
 .pf-real { font-size: 8.5px; letter-spacing: 0.06em; color: var(--ink-mute); border: 1px solid var(--hairline-rest); border-radius: 2px; padding: 0 4px; text-transform: none; font-variant-numeric: tabular-nums; }
-.pf-hero__val { font-family: var(--qc-font-num); font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); line-height: 1.0; letter-spacing: -0.01em; }
-.pf-hero__meta { font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; margin-top: 2px; }
+/* 1.F §4.8 — héros nowrap + ellipse : une valeur/meta live longue ne
+   wrappe plus (le wrap décalait le rythme 55px du panneau) et ne peint
+   plus hors du panneau. */
+.pf-hero__val { font-family: var(--qc-font-num); font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); line-height: 1.0; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-hero__meta { font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Grille 2 colonnes de cellules compactes (densité MONDE) */
 /* Grille ALIGNÉE AU CORDEAU : colonnes fixes, gouttières constantes,
    RANGÉES à hauteur uniforme (grid-auto-rows) → cellules jamais décalées.
    Chaque cellule a une STRUCTURE UNIFORME (label · valeur · meta · barre)
    → baselines alignées d'une colonne à l'autre. */
-.pf-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; row-gap: 5px; grid-auto-rows: 55px; align-content: start; }
+/* 1.F §4.8 — rangées minmax(55px, auto) : la pile réelle d'une cellule
+   à barre fait 56px (13+24+12+7) → l'ancien 55px fixe rognait 1px de
+   barre. minmax garde l'alignement de rangée sans jamais rogner. */
+.pf-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; row-gap: 5px; grid-auto-rows: minmax(55px, auto); align-content: start; }
 .pf-c { display: flex; flex-direction: column; gap: 0; min-width: 0; overflow: hidden; }
 .pf-c__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 13px; }
 .pf-c__val { font-family: var(--qc-font-num); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); line-height: 24px; white-space: nowrap; }
