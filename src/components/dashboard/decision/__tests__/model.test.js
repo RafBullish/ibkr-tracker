@@ -49,17 +49,19 @@ describe('deriveAttention — matrice de non-perte (chaque signal AlertsFeed a u
     expect(a.lines[0].metric).toBe('8 j sans +15 %');
   });
 
-  it('DTE_CRITICAL : ARMÉ au-dessus du gate 35 (anti-aplatissement), CRITIQUE en dessous', () => {
-    // Sévérité plafonnée : une entrée Sniper naît vers DTE 45-60 — la
-    // marquer CRITIQUE dès < 90 rendrait la zone illisible (tout brûle).
-    const arme = deriveAttention({ alerts: [alert({ type: 'DTE_CRITICAL', value: 82 })], gateRows: [] });
-    expect(arme.lines[0].severity).toBe('arme');
-    expect(arme.lines[0].metric).toBe('DTE 82 j ≤ 90 j');
-    const crit = deriveAttention({ alerts: [alert({ type: 'DTE_CRITICAL', value: 30 })], gateRows: [] });
-    expect(crit.lines[0].severity).toBe('critique');
-    const warn = deriveAttention({ alerts: [alert({ type: 'DTE_WARNING', value: 95 })], gateRows: [] });
-    expect(warn.lines[0].severity).toBe('arme');
-    expect(warn.lines[0].metric).toBe('DTE 95 j → seuil 90 j');
+  it('seuils DTE legacy 90/100 j RETIRÉS de la bande (1.F-c1 C2) — maison : LivePositions/Positions', () => {
+    // DTE_CRITICAL/DTE_WARNING armaient toute entrée Sniper dès sa
+    // naissance (~45-60 DTE) → bruit permanent, état calme impossible.
+    const a = deriveAttention({
+      alerts: [
+        alert({ positionId: 'p1', type: 'DTE_CRITICAL', value: 82 }),
+        alert({ positionId: 'p2', type: 'DTE_WARNING', value: 95 }),
+      ],
+      gateRows: [],
+      watchedCount: 2,
+    });
+    expect(a.lines).toHaveLength(0);
+    expect(a.empty).toBe(true);
   });
 
   it('TP1 / TP2 (orange) → lignes ARMÉ avec seuils 40 / 80', () => {
@@ -82,14 +84,18 @@ describe('deriveAttention — matrice de non-perte (chaque signal AlertsFeed a u
   });
 });
 
-describe('deriveAttention — gates Sniper câblés (SL35 / DTE45 / TP short)', () => {
-  it('DTE ≤ 35 → CRITIQUE gate 35 ; 35 < DTE ≤ 45 → ARMÉ gate 45', () => {
-    const g35 = deriveAttention({ alerts: [], gateRows: [gateRow({ dte: 31 })] });
-    expect(g35.lines[0].severity).toBe('critique');
-    expect(g35.lines[0].metric).toBe('DTE 31 j ≤ gate 35');
-    const g45 = deriveAttention({ alerts: [], gateRows: [gateRow({ dte: 42 })] });
-    expect(g45.lines[0].severity).toBe('arme');
-    expect(g45.lines[0].metric).toBe('DTE 42 j ≤ gate 45');
+describe('deriveAttention — règle DTE doctrine + gates câblés (DTE45 / SL / TP short)', () => {
+  it('DTE ≤ 45 → CRITICAL gate 45 (pas de second seuil) ; DTE > 50 → rien', () => {
+    const g31 = deriveAttention({ alerts: [], gateRows: [gateRow({ dte: 31 })] });
+    expect(g31.lines[0].severity).toBe('critique');
+    expect(g31.lines[0].metric).toBe('DTE 31 j ≤ gate 45');
+    const g42 = deriveAttention({ alerts: [], gateRows: [gateRow({ dte: 42 })] });
+    expect(g42.lines[0].severity).toBe('critique');
+    expect(g42.lines[0].metric).toBe('DTE 42 j ≤ gate 45');
+    // Au-delà de la fenêtre d'approche : silence (échéance lointaine ≠ décision).
+    const g60 = deriveAttention({ alerts: [], gateRows: [gateRow({ dte: 60 })], watchedCount: 1 });
+    expect(g60.lines).toHaveLength(0);
+    expect(g60.empty).toBe(true);
   });
 
   it('fenêtre d’approche : « DTE 46 → gate 45 » (exemple architecte)', () => {
@@ -115,10 +121,7 @@ describe('deriveAttention — gates Sniper câblés (SL35 / DTE45 / TP short)', 
 describe('deriveAttention — dédup, tri, débordement, état vide', () => {
   it('une seule ligne par position : le signal le plus urgent gagne', () => {
     const a = deriveAttention({
-      alerts: [
-        alert({ type: 'DTE_CRITICAL', value: 40 }),
-        alert({ type: 'STOP_LOSS', value: -41 }),
-      ],
+      alerts: [alert({ type: 'STOP_LOSS', value: -41 })],
       gateRows: [gateRow({ dte: 40, unrealPct: -41 })],
     });
     expect(a.lines).toHaveLength(1);
@@ -130,34 +133,35 @@ describe('deriveAttention — dédup, tri, débordement, état vide', () => {
     expect(a.lines[0].otherMetrics.length).toBe(a.lines[0].others);
   });
 
-  it('même sujet, même sévérité → le vocabulaire doctrine (gate) est affiché', () => {
-    // DTE 29 : DTE_CRITICAL (fill 161) ET gate SL35 (doctrine, fill 106),
-    // tous deux critiques → la métrique affichée parle « gate 35 ».
+  it('un DTE_CRITICAL legacy en doublon ne réintroduit pas le seuil 90 j', () => {
+    // La ligne existe (gate doctrine franchie) mais parle « gate 45 »,
+    // jamais « ≤ 90 j » — le legacy est bien mort dans la bande.
     const a = deriveAttention({
       alerts: [alert({ type: 'DTE_CRITICAL', value: 29 })],
       gateRows: [gateRow({ dte: 29 })],
     });
+    expect(a.lines).toHaveLength(1);
     expect(a.lines[0].severity).toBe('critique');
-    expect(a.lines[0].metric).toBe('DTE 29 j ≤ gate 35');
+    expect(a.lines[0].metric).toBe('DTE 29 j ≤ gate 45');
   });
 
   it('tri : critique avant armé ; à sévérité égale, proximité du seuil', () => {
     const a = deriveAttention({
-      alerts: [
-        alert({ positionId: 'p1', ticker: 'A', type: 'DTE_WARNING', value: 99 }),
-        alert({ positionId: 'p2', ticker: 'B', type: 'STOP_LOSS', value: -36 }),
-        alert({ positionId: 'p3', ticker: 'C', type: 'DTE_WARNING', value: 91 }),
+      alerts: [alert({ positionId: 'p2', ticker: 'B', type: 'STOP_LOSS', value: -36 })],
+      gateRows: [
+        gateRow({ id: 'p1', ticker: 'A', dte: 49 }),
+        gateRow({ id: 'p2', ticker: 'B', dte: 120 }),
+        gateRow({ id: 'p3', ticker: 'C', dte: 46 }),
       ],
-      gateRows: [],
     });
     expect(a.lines.map((l) => l.ticker)).toEqual(['B', 'C', 'A']);
   });
 
   it('débordement : maxLines affichées + compteur « +N »', () => {
-    const alerts = Array.from({ length: 8 }, (_, i) =>
-      alert({ positionId: `p${i}`, ticker: `T${i}`, type: 'DTE_CRITICAL', value: 80 - i })
+    const gateRows = Array.from({ length: 8 }, (_, i) =>
+      gateRow({ id: `p${i}`, ticker: `T${i}`, dte: 10 + i })
     );
-    const a = deriveAttention({ alerts, gateRows: [], maxLines: 5 });
+    const a = deriveAttention({ alerts: [], gateRows, maxLines: 5 });
     expect(a.shown).toHaveLength(5);
     expect(a.moreCount).toBe(3);
   });

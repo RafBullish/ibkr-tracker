@@ -11,7 +11,10 @@
 import { useNavigate } from 'react-router-dom';
 import { fmtUsdSigned } from '../hero1/kit';
 
-const BADGE = { critique: 'CRITIQUE', arme: 'ARMED' };
+// 1.F-c1 C3 — registre terminal : ARMED / CRITICAL (parité avec le
+// vocabulaire validé de la page : ARMED de l'AgendaCell, LIVE/REAL de
+// la StatusBar). Le reste de la bande reste en français.
+const BADGE = { critique: 'CRITICAL', arme: 'ARMED' };
 
 export default function AttentionZone({ attention }) {
   const navigate = useNavigate();

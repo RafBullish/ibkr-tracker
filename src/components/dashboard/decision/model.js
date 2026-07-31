@@ -4,11 +4,20 @@
 //
 //  ATTENTION — fusion des DEUX moteurs existants, sans recalcul :
 //    · generateAlerts (utils/alerts, moteur canonique U7) filtré
-//      red/orange — les 6 types actionnables (DTE_CRITICAL, STOP_LOSS,
-//      TIME_STOP, DTE_WARNING, TP2_REACHED, TP1_REACHED) ;
-//    · useSniperGates.rows — les 3 gates RÉELLEMENT câblés (SL35,
-//      DTE45, TP) ; les placeholders (EARN-J2, EARN+J30, TR) sont
-//      IGNORÉS (données non servies = rien à l'écran) ;
+//      red/orange — signaux P&L/temps (STOP_LOSS, TIME_STOP,
+//      TP2_REACHED, TP1_REACHED). Les seuils DTE legacy 90/100 j
+//      (DTE_CRITICAL, DTE_WARNING) sont RETIRÉS de la bande
+//      (correctif architecte 1.F-c1 C2) : ils armaient toute entrée
+//      Sniper dès sa naissance (~45-60 DTE) → bruit permanent. Leur
+//      maison reste la colonne DTE de LivePositions + la page
+//      Positions ; la position réapparaît ici dès DTE ≤ 50.
+//    · useSniperGates.rows — règle DTE DOCTRINE de la bande :
+//      CRITICAL quand la gate est franchie (DTE ≤ 45), ARMED dans la
+//      fenêtre d'approche (45 < DTE ≤ 50), rien au-delà. Le palier
+//      intermédiaire 35 disparaît de la bande (la doctrine dit sortir
+//      à 45 — une fois la gate franchie, on agit). + TP short (gate
+//      câblé) et proximité SL. Placeholders (EARN-J2, EARN+J30, TR)
+//      IGNORÉS (données non servies = rien à l'écran).
 //    · kill switch quotidien (useDailyKillSwitch.triggered).
 //
 //  Une LIGNE par position : le signal le plus urgent gagne (dédup par
@@ -30,10 +39,7 @@ import { MIN_DECISIVE_WINRATE } from '../../../utils/significance';
 // ── Seuils réels des moteurs (miroirs, pas des re-calculs) ──────────
 const SL_PCT = 35; // stop-loss P&L (generateAlerts STOP_LOSS)
 const SL_APPROACH_FRAC = 0.7; // convention statusFromFill (≥70 % du chemin)
-const DTE_CRITICAL_D = 90; // generateAlerts DTE_CRITICAL
-const DTE_WARNING_MAX = 100; // generateAlerts DTE_WARNING (90..100)
-const GATE_SL35 = 35; // useSniperGates SL35 (DTE)
-const GATE_DTE45 = 45; // useSniperGates DTE45
+const GATE_DTE45 = 45; // gate doctrine (useSniperGates DTE45)
 const GATE_DTE45_APPROACH = 5; // fenêtre « DTE 46 → gate 45 » (J+5)
 const TP_SHORT_PCT = 50; // useSniperGates TP (short premium)
 const TP1_PCT = 40;
@@ -52,21 +58,10 @@ function alertToSignal(a) {
       return { topic: 'pnl', severity: SEV.CRITIQUE, fill: 100 + (Math.abs(v) - SL_PCT), metric: `P&L ${pct0(v)} ≤ SL −${SL_PCT} %` };
     case 'TIME_STOP':
       return { topic: 'time', severity: SEV.CRITIQUE, fill: 100 + (v - 5), metric: `${v} j sans +15 %` };
-    case 'DTE_CRITICAL':
-      // Sévérité PLAFONNÉE à ARMÉ au-dessus du gate doctrine 35 : le
-      // moteur U7 marque red dès DTE < 90, mais une entrée Sniper naît
-      // vers DTE 45-60 — tout badger CRITIQUE aplatirait la zone (« tout
-      // brûle » = zéro tri). Le CRITIQUE reste réservé aux seuils durs :
-      // DTE ≤ 35, SL franchi, time-stop, kill switch. (Décision 1.F,
-      // panel d'autocritique — signalée au rapport.)
-      return {
-        topic: 'dte',
-        severity: v <= GATE_SL35 ? SEV.CRITIQUE : SEV.ARME,
-        fill: 100 + (DTE_CRITICAL_D - v),
-        metric: `DTE ${v} j ≤ ${DTE_CRITICAL_D} j`,
-      };
-    case 'DTE_WARNING':
-      return { topic: 'dte', severity: SEV.ARME, fill: ((DTE_WARNING_MAX - v) / (DTE_WARNING_MAX - DTE_CRITICAL_D)) * 100, metric: `DTE ${v} j → seuil ${DTE_CRITICAL_D} j` };
+    // DTE_CRITICAL / DTE_WARNING (seuils legacy 90/100 j du moteur U7) :
+    // RETIRÉS de la bande (1.F-c1 C2) — le sujet DTE appartient à la
+    // seule règle doctrine (gateSignals). Leur maison : colonne DTE de
+    // LivePositions + page Positions.
     case 'TP2_REACHED':
       return { topic: 'tp', severity: SEV.ARME, fill: 100 + (v - TP2_PCT), metric: `${pct0(v)} ≥ TP ${TP2_PCT} %` };
     case 'TP1_REACHED':
@@ -76,19 +71,20 @@ function alertToSignal(a) {
   }
 }
 
-// Signaux dérivés d'une row useSniperGates (3 gates câblés uniquement).
-// `doctrine: true` = vocabulaire Sniper v1.0 (préféré à sévérité égale
-// sur le même sujet — « DTE 29 j ≤ gate 35 » parle mieux que « ≤ 90 j »).
+// Signaux dérivés d'une row useSniperGates (gates câblés uniquement).
+// Règle DTE DOCTRINE de la bande (1.F-c1 C2) : CRITICAL dès la gate 45
+// franchie (on agit — pas de second seuil), ARMED dans la fenêtre
+// d'approche 45 < DTE ≤ 50, RIEN au-delà de 50 (une échéance lointaine
+// n'est pas une décision). `doctrine: true` = vocabulaire Sniper v1.0
+// (préféré à sévérité égale sur le même sujet).
 function gateSignals(row) {
   const out = [];
   const { dte, unrealPct, dir } = row;
   if (Number.isFinite(dte)) {
-    if (dte <= GATE_SL35) {
-      out.push({ topic: 'dte', severity: SEV.CRITIQUE, doctrine: true, fill: 100 + (GATE_SL35 - dte), metric: `DTE ${dte} j ≤ gate ${GATE_SL35}` });
-    } else if (dte <= GATE_DTE45) {
-      out.push({ topic: 'dte', severity: SEV.ARME, doctrine: true, fill: 100 + (GATE_DTE45 - dte), metric: `DTE ${dte} j ≤ gate ${GATE_DTE45}` });
+    if (dte <= GATE_DTE45) {
+      out.push({ topic: 'dte', severity: SEV.CRITIQUE, doctrine: true, fill: 100 + (GATE_DTE45 - dte), metric: `DTE ${dte} j ≤ gate ${GATE_DTE45}` });
     } else if (dte <= GATE_DTE45 + GATE_DTE45_APPROACH) {
-      out.push({ topic: 'dte', severity: SEV.ARME, doctrine: true, fill: ((GATE_DTE45 + GATE_DTE45_APPROACH - dte) / GATE_DTE45_APPROACH) * 100 - 1, metric: `DTE ${dte} j → gate ${GATE_DTE45}` });
+      out.push({ topic: 'dte', severity: SEV.ARME, doctrine: true, fill: ((GATE_DTE45 + GATE_DTE45_APPROACH - dte) / GATE_DTE45_APPROACH) * 100, metric: `DTE ${dte} j → gate ${GATE_DTE45}` });
     }
   }
   if (Number.isFinite(unrealPct) && unrealPct < 0) {

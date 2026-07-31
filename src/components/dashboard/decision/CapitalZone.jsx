@@ -56,7 +56,15 @@ export default function CapitalZone({ capital, rate }) {
           {[25, 50, 75].map((g) => (
             <span key={g} className="db-gauge__grad" style={{ left: `${g}%` }} aria-hidden="true" />
           ))}
-          {pct != null ? <span className="db-gauge__fill" style={{ width: `${pct}%` }} /> : null}
+          {/* 1.F-c1 C1 — remplissage NEUTRE (acier) sous le cap ; il passe
+              INTÉGRALEMENT à l'ambre au franchissement (le signal naît au
+              cap, il n'est plus permanent). */}
+          {pct != null ? (
+            <span
+              className={`db-gauge__fill${pct >= cap ? ' db-gauge__fill--cap' : ''}`}
+              style={{ width: `${pct}%` }}
+            />
+          ) : null}
           <span className="db-gauge__mark" style={{ left: `${cap}%` }} aria-hidden="true" />
         </span>
       </div>

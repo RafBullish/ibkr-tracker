@@ -81,7 +81,16 @@
    porteur ambre du seuil (autocritique — pas de double signal). */
 .db-gauge__cap { color: var(--ink-mute); }
 .db-gauge { position: relative; display: block; width: 100%; height: 8px; border-radius: 2px; background: color-mix(in srgb, var(--ink-pure) 9%, transparent); }
-.db-gauge__fill { position: absolute; left: 0; top: 0; bottom: 0; background: color-mix(in srgb, var(--accent-amber) 72%, transparent); border-radius: 2px; }
+/* 1.F-c1 C1 — remplissage NEUTRE (registre acier des barres de deck,
+   cf. .pf-bar__fill) tant que déployé < cap ; INTÉGRALEMENT ambre dès
+   le franchissement du cap 70 % (le signal naît au cap — un ambre
+   permanent n'est plus un signal, DA §3). Transition 120 ms ease-out ;
+   instantanée sous prefers-reduced-motion. */
+.db-gauge__fill { position: absolute; left: 0; top: 0; bottom: 0; background: color-mix(in srgb, var(--ink-soft) 50%, transparent); border-radius: 2px; transition: background-color 120ms ease-out; }
+.db-gauge__fill--cap { background: color-mix(in srgb, var(--accent-amber) 72%, transparent); }
+@media (prefers-reduced-motion: reduce) {
+  .db-gauge__fill { transition: none; }
+}
 .db-gauge__grad { position: absolute; top: 0; bottom: 0; width: 1px; background: color-mix(in srgb, var(--depth-void) 65%, transparent); }
 /* Repère cap : liseré void → lisible sur piste vide ET sur
    remplissage ambre (déploiement au-delà du cap). */
