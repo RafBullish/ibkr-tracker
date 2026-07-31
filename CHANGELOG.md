@@ -6,6 +6,73 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0-rc.9] — 2026-07-31
+
+**Brique 1.F — La bande décision (clôture du Dashboard, Étape 1 CLOSE).**
+Nouvel étage DÉCISION pleine largeur entre Héros 2 et RiskMatrix : UN
+panneau continu au cadre cockpit canonique, TROIS zones séparées par des
+rails verticaux (langage MarketDeck). Inclut le correctif architecte
+1.F-c1 (jauge, règle DTE, badges).
+
+### Ajouté
+- **Zone ATTENTION** (« dois-je agir ? », la plus large) —
+  `decision/model.js` PUR (23 tests) fusionne le moteur canonique
+  `generateAlerts` (STOP_LOSS, TIME_STOP, TP1/TP2, fenêtres d'approche
+  SL −24,5 % et TP) + la **règle DTE doctrine de la bande** (CRITICAL dès
+  la gate 45 franchie, ARMED dans la fenêtre 45-50, **silence au-delà** —
+  les seuils legacy 90/100 j sont retirés de la bande, leur maison reste
+  LivePositions/Positions) + le **kill switch quotidien** en ligne
+  prioritaire. Une ligne par position (signal le plus urgent, « +N » au
+  survol), tri critique→armé puis proximité, badges terminal
+  **ARMED / CRITICAL** (filet/plein reverse-video), hairline gauche ambre
+  sur les critiques, deep-links `/trading/positions?focus=`, débordement
+  « +N autres » cliquable, **état vide designé** (« Tous les gates au
+  vert — N positions surveillées »).
+- **Zone FORME** (« suis-je en forme ? ») — pastilles des **18 dernières
+  clôtures** (chrono, la plus récente accentuée, strip signature en rangée
+  basse), **streak courant** (encre neutre — un compteur n'est pas de
+  l'argent), **MTD réalisé** et **expectancy** gatée à 10 trades décisifs
+  (« — » honnête sous le seuil). Sources = modèle Héros 2
+  (`deriveRealized` ALL) + `usePortfolioMetrics` — zéro recalcul divergent.
+- **Zone CAPITAL** (« ai-je de la marge ? ») — **jauge de déploiement**
+  graduée : remplissage **acier** (registre barres de deck) sous le cap,
+  **intégralement ambre au franchissement du cap tier 70 %** (transition
+  120 ms, le signal naît au cap), repère ambre à liseré void ; cellules
+  miroir Héros 1 : DÉPLOYÉ, DISPONIBLE (marqueur IBKR/est.,
+  `resolveLiveAvailableUsd`), RISK $ · STOPS (neutre, §8), Δ NET et
+  Θ TOTAL (neutres — loi de couleur), chip TIER sobre.
+- **Micro-mouvement** — `TickValue` (fondu + 2 px, 180 ms) sur les valeurs
+  de la bande ET les cellules/héros des decks Héros 1 et 2 (MarketDeck
+  gelé, non touché) ; **stagger de montage** 150 ms / 30 ms par étage
+  (cockpit → héros → bande → suites), une fois au mount ;
+  `prefers-reduced-motion` coupé proprement partout (vérifié par émulation).
+
+### Modifié
+- **AlertsFeed MEURT** — fusion dans ATTENTION (matrice de non-perte
+  intégrale au rapport de brique) : composant + hook + ~135 l CSS + area
+  `alert` supprimés, grep 0. `utils/alerts.js` et `useDailyKillSwitch`
+  intacts (consommés ailleurs). `useSniperGates` NON modifié.
+- **Veille harmonisée** — Watchlist · CalendarMini au langage v1.0
+  (`.db-veille`) : cadre cockpit canonique, titres de zone 13 caps,
+  colonnes tenues groupées à gauche, CalendarMini date·tag·label, chips
+  hairline sobres, × de retrait au survol, « Août » correct.
+- **Rythme vertical 8 px uniforme** — retrait du margin-top 6 px legacy
+  C.2.6.7 sur history (séparait la rangée SniperGate morte depuis C.2.10).
+- **Garde-fous overlap PortfolioDeck** (résidu 1.E, non reproduit malgré
+  seed de stress systématique — protections racine) : panneaux
+  `overflow:hidden`, héros/meta/titres nowrap + ellipse, rangées
+  `minmax(55px,auto)` (la barre EXPOSURE n'est plus rognée d'1 px).
+- Typo : « · / clôture » → « / clôture » (bande + decks Héros 1/2),
+  signes du kill uniformisés (U+2212).
+
+### Vérifié
+- Build vert · color-law 0 · 290 tests verts · audit 12 pages peuplées
+  @1591×900 dpr 1.35 → `docs/captures/1f-decision/` · 0 overflow @1591 ET
+  @1920 (Chain peuplée incluse) · console : tolérés uniquement · 3 passes
+  d'autocritique documentées (dont panel 4 juges) + correctif architecte.
+
+---
+
 ## [1.0.0-rc.8] — 2026-07-29
 
 **Micro-brique FF-données (fast-follows données 1.D).** Zéro refonte

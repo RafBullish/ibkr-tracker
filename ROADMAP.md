@@ -65,8 +65,26 @@ Objectif : **tag v1.0.0 au 01.09.2026**.
   marqueurs de clôture ; panneau **DISTRIBUTION** (histogramme par bucket $,
   toujours visible) ; footer référence dédupliqué (détail jour + distribution).
   Remplace DailyPnLChart ; lab d'arbitrage purgé.
-- **1.F — Bande décision** (ATTENTION/FORME/CAPITAL) + micro-mouvement +
-  polissage — clôt le Dashboard.
+- **1.F ✅ (1.0.0-rc.9, 31.07.2026)** — La bande décision, **clôt le
+  Dashboard (Étape 1 CLOSE)**. Étage DÉCISION pleine largeur entre Héros 2
+  et RiskMatrix : UN panneau au cadre cockpit, 3 zones aux rails verticaux.
+  **ATTENTION** (la plus large) : fusion generateAlerts (SL/TP/time-stop) +
+  règle DTE doctrine de la bande (CRITICAL ≤ gate 45, ARMED 45-50, silence
+  au-delà — seuils legacy 90/100 j retirés, correctif architecte c1) + kill
+  switch en tête ; badges terminal ARMED/CRITICAL (plein/filet), tri par
+  urgence, deep-links positions, état vide designé. **FORME** : pastilles
+  des 18 dernières clôtures (strip signature rangée basse) + streak (neutre)
+  + MTD + expectancy gatée 10 décisifs — modèle Héros 2, zéro recalcul.
+  **CAPITAL** : jauge de déploiement graduée acier→ambre intégral au cap
+  tier 70 % + DÉPLOYÉ / DISPONIBLE (IBKR·est.) / RISK $·STOPS / Δ NET /
+  Θ TOTAL neutres / chip TIER — miroir strict Héros 1. **AlertsFeed MORT**
+  (fusion, matrice de non-perte documentée). Micro-mouvement : ticks 180 ms
+  (bande + decks Héros 1/2), stagger de montage 30 ms/étage,
+  prefers-reduced-motion vérifié. Veille Watchlist/CalendarMini harmonisée
+  (cadre cockpit, colonnes tenues, chips sobres) ; rythme vertical 8 px
+  uniforme ; garde-fous racine overlap PortfolioDeck. Résidus tranchés
+  É3/2.A : doublon CAPITAL↔PortfolioDeck, triplication Σ Δ/Σ Θ, moteurs
+  DTE divergents, sémantique totalExposure, gate expectancy du deck Héros 2.
 
 ## Étape 2 — Familles de pages
 
