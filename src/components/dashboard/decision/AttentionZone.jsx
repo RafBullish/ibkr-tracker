@@ -9,7 +9,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useNavigate } from 'react-router-dom';
-import { fmtUsd, fmtUsdSigned } from '../hero1/kit';
+import { fmtUsdSigned } from '../hero1/kit';
 
 const BADGE = { critique: 'CRITIQUE', arme: 'ARMED' };
 
@@ -27,7 +27,10 @@ export default function AttentionZone({ attention }) {
 
   return (
     <div className="db-zone db-zone--attention" aria-label="Attention — gates et alertes">
-      <div className="mk-title">ATTENTION</div>
+      <div className="mk-title">
+        ATTENTION
+        {a.lines.length > 0 ? ` · ${a.lines.length}` : ''}
+      </div>
       {a.kill ? (
         <div
           className="db-kill"
@@ -39,7 +42,7 @@ export default function AttentionZone({ attention }) {
         >
           <span className="db-badge db-badge--critique">KILL SWITCH</span>
           <span className="db-kill__msg">
-            Limite du jour franchie · {fmtUsdSigned(a.kill.dailyPnlUsd)} / {fmtUsd(a.kill.maxLoss)}
+            Limite du jour franchie · {fmtUsdSigned(a.kill.dailyPnlUsd)} / {fmtUsdSigned(a.kill.maxLoss)}
           </span>
         </div>
       ) : null}
@@ -71,12 +74,28 @@ export default function AttentionZone({ attention }) {
                 <span className="db-line__tk">{l.ticker}</span>
                 {l.sub ? <span className="db-line__sub">{l.sub}</span> : null}
                 <span className="db-line__metric">{l.metric}</span>
-                {l.others > 0 ? <span className="db-line__more">+{l.others}</span> : null}
+                {l.others > 0 ? (
+                  <span
+                    className="db-line__more"
+                    title={`+${l.others} signal${l.others > 1 ? 'aux' : ''} · ${l.otherMetrics.join(' · ')}`}
+                  >
+                    +{l.others}
+                  </span>
+                ) : null}
               </li>
             );
           })}
           {a.moreCount > 0 ? (
-            <li className="db-lines__overflow">+{a.moreCount} autre{a.moreCount > 1 ? 's' : ''}</li>
+            <li
+              className="db-lines__overflow"
+              role="link"
+              tabIndex={0}
+              onClick={go('/trading/positions')}
+              onKeyDown={onKey('/trading/positions')}
+              title="Ouvrir la page Positions"
+            >
+              +{a.moreCount} autre{a.moreCount > 1 ? 's' : ''}
+            </li>
           ) : null}
         </ul>
       )}

@@ -13,7 +13,8 @@ import { MIN_DECISIVE_WINRATE } from '../../../utils/significance';
 import { TickValue } from './parts';
 
 function Cell({ label, value, chf, sub, tone }) {
-  const meta = [chf, sub].filter(Boolean).join(' · ');
+  // Pas de « · » devant un sub qui commence par « / » (« CHF +118 / clôture »).
+  const meta = [chf, sub].filter(Boolean).join(sub && sub.startsWith('/') ? ' ' : ' · ');
   return (
     <div className="pf-c db-c">
       <span className="pf-c__label">{label}</span>
@@ -38,25 +39,19 @@ export default function FormeZone({ forme, rate }) {
         </div>
       ) : (
         <>
-          <div
-            className="db-dots"
-            role="img"
-            aria-label={`${f.dots.length} derniers trades clôturés — vert gain, rouge perte`}
-          >
-            {f.dots.map((d, i) => (
-              <span
-                key={`${d.date}-${i}`}
-                className={`db-dot db-dot--${d.tone}${i === f.dots.length - 1 ? ' db-dot--last' : ''}`}
-                title={`${d.tk} · ${fmtUsdSigned(d.pnl)} · ${d.date}`}
-              />
-            ))}
-          </div>
+          {/* Streak : COMPTEUR → encre neutre (loi de couleur : le rouge/vert
+              reste aux montants réels et aux pastilles). */}
           <div className="db-grid3">
             <Cell
               label="STREAK"
               value={f.streak ? `${f.streak.count} ${f.streak.kind}` : '0'}
-              sub={f.streak ? (f.streak.kind === 'V' ? 'victoires' : 'défaites') : 'neutre'}
-              tone={f.streak ? (f.streak.kind === 'V' ? 'profit' : 'loss') : undefined}
+              sub={
+                f.streak
+                  ? f.streak.kind === 'V'
+                    ? `victoire${f.streak.count > 1 ? 's' : ''}`
+                    : `défaite${f.streak.count > 1 ? 's' : ''}`
+                  : 'neutre'
+              }
             />
             <Cell
               label="MTD · MOIS"
@@ -71,6 +66,22 @@ export default function FormeZone({ forme, rate }) {
               sub={f.expectancy == null ? `${f.decisive} décisifs / ${MIN_DECISIVE_WINRATE} requis` : '/ clôture'}
               tone={toneSign(f.expectancy)}
             />
+          </div>
+          {/* Strip des pastilles EN RANGÉE BASSE, agrandies — l'élément
+              signature de FORME occupe la hauteur (zéro trou), chrono
+              gauche→droite, le plus récent à droite accentué. */}
+          <div
+            className="db-dots"
+            role="img"
+            aria-label={`${f.dots.length} derniers trades clôturés — vert gain, rouge perte`}
+          >
+            {f.dots.map((d, i) => (
+              <span
+                key={`${d.date}-${i}`}
+                className={`db-dot db-dot--${d.tone}${i === f.dots.length - 1 ? ' db-dot--last' : ''}`}
+                title={`${d.tk} · ${fmtUsdSigned(d.pnl)} · ${d.date}`}
+              />
+            ))}
           </div>
         </>
       )}

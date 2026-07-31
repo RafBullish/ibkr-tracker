@@ -53,7 +53,18 @@ function alertToSignal(a) {
     case 'TIME_STOP':
       return { topic: 'time', severity: SEV.CRITIQUE, fill: 100 + (v - 5), metric: `${v} j sans +15 %` };
     case 'DTE_CRITICAL':
-      return { topic: 'dte', severity: SEV.CRITIQUE, fill: 100 + (DTE_CRITICAL_D - v), metric: `DTE ${v} j ≤ ${DTE_CRITICAL_D} j` };
+      // Sévérité PLAFONNÉE à ARMÉ au-dessus du gate doctrine 35 : le
+      // moteur U7 marque red dès DTE < 90, mais une entrée Sniper naît
+      // vers DTE 45-60 — tout badger CRITIQUE aplatirait la zone (« tout
+      // brûle » = zéro tri). Le CRITIQUE reste réservé aux seuils durs :
+      // DTE ≤ 35, SL franchi, time-stop, kill switch. (Décision 1.F,
+      // panel d'autocritique — signalée au rapport.)
+      return {
+        topic: 'dte',
+        severity: v <= GATE_SL35 ? SEV.CRITIQUE : SEV.ARME,
+        fill: 100 + (DTE_CRITICAL_D - v),
+        metric: `DTE ${v} j ≤ ${DTE_CRITICAL_D} j`,
+      };
     case 'DTE_WARNING':
       return { topic: 'dte', severity: SEV.ARME, fill: ((DTE_WARNING_MAX - v) / (DTE_WARNING_MAX - DTE_CRITICAL_D)) * 100, metric: `DTE ${v} j → seuil ${DTE_CRITICAL_D} j` };
     case 'TP2_REACHED':
@@ -151,6 +162,7 @@ export function deriveAttention({ alerts = [], gateRows = [], watchedCount = 0, 
         severity: top.display.severity === SEV.CRITIQUE ? 'critique' : 'arme',
         metric: top.display.metric,
         others: topics.length - 1,
+        otherMetrics: topics.slice(1).map((t) => t.display.metric),
         urgency: top.urgency,
       };
     })

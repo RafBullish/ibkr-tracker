@@ -18,7 +18,8 @@ const sharesSigned = (v) =>
     : `${v >= 0 ? '+' : '−'}${Math.abs(Math.round(v)).toLocaleString('de-CH')}`;
 
 function Cell({ label, value, chf, sub, chip }) {
-  const meta = [chf, sub].filter(Boolean).join(' · ');
+  // Pas de « · » devant un sub qui commence par « / » (« CHF −71 / jour »).
+  const meta = [chf, sub].filter(Boolean).join(sub && sub.startsWith('/') ? ' ' : ' · ');
   return (
     <div className="pf-c db-c">
       <span className="pf-c__label">{label}</span>
@@ -83,11 +84,13 @@ export default function CapitalZone({ capital, rate }) {
           chf={chf(c.available)}
           sub={c.availablePct != null ? `${Math.round(c.availablePct)} % NLV` : null}
         />
+        {/* « STOPS » au libellé : Risk $ (exposition ajustée au stop)
+            ≠ Max Loss (§8) — la nature du chiffre reste toujours dite. */}
         <Cell
-          label="RISK $"
+          label="RISK $ · STOPS"
           value={c.riskDollar == null ? '—' : fmtUsd(c.riskDollar)}
           chf={chf(c.riskDollar)}
-          sub={c.riskPct != null ? `${c.riskPct.toFixed(1)} % NLV` : 'stops cumulés'}
+          sub={c.riskPct != null ? `${c.riskPct.toFixed(1)} % NLV` : 'cumul stops'}
         />
         <Cell
           label="Δ NET"

@@ -49,10 +49,14 @@ describe('deriveAttention — matrice de non-perte (chaque signal AlertsFeed a u
     expect(a.lines[0].metric).toBe('8 j sans +15 %');
   });
 
-  it('DTE_CRITICAL (red) → CRITIQUE ; DTE_WARNING (orange) → ARMÉ', () => {
-    const crit = deriveAttention({ alerts: [alert({ type: 'DTE_CRITICAL', value: 82 })], gateRows: [] });
+  it('DTE_CRITICAL : ARMÉ au-dessus du gate 35 (anti-aplatissement), CRITIQUE en dessous', () => {
+    // Sévérité plafonnée : une entrée Sniper naît vers DTE 45-60 — la
+    // marquer CRITIQUE dès < 90 rendrait la zone illisible (tout brûle).
+    const arme = deriveAttention({ alerts: [alert({ type: 'DTE_CRITICAL', value: 82 })], gateRows: [] });
+    expect(arme.lines[0].severity).toBe('arme');
+    expect(arme.lines[0].metric).toBe('DTE 82 j ≤ 90 j');
+    const crit = deriveAttention({ alerts: [alert({ type: 'DTE_CRITICAL', value: 30 })], gateRows: [] });
     expect(crit.lines[0].severity).toBe('critique');
-    expect(crit.lines[0].metric).toBe('DTE 82 j ≤ 90 j');
     const warn = deriveAttention({ alerts: [alert({ type: 'DTE_WARNING', value: 95 })], gateRows: [] });
     expect(warn.lines[0].severity).toBe('arme');
     expect(warn.lines[0].metric).toBe('DTE 95 j → seuil 90 j');
@@ -118,9 +122,12 @@ describe('deriveAttention — dédup, tri, débordement, état vide', () => {
       gateRows: [gateRow({ dte: 40, unrealPct: -41 })],
     });
     expect(a.lines).toHaveLength(1);
-    // DTE_CRITICAL fill = 100+(90−40)=150 > STOP_LOSS fill = 100+6 → DTE gagne.
-    expect(a.lines[0].metric).toBe('DTE 40 j ≤ 90 j');
+    // STOP_LOSS (critique, argent qui saigne) > sujet DTE (armé à 40 j) →
+    // la métrique P&L gagne, le sujet DTE compte dans « +N ».
+    expect(a.lines[0].severity).toBe('critique');
+    expect(a.lines[0].metric).toBe('P&L −41 % ≤ SL −35 %');
     expect(a.lines[0].others).toBeGreaterThan(0);
+    expect(a.lines[0].otherMetrics.length).toBe(a.lines[0].others);
   });
 
   it('même sujet, même sévérité → le vocabulaire doctrine (gate) est affiché', () => {

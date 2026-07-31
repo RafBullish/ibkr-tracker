@@ -38,7 +38,8 @@ function AllocBar({ pct, mark }) {
 // cordeau. `value` null → cellule ignorée (aucune ligne « — » nue).
 function Cell({ label, value, chf, sub, tone, bar }) {
   if (value == null) return null;
-  const meta = [chf, sub].filter(Boolean).join(' · ');
+  // 1.F — pas de « · » devant un sub qui commence par « / ».
+  const meta = [chf, sub].filter(Boolean).join(sub && sub.startsWith('/') ? ' ' : ' · ');
   return (
     <div className="pf-c">
       <span className="pf-c__label">{label}</span>

@@ -17,7 +17,7 @@ import { useOpenPositions } from '../../store/useStore';
 
 const DAYS_FR = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 const MONTHS_FR_SHORT = [
-  'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jui', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc',
+  'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc',
 ];
 const TYPE_LABEL = { earn: 'Résultats', macro: 'Macro', exp: 'Expiration' };
 
