@@ -4884,13 +4884,9 @@
   border-color: var(--qc-border-strong);
 }
 
-/* Phase C.2.6.7 polish — gap visuel discret entre la zone active
-   (Row 3 SniperGate) et la zone historique (Row 4 TradeHistory).
-   La grid `gap: 8px` existant est conservé, le margin-top ajoute
-   un breath supplémentaire spécifique. */
-.dash-grid > [style*="grid-area: history"] {
-  margin-top: 6px;
-}
+/* (1.F — l'ex-breath margin-top 6px C.2.6.7 sur history est retiré :
+   il séparait la rangée SniperGate, morte depuis C.2.10 → rythme
+   vertical uniforme 8px entre tous les étages.) */
 
 .trade-history__header {
   /* Phase C.2.8 — padding 18→14 aligné avec table tbody td padding. */

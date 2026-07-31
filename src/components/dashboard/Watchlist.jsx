@@ -54,7 +54,7 @@ export default function Watchlist({ data, area = 'watch' }) {
   };
 
   return (
-    <section className="module watchlist" style={{ gridArea: area }}>
+    <section className="module db-veille watchlist" style={{ gridArea: area }}>
       <header className="module-header">
         <span className="module-header__title">Watchlist · {rows.length}</span>
         <form className="watchlist__add" onSubmit={handleAdd}>

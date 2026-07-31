@@ -77,6 +77,33 @@
 .db-gauge__grad { position: absolute; top: 0; bottom: 0; width: 1px; background: color-mix(in srgb, var(--depth-void) 65%, transparent); }
 .db-gauge__mark { position: absolute; top: -1px; bottom: -1px; width: 2px; background: var(--accent-amber); }
 
+/* ── Rangée de clôture « veille » (1.F §4.7) — Watchlist · CalendarMini
+   mis au langage v1.0 : cadre cockpit canonique (depth-raised +
+   hairline-rest + radius 7), titre de zone uniforme (registre
+   .mk-title). Contenu et données INCHANGÉS. Spécificité (0,3,0) sur
+   les éléments de header pour battre les bumps génériques du palier
+   c3-hires (.module-header__title 18px) sans dépendre de l'ordre. ── */
+.module.db-veille { background: var(--depth-raised); border: 1px solid var(--hairline-rest); border-radius: 7px; }
+.db-veille > .module-header { height: 34px; padding: 0 16px; background: transparent; border-bottom: 1px solid var(--hairline-rest); }
+.db-veille > .module-header .module-header__title { font-family: inherit; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); }
+.db-veille > .module-header .module-header__hint { font-family: inherit; font-size: 10.5px; letter-spacing: 0.1em; color: var(--ink-mute); opacity: 0.75; }
+/* Ajout watchlist au registre hairline murmuré. */
+.db-veille .watchlist__add-input { background: color-mix(in srgb, var(--ink-pure) 4%, transparent); border: 1px solid var(--hairline-rest); color: var(--ink-soft); }
+.db-veille > .module-header .watchlist__add-btn { background: transparent; border: 1px solid var(--hairline-rest); color: var(--ink-mute); font-size: 11px; }
+.db-veille > .module-header .watchlist__add-btn:hover { color: var(--ink-soft); border-color: var(--line-emphasis); }
+/* Colonnes tenues, contenu GROUPÉ à gauche — le surplus vit en fin de
+   ligne, jamais entre les colonnes (loi anti-vide). */
+.db-veille .watchlist__table th:nth-child(1), .db-veille .watchlist__table td:nth-child(1) { width: 110px; }
+.db-veille .watchlist__table th:nth-child(2), .db-veille .watchlist__table td:nth-child(2) { width: 130px; }
+.db-veille .watchlist__table th:nth-child(3), .db-veille .watchlist__table td:nth-child(3) { width: 130px; }
+.db-veille .watchlist__table th:nth-child(4), .db-veille .watchlist__table td:nth-child(4) { width: auto; text-align: left; }
+/* CalendarMini — date · tag · label groupés ; tags au registre chip
+   sobre (hairline murmurée, encre sourde — fini le reverse-video). */
+.db-veille .calmini__date { width: 120px; }
+.db-veille .calmini__type { width: 1%; white-space: nowrap; padding-right: 12px; }
+.db-veille .calmini__label { text-align: left; color: var(--ink-soft); }
+.db-veille .calmini__tag { display: inline-flex; align-items: center; background: transparent; border: 1px solid var(--hairline-rest); border-radius: 2px; color: var(--ink-mute); font-size: 10px; font-weight: 600; letter-spacing: 0.07em; padding: 1px 6px; text-transform: uppercase; }
+
 /* ── Stagger de montage (1.F §4.6) — fondu + montée 8 px, 150 ms,
    30 ms par étage (cockpit → héros 1 → héros 2 → bande → suites),
    UNE FOIS au premier mount de la page (animation d'insertion DOM :
