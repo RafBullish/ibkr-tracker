@@ -120,6 +120,9 @@
   flex-direction: column;
   vertical-align: middle;
   line-height: normal;
+  /* Cale la ligne primaire sur l'axe optique des cellules simples
+     (centrées dans rowHeight 47) — la rangée ne « danse » plus. */
+  padding-top: 7px;
 }
 .pos-cell2__val {
   line-height: 22px;

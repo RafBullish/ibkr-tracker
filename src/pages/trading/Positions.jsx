@@ -48,7 +48,6 @@ import { TickValue } from '../../components/dashboard/decision/parts';
 import { fmtUsd, fmtUsdSigned, fmtChf } from '../../components/dashboard/hero1/kit';
 
 import StatusBadge from '../../components/ui/StatusBadge';
-import InfoTooltip from '../../components/ui/InfoTooltip';
 import EmptyState from '../../components/ui/EmptyState';
 import DataTable from '../../components/ui/DataTable';
 import Modal from '../../components/ui/Modal';
@@ -207,15 +206,25 @@ function Cell2({ value, meta, metaTone }) {
   );
 }
 
+// Greek de cellule : clamp du zéro négatif (« -0.00 » interdit dans un
+// terminal) + marquage IV estimée (~, convention établie) conservé.
+function fmtGreek(v) {
+  if (v == null || !Number.isFinite(v)) return null;
+  const clamped = Math.abs(v) < 0.005 ? 0 : v;
+  return clamped.toFixed(2);
+}
+
 // ── Cellule-MONDE du bandeau de commandement ─────────────────
-function CommandCell({ label, marker, tooltip, value, chf, sub, tone }) {
+// 2.A passe 3 : plus de ⓘ (affordance absente du langage deck — la
+// sémantique vit dans la méta : « prime totale engagée », etc.) ;
+// le tooltip complet reste accessible via title sur le libellé.
+function CommandCell({ label, marker, title, value, chf, sub, tone }) {
   const meta = [chf, sub].filter(Boolean).join(sub && sub.startsWith('/') ? ' ' : ' · ');
   return (
     <div className="pf-c pos-command__cell">
-      <span className="pf-c__label pos-command__label">
+      <span className="pf-c__label pos-command__label" title={title || undefined}>
         <span>{label}</span>
         {marker || null}
-        {tooltip && <InfoTooltip content={tooltip} size={12} />}
       </span>
       <TickValue
         text={value}
@@ -987,7 +996,7 @@ export default function Positions() {
     let totalCost = 0;
     let totalMaxLoss = 0;
     let totalUnreal = 0;
-    let totalNotional = 0;
+    let totalMarkValue = 0;
     let deltaDollar = 0;
     let thetaDollar = 0;
     let closest = null;
@@ -997,7 +1006,9 @@ export default function Positions() {
       totalCost += row.costBasis;
       totalMaxLoss += row.maxLoss;
       totalUnreal += row.pnlUsd;
-      totalNotional += Math.abs(row.r.marketValueUsd);
+      // Σ |valeur mark| — PAS un notionnel (§8 : le label doit dire ce
+      // qu'il montre ; le notionnel serait strike × 100 × contrats).
+      totalMarkValue += Math.abs(row.r.marketValueUsd);
       if (row.isOpt) nOpt++;
       else nStk++;
       const mul = row.isOpt ? ensurePositive(row.pos.mu) : 1;
@@ -1019,12 +1030,24 @@ export default function Positions() {
       totalCost,
       totalMaxLoss,
       totalUnreal,
-      totalNotional,
+      totalMarkValue,
       deltaDollar,
       thetaDollar,
       closest,
     };
   }, [positions]);
+
+  // Compte des gates par sévérité (bandeau POSITIONS : « qui réclame
+  // une action » vit aussi dans le bandeau, pas que dans la table).
+  const gateCounts = useMemo(() => {
+    let critical = 0;
+    let armed = 0;
+    for (const l of gateByPos.values()) {
+      if (l.severity === 'critique') critical++;
+      else armed++;
+    }
+    return { critical, armed };
+  }, [gateByPos]);
 
   // Fraîcheur Greeks — marqueur discret (registre pf-real, §4.1).
   const greeksFreshness = useMemo(() => {
@@ -1172,8 +1195,8 @@ export default function Positions() {
       mono: true,
       footer: () => (
         <span>
-          <span className="v3-table__tf-label">Σ Notionnel</span>
-          <span className="v3-table__tf-value">{fmtUsd(summary.totalNotional)}</span>
+          <span className="v3-table__tf-label">Σ Valeur mark</span>
+          <span className="v3-table__tf-value">{fmtUsd(summary.totalMarkValue)}</span>
         </span>
       ),
       render: (v, row) => (
@@ -1232,16 +1255,16 @@ export default function Positions() {
         </span>
       ),
       render: (v, row) => {
-        if (!row.isOpt) return '—';
-        if (v == null) return '—';
+        const s = row.isOpt ? fmtGreek(v) : null;
+        if (s == null) return '—';
         if (row.ivEstimated) {
           return (
             <span className="pos-iv-est" title="IV estimée (mark hors plage no-arbitrage, défaut σ=30%)">
-              ~{v.toFixed(2)}
+              ~{s}
             </span>
           );
         }
-        return v.toFixed(2);
+        return s;
       },
     },
     {
@@ -1259,16 +1282,16 @@ export default function Positions() {
       // Θ NEUTRE (loi de couleur) — per-day (convention LivePositions /
       // Héros 1, unifiée 2.A ; la page affichait la valeur annuelle brute).
       render: (v, row) => {
-        if (!row.isOpt) return '—';
-        if (v == null) return '—';
+        const s = row.isOpt ? fmtGreek(v) : null;
+        if (s == null) return '—';
         if (row.ivEstimated) {
           return (
             <span className="pos-iv-est" title="IV estimée (mark hors plage no-arbitrage, défaut σ=30%)">
-              ~{v.toFixed(2)}
+              ~{s}
             </span>
           );
         }
-        return v.toFixed(2);
+        return s;
       },
     },
     {
@@ -1448,9 +1471,18 @@ export default function Positions() {
         <div className="pos-command__grid">
           <CommandCell
             label="POSITIONS"
-            tooltip="Nombre de positions ouvertes (actions + options)."
+            title="Nombre de positions ouvertes (actions + options) et gates actifs."
             value={String(summary.count)}
-            sub={`${summary.nOpt} option${summary.nOpt > 1 ? 's' : ''}${summary.nStk > 0 ? ` · ${summary.nStk} action${summary.nStk > 1 ? 's' : ''}` : ''}`}
+            sub={
+              gateCounts.critical + gateCounts.armed > 0
+                ? [
+                    gateCounts.critical ? `${gateCounts.critical} CRITICAL` : null,
+                    gateCounts.armed ? `${gateCounts.armed} ARMED` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')
+                : `${summary.nOpt} option${summary.nOpt > 1 ? 's' : ''}${summary.nStk > 0 ? ` · ${summary.nStk} action${summary.nStk > 1 ? 's' : ''}` : ''}`
+            }
           />
           <CommandCell
             label="Δ NET"
@@ -1459,10 +1491,7 @@ export default function Positions() {
                 {greeksFreshness.text}
               </span>
             }
-            tooltip={{
-              title: 'Delta net',
-              body: 'Exposition directionnelle agrégée (options + actions, sign-aware par dir). +1 = $1 de P&L pour +$1 du sous-jacent.',
-            }}
+            title="Exposition directionnelle agrégée (options + actions, sign-aware par dir). +1 = $1 de P&L pour +$1 du sous-jacent."
             value={
               Number.isFinite(greeks.sumDelta)
                 ? `${greeks.sumDelta >= 0 ? '+' : '−'}${Math.abs(greeks.sumDelta).toLocaleString('de-CH', { maximumFractionDigits: 0 })}`
@@ -1476,30 +1505,21 @@ export default function Positions() {
           />
           <CommandCell
             label="Θ TOTAL"
-            tooltip={{
-              title: 'Theta agrégé',
-              body: "Erosion temporelle quotidienne cumulée sur le portefeuille d'options (sign-aware par dir).",
-            }}
+            title="Érosion temporelle quotidienne cumulée sur le portefeuille d'options (sign-aware par dir)."
             value={Number.isFinite(greeks.thetaDaily) ? fmtUsdSigned(greeks.thetaDaily) : '—'}
             chf={chf(greeks.thetaDaily, true)}
             sub="/ jour"
           />
           <CommandCell
             label="CAPITAL ENGAGÉ"
-            tooltip={{
-              title: 'Capital investi',
-              body: 'Coût total absolu des positions ouvertes (entry price × qty × multiplier, frais inclus).',
-            }}
+            title="Coût total absolu des positions ouvertes (entry × qty × multiplier, frais inclus)."
             value={fmtUsd(summary.totalCost)}
             chf={chf(summary.totalCost)}
             sub="coût d'entrée"
           />
           <CommandCell
             label="MAX LOSS"
-            tooltip={{
-              title: 'Max Loss',
-              body: 'Perte maximum théorique si toutes les options expirent sans valeur (long options only). Montant hypothétique — neutre.',
-            }}
+            title="Perte maximum théorique si toutes les options expirent sans valeur (long options only). Montant hypothétique — neutre."
             value={fmtUsd(summary.totalMaxLoss)}
             chf={chf(summary.totalMaxLoss)}
             sub="prime totale engagée"

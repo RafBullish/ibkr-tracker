@@ -207,7 +207,7 @@
    ════════════════════════════════════════════════════════════════ */
 .hist-analyse__grid {
   display: grid;
-  grid-template-columns: 0.85fr 1.5fr 1.9fr;
+  grid-template-columns: 0.7fr 1.55fr 1.95fr;
 }
 .hist-analyse__zone {
   display: flex;
@@ -331,6 +331,13 @@
 .hist-analyse .perf-attr__cell-n {
   font-size: 10px;
   line-height: 12px;
+  color: var(--ink-mute); /* la demi-opacité porte déjà n<3 — pas d'ambre */
+}
+.hist-analyse .perf-attr__legend-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
 }
 .hist-analyse .perf-attr__legend {
   font-size: 11px;

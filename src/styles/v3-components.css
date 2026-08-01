@@ -2058,10 +2058,13 @@
   width: 100%;
 }
 
+/* 2.A — outils GROUPÉS à gauche (loi anti-vide : le surplus vit en
+   fin de rangée, jamais entre la recherche et la densité). Seuls
+   consommateurs : Positions + History. */
 .v3-table-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: var(--qc-space-3);
   padding: var(--qc-space-2) var(--qc-space-1);
   flex-wrap: wrap;
@@ -2811,6 +2814,21 @@
   border-radius: var(--radius-xs);
   opacity: 0.5;
   transition: all var(--duration-fast) var(--ease-out);
+}
+/* 2.A — hover-reveal DANS les tables cockpit : l'affordance
+   destructive n'encombre plus chaque ligne au repos (révélée au
+   survol/focus de la ligne ; les listes Journal/Settings gardent
+   leur rendu permanent). */
+.v3-table__row .history-v3__delete-btn {
+  opacity: 0;
+}
+.v3-table__row:hover .history-v3__delete-btn,
+.v3-table__row:focus-within .history-v3__delete-btn {
+  opacity: 0.6;
+}
+.v3-table__row .history-v3__delete-btn:hover,
+.v3-table__row .history-v3__delete-btn:focus-visible {
+  opacity: 1;
 }
 .history-v3__delete-btn:hover,
 .journal-v3__entry-delete:hover {

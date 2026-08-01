@@ -33,10 +33,9 @@ import { formatUsd } from '../../utils/format';
 import { toFloat, ensurePositive } from '../../utils/math';
 import { holdingDays } from '../../utils/dates';
 import { TickValue } from '../../components/dashboard/decision/parts';
-import { fmtChf } from '../../components/dashboard/hero1/kit';
+import { fmtChf, fmtUsdSigned } from '../../components/dashboard/hero1/kit';
 
 import StatusBadge from '../../components/ui/StatusBadge';
-import InfoTooltip from '../../components/ui/InfoTooltip';
 import EmptyState from '../../components/ui/EmptyState';
 import DataTable from '../../components/ui/DataTable';
 import Modal from '../../components/ui/Modal';
@@ -132,24 +131,6 @@ function fmtNumber(v) {
     maximumFractionDigits: 2,
   }).format(v);
 }
-const HIST_USD_FMT_2D = new Intl.NumberFormat('de-CH', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-function fmtCurrency(v) {
-  if (v == null || Number.isNaN(v)) return '—';
-  return (v < 0 ? '-' : '') + '$' + HIST_USD_FMT_2D.format(Math.abs(v));
-}
-function fmtPercent(v) {
-  if (v == null || Number.isNaN(v)) return '—';
-  return (
-    new Intl.NumberFormat('de-CH', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(v) + '%'
-  );
-}
-
 // Tonalité par SIGNE — argent réel uniquement (les ratios WR/Avg R
 // sont NEUTRES depuis 2.A : un ratio n'est pas de l'argent).
 function toneSign(v) {
@@ -217,13 +198,13 @@ function ExitReasonEditor({ trade, onConfirm, onOverride, onClose }) {
 }
 
 // ── Cellule-MONDE du bandeau (miroir .pos-command de Positions) ──
-function CommandCell({ label, tooltip, value, chf, sub, tone }) {
+// 2.A passe 3 : plus de ⓘ (langage deck) — tooltip via title.
+function CommandCell({ label, title, value, chf, sub, tone }) {
   const meta = [chf, sub].filter(Boolean).join(sub && sub.startsWith('/') ? ' ' : ' · ');
   return (
     <div className="pf-c hist-command__cell">
-      <span className="pf-c__label hist-command__label">
+      <span className="pf-c__label hist-command__label" title={title || undefined}>
         <span>{label}</span>
-        {tooltip && <InfoTooltip content={tooltip} size={12} />}
       </span>
       <TickValue
         text={value}
@@ -320,7 +301,7 @@ export default function History() {
         total: 0,
         net: 0,
         winRate: null,
-        avgR: 0,
+        avgR: null,
         best: 0,
         worst: 0,
         winCount: 0,
@@ -331,7 +312,9 @@ export default function History() {
       total: m.totalPnlCount,
       net: m.totalPnl,
       winRate: m.winRate,
-      avgR: m.avgLoss > 0 ? m.avgWin / m.avgLoss : 0,
+      // 2.A — avgR NULLABLE : sans perdant dans le scope, le ratio est
+      // INDÉFINI, pas nul (« 0 » raconterait le contraire de la réalité).
+      avgR: m.avgLoss > 0 ? m.avgWin / m.avgLoss : null,
       best: m.bestTrade,
       worst: m.worstTrade,
       winCount: m.winCount,
@@ -384,7 +367,7 @@ export default function History() {
         <span>
           <span className="v3-table__tf-label">Σ Net P&L</span>
           <span className={`v3-table__tf-value${t ? ` v3-table__tf-value--${t}` : ''}`}>
-            {fmtCurrency(stats.net)}
+            {fmtUsdSigned(stats.net)}
           </span>
         </span>
       );
@@ -405,7 +388,20 @@ export default function History() {
     align: 'right',
     sort: true,
     mono: true,
+    // Garde-fou de vraisemblance : un % à 4 chiffres signale un P&L
+    // stocké incohérent avec entry/exit×qty×mul (import corrompu) —
+    // « — » honnête plutôt qu'un chiffre absurde.
     render: (v) => {
+      if (!Number.isFinite(v) || Math.abs(v) > 999) {
+        return (
+          <span
+            className="history-page__cell-empty"
+            title="% non calculable : P&L stocké incohérent avec entry/exit × qty × multiplicateur"
+          >
+            —
+          </span>
+        );
+      }
       const tone = v > 0 ? 'profit' : v < 0 ? 'loss' : 'neutral';
       return (
         <span className={`text-${tone}`}>
@@ -430,7 +426,9 @@ export default function History() {
     key: 'tag',
     label: 'Tag',
     align: 'left',
-    render: (v) => (v ? <StatusBadge variant="accent" label={v} size="xs" /> : null),
+    // 2.A passe 3 — chips NEUTRES : un tag de classification n'est pas
+    // un signal décisionnel (l'ambre de la page reste au CTA/filtres).
+    render: (v) => (v ? <StatusBadge variant="neutral" label={v} size="xs" /> : null),
   };
   const deleteColumn = {
     key: '_delete',
@@ -695,6 +693,9 @@ export default function History() {
         aria-label="Commandement — le grand livre"
       >
         <div className="hist-command__grid">
+          {/* Montants héros en ENTIERS (formatters kit — parité bandeau
+              Positions et decks du Dashboard ; le « .00 » plein format
+              est mort). Ratios neutres, WR sans décimale (parité deck). */}
           <CommandCell
             label="TOTAL"
             value={fmtCount(stats.total)}
@@ -702,41 +703,34 @@ export default function History() {
           />
           <CommandCell
             label="NET P&L"
-            tooltip={{
-              title: 'Net P&L',
-              body: 'Somme des P&L réalisés sur le sous-ensemble filtré, nets des frais IBKR.',
-            }}
-            value={fmtCurrency(stats.net)}
+            title="Somme des P&L réalisés sur le sous-ensemble filtré, nets des frais IBKR."
+            value={fmtUsdSigned(stats.net)}
             chf={chf(stats.net, true)}
             tone={toneSign(stats.net)}
           />
           <CommandCell
             label="WIN RATE"
-            tooltip={{
-              title: 'Win Rate',
-              body: "% de trades gagnants (décisifs ≥ 10 requis). Utile à lire en combinaison avec l'Avg R.",
-            }}
-            value={fmtPercent(stats.winRate)}
+            title="% de trades gagnants (décisifs ≥ 10 requis). À lire avec l'Avg R."
+            value={stats.winRate == null ? '—' : `${stats.winRate.toFixed(0)} %`}
             sub={stats.winRate == null ? `${stats.decisive} décisifs / 10 requis` : `${stats.winCount}↑ / ${stats.lossCount}↓`}
           />
           <CommandCell
             label="AVG R"
-            tooltip={{
-              title: 'Avg R',
-              body: 'Gain moyen rapporté à la perte moyenne. > 1.5 = bon risque/récompense.',
-            }}
-            value={fmtNumber(stats.avgR)}
-            sub="gain / perte moy."
+            title="Gain moyen rapporté à la perte moyenne. > 1.5 = bon risque/récompense."
+            value={stats.avgR == null ? '—' : fmtNumber(stats.avgR)}
+            sub={stats.avgR == null && stats.total > 0 ? 'aucun perdant dans le scope' : 'gain / perte moy.'}
           />
           <CommandCell
             label="BEST"
-            value={fmtCurrency(stats.best)}
+            title="Meilleur trade du sous-ensemble filtré."
+            value={fmtUsdSigned(stats.best)}
             chf={chf(stats.best, true)}
             tone={toneSign(stats.best)}
           />
           <CommandCell
             label="WORST"
-            value={fmtCurrency(stats.worst)}
+            title="Pire trade du sous-ensemble filtré."
+            value={fmtUsdSigned(stats.worst)}
             chf={chf(stats.worst, true)}
             tone={toneSign(stats.worst)}
           />

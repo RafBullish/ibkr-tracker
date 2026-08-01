@@ -66,9 +66,16 @@ export default function HistoryDistribution({ trades, height = 220 }) {
             tick={OBS.tick}
             axisLine={false}
             tickLine={false}
-            interval="preserveStartEnd"
+            interval={1}
           />
-          <YAxis tick={OBS.tick} axisLine={false} tickLine={false} width={32} allowDecimals={false} />
+          <YAxis
+            tick={OBS.tick}
+            axisLine={false}
+            tickLine={false}
+            width={32}
+            allowDecimals={false}
+            domain={[0, 'dataMax']}
+          />
           <Tooltip
             cursor={{ fill: 'rgba(255,255,255,0.04)' }}
             content={
