@@ -525,8 +525,12 @@
   letter-spacing: 0.04em;
 }
 
+/* 2.A-c1 C1 — l'ambre ambiant meurt : « N non-taggués » est l'état
+   DURABLE (0 taggué), un texte ambre permanent n'est plus un signal
+   (DA §3, même loi que la jauge 1.F-c1). Registre neutre, comme
+   toute méta de scope. */
 .perf-attr__untagged {
-  color: var(--accent-amber, #ffa028);
+  color: var(--ink-mute);
   font-weight: 600;
 }
 
