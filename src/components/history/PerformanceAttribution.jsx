@@ -69,22 +69,28 @@ function HeroChip({ label, value, sub, tone }) {
   );
 }
 
-export default function PerformanceAttribution() {
+/**
+ * 2.A — `trades` optionnel : le SOUS-ENSEMBLE FILTRÉ de la page (une
+ * page = une vérité). Sans prop → tout l'historique du store (compat).
+ * Le titre de zone vit désormais dans l'étage ANALYSE (.mk-title) —
+ * le composant ne garde que sa ligne d'état taggués/non-taggués.
+ */
+export default function PerformanceAttribution({ trades = null }) {
   const closedTrades = useClosedTrades();
   const metrics = usePortfolioMetrics();
   const liveRate = metrics?.liveRate || 1;
+  const source = trades ?? closedTrades ?? [];
 
   const matrixResult = useMemo(() => {
     const sniperMetaMap = readAllSniperMeta();
-    return computeEdgeCapitalMatrix(closedTrades || [], { sniperMetaMap, liveRate });
-  }, [closedTrades, liveRate]);
+    return computeEdgeCapitalMatrix(source, { sniperMetaMap, liveRate });
+  }, [source, liveRate]);
 
   const { matrix, untaggedCount, decisive, bestCell, worstCell } = matrixResult;
 
   return (
     <section className="perf-attr">
       <header className="perf-attr__header">
-        <span className="perf-attr__title">Performance Attribution · Edge × Capital</span>
         <span className="perf-attr__hint">
           {decisive} {decisive === 1 ? 'trade taggué' : 'trades taggués'}
           {untaggedCount > 0 ? (
@@ -103,13 +109,17 @@ export default function PerformanceAttribution() {
           <div className="perf-attr__empty-title">Aucun trade taggué pour le moment.</div>
           <div className="perf-attr__empty-sub">
             Tagge tes positions ouvertes via le bouton <em>Tag</em> dans Live Positions (/dashboard)
-            pour qu&apos;une fois closées, elles alimentent cette matrice Edge × Capital.
+            ou le détail d&apos;une position (/trading/positions) pour qu&apos;une fois closées,
+            elles alimentent cette matrice Edge × Capital.
             L&apos;Edge Tier est auto-dérivé depuis l&apos;IV Rank si tu laisses ce champ vide ; le
             Capital Tier reste manuel.
           </div>
         </div>
       ) : (
         <>
+          {/* 2.A — honnêteté des extrêmes : ton par SIGNE de l'avg (le
+              rouge = perte réelle, jamais un rang) ; best === worst
+              (un seul bucket qualifié) → PIRE affiche « — ». */}
           <div className="perf-attr__chips">
             <HeroChip label="Décisifs" value={String(decisive)} sub="trades dans matrix" />
             {bestCell ? (
@@ -117,20 +127,26 @@ export default function PerformanceAttribution() {
                 label="Meilleur bucket"
                 value={`${bestCell.edge} · ${bestCell.cap}`}
                 sub={`avg ${fmtUsd(bestCell.avgPnl)} · n=${bestCell.n}`}
-                tone="profit"
+                tone={bestCell.avgPnl > 0 ? 'profit' : bestCell.avgPnl < 0 ? 'loss' : 'mute'}
               />
             ) : (
               <HeroChip label="Meilleur bucket" value="——" sub="n < 3 partout" tone="mute" />
             )}
-            {worstCell ? (
+            {worstCell &&
+            !(bestCell && worstCell.edge === bestCell.edge && worstCell.cap === bestCell.cap) ? (
               <HeroChip
                 label="Pire bucket"
                 value={`${worstCell.edge} · ${worstCell.cap}`}
                 sub={`avg ${fmtUsd(worstCell.avgPnl)} · n=${worstCell.n}`}
-                tone="loss"
+                tone={worstCell.avgPnl < 0 ? 'loss' : worstCell.avgPnl > 0 ? 'profit' : 'mute'}
               />
             ) : (
-              <HeroChip label="Pire bucket" value="——" sub="n < 3 partout" tone="mute" />
+              <HeroChip
+                label="Pire bucket"
+                value="——"
+                sub={worstCell ? '1 seul bucket qualifié' : 'n < 3 partout'}
+                tone="mute"
+              />
             )}
           </div>
 
@@ -178,18 +194,30 @@ export default function PerformanceAttribution() {
             </table>
           </div>
 
+          {/* Paires swatch+libellé insécables (wrap d'un bloc, jamais
+              d'orphelin). */}
           <div className="perf-attr__legend">
             <span className="perf-attr__legend-label">Intensité (avg $ P&L / trade) :</span>
-            <span className="perf-attr__legend-swatch perf-attr__legend-swatch--loss-strong" />
-            <span className="perf-attr__legend-tick">≤ −$100</span>
-            <span className="perf-attr__legend-swatch perf-attr__legend-swatch--loss-soft" />
-            <span className="perf-attr__legend-tick">−$1 .. −$99</span>
-            <span className="perf-attr__legend-swatch perf-attr__legend-swatch--flat" />
-            <span className="perf-attr__legend-tick">~ 0</span>
-            <span className="perf-attr__legend-swatch perf-attr__legend-swatch--profit-soft" />
-            <span className="perf-attr__legend-tick">+$1 .. +$99</span>
-            <span className="perf-attr__legend-swatch perf-attr__legend-swatch--profit-strong" />
-            <span className="perf-attr__legend-tick">≥ +$100</span>
+            <span className="perf-attr__legend-pair">
+              <span className="perf-attr__legend-swatch perf-attr__legend-swatch--loss-strong" />
+              <span className="perf-attr__legend-tick">≤ −$100</span>
+            </span>
+            <span className="perf-attr__legend-pair">
+              <span className="perf-attr__legend-swatch perf-attr__legend-swatch--loss-soft" />
+              <span className="perf-attr__legend-tick">−$1 .. −$99</span>
+            </span>
+            <span className="perf-attr__legend-pair">
+              <span className="perf-attr__legend-swatch perf-attr__legend-swatch--flat" />
+              <span className="perf-attr__legend-tick">~ 0</span>
+            </span>
+            <span className="perf-attr__legend-pair">
+              <span className="perf-attr__legend-swatch perf-attr__legend-swatch--profit-soft" />
+              <span className="perf-attr__legend-tick">+$1 .. +$99</span>
+            </span>
+            <span className="perf-attr__legend-pair">
+              <span className="perf-attr__legend-swatch perf-attr__legend-swatch--profit-strong" />
+              <span className="perf-attr__legend-tick">≥ +$100</span>
+            </span>
             <span className="perf-attr__legend-divider" aria-hidden="true">
               ·
             </span>

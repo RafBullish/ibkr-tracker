@@ -1,59 +1,60 @@
 // ═══════════════════════════════════════════════════════════════
-//  POSITIONS v3.0 « Midnight Terminal »
+//  POSITIONS — page-vitrine au langage cockpit v1.0 (brique 2.A)
 //  /trading/positions
 //
-//  Three visual branches:
-//    A) No trades at all  → hero EmptyState + import CTA
-//    B) Flat (has history, no open positions) → 4-card flat panel
-//       (Dernière position, Stats récentes, Prochain setup Sniper
-//       OTM, Mini-donut répartition) — kept per Rafael's Phase 3.5
-//       instruction to preserve the existing flat UI
-//    C) Open positions → KPI strip (5 MetricCards) + DataTable v3
-//       with mobile cards mode
+//  Architecture (§4.1 brique 2.A) :
+//    1. BANDEAU DE COMMANDEMENT — un panneau au cadre cockpit
+//       canonique (.lh-final), cellules-MONDE séparées par des
+//       hairlines verticales continues. Les 5 KPI historiques
+//       (Positions · Δ net · Θ total · Capital engagé · Max loss)
+//       + fraîcheur Greeks en marqueur discret (registre pf-real).
+//       MAX LOSS = NEUTRE (amendement 15.07.2026 : un montant
+//       hypothétique n'est pas une perte).
+//    2. LA TABLE, héroïne pleine largeur — SURENSEMBLE des 19
+//       colonnes de LivePositions (méta Sniper affichée, édition via
+//       le modal détail), badges de gates ARMED/CRITICAL au MÊME
+//       classifieur que la bande décision (decision/model), footer
+//       agrégé, deep-link ?focus={id}.
+//    3. Branches vide / flat / live conservées, états designés.
 //
-//  Business logic untouched: calculateOpenPositionPnl, computePortfolio
-//  Greeks, generateAlerts, usePortfolioMetrics consumed as-is.
+//  Business logic untouched: calculateOpenPositionPnl, aggregateGreeks,
+//  generateAlerts, useLivePositions (lecture seule), usePortfolioMetrics.
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
-import {
-  Briefcase,
-  Crosshair,
-  Clock,
-  TrendingUp,
-  TrendingDown,
-  ArrowUpRight,
-  DollarSign,
-  Activity,
-  Sigma,
-  Layers,
-  Trash2,
-} from 'lucide-react';
+import { Briefcase, Crosshair, ArrowUpRight, Trash2 } from 'lucide-react';
 import { useOpenPositions, useSettings, useClosedTrades, useDispatch } from '../../store/useStore';
 import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
+import useLivePositions from '../../hooks/useLivePositions';
+import useSniperGates from '../../hooks/useSniperGates';
+import useDailyKillSwitch from '../../hooks/useDailyKillSwitch';
 import { calculateOpenPositionPnl, tradePnlUsd } from '../../utils/calculations';
 // A1 — migrated from legacy computePortfolioGreeks (sign-agnostic) to
 // aggregateGreeks (sign-aware via pos.dir + correct units : theta/day,
-// vega/1%-IV). For Sniper-OTM short premium portfolios this means
-// Theta is now positive (decay encaissé) and Vega negative (short vol).
+// vega/1%-IV).
 import { aggregateGreeks } from '../../utils/greeks';
 import { formatUsd, formatPnlUsd } from '../../utils/format';
-import { daysToExpiration, holdingDays, todayDateString } from '../../utils/dates';
+import { holdingDays, todayDateString } from '../../utils/dates';
 import { toFloat, ensurePositive, generateId } from '../../utils/math';
 import { getGreeksForAllPositions } from '../../utils/greeksApi';
 import { generateAlerts, getPositionAlerts } from '../../utils/alerts';
 import { effectiveSlDollar } from '../../utils/risk';
-// useMediaQuery no longer needed at page level — DataTable handles mobile cards internally
+// 2.A — classifieur de gates de la BANDE DÉCISION (module pur) : une
+// position CRITICAL dans la bande = CRITICAL ici, toujours.
+import { deriveAttention } from '../../components/dashboard/decision/model';
+import { TickValue } from '../../components/dashboard/decision/parts';
+import { fmtUsd, fmtUsdSigned, fmtChf } from '../../components/dashboard/hero1/kit';
 
 import StatusBadge from '../../components/ui/StatusBadge';
-import InfoTooltip from '../../components/ui/InfoTooltip';
 import EmptyState from '../../components/ui/EmptyState';
 import DataTable from '../../components/ui/DataTable';
 import Modal from '../../components/ui/Modal';
+import SniperMetaEditor from '../../components/dashboard/SniperMetaEditor';
+import PositionSparkline from '../../components/dashboard/PositionSparkline';
 import { POLLING } from '../../constants/timing';
-import { CONTAINER_VARIANTS, TILE_VARIANTS } from '../../theme/animationVariants';
+import { RISE_CONTAINER_VARIANTS, RISE_TILE_VARIANTS } from '../../theme/animationVariants';
 
 const REFRESH_INTERVAL = POLLING.MARKET_QUOTES_MS;
 
@@ -127,73 +128,15 @@ function MiniDonut({ slices, size = 100, thickness = 14 }) {
 
 function LegendRow({ color, label, value }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
-      <span style={{ width: 8, height: 8, borderRadius: 2, background: color, flexShrink: 0 }} />
-      <span style={{ color: 'var(--ink-soft)', minWidth: 44 }}>{label}</span>
-      <span className="mono" style={{ color: 'var(--ink-mute)' }}>
-        {value}
-      </span>
+    <div className="positions-flat__legend-row">
+      <span className="positions-flat__legend-dot" style={{ background: color }} />
+      <span className="positions-flat__legend-label">{label}</span>
+      <span className="mono positions-flat__legend-value">{value}</span>
     </div>
   );
 }
 
-// ── Local KPI tile for the open-positions strip ──────────────
-// Remplace MetricCard sur cette page : surface plate canonique, valeur
-// neutre par défaut, focus amber sur les zones décisives (Positions,
-// Delta net, Capital engagé). Le rouge n'apparaît QUE pour les pertes $
-// RÉELLES (Max Loss). Θ signé est neutre (révision loi de couleur).
-const POS_NUM_FMT_2D = new Intl.NumberFormat('de-CH', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-function fmtKpiValue(value, format, currency = 'USD') {
-  if (value == null || Number.isNaN(value)) return '—';
-  if (format === 'currency') {
-    if (currency === 'USD') {
-      return (value < 0 ? '-' : '') + '$' + POS_NUM_FMT_2D.format(Math.abs(value));
-    }
-    return new Intl.NumberFormat('de-CH', {
-      style: 'currency',
-      currency,
-      currencyDisplay: 'code',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  }
-  return new Intl.NumberFormat('de-CH', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function KpiTile({
-  icon: Icon,
-  label,
-  tooltip,
-  value,
-  format = 'number',
-  currency = 'USD',
-  tone = 'neutral',
-  focus = false,
-}) {
-  const toneClass = tone === 'loss' ? ' is-loss' : tone === 'profit' ? ' is-profit' : '';
-  return (
-    <div className="positions-v3__kpi" data-focus={focus ? 'true' : undefined}>
-      <div className="positions-v3__kpi-label">
-        {Icon && <Icon size={12} aria-hidden="true" />}
-        <span>{label}</span>
-        {tooltip && <InfoTooltip content={tooltip} size={12} />}
-      </div>
-      <div className={`positions-v3__kpi-value${toneClass}`}>
-        {fmtKpiValue(value, format, currency)}
-      </div>
-    </div>
-  );
-}
-
-// ── Relative age formatter (Greeks freshness indicator) ─────
-// Cheap, locale-stable formatter — no Intl.RelativeTimeFormat overhead
-// for the ~once-per-10s render path. Buckets: s < 60, min < 60, h.
+// ── Relative age formatter (Greeks freshness marker) ─────────
 function formatRelativeAge(ms) {
   if (!Number.isFinite(ms) || ms < 0) return '';
   const s = Math.floor(ms / 1000);
@@ -204,24 +147,13 @@ function formatRelativeAge(ms) {
   return `${h} h`;
 }
 
-// ── DTE badge ────────────────────────────────────────────────
-function DteBadge({ dte }) {
-  if (dte === '∞' || dte == null) {
-    return <span className="positions-dte positions-dte--infinity mono">∞</span>;
-  }
-  if (typeof dte !== 'number')
-    return <span className="positions-dte positions-dte--muted mono">—</span>;
-  let tone;
-  if (dte <= 0) tone = 'loss';
-  else if (dte < 30) tone = 'loss';
-  else if (dte < 60) tone = 'warning';
-  else if (dte <= 90) tone = 'accent';
-  else tone = 'profit';
-  return (
-    <span className={`positions-dte positions-dte--${tone} mono`}>
-      {dte <= 0 ? 'EXP' : `${dte}j`}
-    </span>
-  );
+// ── Expiration compacte « Mar'26 » (même format que LivePositions) ──
+const MONTHS_FR = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+function fmtExp(ex) {
+  if (!ex) return null;
+  const d = new Date(`${String(ex).slice(0, 10)}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return String(ex);
+  return `${MONTHS_FR[d.getMonth()]}'${String(d.getFullYear()).slice(2)}`;
 }
 
 // ── Type badge (CALL / PUT / STK) ───────────────────────────
@@ -232,7 +164,11 @@ function TypeBadge({ as, ty }) {
   return <StatusBadge variant="neutral" label="STK" size="xs" />;
 }
 
-// ── Alert inline badges (P6-20) ─────────────────────────────
+// ── Alert inline badges (P6-20, neutralisés 2.A) ────────────
+// Tags FACTUELS neutres (quel signal) — l'URGENCE est portée par la
+// colonne GATE (classifieur de la bande, ambre plein/filet). Un badge
+// rouge sur un signal n'est pas une perte d'argent réel (loi de
+// couleur) ; un seul canal d'urgence = lecture en une seconde.
 const ALERT_SHORT = {
   DTE_CRITICAL: 'DTE',
   DTE_WARNING: 'DTE',
@@ -242,7 +178,6 @@ const ALERT_SHORT = {
   TP2_REACHED: 'TP2',
   IN_PROFIT: 'OK',
 };
-const ALERT_TONE = { red: 'fail', orange: 'warn', green: 'pass' };
 
 function RowAlerts({ alerts }) {
   if (!alerts || alerts.length === 0) return <span className="mono text-tertiary">—</span>;
@@ -251,7 +186,7 @@ function RowAlerts({ alerts }) {
       {alerts.map((a, i) => (
         <StatusBadge
           key={`${a.type}-${i}`}
-          variant={ALERT_TONE[a.severity] || 'neutral'}
+          variant="neutral"
           label={ALERT_SHORT[a.type] || a.type}
           size="xs"
           title={a.message}
@@ -261,10 +196,50 @@ function RowAlerts({ alerts }) {
   );
 }
 
+// ── Cellule de table riche : valeur + méta empilées (rowHeight 47) ──
+function Cell2({ value, meta, metaTone }) {
+  return (
+    <span className="pos-cell2">
+      <span className="pos-cell2__val">{value}</span>
+      <span className={`pos-cell2__meta${metaTone ? ` text-${metaTone}` : ''}`}>{meta ?? ' '}</span>
+    </span>
+  );
+}
+
+// Greek de cellule : clamp du zéro négatif (« -0.00 » interdit dans un
+// terminal) + marquage IV estimée (~, convention établie) conservé.
+function fmtGreek(v) {
+  if (v == null || !Number.isFinite(v)) return null;
+  const clamped = Math.abs(v) < 0.005 ? 0 : v;
+  return clamped.toFixed(2);
+}
+
+// ── Cellule-MONDE du bandeau de commandement ─────────────────
+// 2.A passe 3 : plus de ⓘ (affordance absente du langage deck — la
+// sémantique vit dans la méta : « prime totale engagée », etc.) ;
+// le tooltip complet reste accessible via title sur le libellé.
+function CommandCell({ label, marker, title, value, chf, sub, tone }) {
+  const meta = [chf, sub].filter(Boolean).join(sub && sub.startsWith('/') ? ' ' : ' · ');
+  return (
+    <div className="pf-c pos-command__cell">
+      <span className="pf-c__label pos-command__label" title={title || undefined}>
+        <span>{label}</span>
+        {marker || null}
+      </span>
+      <TickValue
+        text={value}
+        className={`pf-c__val pos-command__val${tone ? ` pf-c__val--${tone}` : ''}`}
+      />
+      <span className="pf-c__meta pos-command__meta">{meta || ' '}</span>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════
-//  FLAT STATE — 4 cards when we have history but no open position
+//  FLAT STATE — un panneau cockpit continu, 4 zones aux rails
+//  verticaux (recomposition 2.A du 4-cartes ; contenu conservé).
 // ═══════════════════════════════════════════════════════════════
-function FlatState({ closedTrades, lr, navigate }) {
+function FlatState({ closedTrades, lr, navigate, reducedMotion }) {
   const lastClosed = useMemo(() => {
     const sorted = [...closedTrades]
       .filter((t) => t.do)
@@ -284,8 +259,8 @@ function FlatState({ closedTrades, lr, navigate }) {
   }, [closedTrades, lr]);
 
   const mix = useMemo(() => assetMix(closedTrades), [closedTrades]);
-  // Slice « Action » = stocks/equity (mix descriptif passé). Pas un signal
-  // décisionnel → ink-mute, l'amber reste réservé aux zones d'action.
+  // Slice « Action » = mix descriptif, ink-mute ; call/put = résultats
+  // d'argent réel historiques → up/down conservés.
   const slices = [
     { key: 'action', color: 'var(--ink-mute)', pct: mix.action.pct },
     { key: 'call', color: 'var(--pnl-up)', pct: mix.call.pct },
@@ -305,11 +280,11 @@ function FlatState({ closedTrades, lr, navigate }) {
   return (
     <motion.div
       className="page-container positions-flat"
-      variants={CONTAINER_VARIANTS}
-      initial="hidden"
-      animate="visible"
+      variants={reducedMotion ? undefined : RISE_CONTAINER_VARIANTS}
+      initial={reducedMotion ? undefined : 'hidden'}
+      animate={reducedMotion ? undefined : 'visible'}
     >
-      <motion.div variants={TILE_VARIANTS} className="page-header">
+      <motion.div variants={RISE_TILE_VARIANTS} className="page-header">
         <div>
           <h1 className="page-title">
             <Crosshair
@@ -326,120 +301,115 @@ function FlatState({ closedTrades, lr, navigate }) {
         </div>
       </motion.div>
 
-      <div className="positions-flat__grid">
-        <motion.div variants={TILE_VARIANTS} className="positions-flat__card">
-          <div className="positions-flat__card-head">
-            <Clock size={12} aria-hidden="true" />
-            <span className="uppercase-label">Dernière position clôturée</span>
-          </div>
-          {lastClosed ? (
-            <>
-              <div className="positions-flat__ticker-row">
-                <span className="mono positions-flat__ticker">{lastClosed.tk}</span>
-                <TypeBadge as={lastClosed.as} ty={lastClosed.ty} />
-              </div>
-              <div
-                className="mono positions-flat__pnl"
-                data-tone={lastPnl > 0 ? 'profit' : lastPnl < 0 ? 'loss' : 'neutral'}
-              >
-                {formatPnlUsd(lastPnl)}
-              </div>
-              <div className="positions-flat__meta">
-                <div>
-                  Clôturé le <strong>{lastClosed.do}</strong>
+      {/* Un seul panneau cockpit, 4 zones — plus de cartes flottantes. */}
+      <motion.section
+        variants={RISE_TILE_VARIANTS}
+        className="lh-final positions-flat__deck"
+        aria-label="État flat — repères"
+      >
+        <div className="positions-flat__grid">
+          <div className="positions-flat__zone">
+            <div className="mk-title">DERNIÈRE CLÔTURE</div>
+            {lastClosed ? (
+              <>
+                <div className="positions-flat__ticker-row">
+                  <span className="mono positions-flat__ticker">{lastClosed.tk}</span>
+                  <TypeBadge as={lastClosed.as} ty={lastClosed.ty} />
                 </div>
-                <div>
-                  Durée <strong>{lastDuration}j</strong>
-                </div>
-                {rMultiple != null && isFinite(rMultiple) && (
-                  <div>
-                    R-multiple{' '}
-                    <strong data-tone={rMultiple >= 0 ? 'profit' : 'loss'}>
-                      {rMultiple >= 0 ? '+' : ''}
-                      {rMultiple.toFixed(2)}R
-                    </strong>
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="positions-flat__placeholder">—</div>
-          )}
-        </motion.div>
-
-        <motion.div variants={TILE_VARIANTS} className="positions-flat__card">
-          <div className="positions-flat__card-head">
-            <TrendingUp size={12} aria-hidden="true" />
-            <span className="uppercase-label">Stats récentes</span>
-          </div>
-          <div className="mono positions-flat__stat-big">
-            {recent.winRate.toFixed(0)}%
-            <span className="positions-flat__stat-sub">WR / {recent.sampleSize} trades</span>
-          </div>
-          <div className="positions-flat__recent-list">
-            {recent.last3.map((t, i) => (
-              <div key={t.id || i} className="positions-flat__recent">
-                <span className="mono positions-flat__recent-tk">{t.tk}</span>
-                <span className="positions-flat__recent-date">{t.do}</span>
-                <span
-                  className="mono positions-flat__recent-pnl"
-                  data-tone={t.pnl > 0 ? 'profit' : t.pnl < 0 ? 'loss' : 'neutral'}
+                <div
+                  className="mono positions-flat__pnl"
+                  data-tone={lastPnl > 0 ? 'profit' : lastPnl < 0 ? 'loss' : 'neutral'}
                 >
-                  {formatPnlUsd(t.pnl)}
-                </span>
-              </div>
-            ))}
+                  {formatPnlUsd(lastPnl)}
+                </div>
+                <div className="positions-flat__meta">
+                  <div>
+                    Clôturé le <strong>{lastClosed.do}</strong>
+                  </div>
+                  <div>
+                    Durée <strong>{lastDuration}j</strong>
+                  </div>
+                  {rMultiple != null && isFinite(rMultiple) && (
+                    <div>
+                      R-multiple{' '}
+                      <strong data-tone={rMultiple >= 0 ? 'profit' : 'loss'}>
+                        {rMultiple >= 0 ? '+' : ''}
+                        {rMultiple.toFixed(2)}R
+                      </strong>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="positions-flat__placeholder">—</div>
+            )}
           </div>
-        </motion.div>
 
-        <motion.div variants={TILE_VARIANTS} className="positions-flat__card">
-          <div className="positions-flat__card-head">
-            <Crosshair size={12} aria-hidden="true" />
-            <span className="uppercase-label">Prochain setup potentiel</span>
-          </div>
-          <p className="positions-flat__setup">
-            Scanne la Chain Options pour trouver ton prochain <strong>Sniper OTM</strong> : Delta
-            0.25-0.35, IV Rank &lt; 40, DTE 120-150.
-          </p>
-          <button
-            type="button"
-            className="positions-flat__cta"
-            onClick={() => navigate('/trading/chain')}
-          >
-            Ouvrir Chain Options <ArrowUpRight size={12} aria-hidden="true" />
-          </button>
-        </motion.div>
-
-        <motion.div variants={TILE_VARIANTS} className="positions-flat__card">
-          <div className="positions-flat__card-head">
-            <TrendingDown size={12} aria-hidden="true" />
-            <span className="uppercase-label">Répartition historique</span>
-          </div>
-          <div className="positions-flat__donut-wrap">
-            <MiniDonut slices={slices} />
-            <div className="positions-flat__legend">
-              <LegendRow
-                color="var(--ink-mute)"
-                label="Action"
-                value={`${mix.action.count} · ${mix.action.pct.toFixed(0)}%`}
-              />
-              <LegendRow
-                color="var(--pnl-up)"
-                label="Call"
-                value={`${mix.call.count} · ${mix.call.pct.toFixed(0)}%`}
-              />
-              <LegendRow
-                color="var(--pnl-down)"
-                label="Put"
-                value={`${mix.put.count} · ${mix.put.pct.toFixed(0)}%`}
-              />
+          <div className="positions-flat__zone">
+            <div className="mk-title">STATS RÉCENTES</div>
+            <div className="mono positions-flat__stat-big">
+              {recent.winRate.toFixed(0)}%
+              <span className="positions-flat__stat-sub">WR / {recent.sampleSize} trades</span>
+            </div>
+            <div className="positions-flat__recent-list">
+              {recent.last3.map((t, i) => (
+                <div key={t.id || i} className="positions-flat__recent">
+                  <span className="mono positions-flat__recent-tk">{t.tk}</span>
+                  <span className="positions-flat__recent-date">{t.do}</span>
+                  <span
+                    className="mono positions-flat__recent-pnl"
+                    data-tone={t.pnl > 0 ? 'profit' : t.pnl < 0 ? 'loss' : 'neutral'}
+                  >
+                    {formatPnlUsd(t.pnl)}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="positions-flat__donut-footer">
-            Sur {mix.total} trade{mix.total > 1 ? 's' : ''} clos
+
+          <div className="positions-flat__zone">
+            <div className="mk-title">PROCHAIN SETUP</div>
+            <p className="positions-flat__setup">
+              Scanne la Chain Options pour trouver ton prochain <strong>Sniper OTM</strong> : Delta
+              0.25-0.35, IV Rank &lt; 40, DTE 120-150.
+            </p>
+            <button
+              type="button"
+              className="positions-flat__cta"
+              onClick={() => navigate('/trading/chain')}
+            >
+              Ouvrir Chain Options <ArrowUpRight size={12} aria-hidden="true" />
+            </button>
           </div>
-        </motion.div>
-      </div>
+
+          <div className="positions-flat__zone">
+            <div className="mk-title">RÉPARTITION</div>
+            <div className="positions-flat__donut-wrap">
+              <MiniDonut slices={slices} />
+              <div className="positions-flat__legend">
+                <LegendRow
+                  color="var(--ink-mute)"
+                  label="Action"
+                  value={`${mix.action.count} · ${mix.action.pct.toFixed(0)}%`}
+                />
+                <LegendRow
+                  color="var(--pnl-up)"
+                  label="Call"
+                  value={`${mix.call.count} · ${mix.call.pct.toFixed(0)}%`}
+                />
+                <LegendRow
+                  color="var(--pnl-down)"
+                  label="Put"
+                  value={`${mix.put.count} · ${mix.put.pct.toFixed(0)}%`}
+                />
+              </div>
+            </div>
+            <div className="positions-flat__donut-footer">
+              Sur {mix.total} trade{mix.total > 1 ? 's' : ''} clos
+            </div>
+          </div>
+        </div>
+      </motion.section>
     </motion.div>
   );
 }
@@ -467,7 +437,7 @@ function PanelGreek({ label, value, ivEstimated, digits = 2 }) {
   } else if (ivEstimated) {
     node = (
       <span
-        style={{ opacity: 0.65, fontStyle: 'italic' }}
+        className="pos-iv-est"
         title="IV estimée (mark hors plage no-arbitrage, défaut σ=30%)"
       >
         ~{value.toFixed(digits)}
@@ -484,7 +454,7 @@ function PanelGreek({ label, value, ivEstimated, digits = 2 }) {
   );
 }
 
-function PositionDetailBody({ row, greeks, posAlerts, navigate, onEdit, onCloseMode }) {
+function PositionDetailBody({ row, greeks, posAlerts, navigate, onEdit, onCloseMode, onTagMeta }) {
   const { pos, r, pctChg, isOpt, dte, costBasis, maxLoss } = row;
   const pnl = r.unrealizedPnlUsd;
   const pnlTone = pnl > 0 ? 'profit' : pnl < 0 ? 'loss' : 'neutral';
@@ -494,12 +464,12 @@ function PositionDetailBody({ row, greeks, posAlerts, navigate, onEdit, onCloseM
   return (
     <div className="position-detail">
       <div className="position-detail__head">
-        <span className="mono" style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)' }}>
-          {pos.tk}
-        </span>
+        <span className="mono position-detail__head-tk">{pos.tk}</span>
         <TypeBadge as={pos.as} ty={pos.ty} />
         <StatusBadge variant="neutral" label={dir} size="xs" />
-        {isOpt && <DteBadge dte={dte} />}
+        {isOpt && Number.isFinite(dte) && (
+          <StatusBadge variant="neutral" label={`DTE ${dte}j`} size="xs" />
+        )}
       </div>
 
       <div className="position-detail__section">
@@ -573,10 +543,23 @@ function PositionDetailBody({ row, greeks, posAlerts, navigate, onEdit, onCloseM
         </div>
       )}
 
+      {/* 2.A — méta Sniper : AFFICHAGE dans la table, ÉDITION ici. */}
+      <div className="position-detail__section">
+        <span className="position-detail__section-title">Méta Sniper</span>
+        <div className="position-detail__grid">
+          <DetailItem label="Edge tier">{row.edgeTier || '—'}</DetailItem>
+          <DetailItem label="Capital tier">{row.capitalTier || '—'}</DetailItem>
+          <DetailItem label="IV Rank">{row.ivr != null ? `${Math.round(row.ivr)}%` : '—'}</DetailItem>
+        </div>
+        <button type="button" className="pg-mock-btn position-detail__tag-btn" onClick={onTagMeta}>
+          Tagger la méta (E0-E4 · C1-C5 · β)
+        </button>
+      </div>
+
       <div className="position-detail__section">
         <span className="position-detail__section-title">Alertes</span>
         {posAlerts.length === 0 ? (
-          <span className="text-tertiary mono" style={{ fontSize: 12 }}>
+          <span className="text-tertiary mono position-detail__no-alert">
             Aucune alerte active
           </span>
         ) : (
@@ -870,6 +853,8 @@ export default function Positions() {
   const [detailId, setDetailId] = useState(null);
   // U4-bis — mode du panneau détail : 'view' (read-only) | 'edit' | 'close'.
   const [detailMode, setDetailMode] = useState('view');
+  // 2.A — éditeur de méta Sniper (modal autonome, sidecar qc:sniperMeta).
+  const [tagPos, setTagPos] = useState(null);
   const [greeksMap, setGreeksMap] = useState(new Map());
   const [lastGreeksUpdate, setLastGreeksUpdate] = useState(null);
   // `now` lives in state so the relative age label can be computed during
@@ -926,6 +911,16 @@ export default function Positions() {
   const m = usePortfolioMetrics();
   const nlvUsd = m.netLiquidationValueUsd;
 
+  // 2.A — rows 19-colonnes de LivePositions (lecture seule, MÊMES
+  // dérivations que le Dashboard : sidecar Sniper, IVR, days-in, spark,
+  // Δ per-share / Θ per-day). La vérité P&L de la page reste
+  // calculateOpenPositionPnl (inchangée).
+  const live = useLivePositions({ greeksMap });
+  const liveById = useMemo(
+    () => new Map((live.positions || []).map((r) => [r.id, r])),
+    [live.positions]
+  );
+
   const positions = useMemo(
     () =>
       openPositions.map((pos) => {
@@ -933,35 +928,39 @@ export default function Positions() {
         const costBasis = Math.abs(r.costBasisUsd);
         const pctChg = costBasis > 0 ? (r.unrealizedPnlUsd / costBasis) * 100 : 0;
         const isOpt = pos.as === 'Option';
-        const dte = isOpt ? daysToExpiration(pos.ex) : '∞';
+        const lrow = liveById.get(pos.id) || {};
         const mul = ensurePositive(pos.mu);
         const maxLoss = toFloat(pos.pi) * toFloat(pos.ct) * mul;
         const portPct = nlvUsd > 0 ? (Math.abs(r.marketValueUsd) / nlvUsd) * 100 : 0;
-        return { pos, r, tk: pos.tk, pctChg, isOpt, dte, costBasis, maxLoss, portPct };
+        return {
+          pos,
+          r,
+          isOpt,
+          costBasis,
+          maxLoss,
+          portPct,
+          pctChg,
+          // Champs plats triables (accessorFn DataTable = row[key]).
+          tk: pos.tk,
+          strike: isOpt ? toFloat(pos.st) : null,
+          exp: isOpt ? pos.ex : null,
+          dte: isOpt ? (Number.isFinite(lrow.dte) ? lrow.dte : null) : Infinity,
+          qty: toFloat(pos.ct),
+          entry: toFloat(pos.pi),
+          mark: toFloat(pos.pc),
+          pnlUsd: r.unrealizedPnlUsd,
+          delta: lrow.delta ?? null,
+          theta: lrow.theta ?? null,
+          ivEstimated: !!lrow.ivEstimated,
+          ivr: lrow.ivr ?? null,
+          edgeTier: lrow.edgeTier ?? null,
+          capitalTier: lrow.capitalTier ?? null,
+          daysIn: Number.isFinite(lrow.daysHeld) ? lrow.daysHeld : null,
+          spark7d: lrow.spark7d ?? null,
+        };
       }),
-    [openPositions, lr, nlvUsd]
+    [openPositions, lr, nlvUsd, liveById]
   );
-
-  // A3c — Greek aggregation removed from this block. The KPI cards
-  // (Delta Net, Theta Total) now read the sign-aware values exposed
-  // by `aggregateGreeks` below (greeks.sumDelta, greeks.thetaDaily).
-  // The legacy summing here was simultaneously sign-agnostic AND in
-  // per-year units (Theta) while the tooltip claimed "quotidienne".
-  // Both bugs fixed at the consumer site.
-  // Passe finale — `uPnlUsd` retiré du retour (calculé jamais lu).
-  const summary = useMemo(() => {
-    let totalCost = 0;
-    let totalMaxLoss = 0;
-    positions.forEach(({ costBasis, maxLoss }) => {
-      totalCost += costBasis;
-      totalMaxLoss += maxLoss;
-    });
-    return {
-      count: positions.length,
-      totalMaxLoss,
-      totalCost,
-    };
-  }, [positions]);
 
   const greeks = useMemo(
     () => aggregateGreeks(openPositions, greeksMap),
@@ -976,11 +975,97 @@ export default function Positions() {
     [alerts]
   );
 
+  // 2.A — classifieur de gates de la bande décision (module pur) :
+  // MÊME règle, MÊMES entrées (alerts red/orange + rows useSniperGates
+  // + kill switch) → une position CRITICAL dans la bande = CRITICAL ici.
+  const gates = useSniperGates();
+  const kill = useDailyKillSwitch();
+  const gateByPos = useMemo(() => {
+    const att = deriveAttention({
+      alerts: actionableAlerts,
+      gateRows: gates.rows,
+      watchedCount: 0,
+      kill: { triggered: kill.triggered, dailyPnlUsd: kill.dailyPnlUsd, maxLoss: kill.maxLoss },
+      maxLines: Infinity,
+    });
+    return new Map(att.lines.map((l) => [l.id, l]));
+  }, [actionableAlerts, gates.rows, kill.triggered, kill.dailyPnlUsd, kill.maxLoss]);
+
+  // Bandeau + footer : agrégats (une passe).
+  const summary = useMemo(() => {
+    let totalCost = 0;
+    let totalMaxLoss = 0;
+    let totalUnreal = 0;
+    let totalMarkValue = 0;
+    let deltaDollar = 0;
+    let thetaDollar = 0;
+    let closest = null;
+    let nOpt = 0;
+    let nStk = 0;
+    for (const row of positions) {
+      totalCost += row.costBasis;
+      totalMaxLoss += row.maxLoss;
+      totalUnreal += row.pnlUsd;
+      // Σ |valeur mark| — PAS un notionnel (§8 : le label doit dire ce
+      // qu'il montre ; le notionnel serait strike × 100 × contrats).
+      totalMarkValue += Math.abs(row.r.marketValueUsd);
+      if (row.isOpt) nOpt++;
+      else nStk++;
+      const mul = row.isOpt ? ensurePositive(row.pos.mu) : 1;
+      const dirSign = row.pos.dir === 'Short' ? -1 : 1;
+      if (Number.isFinite(row.delta)) {
+        deltaDollar += dirSign * row.delta * row.qty * mul * row.mark;
+      }
+      if (Number.isFinite(row.theta)) {
+        thetaDollar += dirSign * row.theta * row.qty * mul;
+      }
+      if (row.isOpt && Number.isFinite(row.dte)) {
+        if (!closest || row.dte < closest.dte) closest = { ticker: row.tk, dte: row.dte };
+      }
+    }
+    return {
+      count: positions.length,
+      nOpt,
+      nStk,
+      totalCost,
+      totalMaxLoss,
+      totalUnreal,
+      totalMarkValue,
+      deltaDollar,
+      thetaDollar,
+      closest,
+    };
+  }, [positions]);
+
+  // Compte des gates par sévérité (bandeau POSITIONS : « qui réclame
+  // une action » vit aussi dans le bandeau, pas que dans la table).
+  const gateCounts = useMemo(() => {
+    let critical = 0;
+    let armed = 0;
+    for (const l of gateByPos.values()) {
+      if (l.severity === 'critique') critical++;
+      else armed++;
+    }
+    return { critical, armed };
+  }, [gateByPos]);
+
+  // Fraîcheur Greeks — marqueur discret (registre pf-real, §4.1).
+  const greeksFreshness = useMemo(() => {
+    const hasUsable = Array.from(greeksMap.values()).some(
+      (g) => g && g.source !== 'unavailable'
+    );
+    if (hasUsable && lastGreeksUpdate) {
+      return { text: formatRelativeAge(now - lastGreeksUpdate), title: 'Greeks recalculés — âge du dernier fetch réussi' };
+    }
+    if (greeksMap.size === 0) return { text: '…', title: 'Greeks · en attente du premier fetch' };
+    return { text: '—', title: 'Greeks indisponibles' };
+  }, [greeksMap, lastGreeksUpdate, now]);
+
   // ─── Branch A : truly empty ────────────────────────────────
   if (positions.length === 0 && closedTrades.length === 0) {
     return (
       <div className="page-container positions-empty">
-        <div className="positions-empty__panel">
+        <div className="positions-empty__panel lh-final">
           <EmptyState
             icon={Briefcase}
             title="Aucune position ouverte"
@@ -1002,12 +1087,22 @@ export default function Positions() {
 
   // ─── Branch B : flat (history exists) ──────────────────────
   if (positions.length === 0) {
-    return <FlatState closedTrades={closedTrades} lr={lr} navigate={navigate} />;
+    return (
+      <FlatState
+        closedTrades={closedTrades}
+        lr={lr}
+        navigate={navigate}
+        reducedMotion={reducedMotion}
+      />
+    );
   }
 
-  // ─── Branch C : open positions → KPI + DataTable ──────────
+  // ─── Branch C : open positions → bandeau + DataTable ───────
   const detailRow =
     detailId != null ? positions.find((p) => p.pos.id === detailId) || null : null;
+
+  const chf = (usd, signed) =>
+    Number.isFinite(usd) && Number.isFinite(lr) && lr > 0 ? fmtChf(usd, lr, signed) : null;
 
   const columns = [
     {
@@ -1016,11 +1111,17 @@ export default function Positions() {
       align: 'left',
       sort: true,
       mono: true,
-      render: (v, row) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span className="mono" style={{ fontWeight: 'var(--fw-semibold)' }}>
-            {v || '—'}
+      footer: () => (
+        <span>
+          <span className="v3-table__tf-label">Σ · {summary.count} pos</span>
+          <span className="v3-table__tf-value">
+            {summary.nOpt} opt{summary.nStk > 0 ? ` · ${summary.nStk} stk` : ''}
           </span>
+        </span>
+      ),
+      render: (v, row) => (
+        <div className="pos-ticker-cell">
+          <span className="mono pos-ticker-cell__tk">{v || '—'}</span>
           <TypeBadge as={row.pos.as} ty={row.pos.ty} />
         </div>
       ),
@@ -1031,13 +1132,38 @@ export default function Positions() {
       align: 'right',
       sort: true,
       mono: true,
-      render: (_v, row) => (row.isOpt ? `$${toFloat(row.pos.st).toFixed(0)}` : '—'),
+      render: (_v, row) =>
+        row.isOpt ? (
+          <Cell2 value={`$${toFloat(row.pos.st).toFixed(0)}`} meta={fmtExp(row.exp)} />
+        ) : (
+          '—'
+        ),
     },
     {
       key: 'dte',
       label: 'DTE',
-      align: 'center',
-      render: (v) => <DteBadge dte={v} />,
+      align: 'right',
+      sort: true,
+      mono: true,
+      footer: () => (
+        <span>
+          <span className="v3-table__tf-label">DTE proche</span>
+          <span className="v3-table__tf-value">
+            {summary.closest ? `${summary.closest.ticker} ${summary.closest.dte} j` : '—'}
+          </span>
+        </span>
+      ),
+      // DTE NEUTRE (2.A) : le temps n'est pas de l'argent — l'urgence est
+      // portée par la colonne GATE (classifieur de la bande décision).
+      render: (v, row) => {
+        if (!row.isOpt) return <Cell2 value="∞" meta={row.daysIn != null ? `${row.daysIn} j in` : null} />;
+        return (
+          <Cell2
+            value={Number.isFinite(v) ? `${v} j` : '—'}
+            meta={row.daysIn != null ? `${row.daysIn} j in` : null}
+          />
+        );
+      },
     },
     {
       key: 'qty',
@@ -1045,15 +1171,21 @@ export default function Positions() {
       align: 'right',
       sort: true,
       mono: true,
-      render: (_v, row) => toFloat(row.pos.ct).toString(),
+      render: (v) => String(v),
     },
     {
-      key: 'pi',
+      key: 'entry',
       label: 'Entry',
       align: 'right',
       sort: true,
       mono: true,
-      render: (_v, row) => `$${toFloat(row.pos.pi).toFixed(2)}`,
+      footer: () => (
+        <span>
+          <span className="v3-table__tf-label">Σ Max loss</span>
+          <span className="v3-table__tf-value">{fmtUsd(summary.totalMaxLoss)}</span>
+        </span>
+      ),
+      render: (v) => `$${v.toFixed(2)}`,
     },
     {
       key: 'mark',
@@ -1061,7 +1193,20 @@ export default function Positions() {
       align: 'right',
       sort: true,
       mono: true,
-      render: (_v, row) => `$${toFloat(row.pos.pc).toFixed(2)}`,
+      footer: () => (
+        <span>
+          <span className="v3-table__tf-label">Σ Valeur mark</span>
+          <span className="v3-table__tf-value">{fmtUsd(summary.totalMarkValue)}</span>
+        </span>
+      ),
+      render: (v, row) => (
+        <span className="pos-mark-cell">
+          <span>${v.toFixed(2)}</span>
+          {Array.isArray(row.spark7d) && row.spark7d.length >= 2 && (
+            <PositionSparkline prices={row.spark7d} dir={row.pos.dir} />
+          )}
+        </span>
+      ),
     },
     {
       key: 'pnlUsd',
@@ -1069,30 +1214,31 @@ export default function Positions() {
       align: 'right',
       sort: true,
       mono: true,
-      render: (_v, row) => {
-        const p = row.r.unrealizedPnlUsd;
-        const tone = p > 0 ? 'profit' : p < 0 ? 'loss' : 'neutral';
+      footer: () => {
+        const t =
+          summary.totalUnreal > 0 ? 'profit' : summary.totalUnreal < 0 ? 'loss' : undefined;
         return (
-          <span className={`text-${tone}`}>
-            {p >= 0 ? '+' : ''}
-            {formatUsd(p)}
+          <span>
+            <span className="v3-table__tf-label">Σ Unreal</span>
+            <span className={`v3-table__tf-value${t ? ` v3-table__tf-value--${t}` : ''}`}>
+              {fmtUsdSigned(summary.totalUnreal)}
+            </span>
           </span>
         );
       },
-    },
-    {
-      key: 'pctChg',
-      label: '%',
-      align: 'right',
-      sort: true,
-      mono: true,
-      render: (v) => {
+      render: (v, row) => {
         const tone = v > 0 ? 'profit' : v < 0 ? 'loss' : 'neutral';
         return (
-          <span className={`text-${tone}`}>
-            {v >= 0 ? '+' : ''}
-            {v.toFixed(2)}%
-          </span>
+          <Cell2
+            value={
+              <span className={`text-${tone}`}>
+                {v >= 0 ? '+' : ''}
+                {formatUsd(v)}
+              </span>
+            }
+            meta={`${row.pctChg >= 0 ? '+' : ''}${row.pctChg.toFixed(2)}%`}
+            metaTone={tone}
+          />
         );
       },
     },
@@ -1102,49 +1248,102 @@ export default function Positions() {
       align: 'right',
       sort: true,
       mono: true,
-      render: (_v, row) => {
-        if (!row.isOpt) return '—';
-        const g = greeksMap.get(row.pos.id);
-        const d = g?.delta;
-        if (d == null) return '—';
-        // Cascade fallback (c) σ=0.30 → marquage discret : ~ prefix + opacity + title
-        if (g.ivEstimated) {
+      footer: () => (
+        <span>
+          <span className="v3-table__tf-label">Σ Δ $</span>
+          <span className="v3-table__tf-value">{fmtUsdSigned(summary.deltaDollar)}</span>
+        </span>
+      ),
+      render: (v, row) => {
+        const s = row.isOpt ? fmtGreek(v) : null;
+        if (s == null) return '—';
+        if (row.ivEstimated) {
           return (
-            <span
-              style={{ opacity: 0.65, fontStyle: 'italic' }}
-              title="IV estimée (mark hors plage no-arbitrage, défaut σ=30%)"
-            >
-              ~{d.toFixed(2)}
+            <span className="pos-iv-est" title="IV estimée (mark hors plage no-arbitrage, défaut σ=30%)">
+              ~{s}
             </span>
           );
         }
-        return d.toFixed(2);
+        return s;
       },
     },
     {
       key: 'theta',
-      label: 'Θ',
+      label: 'Θ / j',
       align: 'right',
       sort: true,
       mono: true,
-      render: (_v, row) => {
-        if (!row.isOpt) return '—';
-        const g = greeksMap.get(row.pos.id);
-        const t = g?.theta;
-        if (t == null) return '—';
-        // Θ NEUTRE (loi de couleur) : un Greek signé ≠ perte $ → neutre comme Δ,
-        // plus de text-loss. Le marquage IV-estimée (~ + opacité) reste.
-        if (g.ivEstimated) {
+      footer: () => (
+        <span>
+          <span className="v3-table__tf-label">Σ Θ $ / j</span>
+          <span className="v3-table__tf-value">{fmtUsdSigned(summary.thetaDollar)}</span>
+        </span>
+      ),
+      // Θ NEUTRE (loi de couleur) — per-day (convention LivePositions /
+      // Héros 1, unifiée 2.A ; la page affichait la valeur annuelle brute).
+      render: (v, row) => {
+        const s = row.isOpt ? fmtGreek(v) : null;
+        if (s == null) return '—';
+        if (row.ivEstimated) {
           return (
-            <span
-              style={{ opacity: 0.65, fontStyle: 'italic' }}
-              title="IV estimée (mark hors plage no-arbitrage, défaut σ=30%)"
-            >
-              ~{t.toFixed(2)}
+            <span className="pos-iv-est" title="IV estimée (mark hors plage no-arbitrage, défaut σ=30%)">
+              ~{s}
             </span>
           );
         }
-        return t.toFixed(2);
+        return s;
+      },
+    },
+    {
+      key: 'ivr',
+      label: 'IVR',
+      align: 'right',
+      sort: true,
+      mono: true,
+      // Microbar NEUTRE (un rang d'IV n'est pas un P&L).
+      render: (v, row) => {
+        if (!row.isOpt || v == null) return '—';
+        const pct = Math.max(0, Math.min(100, v));
+        return (
+          <span className="pos-ivr-cell">
+            <span>{Math.round(v)}</span>
+            <span className="pos-ivr-bar" aria-hidden="true">
+              <span className="pos-ivr-bar__fill" style={{ width: `${pct}%` }} />
+            </span>
+          </span>
+        );
+      },
+    },
+    {
+      key: 'edgeTier',
+      label: 'Tier',
+      align: 'center',
+      mono: true,
+      // Méta Sniper — AFFICHAGE seul (édition dans le modal détail).
+      render: (_v, row) => {
+        if (!row.isOpt) return '—';
+        const e = row.edgeTier || '—';
+        const c = row.capitalTier || '—';
+        if (e === '—' && c === '—') return <span className="text-tertiary mono">—</span>;
+        return <span className="db-chip pos-tier-chip">{`${e}·${c}`}</span>;
+      },
+    },
+    {
+      key: 'gate',
+      label: 'Gate',
+      align: 'left',
+      // Badge ARMED/CRITICAL — même classifieur que la bande décision.
+      render: (_v, row) => {
+        const g = gateByPos.get(row.pos.id);
+        if (!g) return <span className="mono text-tertiary">—</span>;
+        return (
+          <span
+            className={`db-badge db-badge--${g.severity}`}
+            title={`${g.metric}${g.others > 0 ? ` · +${g.others} signal${g.others > 1 ? 'aux' : ''}` : ''}`}
+          >
+            {g.severity === 'critique' ? 'CRITICAL' : 'ARMED'}
+          </span>
+        );
       },
     },
     {
@@ -1193,18 +1392,17 @@ export default function Positions() {
             <span className="mono positions-card__ticker">{row.pos.tk}</span>
             <TypeBadge as={row.pos.as} ty={row.pos.ty} />
           </div>
-          <DteBadge dte={row.dte} />
+          {row.isOpt && Number.isFinite(row.dte) && (
+            <span className="mono positions-card__dte">{row.dte} j</span>
+          )}
         </div>
         <div className="positions-card__body">
           <div className="positions-card__pnl">
-            <span
-              className={`mono text-${tone}`}
-              style={{ fontSize: 18, fontWeight: 'var(--fw-bold)' }}
-            >
+            <span className={`mono text-${tone} positions-card__pnl-usd`}>
               {p >= 0 ? '+' : ''}
               {formatUsd(p)}
             </span>
-            <span className={`mono text-${tone}`} style={{ fontSize: 12 }}>
+            <span className={`mono text-${tone} positions-card__pnl-pct`}>
               {row.pctChg >= 0 ? '+' : ''}
               {row.pctChg.toFixed(2)}%
             </span>
@@ -1238,16 +1436,15 @@ export default function Positions() {
   return (
     <motion.div
       className="page-container positions-v3"
-      variants={reducedMotion ? undefined : CONTAINER_VARIANTS}
+      variants={reducedMotion ? undefined : RISE_CONTAINER_VARIANTS}
       initial={reducedMotion ? undefined : 'hidden'}
       animate={reducedMotion ? undefined : 'visible'}
     >
-      <motion.div variants={TILE_VARIANTS} className="page-header">
+      <motion.div variants={RISE_TILE_VARIANTS} className="page-header">
         <div>
-          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h1 className="page-title positions-v3__title">
             <Crosshair size={18} aria-hidden="true" />
             Positions ouvertes
-            <StatusBadge variant="accent" label={`${summary.count} pos`} size="xs" />
             {actionableAlerts.length > 0 && (
               <StatusBadge
                 variant="warn"
@@ -1257,95 +1454,81 @@ export default function Positions() {
             )}
           </h1>
           <p className="page-subtitle">
-            Portefeuille actif · P&L unrealized, Greeks nets par contrat, DTE badges.
+            L'état du livre ouvert · P&L unrealized, Greeks par contrat, gates Sniper.
           </p>
         </div>
       </motion.div>
 
-      {/* KPI strip — 5 tuiles plates canoniques.
-          Focus (depth-focus + filet amber) = zones décisives de la page :
-          Positions (le sujet), Delta net (Σ Greeks), Capital engagé (capital).
-          Rouge sémantique = pertes $ RÉELLES uniquement (Max Loss). Θ signé
-          est neutre (révision loi de couleur cross-page). */}
-      <motion.div variants={TILE_VARIANTS} className="positions-v3__kpi-strip">
-        <KpiTile
-          icon={Layers}
-          label="Positions"
-          tooltip="Nombre de positions ouvertes (actions + options)."
-          value={summary.count}
-          format="number"
-          focus
-        />
-        <KpiTile
-          icon={Sigma}
-          label="Delta net"
-          tooltip={{
-            title: 'Delta net',
-            body: 'Exposition directionnelle agrégée (options + actions, sign-aware par dir). +1 = $1 de P&L pour +$1 du sous-jacent.',
-          }}
-          value={greeks.sumDelta}
-          format="number"
-          focus
-        />
-        {/* Theta reads greeks.thetaDaily (sign-aware via aggregateGreeks,
-            BSM-theta / 365 → per-day units). Θ NEUTRE (loi de couleur cross-page,
-            révision) : un Greek signé n'est PAS une perte $ → toujours neutre,
-            plus de rouge sur le signe. Le rouge reste réservé aux pertes réalisées
-            (Max Loss). */}
-        <KpiTile
-          icon={Clock}
-          label="Theta total"
-          tooltip={{
-            title: 'Theta agrégé',
-            body: "Erosion temporelle quotidienne cumulée sur le portefeuille d'options (sign-aware par dir : positif = decay encaissé pour les short premium).",
-          }}
-          value={greeks.thetaDaily}
-          format="currency"
-          currency="USD"
-          tone="neutral"
-        />
-        <KpiTile
-          icon={DollarSign}
-          label="Capital engagé"
-          tooltip={{
-            title: 'Capital investi',
-            body: 'Coût total absolu des positions ouvertes (entry price × qty × multiplier).',
-          }}
-          value={summary.totalCost}
-          format="currency"
-          currency="USD"
-          focus
-        />
-        <KpiTile
-          icon={Activity}
-          label="Max loss"
-          tooltip={{
-            title: 'Max Loss',
-            body: 'Perte maximum théorique si toutes les options expirent sans valeur (long options only).',
-          }}
-          value={summary.totalMaxLoss}
-          format="currency"
-          currency="USD"
-          tone="loss"
-        />
-      </motion.div>
+      {/* 2.A — BANDEAU DE COMMANDEMENT : un panneau cockpit, cellules-MONDE
+          aux hairlines verticales continues. Max Loss NEUTRE (montant
+          hypothétique — amendement 15.07.2026). Fraîcheur Greeks en
+          marqueur discret sur la cellule Δ NET. */}
+      <motion.section
+        variants={RISE_TILE_VARIANTS}
+        className="lh-final pos-command"
+        aria-label="Commandement — état du livre ouvert"
+      >
+        <div className="pos-command__grid">
+          <CommandCell
+            label="POSITIONS"
+            title="Nombre de positions ouvertes (actions + options) et gates actifs."
+            value={String(summary.count)}
+            sub={
+              gateCounts.critical + gateCounts.armed > 0
+                ? [
+                    gateCounts.critical ? `${gateCounts.critical} CRITICAL` : null,
+                    gateCounts.armed ? `${gateCounts.armed} ARMED` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')
+                : `${summary.nOpt} option${summary.nOpt > 1 ? 's' : ''}${summary.nStk > 0 ? ` · ${summary.nStk} action${summary.nStk > 1 ? 's' : ''}` : ''}`
+            }
+          />
+          <CommandCell
+            label="Δ NET"
+            marker={
+              <span className="pf-real pos-command__fresh" title={greeksFreshness.title}>
+                {greeksFreshness.text}
+              </span>
+            }
+            title="Exposition directionnelle agrégée (options + actions, sign-aware par dir). +1 = $1 de P&L pour +$1 du sous-jacent."
+            value={
+              Number.isFinite(greeks.sumDelta)
+                ? `${greeks.sumDelta >= 0 ? '+' : '−'}${Math.abs(greeks.sumDelta).toLocaleString('de-CH', { maximumFractionDigits: 0 })}`
+                : '—'
+            }
+            sub={
+              Number.isFinite(greeks.notionalDelta)
+                ? `exp. ${fmtUsdSigned(greeks.notionalDelta)}`
+                : 'actions-éq.'
+            }
+          />
+          <CommandCell
+            label="Θ TOTAL"
+            title="Érosion temporelle quotidienne cumulée sur le portefeuille d'options (sign-aware par dir)."
+            value={Number.isFinite(greeks.thetaDaily) ? fmtUsdSigned(greeks.thetaDaily) : '—'}
+            chf={chf(greeks.thetaDaily, true)}
+            sub="/ jour"
+          />
+          <CommandCell
+            label="CAPITAL ENGAGÉ"
+            title="Coût total absolu des positions ouvertes (entry × qty × multiplier, frais inclus)."
+            value={fmtUsd(summary.totalCost)}
+            chf={chf(summary.totalCost)}
+            sub="coût d'entrée"
+          />
+          <CommandCell
+            label="MAX LOSS"
+            title="Perte maximum théorique si toutes les options expirent sans valeur (long options only). Montant hypothétique — neutre."
+            value={fmtUsd(summary.totalMaxLoss)}
+            chf={chf(summary.totalMaxLoss)}
+            sub="prime totale engagée"
+          />
+        </div>
+      </motion.section>
 
-      {/* Greeks freshness indicator — passive, no toast, no spinner */}
-      <div className="positions-v3__greeks-freshness mono" role="status" aria-live="polite">
-        {(() => {
-          const hasUsable = Array.from(greeksMap.values()).some(
-            (g) => g && g.source !== 'unavailable'
-          );
-          if (hasUsable && lastGreeksUpdate) {
-            return `Greeks · il y a ${formatRelativeAge(now - lastGreeksUpdate)}`;
-          }
-          if (greeksMap.size === 0) return 'Greeks · en attente du premier fetch…';
-          return 'Greeks · indisponibles';
-        })()}
-      </div>
-
-      {/* DataTable */}
-      <motion.div variants={TILE_VARIANTS}>
+      {/* DataTable — l'héroïne pleine largeur (surensemble LivePositions). */}
+      <motion.div variants={RISE_TILE_VARIANTS}>
         <DataTable
           data={positions}
           columns={columns}
@@ -1383,6 +1566,7 @@ export default function Positions() {
             navigate={navigate}
             onEdit={() => setDetailMode('edit')}
             onCloseMode={() => setDetailMode('close')}
+            onTagMeta={() => setTagPos({ id: detailRow.pos.id, ticker: detailRow.pos.tk })}
           />
         )}
         {detailRow && detailMode === 'edit' && (
@@ -1414,6 +1598,9 @@ export default function Positions() {
           />
         )}
       </Modal>
+
+      {/* 2.A — éditeur de méta Sniper (modal autonome, sidecar). */}
+      <SniperMetaEditor position={tagPos} open={!!tagPos} onClose={() => setTagPos(null)} />
     </motion.div>
   );
 }

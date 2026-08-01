@@ -1,29 +1,23 @@
 // ═══════════════════════════════════════════════════════════════
-//  HISTORY — page-vitrine canonique (CANONICAL-6)
+//  HISTORY — le grand livre au langage cockpit v1.0 (brique 2.A)
 //  /trading/history
 //
-//  Cinquième consommatrice de la palette canonique (après Positions,
-//  Greeks, Import, Settings General).
-//
-//  Patterns combinés :
-//   - KPI strip (6 tuiles) : pattern Greeks — markup local plat, label
-//     uppercase ink-soft, value tabular-nums + tonalité sémantique
-//     --up/--down/--neutral. Plus de <MetricCard>.
-//   - Panneaux (Win rate, Distribution P&L, empty branch) : pattern
-//     Positions — surface plate sur var(--depth-raised) via
-//     .history-page__panel. Plus de <GlassCard>.
-//
-//  POINT CRITIQUE : .history-page__panel-head est une COPIE LOCALE (pattern
-//  panel-head local par page). .dashboard-v3__panel-head a été retiré après
-//  la migration U9 d'Analytics/Journal ; History ne dépend pas du Dashboard.
-//
-//  Sémantique des tuiles KPI (rappel des règles métier appliquées) :
-//   - Total   : neutral (compteur, pas de l'argent)
-//   - Net P&L : up si > 0 / down si < 0 / neutral si 0 (P&L money légitime)
-//   - Win Rate: up si >= 50% / down si < 40% / neutral entre (seuils domain)
-//   - Avg R   : up si >= 1.5 / down si < 1 / neutral entre (seuils domain)
-//   - Best    : up (par définition)
-//   - Worst   : down (par définition)
+//  Architecture (§4.3 brique 2.A) :
+//    1. BANDEAU DE COMMANDEMENT — un panneau cockpit (.lh-final),
+//       6 cellules-MONDE aux hairlines verticales (Total · Net P&L ·
+//       Win Rate · Avg R · Best · Worst). Sources INCHANGÉES
+//       (calculateTradingMetrics sur le SOUS-ENSEMBLE FILTRÉ — une
+//       page = une vérité ; gates nullables ≥10 décisifs conservées).
+//       Ratios (WR, Avg R) NEUTRES ; montants tonés + double devise.
+//    2. BARRE D'OUTILS du grand livre — toggle Standard/Sniper à
+//       l'anatomie ViewToggle des héros (.lh-toggle), filtres au même
+//       registre, CTA « Ajouter un trade » (ambre, zone de décision).
+//       Export CSV : bouton sobre du DataTable (inchangé).
+//    3. LA TABLE, héroïne pleine largeur (vues Standard/Sniper).
+//    4. ÉTAGE ANALYSE — un panneau cockpit, 3 zones aux rails :
+//       WIN RATE (donut) · DISTRIBUTION · ATTRIBUTION, au système
+//       Obsidienne (tooltip unique), scope = le tableau filtré,
+//       sous-titres de scope honnêtes.
 //
 //  Known limitation B-01: IBKR Flex exposes only IBCommission as
 //  a single fees field. The "Fees" column shows the aggregate.
@@ -38,9 +32,10 @@ import { calculateTradingMetrics } from '../../hooks/useTradingMetrics';
 import { formatUsd } from '../../utils/format';
 import { toFloat, ensurePositive } from '../../utils/math';
 import { holdingDays } from '../../utils/dates';
+import { TickValue } from '../../components/dashboard/decision/parts';
+import { fmtChf, fmtUsdSigned } from '../../components/dashboard/hero1/kit';
 
 import StatusBadge from '../../components/ui/StatusBadge';
-import InfoTooltip from '../../components/ui/InfoTooltip';
 import EmptyState from '../../components/ui/EmptyState';
 import DataTable from '../../components/ui/DataTable';
 import Modal from '../../components/ui/Modal';
@@ -48,7 +43,7 @@ import AddTradeModal from '../../components/trades/AddTradeModal';
 import WinRateDonut from '../../components/ui/WinRateDonut';
 import PerformanceAttribution from '../../components/history/PerformanceAttribution';
 import { detectExitReason, EXIT_REASONS } from '../../utils/trades/detectExitReason';
-import { CONTAINER_VARIANTS, TILE_VARIANTS } from '../../theme/animationVariants';
+import { RISE_CONTAINER_VARIANTS, RISE_TILE_VARIANTS } from '../../theme/animationVariants';
 
 const LazyDistribution = lazy(() =>
   import('./HistoryDistribution').catch(() => ({
@@ -121,21 +116,7 @@ function loadViewMode() {
   }
 }
 
-// ── Local KPI tile (pattern Greeks) ──────────────────────────
-function KpiTile({ label, tooltip, value, tone = 'neutral' }) {
-  const valueCls = `history-page__kpi-tile-value history-page__kpi-tile-value--${tone}`;
-  return (
-    <div className="history-page__kpi-tile">
-      <span className="history-page__kpi-tile-label">
-        {label}
-        {tooltip && <InfoTooltip content={tooltip} size={12} />}
-      </span>
-      <span className={valueCls}>{value}</span>
-    </div>
-  );
-}
-
-// ── Local formatters (Intl) — équivalent fonctionnel de MetricCard ──
+// ── Formatters locaux (Intl de-CH, préfixe $ manuel anti-NBSP) ──
 function fmtCount(v) {
   if (v == null || Number.isNaN(v)) return '—';
   return new Intl.NumberFormat('de-CH', {
@@ -150,40 +131,11 @@ function fmtNumber(v) {
     maximumFractionDigits: 2,
   }).format(v);
 }
-const HIST_USD_FMT_2D = new Intl.NumberFormat('de-CH', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-function fmtCurrency(v) {
-  if (v == null || Number.isNaN(v)) return '—';
-  return (v < 0 ? '-' : '') + '$' + HIST_USD_FMT_2D.format(Math.abs(v));
-}
-function fmtPercent(v) {
-  if (v == null || Number.isNaN(v)) return '—';
-  return (
-    new Intl.NumberFormat('de-CH', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(v) + '%'
-  );
-}
-
-// ── Tonalités sémantiques (règles métier) ──
-function toneForNetPnl(v) {
-  if (v == null || v === 0) return 'neutral';
-  return v > 0 ? 'up' : 'down';
-}
-function toneForWinRate(v) {
-  if (v == null) return 'neutral';
-  if (v >= 50) return 'up';
-  if (v < 40) return 'down';
-  return 'neutral';
-}
-function toneForAvgR(v) {
-  if (v == null || Number.isNaN(v)) return 'neutral';
-  if (v >= 1.5) return 'up';
-  if (v < 1) return 'down';
-  return 'neutral';
+// Tonalité par SIGNE — argent réel uniquement (les ratios WR/Avg R
+// sont NEUTRES depuis 2.A : un ratio n'est pas de l'argent).
+function toneSign(v) {
+  if (v == null || Number.isNaN(v) || v === 0) return undefined;
+  return v > 0 ? 'profit' : 'loss';
 }
 
 function ExitReasonEditor({ trade, onConfirm, onOverride, onClose }) {
@@ -245,6 +197,44 @@ function ExitReasonEditor({ trade, onConfirm, onOverride, onClose }) {
   );
 }
 
+// ── Cellule-MONDE du bandeau (miroir .pos-command de Positions) ──
+// 2.A passe 3 : plus de ⓘ (langage deck) — tooltip via title.
+function CommandCell({ label, title, value, chf, sub, tone }) {
+  const meta = [chf, sub].filter(Boolean).join(sub && sub.startsWith('/') ? ' ' : ' · ');
+  return (
+    <div className="pf-c hist-command__cell">
+      <span className="pf-c__label hist-command__label" title={title || undefined}>
+        <span>{label}</span>
+      </span>
+      <TickValue
+        text={value}
+        className={`pf-c__val hist-command__val${tone ? ` pf-c__val--${tone}` : ''}`}
+      />
+      <span className="pf-c__meta hist-command__meta">{meta || ' '}</span>
+    </div>
+  );
+}
+
+// ── Groupe de chips (anatomie .lh-toggle des héros) ──────────
+function ChipGroup({ ariaLabel, options, value, onChange }) {
+  return (
+    <div className="lh-toggle" role="tablist" aria-label={ariaLabel}>
+      {options.map(([k, label]) => (
+        <button
+          key={k}
+          type="button"
+          className="lh-toggle__btn"
+          data-active={value === k || undefined}
+          onClick={() => onChange(k)}
+          aria-pressed={value === k}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  MAIN
 // ═══════════════════════════════════════════════════════════════
@@ -281,6 +271,8 @@ export default function History() {
     });
   }, [closedTrades, lr]);
 
+  // LE tableau filtré — la vérité unique de la page (bandeau, table,
+  // et les 3 zones de l'étage ANALYSE lisent ce même sous-ensemble).
   const filtered = useMemo(() => {
     return enriched.filter((t) => {
       if (resultTab === 'win' && t.pnlUsd <= 0) return false;
@@ -291,20 +283,48 @@ export default function History() {
     });
   }, [enriched, resultTab, typeTab]);
 
+  // Libellé de scope honnête (sous-titres ANALYSE + méta bandeau).
+  const scopeLabel = useMemo(() => {
+    const parts = [
+      resultTab === 'win' ? 'gagnants' : resultTab === 'loss' ? 'perdants' : null,
+      typeTab === 'options' ? 'options' : typeTab === 'stocks' ? 'actions' : null,
+    ].filter(Boolean);
+    return parts.length ? parts.join(' · ') : "tout l'historique";
+  }, [resultTab, typeTab]);
+
   const stats = useMemo(() => {
     const m = calculateTradingMetrics(filtered, lr);
     // A2b — winRate is nullable upstream when decisive<10. Preserve null
-    // here so KpiTile / WinRateDonut render "—" instead of "0 %".
-    if (!m) return { total: 0, net: 0, winRate: null, avgR: 0, best: 0, worst: 0 };
+    // here so the bandeau / WinRateDonut render "—" instead of "0 %".
+    if (!m)
+      return {
+        total: 0,
+        net: 0,
+        winRate: null,
+        avgR: null,
+        best: 0,
+        worst: 0,
+        winCount: 0,
+        lossCount: 0,
+        decisive: 0,
+      };
     return {
       total: m.totalPnlCount,
       net: m.totalPnl,
       winRate: m.winRate,
-      avgR: m.avgLoss > 0 ? m.avgWin / m.avgLoss : 0,
+      // 2.A — avgR NULLABLE : sans perdant dans le scope, le ratio est
+      // INDÉFINI, pas nul (« 0 » raconterait le contraire de la réalité).
+      avgR: m.avgLoss > 0 ? m.avgWin / m.avgLoss : null,
       best: m.bestTrade,
       worst: m.worstTrade,
+      winCount: m.winCount,
+      lossCount: m.lossCount,
+      decisive: m.decisive,
     };
   }, [filtered, lr]);
+
+  const chf = (usd, signed) =>
+    Number.isFinite(usd) && Number.isFinite(lr) && lr > 0 ? fmtChf(usd, lr, signed) : null;
 
   const dateColumn = {
     key: 'do',
@@ -321,10 +341,8 @@ export default function History() {
     sort: true,
     mono: true,
     render: (v, row) => (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span className="mono" style={{ fontWeight: 'var(--fw-semibold)' }}>
-          {v || '—'}
-        </span>
+      <div className="pos-ticker-cell">
+        <span className="mono pos-ticker-cell__tk">{v || '—'}</span>
         <TypeBadge as={row.as} ty={row.ty} />
       </div>
     ),
@@ -343,6 +361,17 @@ export default function History() {
     align: 'right',
     sort: true,
     mono: true,
+    footer: () => {
+      const t = stats.net > 0 ? 'profit' : stats.net < 0 ? 'loss' : undefined;
+      return (
+        <span>
+          <span className="v3-table__tf-label">Σ Net P&L</span>
+          <span className={`v3-table__tf-value${t ? ` v3-table__tf-value--${t}` : ''}`}>
+            {fmtUsdSigned(stats.net)}
+          </span>
+        </span>
+      );
+    },
     render: (v) => {
       const tone = v > 0 ? 'profit' : v < 0 ? 'loss' : 'neutral';
       return (
@@ -359,7 +388,20 @@ export default function History() {
     align: 'right',
     sort: true,
     mono: true,
+    // Garde-fou de vraisemblance : un % à 4 chiffres signale un P&L
+    // stocké incohérent avec entry/exit×qty×mul (import corrompu) —
+    // « — » honnête plutôt qu'un chiffre absurde.
     render: (v) => {
+      if (!Number.isFinite(v) || Math.abs(v) > 999) {
+        return (
+          <span
+            className="history-page__cell-empty"
+            title="% non calculable : P&L stocké incohérent avec entry/exit × qty × multiplicateur"
+          >
+            —
+          </span>
+        );
+      }
       const tone = v > 0 ? 'profit' : v < 0 ? 'loss' : 'neutral';
       return (
         <span className={`text-${tone}`}>
@@ -384,7 +426,9 @@ export default function History() {
     key: 'tag',
     label: 'Tag',
     align: 'left',
-    render: (v) => (v ? <StatusBadge variant="accent" label={v} size="xs" /> : null),
+    // 2.A passe 3 — chips NEUTRES : un tag de classification n'est pas
+    // un signal décisionnel (l'ambre de la page reste au CTA/filtres).
+    render: (v) => (v ? <StatusBadge variant="neutral" label={v} size="xs" /> : null),
   };
   const deleteColumn = {
     key: '_delete',
@@ -408,9 +452,16 @@ export default function History() {
       </button>
     ),
   };
+  // Footer sous Date : compteur de la vue filtrée (héroïne = la table).
+  const dateFooter = () => (
+    <span>
+      <span className="v3-table__tf-label">Σ · {stats.total} trades</span>
+      <span className="v3-table__tf-value">{scopeLabel}</span>
+    </span>
+  );
 
   const standardColumns = [
-    dateColumn,
+    { ...dateColumn, footer: dateFooter },
     tickerColumn,
     {
       key: 'qty',
@@ -445,7 +496,7 @@ export default function History() {
   ];
 
   const sniperColumns = [
-    dateColumn,
+    { ...dateColumn, footer: dateFooter },
     tickerColumn,
     {
       key: 'deltaAtEntry',
@@ -525,7 +576,7 @@ export default function History() {
           >
             <span>{label}</span>
             {row._exitReasonAutoDetected && (
-              <span className="history-page__cell-meta" style={{ marginLeft: 4 }}>
+              <span className="history-page__cell-meta history-page__cell-meta--inline">
                 auto
               </span>
             )}
@@ -556,14 +607,11 @@ export default function History() {
         </div>
         <div className="positions-card__body">
           <div className="positions-card__pnl">
-            <span
-              className={`mono text-${tone}`}
-              style={{ fontSize: 18, fontWeight: 'var(--fw-bold)' }}
-            >
+            <span className={`mono text-${tone} positions-card__pnl-usd`}>
               {row.pnlUsd >= 0 ? '+' : ''}
               {formatUsd(row.pnlUsd)}
             </span>
-            <span className={`mono text-${tone}`} style={{ fontSize: 12 }}>
+            <span className={`mono text-${tone} positions-card__pnl-pct`}>
               {row.pnlPct >= 0 ? '+' : ''}
               {row.pnlPct.toFixed(2)}%
             </span>
@@ -590,7 +638,7 @@ export default function History() {
   if (closedTrades.length === 0) {
     return (
       <div className="page-container history-page">
-        <aside className="history-page__panel history-page__panel--subtle">
+        <aside className="history-page__empty-panel lh-final">
           <EmptyState
             icon={HistoryIcon}
             title="Aucun trade clôturé"
@@ -616,129 +664,119 @@ export default function History() {
     );
   }
 
+  const scopeLine = `${stats.total} trade${stats.total > 1 ? 's' : ''} · ${scopeLabel}`;
+
   return (
     <motion.div
       className="page-container history-page"
-      variants={reducedMotion ? undefined : CONTAINER_VARIANTS}
+      variants={reducedMotion ? undefined : RISE_CONTAINER_VARIANTS}
       initial={reducedMotion ? undefined : 'hidden'}
       animate={reducedMotion ? undefined : 'visible'}
     >
-      <motion.div variants={TILE_VARIANTS} className="page-header">
+      <motion.div variants={RISE_TILE_VARIANTS} className="page-header">
         <div>
           <h1 className="page-title">
             <HistoryIcon size={18} aria-hidden="true" />
             Historique des trades
-            <StatusBadge variant="accent" label={`${stats.total} trades`} size="xs" />
           </h1>
           <p className="page-subtitle">
-            P&L réalisé cumulé · filtres gagnants/perdants · export CSV.
+            Le grand livre · P&L réalisé, vues Standard/Sniper, analyse du sous-ensemble filtré.
           </p>
         </div>
-        <div className="history-page__header-actions">
-          <div className="history-page__view-toggle" role="group" aria-label="Mode d'affichage">
-            <button
-              type="button"
-              className="history-page__view-btn"
-              data-active={viewMode === 'standard' || undefined}
-              onClick={() => setViewMode('standard')}
-              aria-pressed={viewMode === 'standard'}
-            >
-              Standard
-            </button>
-            <button
-              type="button"
-              className="history-page__view-btn"
-              data-active={viewMode === 'sniper' || undefined}
-              data-sniper-active={viewMode === 'sniper' || undefined}
-              onClick={() => setViewMode('sniper')}
-              aria-pressed={viewMode === 'sniper'}
-            >
-              <Crosshair size={12} aria-hidden="true" style={{ marginRight: 4 }} />
-              Sniper
-            </button>
-          </div>
-          <button type="button" className="pg-mock-btn" onClick={() => setAddOpen(true)}>
-            <Plus size={14} aria-hidden="true" /> Ajouter
-          </button>
-        </div>
       </motion.div>
 
-      {/* KPI strip — 6 tuiles canoniques, règles métier appliquées */}
-      <motion.div variants={TILE_VARIANTS} className="history-page__kpi-strip">
-        <KpiTile label="Total" value={fmtCount(stats.total)} tone="neutral" />
-        <KpiTile
-          label="Net P&L"
-          tooltip={{
-            title: 'Net P&L',
-            body: 'Somme des P&L réalisés sur la plage filtrée, nets des frais IBKR.',
-          }}
-          value={fmtCurrency(stats.net)}
-          tone={toneForNetPnl(stats.net)}
+      {/* 2.A — BANDEAU DE COMMANDEMENT : 6 cellules-MONDE sur le
+          sous-ensemble filtré. Ratios neutres, montants tonés + CHF. */}
+      <motion.section
+        variants={RISE_TILE_VARIANTS}
+        className="lh-final hist-command"
+        aria-label="Commandement — le grand livre"
+      >
+        <div className="hist-command__grid">
+          {/* Montants héros en ENTIERS (formatters kit — parité bandeau
+              Positions et decks du Dashboard ; le « .00 » plein format
+              est mort). Ratios neutres, WR sans décimale (parité deck). */}
+          <CommandCell
+            label="TOTAL"
+            value={fmtCount(stats.total)}
+            sub={scopeLabel}
+          />
+          <CommandCell
+            label="NET P&L"
+            title="Somme des P&L réalisés sur le sous-ensemble filtré, nets des frais IBKR."
+            value={fmtUsdSigned(stats.net)}
+            chf={chf(stats.net, true)}
+            tone={toneSign(stats.net)}
+          />
+          <CommandCell
+            label="WIN RATE"
+            title="% de trades gagnants (décisifs ≥ 10 requis). À lire avec l'Avg R."
+            value={stats.winRate == null ? '—' : `${stats.winRate.toFixed(0)} %`}
+            sub={stats.winRate == null ? `${stats.decisive} décisifs / 10 requis` : `${stats.winCount}↑ / ${stats.lossCount}↓`}
+          />
+          <CommandCell
+            label="AVG R"
+            title="Gain moyen rapporté à la perte moyenne. > 1.5 = bon risque/récompense."
+            value={stats.avgR == null ? '—' : fmtNumber(stats.avgR)}
+            sub={stats.avgR == null && stats.total > 0 ? 'aucun perdant dans le scope' : 'gain / perte moy.'}
+          />
+          <CommandCell
+            label="BEST"
+            title="Meilleur trade du sous-ensemble filtré."
+            value={fmtUsdSigned(stats.best)}
+            chf={chf(stats.best, true)}
+            tone={toneSign(stats.best)}
+          />
+          <CommandCell
+            label="WORST"
+            title="Pire trade du sous-ensemble filtré."
+            value={fmtUsdSigned(stats.worst)}
+            chf={chf(stats.worst, true)}
+            tone={toneSign(stats.worst)}
+          />
+        </div>
+      </motion.section>
+
+      {/* 2.A — BARRE D'OUTILS du grand livre : toggle de vue (anatomie
+          ViewToggle des héros), filtres au même registre, CTA ambre. */}
+      <motion.div variants={RISE_TILE_VARIANTS} className="hist-toolbar">
+        <ChipGroup
+          ariaLabel="Mode d'affichage"
+          options={[
+            ['standard', 'STANDARD'],
+            ['sniper', 'SNIPER'],
+          ]}
+          value={viewMode}
+          onChange={setViewMode}
         />
-        <KpiTile
-          label="Win Rate"
-          tooltip={{
-            title: 'Win Rate',
-            body: "% de trades gagnants. Utile à lire en combinaison avec l'Avg R.",
-          }}
-          value={fmtPercent(stats.winRate)}
-          tone={toneForWinRate(stats.winRate)}
+        <span className="hist-toolbar__sep" aria-hidden="true" />
+        <ChipGroup
+          ariaLabel="Filtre résultat"
+          options={[
+            ['all', 'TOUS'],
+            ['win', 'GAGNANTS'],
+            ['loss', 'PERDANTS'],
+          ]}
+          value={resultTab}
+          onChange={setResultTab}
         />
-        <KpiTile
-          label="Avg R"
-          tooltip={{
-            title: 'Avg R',
-            body: 'Gain moyen rapporté à la perte moyenne. > 1.5 = bon risque/récompense.',
-          }}
-          value={fmtNumber(stats.avgR)}
-          tone={toneForAvgR(stats.avgR)}
+        <ChipGroup
+          ariaLabel="Filtre actif"
+          options={[
+            ['all', 'TOUS'],
+            ['options', 'OPTIONS'],
+            ['stocks', 'ACTIONS'],
+          ]}
+          value={typeTab}
+          onChange={setTypeTab}
         />
-        <KpiTile label="Best" value={fmtCurrency(stats.best)} tone="up" />
-        <KpiTile label="Worst" value={fmtCurrency(stats.worst)} tone="down" />
+        <button type="button" className="hist-cta" onClick={() => setAddOpen(true)}>
+          <Plus size={14} aria-hidden="true" /> Ajouter un trade
+        </button>
       </motion.div>
 
-      {/* Tabs filtres */}
-      <motion.div variants={TILE_VARIANTS} className="history-page__tabs">
-        <div className="history-page__tab-group" role="tablist" aria-label="Filtre résultat">
-          {[
-            { key: 'all', label: 'Tous' },
-            { key: 'win', label: 'Gagnants' },
-            { key: 'loss', label: 'Perdants' },
-          ].map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              className="history-page__tab"
-              data-active={resultTab === t.key || undefined}
-              onClick={() => setResultTab(t.key)}
-              aria-pressed={resultTab === t.key}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        <div className="history-page__tab-group" role="tablist" aria-label="Filtre actif">
-          {[
-            { key: 'all', label: 'Tous' },
-            { key: 'options', label: 'Options' },
-            { key: 'stocks', label: 'Actions' },
-          ].map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              className="history-page__tab"
-              data-active={typeTab === t.key || undefined}
-              onClick={() => setTypeTab(t.key)}
-              aria-pressed={typeTab === t.key}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* DataTable */}
-      <motion.div variants={TILE_VARIANTS}>
+      {/* DataTable — l'héroïne pleine largeur. */}
+      <motion.div variants={RISE_TILE_VARIANTS}>
         <DataTable
           data={filtered}
           columns={columns}
@@ -752,42 +790,47 @@ export default function History() {
         />
       </motion.div>
 
-      {/* Distribution row — Win rate + Distribution P&L */}
-      {stats.total > 2 && (
-        <motion.div variants={TILE_VARIANTS} className="history-page__dist-row">
-          <section className="history-page__panel">
-            <header className="history-page__panel-head">
-              <span className="uppercase-label">Win rate</span>
-              <InfoTooltip
-                content={{ title: 'Win Rate', body: '% trades gagnants sur le filtre actif.' }}
-                size={12}
-              />
-            </header>
-            <WinRateDonut winRate={stats.winRate} />
-          </section>
-          <section className="history-page__panel">
-            <header className="history-page__panel-head">
-              <span className="uppercase-label">Distribution P&L</span>
-              <InfoTooltip
-                content={{
-                  title: 'Distribution P&L',
-                  body: 'Histogramme des P&L $ par trade. Queue à droite = tail winners.',
-                }}
-                size={12}
-              />
-            </header>
-            <Suspense fallback={<div style={{ height: 200 }} />}>
-              <LazyDistribution trades={filtered} />
-            </Suspense>
-          </section>
-        </motion.div>
-      )}
-
-      {/* v5 Sprint 7 — Edge × Capital attribution heatmap below the
-          existing distribution row. Uses sniper meta sidecar tagging. */}
-      <motion.div variants={TILE_VARIANTS}>
-        <PerformanceAttribution />
-      </motion.div>
+      {/* 2.A — ÉTAGE ANALYSE : un panneau cockpit, 3 zones aux rails.
+          MÊME sous-ensemble filtré que la table (une page = une vérité),
+          sous-titres de scope honnêtes, système Obsidienne. */}
+      <motion.section
+        variants={RISE_TILE_VARIANTS}
+        className="lh-final hist-analyse"
+        aria-label="Analyse du sous-ensemble filtré"
+      >
+        <div className="hist-analyse__grid">
+          <div className="hist-analyse__zone hist-analyse__zone--donut">
+            <div className="mk-title">WIN RATE</div>
+            <div className="hist-analyse__scope">{scopeLine}</div>
+            <div className="hist-analyse__donut-wrap">
+              <WinRateDonut winRate={stats.winRate} size={124} strokeWidth={11} />
+              <div className="hist-analyse__donut-sub">
+                {stats.winRate == null
+                  ? `${stats.decisive} décisifs / 10 requis`
+                  : `${stats.winCount}↑ / ${stats.lossCount}↓`}
+              </div>
+            </div>
+          </div>
+          <div className="hist-analyse__zone">
+            <div className="mk-title">DISTRIBUTION P&L</div>
+            <div className="hist-analyse__scope">{scopeLine}</div>
+            {stats.total > 2 ? (
+              <Suspense fallback={<div className="hist-analyse__chart-slot" />}>
+                <LazyDistribution trades={filtered} height={224} />
+              </Suspense>
+            ) : (
+              <div className="hist-analyse__empty">
+                Pas assez de clôtures (≥ 3) sur ce filtre pour une distribution.
+              </div>
+            )}
+          </div>
+          <div className="hist-analyse__zone hist-analyse__zone--attr">
+            <div className="mk-title">ATTRIBUTION · EDGE × CAPITAL</div>
+            <div className="hist-analyse__scope">{scopeLine}</div>
+            <PerformanceAttribution trades={filtered} />
+          </div>
+        </div>
+      </motion.section>
 
       <AddTradeModal
         open={addOpen}

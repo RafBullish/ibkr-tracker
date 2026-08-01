@@ -1,7 +1,12 @@
 // ═══════════════════════════════════════════════════════════════
-//  HISTORY DISTRIBUTION — lazy-loaded recharts histogram
-//  Split from History.jsx so the heavy recharts bundle only loads
-//  when the user actually reaches the distribution row.
+//  HISTORY DISTRIBUTION — histogramme P&L au système Obsidienne
+//  (migré brique 2.A : kit OBS, LE tooltip unique ObsidienneTooltip —
+//  le contentStyle inline 11px meurt). Lazy-loaded (recharts).
+//
+//  Couleurs : bucket ≥ 0 → up, < 0 → down (P&L réalisé par trade =
+//  exception chartée DA §5), aplats désaturés fillOpacity .62 (parité
+//  Distribution Héros 2, sans en importer le code). Animation au
+//  premier montage uniquement (useMountOnlyAnimation).
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo } from 'react';
@@ -15,6 +20,8 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts';
+import { OBS, useMountOnlyAnimation } from '../../components/charts/obsidienne';
+import ObsidienneTooltip from '../../components/charts/ObsidienneTooltip';
 
 const BUCKET_COUNT = 15;
 
@@ -40,41 +47,58 @@ function buildHistogram(trades) {
   return buckets;
 }
 
-export default function HistoryDistribution({ trades }) {
+const fmtBucket = (v) => {
+  const sign = v < 0 ? '−' : '';
+  return `${sign}$${Math.abs(Math.round(v)).toLocaleString('de-CH')}`;
+};
+
+export default function HistoryDistribution({ trades, height = 220 }) {
   const data = useMemo(() => buildHistogram(trades), [trades]);
+  const anim = useMountOnlyAnimation();
   if (!data.length) return null;
   return (
-    <div style={{ height: 220 }}>
-      <ResponsiveContainer width="100%" height={220} minWidth={1} minHeight={1}>
+    <div className="obsidienne-chart" style={{ height }}>
+      <ResponsiveContainer width="100%" height={height} minWidth={1} minHeight={1}>
         <BarChart data={data} margin={{ top: 12, right: 16, left: 4, bottom: 4 }}>
-          <CartesianGrid vertical={false} stroke="var(--border-subtle)" strokeDasharray="3 3" />
+          <CartesianGrid vertical={false} stroke={OBS.color.grid} />
           <XAxis
             dataKey="range"
-            tick={{ fill: 'var(--text-tertiary)', fontSize: 10, fontFamily: 'var(--font-mono)' }}
+            tick={OBS.tick}
             axisLine={false}
             tickLine={false}
-            interval="preserveStartEnd"
+            interval={1}
           />
           <YAxis
-            tick={{ fill: 'var(--text-tertiary)', fontSize: 10, fontFamily: 'var(--font-mono)' }}
+            tick={OBS.tick}
             axisLine={false}
             tickLine={false}
             width={32}
+            allowDecimals={false}
+            domain={[0, 'dataMax']}
           />
           <Tooltip
-            contentStyle={{
-              background: 'var(--chart-tooltip-bg)',
-              border: '1px solid var(--border-default)',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--text-primary)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
-            }}
-            formatter={(v) => [`${v} trade${v > 1 ? 's' : ''}`, 'Count']}
+            cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+            content={
+              <ObsidienneTooltip
+                rows={(payload) => {
+                  const d = payload?.[0]?.payload;
+                  if (!d) return [];
+                  return [
+                    { label: 'BUCKET', value: `${fmtBucket(d.lo)} → ${fmtBucket(d.hi)}` },
+                    { label: 'TRADES', value: String(d.count) },
+                  ];
+                }}
+                formatLabel={() => ''}
+              />
+            }
           />
-          <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+          <Bar dataKey="count" radius={[2, 2, 0, 0]} {...anim}>
             {data.map((d, i) => (
-              <Cell key={i} fill={d.lo >= 0 ? 'var(--profit)' : 'var(--loss)'} />
+              <Cell
+                key={i}
+                fill={d.lo >= 0 ? OBS.color.up : OBS.color.down}
+                fillOpacity={0.62}
+              />
             ))}
           </Bar>
         </BarChart>

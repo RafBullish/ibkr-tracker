@@ -147,20 +147,22 @@ un champ greek fait échouer le contrôle.
 
 ### PHASE FINALE v1.0
 
-**Phase finale v1.0 — ÉTAPE 1 (Dashboard) CLOSE** — ligne de base v2.3.1
-(ea64652 ; baseline effective 1254a34). Briques livrées : 1.A (rc.1),
-1.B (rc.2), 1.C (rc.3), 1.S (rc.4), 1.D (rc.5, + liquidité IBKR rc.6,
-+ FF-données rc.8), 1.E (rc.7) et **1.F mergée (1.0.0-rc.9)** — bande
-décision : étage DÉCISION pleine largeur entre Héros 2 et RiskMatrix
-(un panneau cockpit, 3 zones aux rails verticaux : ATTENTION fusionnant
-generateAlerts + gates doctrine DTE 45/50 + kill switch, badges
-ARMED/CRITICAL ; FORME = pastilles 18 clôtures + streak neutre + MTD +
-expectancy gatée 10 décisifs, modèle Héros 2 ; CAPITAL = jauge de
-déploiement acier→ambre au cap 70 % + cellules miroir Héros 1) ;
-AlertsFeed MORT (fusion) ; micro-mouvement (ticks 180 ms decks héros +
-bande, stagger 30 ms/étage, reduced-motion) ; veille
-Watchlist/CalendarMini harmonisée ; garde-fous overlap PortfolioDeck.
-Prochaine brique : **2.A — Tables (Positions · History), Étape 2.**
+**Phase finale v1.0 — ÉTAPE 2 EN COURS** (Étape 1 Dashboard close en
+rc.9). Ligne de base v2.3.1 (ea64652). Briques livrées : 1.A→1.F
+(rc.1→rc.9, dont bande décision : gates doctrine DTE 45/50, badges
+ARMED/CRITICAL, jauge acier→ambre au cap 70 %) et **2.A mergée
+(1.0.0-rc.10)** — Tables : /trading/positions et /trading/history au
+langage cockpit. Bandeaux de commandement de page (cellules-MONDE aux
+rails, valeurs **34 px — LOI ratifiée** : bandeau de page 34 px vs
+decks multi-panneaux Dashboard 22-24 px, applicable 2.B/2.C/2.D) ;
+Positions = surensemble des 19 colonnes LivePositions + badge GATE au
+classifieur de la bande (deriveAttention) + footer agrégé (col.footer
+DataTable) + MAX LOSS NEUTRE (amendement 15.07 soldé) + « Σ Valeur
+mark » (§8) ; History = toolbar .lh-toggle + étage ANALYSE Obsidienne
+(ObsidienneTooltip unique, WinRateDonut OBS partagé avec Analytics,
+attribution scopée au sous-ensemble filtré). Chips actifs des toggles :
+ambre gardé (ViewToggle validé). Prochaine brique : **2.B —
+Analytiques (Greeks · Analytics · Insights).**
 
 Repères S2 toujours en vigueur : KPI 44, cellules `.v3-table` 20 (rowHeight 47),
 plancher caption 17, strip 21/16/18, ticks charts plafonnés 14, héros 56/64

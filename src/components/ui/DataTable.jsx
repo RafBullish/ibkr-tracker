@@ -1,4 +1,9 @@
-// Columns API: { key, label, render?, sort?, align?, mono?, hide? }
+// Columns API: { key, label, render?, sort?, align?, mono?, hide?, footer? }
+//
+// footer? (2.A) : ReactNode ou () => ReactNode par colonne — si au moins
+// une colonne visible en porte un, un <tfoot> sticky bottom (totaux
+// agrégés, pattern LivePositions) est rendu dans les deux branches
+// (virtualisée et plate). Cellule vide si la colonne n'a pas de footer.
 //
 // Virtualization is enabled automatically when data.length > 50.
 // mobileCardRender: below 768px rows render as stacked cards.
@@ -278,6 +283,24 @@ export default function DataTable({
     </thead>
   );
 
+  // ── Footer de totaux (2.A) — tfoot sticky bottom, cellules alignées
+  // sur les colonnes visibles. Rendu uniquement si ≥1 colonne a footer.
+  const hasFooter = visibleColumns.some((c) => c.footer != null);
+  const footerContent = hasFooter ? (
+    <tfoot className="v3-table__tfoot">
+      <tr className="v3-table__tf-row">
+        {visibleColumns.map((col) => (
+          <td
+            key={col.key}
+            className={`v3-table__tf v3-table__tf--${col.align || 'left'}${col.mono ? ' mono' : ''}`}
+          >
+            {typeof col.footer === 'function' ? col.footer() : (col.footer ?? null)}
+          </td>
+        ))}
+      </tr>
+    </tfoot>
+  ) : null;
+
   const renderRow = (row) => {
     const rowData = row.original;
     const pnl = rowData.pnlUsd ?? rowData.pnl ?? 0;
@@ -356,6 +379,7 @@ export default function DataTable({
                 </tr>
               )}
             </tbody>
+            {footerContent}
           </table>
         </div>
       </div>
@@ -369,6 +393,7 @@ export default function DataTable({
         <table className="v3-table">
           {headerContent}
           <tbody>{rows.map(renderRow)}</tbody>
+          {footerContent}
         </table>
       </div>
     </div>

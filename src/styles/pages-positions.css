@@ -1,8 +1,12 @@
 /* ════════════════════════════════════════════════════════════════
-   PAGES-POSITIONS.CSS — page-vitrine de la palette canonique.
+   PAGES-POSITIONS.CSS — /trading/positions au langage cockpit v1.0
+   (brique 2.A). Réécrit EN PLACE (position de cascade conservée).
 
    Toutes les règles sont SCOPÉES à .positions-v3 / .positions-flat /
-   .positions-empty pour ne contaminer aucune autre page.
+   .positions-empty / .pos-* pour ne contaminer aucune autre page.
+   Réutilise les recettes v1.0 chargées plus tard dans la cascade :
+   .lh-final (cadre cockpit), .mk-title (titre de zone), .pf-c
+   (cellule-MONDE), .db-badge / .db-chip (registre terminal).
 
    Chargée APRÈS canonical.css dans main.jsx.
    Aucune définition de :root ici — uniquement des règles locales.
@@ -25,106 +29,49 @@
   color: var(--accent);
   opacity: 1;
 }
+.positions-v3__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
 /* ════════════════════════════════════════════════════════════════
-   KPI STRIP — markup local (5 cartes plates, focus amber sélectif)
+   BANDEAU DE COMMANDEMENT (2.A §4.1) — un panneau cockpit continu,
+   cellules-MONDE séparées par des hairlines VERTICALES continues.
    ════════════════════════════════════════════════════════════════ */
-.positions-v3__kpi {
-  display: flex;
-  flex-direction: column;
-  gap: var(--qc-space-1);
-  padding: var(--qc-space-3) var(--qc-space-4);
-  background: var(--depth-raised);
-  border: 1px solid var(--line-hairline);
-  border-radius: 2px;
-  min-width: 0;
+.pos-command {
+  /* .lh-final porte cadre + fond ; ici la géométrie interne. */
 }
-
-.positions-v3__kpi[data-focus="true"] {
-  background: var(--depth-focus);
-  border-top: 1px solid var(--depth-focus-line);
+.pos-command__grid {
+  display: grid;
+  grid-template-columns: 0.8fr 1.1fr 1fr 1.1fr 1.1fr;
 }
-
-.positions-v3__kpi-label {
+.pos-command__cell {
+  padding: 14px 18px 12px;
+  overflow: hidden;
+}
+.pos-command__cell + .pos-command__cell {
+  border-left: 1px solid var(--line-emphasis);
+}
+.pos-command__label {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  color: var(--ink-soft);
-  font-family: var(--type-mono);
-  font-size: var(--type-caption);
-  font-weight: 600; /* D2.E — label KPI au barème D2 (était 500). */
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  gap: 7px;
+  line-height: 14px;
+  margin-bottom: 4px;
 }
-
-.positions-v3__kpi-label svg {
-  color: var(--ink-mute);
-  flex-shrink: 0;
-}
-
-.positions-v3__kpi-value {
-  color: var(--ink-pure);
-  font-family: var(--type-mono);
-  font-size: var(--type-display);
-  /* D2.E — parité KPI : 34px (--type-display) / 700 comme Dashboard (était 600). */
-  font-weight: 700;
-  font-variant-numeric: tabular-nums slashed-zero;
-  letter-spacing: -0.01em;
+/* Valeur au registre display de page (34/700 — parité strip historique). */
+.pos-command .pf-c__val {
+  font-size: var(--type-display, 34px);
   line-height: 1.15;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
 }
-
-.positions-v3__kpi-value.is-loss {
-  color: var(--pnl-down);
+.pos-command__meta {
+  margin-top: 2px;
 }
-.positions-v3__kpi-value.is-profit {
-  color: var(--pnl-up);
-}
-
-/* Freshness timestamp : passe en ink-mute. */
-.positions-v3__greeks-freshness {
-  color: var(--ink-mute);
-}
-
-/* ════════════════════════════════════════════════════════════════
-   DTE BADGE — re-point aux tokens canoniques
-   ════════════════════════════════════════════════════════════════ */
-.positions-v3 .positions-dte,
-.positions-flat .positions-dte {
-  border-radius: 2px;
-}
-.positions-v3 .positions-dte--profit,
-.positions-flat .positions-dte--profit {
-  background: color-mix(in srgb, var(--pnl-up) 14%, transparent);
-  color: var(--pnl-up);
-}
-.positions-v3 .positions-dte--accent,
-.positions-flat .positions-dte--accent {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-.positions-v3 .positions-dte--warning,
-.positions-flat .positions-dte--warning {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-.positions-v3 .positions-dte--loss,
-.positions-flat .positions-dte--loss {
-  background: color-mix(in srgb, var(--pnl-down) 14%, transparent);
-  color: var(--pnl-down);
-}
-.positions-v3 .positions-dte--muted,
-.positions-v3 .positions-dte--infinity,
-.positions-flat .positions-dte--muted,
-.positions-flat .positions-dte--infinity {
-  background: transparent;
-  color: var(--ink-mute);
-  border: 1px solid var(--line-hairline);
+/* Marqueur de fraîcheur Greeks — registre pf-real (neutre, murmuré). */
+.pos-command__fresh {
+  flex-shrink: 0;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -149,9 +96,8 @@
 .positions-v3 .v3-table__row:hover {
   background: var(--depth-focus);
 }
-/* U4 — ligne ciblée par ?focus= (deep-link Premarket → Positions).
-   Surlignage non destructif, prioritaire sur hover/tone : fond amber doux
-   + filet accent à gauche. Tokens canoniques uniquement. */
+/* U4 — ligne ciblée par ?focus= (deep-link bande décision / Premarket).
+   Hairline gauche AMBRE (sélection — sanctionné DA §3) + fond doux. */
 .positions-v3 .v3-table__row--focus,
 .positions-v3 .v3-table__row--focus:hover {
   background: var(--accent-soft);
@@ -161,6 +107,77 @@
   box-shadow:
     inset 3px 0 0 var(--accent),
     0 0 0 1px var(--accent-soft);
+}
+/* Footer de totaux — même surface que la thead, filet appuyé. */
+.positions-v3 .v3-table__tf {
+  background: var(--depth-raised);
+  border-top: 1px solid var(--line-emphasis);
+}
+
+/* ── Cellules riches (valeur + méta empilées dans rowHeight 47) ── */
+.pos-cell2 {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: middle;
+  line-height: normal;
+  /* Cale la ligne primaire sur l'axe optique des cellules simples
+     (centrées dans rowHeight 47) — la rangée ne « danse » plus. */
+  padding-top: 7px;
+}
+.pos-cell2__val {
+  line-height: 22px;
+}
+.pos-cell2__meta {
+  font-size: 12px;
+  line-height: 14px;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+.pos-ticker-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pos-ticker-cell__tk {
+  font-weight: var(--fw-semibold);
+}
+.pos-mark-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+/* IVR — valeur + microbar NEUTRE (un rang d'IV n'est pas un P&L). */
+.pos-ivr-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pos-ivr-bar {
+  position: relative;
+  width: 30px;
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--ink-pure) 9%, transparent);
+  overflow: hidden;
+}
+.pos-ivr-bar__fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: color-mix(in srgb, var(--ink-soft) 50%, transparent);
+}
+/* Chip TIER (E·C) — registre db-chip, cadré cellule de table. */
+.pos-tier-chip {
+  margin: 0;
+  align-self: center;
+  padding: 1px 6px;
+  font-size: 12px;
+}
+/* Marquage IV estimée (~) — remplace les styles inline historiques. */
+.pos-iv-est {
+  opacity: 0.65;
+  font-style: italic;
 }
 
 /* U4 — panneau détail position (read-only), rendu dans Modal v3 */
@@ -175,6 +192,10 @@
   gap: var(--space-3);
   flex-wrap: wrap;
   color: var(--ink-soft);
+}
+.position-detail__head-tk {
+  font-size: 16px;
+  font-weight: var(--fw-semibold);
 }
 .position-detail__section {
   display: flex;
@@ -227,6 +248,12 @@
 }
 .position-detail__alert[data-tone='profit'] {
   border-left-color: var(--pnl-up);
+}
+.position-detail__no-alert {
+  font-size: 12px;
+}
+.position-detail__tag-btn {
+  align-self: flex-start;
 }
 .position-detail__nav {
   margin-top: var(--space-2);
@@ -289,8 +316,7 @@
   background: var(--depth-focus);
   color: var(--ink-pure);
 }
-.positions-v3 .v3-table-toolbar__density,
-.positions-v3 .v3-table-toolbar__export-btn {
+.positions-v3 .v3-table-toolbar__density {
   background: var(--depth-raised);
   border: 1px solid var(--line-hairline);
   border-radius: 2px;
@@ -311,36 +337,59 @@
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
+.positions-card__dte {
+  color: var(--ink-mute);
+  font-size: 12px;
+}
+.positions-card__pnl-usd {
+  font-size: 18px;
+  font-weight: var(--fw-bold);
+}
+.positions-card__pnl-pct {
+  font-size: 12px;
+}
 
 /* ════════════════════════════════════════════════════════════════
-   FLAT STATE — cartes locales plates (zéro glass, zéro halo)
+   FLAT STATE (2.A) — UN panneau cockpit continu, 4 zones aux rails
+   verticaux (recomposition du 4-cartes ; contenu conservé).
    ════════════════════════════════════════════════════════════════ */
 .positions-flat__grid {
-  /* layout inchangé, défini dans v3-components.css */
+  display: grid;
+  grid-template-columns: 1.05fr 1fr 0.95fr 1fr;
+}
+.positions-flat__zone {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px 16px;
+  min-width: 0;
+  overflow: hidden;
+}
+.positions-flat__zone + .positions-flat__zone {
+  border-left: 1px solid var(--line-emphasis);
+}
+.positions-flat__zone > .mk-title {
+  margin-bottom: 0;
 }
 
-.positions-flat__card {
-  background: var(--depth-raised);
-  border: 1px solid var(--line-hairline);
-  border-radius: 2px;
-  /* Annulations explicites en cas de cascade glass-card résiduelle. */
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+.positions-flat__ticker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-
-.positions-flat__card-head {
-  color: var(--ink-soft);
-}
-
 .positions-flat__ticker {
   color: var(--ink-pure);
   font-family: var(--type-mono);
+  font-size: 18px;
+  font-weight: var(--fw-semibold);
 }
-
 .positions-flat__pnl {
   font-family: var(--type-mono);
   color: var(--ink-pure);
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums slashed-zero;
+  line-height: 1.1;
 }
 .positions-flat__pnl[data-tone="profit"] {
   color: var(--pnl-up);
@@ -350,10 +399,15 @@
 }
 
 .positions-flat__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
   color: var(--ink-mute);
+  font-size: 12px;
 }
 .positions-flat__meta strong {
   color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
 }
 .positions-flat__meta strong[data-tone="profit"] {
   color: var(--pnl-up);
@@ -365,16 +419,39 @@
 .positions-flat__stat-big {
   color: var(--ink-pure);
   font-family: var(--type-mono);
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums slashed-zero;
+  line-height: 1.1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 .positions-flat__stat-sub {
   color: var(--ink-mute);
+  font-size: 12px;
+  font-weight: 400;
 }
-
+.positions-flat__recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.positions-flat__recent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
 .positions-flat__recent-tk {
   color: var(--ink-soft);
+  min-width: 46px;
 }
 .positions-flat__recent-date {
   color: var(--ink-mute);
+}
+.positions-flat__recent-pnl {
+  font-variant-numeric: tabular-nums;
 }
 .positions-flat__recent-pnl[data-tone="profit"] {
   color: var(--pnl-up);
@@ -385,17 +462,65 @@
 
 .positions-flat__setup {
   color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.55;
+  margin: 0;
 }
-.positions-flat__donut-footer {
+.positions-flat__placeholder {
   color: var(--ink-mute);
 }
 
-/* CTA Sniper — c'est une action décisionnelle → accent amber, à plat. */
+.positions-flat__donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.positions-flat__legend {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.positions-flat__legend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.positions-flat__legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.positions-flat__legend-label {
+  color: var(--ink-soft);
+  min-width: 44px;
+}
+.positions-flat__legend-value {
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+.positions-flat__donut-footer {
+  color: var(--ink-mute);
+  font-size: 11px;
+  margin-top: auto;
+}
+
+/* CTA Sniper — action décisionnelle → accent amber, à plat. */
 .positions-flat__cta {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
   background: var(--accent-soft);
   color: var(--accent);
   border: 1px solid var(--accent);
   border-radius: 2px;
+  margin-top: auto;
 }
 .positions-flat__cta:hover {
   background: var(--accent);
@@ -403,15 +528,23 @@
   border-color: var(--accent);
 }
 
+/* Empilement mobile du panneau flat. */
+@media (max-width: 900px) {
+  .positions-flat__grid {
+    grid-template-columns: 1fr;
+  }
+  .positions-flat__zone + .positions-flat__zone {
+    border-left: none;
+    border-top: 1px solid var(--line-emphasis);
+  }
+}
+
 /* ════════════════════════════════════════════════════════════════
-   EMPTY BRANCH (truly-empty A) — local container plat
+   EMPTY BRANCH (truly-empty A) — panneau cockpit centré
    ════════════════════════════════════════════════════════════════ */
 .positions-empty__panel {
   max-width: 640px;
   margin: 60px auto;
-  background: var(--depth-raised);
-  border: 1px solid var(--line-hairline);
-  border-radius: 2px;
   padding: var(--qc-space-6);
 }
 .positions-empty .empty-state__title {
@@ -422,4 +555,31 @@
 }
 .positions-empty .empty-state__icon {
   color: var(--ink-mute);
+}
+
+/* Bandeau : empilement mobile (2 col <1200, 1 col <768). */
+@media (max-width: 1200px) {
+  .pos-command__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .pos-command__cell + .pos-command__cell {
+    border-left: none;
+  }
+  .pos-command__cell:nth-child(even) {
+    border-left: 1px solid var(--line-emphasis);
+  }
+  .pos-command__cell:nth-child(n + 3) {
+    border-top: 1px solid var(--line-hairline);
+  }
+}
+@media (max-width: 767px) {
+  .pos-command__grid {
+    grid-template-columns: 1fr;
+  }
+  .pos-command__cell:nth-child(even) {
+    border-left: none;
+  }
+  .pos-command__cell + .pos-command__cell {
+    border-top: 1px solid var(--line-hairline);
+  }
 }

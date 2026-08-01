@@ -1,27 +1,27 @@
 /* ════════════════════════════════════════════════════════════════
-   PAGES-HISTORY.CSS — page-vitrine /trading/history (5ème consommation
-   des tokens canoniques).
+   PAGES-HISTORY.CSS — /trading/history au langage cockpit v1.0
+   (brique 2.A). Réécrit EN PLACE (position de cascade conservée).
 
-   Toutes les règles sont SCOPÉES à .history-page pour ne contaminer
-   aucune autre page. Chargée APRÈS pages-settings.css dans main.jsx.
-
-   POINT CRITIQUE : .history-page__panel-head est une COPIE LOCALE (pattern
-   panel-head local par page). .dashboard-v3__panel-head a été retiré après la
-   migration U9 d'Analytics/Journal ; History ne dépend pas du CSS de Dashboard.
-
-   La classe .history-v3__delete-btn reste dans v3-components.css car
-   PARTAGÉE avec Positions, Journal et Settings General.
+   Toutes les règles sont SCOPÉES à .history-page / .hist-* pour ne
+   contaminer aucune autre page. Réutilise les recettes v1.0 chargées
+   plus tard dans la cascade : .lh-final (cadre cockpit), .mk-title
+   (titre de zone), .pf-c (cellule-MONDE), .lh-toggle (chips des
+   héros). Le strip KPI, les tabs et les panneaux flottants pré-2.A
+   sont MORTS. .history-v3__delete-btn reste dans v3-components.css
+   (partagé Positions/Journal/Settings).
    ════════════════════════════════════════════════════════════════ */
 
-/* Surface de page : fond le plus profond, opaque. */
+/* ── Surface de page ──────────────────────────────────────────── */
 .history-page {
   background: var(--depth-void);
   position: relative;
   z-index: 1;
 }
-
 .history-page .page-title {
   color: var(--ink-pure);
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 .history-page .page-title svg {
   color: var(--accent);
@@ -32,286 +32,398 @@
 }
 
 /* ════════════════════════════════════════════════════════════════
-   HEADER ACTIONS — view-toggle (Standard / Sniper) + Ajouter
+   BANDEAU DE COMMANDEMENT (2.A §4.3) — 6 cellules-MONDE, rails.
    ════════════════════════════════════════════════════════════════ */
-.history-page__header-actions {
-  display: flex;
-  gap: var(--qc-space-2);
+.hist-command__grid {
+  display: grid;
+  grid-template-columns: 0.9fr 1.15fr 1fr 0.95fr 1fr 1fr;
+}
+.hist-command__cell {
+  padding: 14px 18px 12px;
+  overflow: hidden;
+}
+.hist-command__cell + .hist-command__cell {
+  border-left: 1px solid var(--line-emphasis);
+}
+.hist-command__label {
+  display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
+  gap: 7px;
+  line-height: 14px;
+  margin-bottom: 4px;
+}
+.hist-command .pf-c__val {
+  font-size: var(--type-display, 34px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.hist-command__meta {
+  margin-top: 2px;
 }
 
-.history-page__view-toggle {
+/* ════════════════════════════════════════════════════════════════
+   BARRE D'OUTILS du grand livre — une rangée sobre : toggle de vue
+   + filtres (anatomie .lh-toggle des héros) + CTA ambre.
+   ════════════════════════════════════════════════════════════════ */
+.hist-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.hist-toolbar__sep {
+  width: 1px;
+  height: 18px;
+  background: var(--line-emphasis);
+  flex-shrink: 0;
+}
+/* CTA « Ajouter un trade » — zone de décision (ambre sanctionné),
+   pattern brutaliste établi (accent-soft → inversion au hover). */
+.hist-cta {
+  margin-left: auto;
   display: inline-flex;
-  gap: 2px;
-  padding: 2px;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.hist-cta:hover {
+  background: var(--accent);
+  color: var(--depth-void);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DATA TABLE — skin cockpit (miroir Positions)
+   ════════════════════════════════════════════════════════════════ */
+.history-page .v3-table-scroller {
   background: var(--depth-raised);
   border: 1px solid var(--line-hairline);
   border-radius: 2px;
 }
-
-.history-page__view-btn {
-  padding: 6px 12px;
-  background: transparent;
-  border: none;
-  border-radius: 2px;
+.history-page .v3-table__th {
+  background: var(--depth-raised);
   color: var(--ink-soft);
-  font-family: var(--qc-font-sans);
-  font-size: 11px;
-  font-weight: var(--fw-medium);
-  cursor: pointer;
-  transition:
-    background var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out);
+  border-bottom: 1px solid var(--line-emphasis);
 }
-
-.history-page__view-btn:hover {
+.history-page .v3-table__td {
   color: var(--ink-pure);
+}
+.history-page .v3-table__row {
+  border-bottom: 1px solid var(--line-hairline);
+}
+.history-page .v3-table__row:hover {
   background: var(--depth-focus);
 }
-
-.history-page__view-btn[data-active] {
+.history-page .v3-table__tf {
+  background: var(--depth-raised);
+  border-top: 1px solid var(--line-emphasis);
+}
+.history-page .v3-table-toolbar__search {
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  color: var(--ink-soft);
+}
+.history-page .v3-table-toolbar__search:focus-within {
+  border-color: var(--accent);
+  background: var(--depth-focus);
+  color: var(--ink-pure);
+}
+.history-page .v3-table-toolbar__density,
+.history-page .v3-table-toolbar__export-btn {
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  color: var(--ink-soft);
+}
+.history-page .v3-table-toolbar__density-btn[data-active] {
   background: var(--accent-soft);
   color: var(--accent);
-  font-weight: var(--fw-semibold);
 }
-
-.history-page__view-btn[data-sniper-active] {
-  box-shadow: 0 0 0 1px var(--accent) inset;
-}
-
-/* ════════════════════════════════════════════════════════════════
-   KPI STRIP — 6 tuiles (Total / Net P&L / Win Rate / Avg R / Best /
-   Worst). Pattern Greeks : tuiles plates, label uppercase ink-soft,
-   value tabular-nums ink-pure (override sémantique --up/--down/--neutral).
-   ════════════════════════════════════════════════════════════════ */
-.history-page__kpi-strip {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: var(--qc-space-3);
-}
-
-@media (max-width: 1200px) {
-  .history-page__kpi-strip {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-@media (max-width: 600px) {
-  .history-page__kpi-strip {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.history-page__kpi-tile {
-  display: flex;
-  flex-direction: column;
-  gap: var(--qc-space-1);
-  padding: var(--qc-space-3) var(--qc-space-4);
+.history-page .v3-table-card.glass-card {
   background: var(--depth-raised);
   border: 1px solid var(--line-hairline);
   border-radius: 2px;
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  min-width: 0;
 }
 
-.history-page__kpi-tile-label {
+/* ── Cellules propres à la table History ─────────────────────── */
+.history-page__cell-empty {
+  color: var(--ink-mute);
+  opacity: 0.85;
+}
+.history-page__cell-meta {
+  font-size: 10px;
+  color: var(--ink-mute);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.history-page__cell-meta--inline {
+  margin-left: 4px;
+}
+.history-page__cell-asterisk {
+  color: var(--accent);
+  margin-left: 2px;
+  cursor: help;
+}
+.history-page__cell-mobile-date {
+  font-size: 11px;
+  color: var(--ink-mute);
+}
+/* Motif de sortie — cellule-bouton éditable (vue Sniper). */
+.history-page__exit-cell {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ink-pure);
+  font-size: inherit;
+  font-family: inherit;
+}
+.history-page__exit-cell:hover span:first-child {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.history-page__exit-cell:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ÉTAGE ANALYSE (2.A §4.3-4.4) — un panneau cockpit, 3 zones aux
+   rails verticaux : WIN RATE · DISTRIBUTION · ATTRIBUTION.
+   ════════════════════════════════════════════════════════════════ */
+.hist-analyse__grid {
+  display: grid;
+  grid-template-columns: 0.7fr 1.55fr 1.95fr;
+}
+.hist-analyse__zone {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px 14px;
+  min-width: 0;
+  overflow: hidden;
+}
+.hist-analyse__zone + .hist-analyse__zone {
+  border-left: 1px solid var(--line-emphasis);
+}
+.hist-analyse__zone > .mk-title {
+  margin-bottom: 0;
+}
+/* Sous-titre de scope honnête (« 84 trades · tout l'historique »). */
+.hist-analyse__scope {
+  font-size: 11px;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hist-analyse__donut-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 160px;
+}
+.hist-analyse__donut-sub {
+  font-size: 12px;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+.hist-analyse__empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-mute);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  min-height: 160px;
+}
+.hist-analyse__chart-slot {
+  height: 224px;
+}
+
+/* L'attribution embarquée : la zone porte le titre — le composant ne
+   garde que sa ligne d'état + la grille + la légende. Registre
+   DATA-VIZ compact (la zone doit tenir un étage, pas une page) :
+   les cartes-chips meurent → une ligne d'état ; grille resserrée ;
+   légende sur une ligne. Spécificité (0,2,0) > planchers c3-hires. */
+.hist-analyse .perf-attr {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+.hist-analyse .perf-attr__header {
+  padding: 0;
+  margin-bottom: 6px;
+}
+.hist-analyse .perf-attr__hint {
+  font-size: 12px;
+}
+.hist-analyse .perf-attr__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 18px;
+  margin: 0 0 8px;
+}
+.hist-analyse .perf-attr__chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  min-width: 0;
+}
+.hist-analyse .perf-attr__chip-label {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  white-space: nowrap;
+}
+.hist-analyse .perf-attr__chip-value {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.hist-analyse .perf-attr__chip-sub {
+  font-size: 11px;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.hist-analyse .perf-attr__grid thead th,
+.hist-analyse .perf-attr__grid tbody th {
+  font-size: 12px;
+  padding: 4px 6px;
+  height: auto;
+}
+.hist-analyse .perf-attr__cell {
+  padding: 3px 6px;
+  height: auto;
+}
+.hist-analyse .perf-attr__cell-val {
+  font-size: 13px;
+  line-height: 16px;
+}
+.hist-analyse .perf-attr__cell-n {
+  font-size: 10px;
+  line-height: 12px;
+  color: var(--ink-mute); /* la demi-opacité porte déjà n<3 — pas d'ambre */
+}
+.hist-analyse .perf-attr__legend-pair {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: var(--ink-soft);
-  font-family: var(--type-mono);
-  font-size: var(--type-caption);
-  font-weight: 600; /* D2.E — label KPI au barème D2 (était 500). */
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-
-.history-page__kpi-tile-value {
-  color: var(--ink-pure);
-  font-family: var(--type-mono);
-  font-size: var(--type-display);
-  /* D2.E — parité KPI : 34px (--type-display) / 700 comme Dashboard (était 600). */
-  font-weight: 700;
-  font-variant-numeric: tabular-nums slashed-zero;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.history-page__kpi-tile-value--up {
-  color: var(--pnl-up);
-}
-.history-page__kpi-tile-value--down {
-  color: var(--pnl-down);
-}
-.history-page__kpi-tile-value--neutral {
-  color: var(--ink-pure);
-}
-
-/* ════════════════════════════════════════════════════════════════
-   TABS — filtre résultat (Tous/Gagnants/Perdants) + actif
-   (Tous/Options/Actions)
-   ════════════════════════════════════════════════════════════════ */
-.history-page__tabs {
-  display: flex;
-  gap: var(--qc-space-4);
+.hist-analyse .perf-attr__legend {
+  font-size: 11px;
+  gap: 4px 8px;
   flex-wrap: wrap;
+  align-items: center;
 }
-
-.history-page__tab-group {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  background: var(--depth-raised);
-  border: 1px solid var(--line-hairline);
-  border-radius: 2px;
+.hist-analyse .perf-attr__legend-label {
+  font-size: 10px;
+  white-space: nowrap;
 }
-
-.history-page__tab {
-  padding: 6px 14px;
-  background: transparent;
-  border: none;
-  border-radius: 2px;
-  color: var(--ink-soft);
-  font-family: var(--qc-font-sans);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-medium);
-  cursor: pointer;
-  transition:
-    background var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out);
+.hist-analyse .perf-attr__legend-tick {
+  font-size: 11px;
+  white-space: nowrap;
 }
-
-.history-page__tab:hover {
-  color: var(--ink-pure);
-  background: var(--depth-focus);
+.hist-analyse .perf-attr__empty-title {
+  font-size: 13px;
 }
-
-.history-page__tab[data-active] {
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-weight: var(--fw-semibold);
+.hist-analyse .perf-attr__empty-sub {
+  font-size: 12px;
 }
 
 /* ════════════════════════════════════════════════════════════════
-   PANEL — wrapper local plat (remplace <GlassCard>)
+   EMPTY BRANCH — panneau cockpit centré
    ════════════════════════════════════════════════════════════════ */
-.history-page__panel {
-  background: var(--depth-raised);
-  border: 1px solid var(--line-hairline);
-  border-radius: 2px;
-  padding: var(--qc-space-5);
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
-/* Variante empty branch : surface plus discrète (depth-base). */
-.history-page__panel--subtle {
-  background: var(--depth-base);
-  padding: var(--qc-space-6);
+.history-page__empty-panel {
   max-width: 640px;
   margin: 60px auto;
+  padding: var(--qc-space-6);
 }
-
-/* ════════════════════════════════════════════════════════════════
-   PANEL HEAD — COPIE LOCALE INDÉPENDANTE de .dashboard-v3__panel-head.
-   History ne dépend plus du CSS de Dashboard. Quand Dashboard migrera,
-   History n'en sera pas affectée.
-   ════════════════════════════════════════════════════════════════ */
-.history-page__panel-head {
-  display: flex;
-  align-items: center;
-  gap: var(--qc-space-2);
-  margin-bottom: var(--qc-space-3);
-  padding-bottom: var(--qc-space-3);
-  border-bottom: 1px solid var(--line-hairline);
-}
-
-.history-page__panel-head .uppercase-label {
-  color: var(--ink-soft);
-}
-
-.history-page__panel-title {
+.history-page .empty-state__title {
   color: var(--ink-pure);
-  font-family: var(--qc-font-sans);
-  font-size: var(--fs-md);
-  font-weight: var(--fw-bold);
-  letter-spacing: var(--ls-tight);
 }
-
-.history-page__panel-subtitle {
+.history-page .empty-state__desc {
   color: var(--ink-soft);
-  font-family: var(--qc-font-sans);
-  font-size: var(--type-caption);
+}
+.history-page .empty-state__icon {
+  color: var(--ink-mute);
 }
 
-/* ════════════════════════════════════════════════════════════════
-   DISTRIBUTION ROW — Win rate (1/3) + Distribution P&L (2/3)
-   ════════════════════════════════════════════════════════════════ */
-.history-page__dist-row {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: var(--qc-space-4);
-}
-
-@media (max-width: 900px) {
-  .history-page__dist-row {
-    grid-template-columns: 1fr;
+/* ── Empilements mobiles ─────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .hist-command__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .hist-command__cell + .hist-command__cell {
+    border-left: none;
+  }
+  .hist-command__cell:nth-child(3n + 2),
+  .hist-command__cell:nth-child(3n) {
+    border-left: 1px solid var(--line-emphasis);
+  }
+  .hist-command__cell:nth-child(n + 4) {
+    border-top: 1px solid var(--line-hairline);
+  }
+  .hist-analyse__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .hist-analyse__zone--attr {
+    grid-column: 1 / -1;
+    border-left: none;
+    border-top: 1px solid var(--line-emphasis);
   }
 }
-
-/* ════════════════════════════════════════════════════════════════
-   CELLULES DataTable — placeholder data manquante + meta inline
-   (remplace les 7 inline var(--text-tertiary) du fichier source).
-   ════════════════════════════════════════════════════════════════ */
-.history-page__cell-empty {
-  color: var(--ink-mute);
-}
-
-.history-page__cell-meta {
-  color: var(--ink-mute);
-  font-size: 10px;
-  font-style: italic;
-}
-
-.history-page__cell-asterisk {
-  color: var(--ink-mute);
-  margin-left: 2px;
-}
-
-.history-page__cell-mobile-date {
-  color: var(--ink-mute);
-  font-size: 11px;
-  font-variant-numeric: tabular-nums slashed-zero;
-}
-
-/* ════════════════════════════════════════════════════════════════
-   EXIT REASON CELL — bouton de cell Sniper view (motif sortie)
-   ════════════════════════════════════════════════════════════════ */
-.history-page__exit-cell {
-  background: transparent;
-  border: none;
-  padding: 2px 6px;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-  border-radius: 2px;
-  transition: background var(--duration-fast) var(--ease-out);
-}
-
-.history-page__exit-cell:hover {
-  background: var(--depth-focus);
-}
-
-.history-page__exit-cell:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+@media (max-width: 767px) {
+  .hist-command__grid {
+    grid-template-columns: 1fr;
+  }
+  .hist-command__cell:nth-child(3n + 2),
+  .hist-command__cell:nth-child(3n) {
+    border-left: none;
+  }
+  .hist-command__cell + .hist-command__cell {
+    border-top: 1px solid var(--line-hairline);
+  }
+  .hist-toolbar {
+    flex-wrap: wrap;
+  }
+  .hist-cta {
+    margin-left: 0;
+  }
+  .hist-analyse__grid {
+    grid-template-columns: 1fr;
+  }
+  .hist-analyse__zone + .hist-analyse__zone {
+    border-left: none;
+    border-top: 1px solid var(--line-emphasis);
+  }
 }
