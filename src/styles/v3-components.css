@@ -2215,6 +2215,47 @@
   text-align: center;
 }
 
+/* ── Footer de totaux (2.A) — sticky bottom, pattern LivePositions ── */
+.v3-table__tf {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  padding: var(--qc-space-2) var(--qc-space-3);
+  background: var(--surface-2);
+  border-top: 1px solid var(--qc-border-default);
+  white-space: nowrap;
+}
+.v3-table__tf--left {
+  text-align: left;
+}
+.v3-table__tf--right {
+  text-align: right;
+}
+.v3-table__tf--center {
+  text-align: center;
+}
+.v3-table__tf-label {
+  display: block;
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--qc-text-tertiary);
+  line-height: 12px;
+}
+.v3-table__tf-value {
+  display: block;
+  font-variant-numeric: tabular-nums slashed-zero;
+  color: var(--qc-text-primary);
+  line-height: 18px;
+}
+.v3-table__tf-value--profit {
+  color: var(--pnl-up);
+}
+.v3-table__tf-value--loss {
+  color: var(--pnl-down);
+}
+
 .v3-table__th-inner {
   display: inline-flex;
   align-items: center;
@@ -2674,67 +2715,10 @@
 
 /* ═══════════════════════════════════════════════════════════════
    POSITIONS v3
+   (2.A : le strip KPI, le timestamp greeks-freshness et le badge DTE
+   coloré sont MORTS — remplacés par le bandeau de commandement
+   .pos-command et le DTE neutre, cf. pages-positions.css.)
    ═══════════════════════════════════════════════════════════════ */
-.positions-v3__kpi-strip {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--qc-space-3);
-}
-
-@media (max-width: 1200px) {
-  .positions-v3__kpi-strip {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-@media (max-width: 767px) {
-  .positions-v3__kpi-strip {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* Greeks freshness indicator — passive timestamp under the KPI strip */
-.positions-v3__greeks-freshness {
-  font-size: 11px;
-  color: var(--qc-text-tertiary);
-  margin-top: calc(var(--qc-space-2) * -1);
-  letter-spacing: var(--ls-wide);
-  text-transform: uppercase;
-}
-
-/* DTE badge */
-.positions-dte {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 8px;
-  border-radius: var(--qc-radius-md);
-  font-family: var(--qc-font-mono);
-  font-size: 11px;
-  font-weight: var(--fw-semibold);
-  letter-spacing: 0;
-  min-width: 36px;
-  justify-content: center;
-}
-.positions-dte--profit {
-  background: var(--qc-profit-bg);
-  color: var(--profit-text);
-}
-.positions-dte--accent {
-  background: var(--qc-info-bg);
-  color: var(--accent-text);
-}
-.positions-dte--warning {
-  background: var(--qc-warning-bg);
-  color: var(--warning-text);
-}
-.positions-dte--loss {
-  background: var(--qc-loss-bg);
-  color: var(--loss-text);
-}
-.positions-dte--muted,
-.positions-dte--infinity {
-  background: var(--surface-3);
-  color: var(--qc-text-tertiary);
-}
 
 /* Mobile card */
 .positions-card {
@@ -2800,169 +2784,8 @@
   border-top: 1px dashed var(--qc-border-subtle);
 }
 
-/* Flat state */
-.positions-flat__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: var(--qc-space-3);
-}
-
-.positions-flat__card {
-  padding: var(--qc-space-5);
-  min-height: 200px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--qc-space-3);
-}
-
-.positions-flat__card-head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--qc-text-secondary);
-}
-
-.positions-flat__ticker-row {
-  display: flex;
-  align-items: center;
-  gap: var(--qc-space-2);
-}
-
-.positions-flat__ticker {
-  font-size: var(--fs-xl);
-  font-weight: var(--fw-bold);
-  color: var(--qc-text-primary);
-}
-
-.positions-flat__pnl {
-  font-family: var(--qc-font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: var(--fs-xl);
-  font-weight: var(--fw-bold);
-  margin-top: 4px;
-}
-.positions-flat__pnl[data-tone="profit"] {
-  color: var(--profit-text);
-}
-.positions-flat__pnl[data-tone="loss"] {
-  color: var(--loss-text);
-}
-
-.positions-flat__meta {
-  color: var(--qc-text-tertiary);
-  font-size: var(--fs-xs);
-  line-height: 1.7;
-  margin-top: auto;
-}
-
-.positions-flat__meta strong {
-  color: var(--qc-text-secondary);
-  font-weight: var(--fw-medium);
-}
-
-.positions-flat__meta strong[data-tone="profit"] {
-  color: var(--profit-text);
-}
-.positions-flat__meta strong[data-tone="loss"] {
-  color: var(--loss-text);
-}
-
-.positions-flat__stat-big {
-  font-family: var(--qc-font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: var(--fs-2xl);
-  font-weight: var(--fw-bold);
-  color: var(--qc-text-primary);
-  display: flex;
-  align-items: baseline;
-  gap: var(--qc-space-2);
-}
-.positions-flat__stat-sub {
-  font-family: var(--qc-font-sans);
-  font-size: 11px;
-  font-weight: var(--fw-medium);
-  color: var(--qc-text-tertiary);
-}
-
-.positions-flat__recent-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: auto;
-}
-
-.positions-flat__recent {
-  display: flex;
-  align-items: center;
-  gap: var(--qc-space-2);
-  font-size: 11px;
-}
-.positions-flat__recent-tk {
-  min-width: 44px;
-  color: var(--qc-text-secondary);
-}
-.positions-flat__recent-date {
-  color: var(--qc-text-tertiary);
-  font-size: 10px;
-}
-.positions-flat__recent-pnl {
-  margin-left: auto;
-  font-weight: var(--fw-semibold);
-}
-.positions-flat__recent-pnl[data-tone="profit"] {
-  color: var(--profit-text);
-}
-.positions-flat__recent-pnl[data-tone="loss"] {
-  color: var(--loss-text);
-}
-
-.positions-flat__setup {
-  margin: 0;
-  color: var(--qc-text-secondary);
-  font-size: var(--fs-sm);
-  line-height: 1.6;
-}
-
-.positions-flat__cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: var(--qc-info-bg);
-  color: var(--accent-text);
-  border: 1px solid var(--accent-border);
-  border-radius: var(--qc-radius-md);
-  font-family: var(--qc-font-sans);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-  align-self: flex-start;
-  margin-top: auto;
-  transition: all var(--duration-fast) var(--ease-out);
-}
-.positions-flat__cta:hover {
-  background: var(--qc-accent);
-  color: var(--text-on-accent);
-  border-color: var(--qc-accent);
-}
-
-.positions-flat__donut-wrap {
-  display: flex;
-  align-items: center;
-  gap: var(--qc-space-3);
-}
-
-.positions-flat__legend {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.positions-flat__donut-footer {
-  color: var(--qc-text-tertiary);
-  font-size: 10px;
-  margin-top: auto;
-}
+/* Flat state — 2.A : recomposé en panneau cockpit continu ; toutes
+   les règles .positions-flat__* vivent dans pages-positions.css. */
 
 /* ═══════════════════════════════════════════════════════════════
    HISTORY — règles exclusives à History.jsx déménagées vers
