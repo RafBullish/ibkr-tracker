@@ -228,10 +228,9 @@
   .v3-table__th-sort {
     font-size: var(--type-caption);
   }
-  .pos-command .pf-c__label,
-  .pos-command .pf-c__meta {
-    font-size: 13px;
-  }
+  /* Le bandeau .pos-command suit le registre DECK (labels/meta 10px,
+     v1-heros .pf-c — parité PortfolioDeck/bande 1.F validés) : pas de
+     bump. Méta des cellules riches : 13 (proportion td 20). */
   .positions-v3 .pos-cell2__meta {
     font-size: 13px;
   }
@@ -245,22 +244,16 @@
     flex-wrap: nowrap;
   }
 
-  /* ══ HISTORY (densif) — plancher 13 sur les résidus sous-13 PROPRES à
-     la page. Le patron table est déjà acquis : hauteur de ligne 34px via le
-     rowHeight palier de DataTable (brique précédente → cohérence Positions),
-     et .v3-table__th-sort déjà à 13 (hérité du palier Positions). Restent
-     les hardcodes page :
-       · pages-history.css : .history-page__view-btn (11), .history-page__cell-meta (10)
-       · PerformanceAttribution (.perf-attr*, composant rendu UNIQUEMENT par
-         History → flooré ici = page-effectif) : title/hint/empty/chips/grid/
-         cells/legend, de 9-12px → 13.
-     EXCLUS (B-final) : .history-page__cell-mobile-date (mobile <768, jamais
-     au palier) + span P&L% inline JSX de la carte mobile (History.jsx:566).
-     Heatmap perf-attr : heights 24px (thead) / 48px (cells) absorbent 13px ;
-     vérifié 0 wrap chips + grille tenue + 0 overflow. */
-  .history-page__view-btn,
+  /* ══ HISTORY (2.A — bandeau cockpit + barre d'outils + étage ANALYSE)
+     Plancher caption sur les résidus page + PerformanceAttribution
+     (rendu UNIQUEMENT par History). Le bandeau .hist-command suit le
+     même registre que .pos-command (labels/meta 13). Le scope de
+     l'étage ANALYSE et la donut-sub montent aussi au plancher.
+     EXCLUS : .history-page__cell-mobile-date (mobile <768, jamais au
+     palier) ; chips .lh-toggle (anatomie héros validée, 11px). */
+  .hist-analyse__scope,
+  .hist-analyse__donut-sub,
   .history-page__cell-meta,
-  .perf-attr__title,
   .perf-attr__hint,
   .perf-attr__empty-title,
   .perf-attr__empty-sub,
@@ -272,6 +265,13 @@
   .perf-attr__cell-n,
   .perf-attr__legend {
     font-size: var(--type-caption);
+  }
+  /* Le bandeau .hist-command suit le registre DECK (labels/meta 10px,
+     v1-heros .pf-c — parité PortfolioDeck/bande 1.F validés) : pas de
+     bump — cohérence cockpit avant plancher page. Méta des cellules
+     riches de table : 13 (proportion td 20). */
+  .history-page .pos-cell2__meta {
+    font-size: 13px;
   }
 
   /* ══ HISTORY · TICKS RECHARTS (addendum B11) — HistoryDistribution (histogramme

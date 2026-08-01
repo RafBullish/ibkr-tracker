@@ -69,22 +69,28 @@ function HeroChip({ label, value, sub, tone }) {
   );
 }
 
-export default function PerformanceAttribution() {
+/**
+ * 2.A — `trades` optionnel : le SOUS-ENSEMBLE FILTRÉ de la page (une
+ * page = une vérité). Sans prop → tout l'historique du store (compat).
+ * Le titre de zone vit désormais dans l'étage ANALYSE (.mk-title) —
+ * le composant ne garde que sa ligne d'état taggués/non-taggués.
+ */
+export default function PerformanceAttribution({ trades = null }) {
   const closedTrades = useClosedTrades();
   const metrics = usePortfolioMetrics();
   const liveRate = metrics?.liveRate || 1;
+  const source = trades ?? closedTrades ?? [];
 
   const matrixResult = useMemo(() => {
     const sniperMetaMap = readAllSniperMeta();
-    return computeEdgeCapitalMatrix(closedTrades || [], { sniperMetaMap, liveRate });
-  }, [closedTrades, liveRate]);
+    return computeEdgeCapitalMatrix(source, { sniperMetaMap, liveRate });
+  }, [source, liveRate]);
 
   const { matrix, untaggedCount, decisive, bestCell, worstCell } = matrixResult;
 
   return (
     <section className="perf-attr">
       <header className="perf-attr__header">
-        <span className="perf-attr__title">Performance Attribution · Edge × Capital</span>
         <span className="perf-attr__hint">
           {decisive} {decisive === 1 ? 'trade taggué' : 'trades taggués'}
           {untaggedCount > 0 ? (
@@ -103,7 +109,8 @@ export default function PerformanceAttribution() {
           <div className="perf-attr__empty-title">Aucun trade taggué pour le moment.</div>
           <div className="perf-attr__empty-sub">
             Tagge tes positions ouvertes via le bouton <em>Tag</em> dans Live Positions (/dashboard)
-            pour qu&apos;une fois closées, elles alimentent cette matrice Edge × Capital.
+            ou le détail d&apos;une position (/trading/positions) pour qu&apos;une fois closées,
+            elles alimentent cette matrice Edge × Capital.
             L&apos;Edge Tier est auto-dérivé depuis l&apos;IV Rank si tu laisses ce champ vide ; le
             Capital Tier reste manuel.
           </div>
