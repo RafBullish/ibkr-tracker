@@ -88,7 +88,33 @@ Objectif : **tag v1.0.0 au 01.09.2026**.
 
 ## Étape 2 — Familles de pages
 
-- **2.A** — Tables (Positions · History).
+- **2.A ✅ (1.0.0-rc.10, 02.08.2026)** — Tables (Positions · History) au
+  langage cockpit v1.0 (+ correctif architecte 2.A-c1). **Positions** :
+  bandeau de commandement 5 cellules-MONDE (MAX LOSS NEUTRE — amendement
+  15.07 soldé — méta « prime totale engagée » ; fraîcheur Greeks en
+  marqueur pf-real), table SURENSEMBLE des 19 colonnes LivePositions
+  (cellules riches, Θ per-day unifié, TIER affichage seul + édition
+  SniperMetaEditor au modal, badge GATE ARMED/CRITICAL au classifieur
+  de la bande `deriveAttention`), footer agrégé sticky (`col.footer`
+  DataTable, « Σ Valeur mark » §8), focus ambre `?focus=`, flat/vide
+  recomposés cockpit. **History** : bandeau 6 cellules sur le
+  sous-ensemble filtré (gates nullables honnêtes, Avg R « — » sans
+  perdant), barre d'outils .lh-toggle + CTA ambre, étage ANALYSE
+  Obsidienne 3 zones (ObsidienneTooltip unique ressuscité, WinRateDonut
+  OBS — Analytics hérite —, attribution scopée par prop `trades`,
+  extrêmes par signe), sous-titres de scope. LOI ratifiée : bandeaux de
+  page 34 px / decks Dashboard 22-24 px (2.B/2.C/2.D). Chips
+  ALERTS/TAG neutres, poubelles hover-reveal, « N non-taggués » neutre.
+  - **Résidus consignés (décisions architecte 02.08)** :
+    1. GATE NXT de LivePositions (`computeNextGate`) diverge du
+       classifieur bande/page (`deriveAttention`) — vocabulaire et
+       états (ex. « SL35 ARMED » vs CRITICAL time-stop). Alignement É3.
+    2. CalendarMini « 0 évt » alors que le fallback macro local
+       contient NFP à J-6 (AgendaCell/Calendar l'affichent — constaté
+       live 01.08). Sonde du chemin de données + correctif en **2.C**.
+    3. Seuil TIME_STOP hérité (≥5 j sans +15 %) sature ATTENTION en
+       usage réel (4/5 CRITICAL). Doctrine à trancher (Rafael +
+       architecte) en É3 — aucun changement d'ici là.
 - **2.B** — Analytiques (Greeks · Analytics · Insights).
 - **2.C** — Workflow (Chain · PreMarket · Calendar · Journal).
 - **2.D** — Utilitaires (Import · Settings · API).

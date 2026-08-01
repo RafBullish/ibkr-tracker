@@ -6,6 +6,74 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0-rc.10] — 2026-08-02
+
+**Brique 2.A — Tables (Positions · History), ouverture de l'Étape 2.**
+Les deux pages passent au langage cockpit v1.0 : bandeau de commandement
++ table héroïne + (History) étage ANALYSE au système Obsidienne. Inclut
+le correctif architecte 2.A-c1.
+
+### Ajouté
+- **Positions — bandeau de commandement** (`.pos-command`, cadre
+  cockpit `.lh-final`) : 5 cellules-MONDE aux hairlines verticales
+  (POSITIONS · Δ NET · Θ TOTAL · CAPITAL ENGAGÉ · MAX LOSS), double
+  devise CHF, TickValue, fraîcheur Greeks en marqueur discret (registre
+  pf-real) sur Δ NET, méta POSITIONS = « N CRITICAL · N ARMED » quand
+  des gates sont actifs. **MAX LOSS NEUTRE** (amendement 15.07.2026 —
+  un montant hypothétique n'est pas une perte), méta « prime totale
+  engagée » (≠ RISK $ · STOPS de la bande : 100 % vs 35 % de la prime).
+- **Positions — table SURENSEMBLE** des 19 colonnes de LivePositions
+  (14 colonnes via cellules riches : Strike+Exp, DTE+DaysIn, Mark+Spark,
+  P&L+%), rows enrichies par `useLivePositions` (lecture seule — Θ
+  unifié per-day, IVR + microbar neutre, TIER chip E·C affichage seul,
+  édition de la méta Sniper via le modal détail + SniperMetaEditor).
+  **Badge GATE ARMED/CRITICAL au MÊME classifieur que la bande décision**
+  (`deriveAttention` importé — une position CRITICAL dans la bande =
+  CRITICAL ici). **Footer agrégé sticky** (nouveau support `col.footer`
+  du DataTable, tfoot, deux branches) : Σ·N pos · DTE proche · Σ Max
+  loss · **Σ Valeur mark** (§8 : « notionnel » aurait menti) · Σ Unreal
+  toné · Σ Δ$ · Σ Θ/j. Deep-link `?focus=` = hairline gauche ambre.
+- **History — bandeau** (`.hist-command`) : 6 cellules-MONDE sur le
+  SOUS-ENSEMBLE FILTRÉ (une page = une vérité), montants héros en
+  ENTIERS (U+2212), ratios NEUTRES, gates nullables honnêtes (« — »
+  Win Rate < 10 décisifs ; **Avg R « — » sans perdant dans le scope**).
+- **History — barre d'outils** : toggle Standard/Sniper + filtres à
+  l'anatomie `.lh-toggle` des héros (clé `ibkr_history_view_mode`
+  inchangée), CTA « Ajouter un trade » ambre (zone de décision).
+- **History — étage ANALYSE** : UN panneau cockpit, 3 zones aux rails
+  (WIN RATE donut · DISTRIBUTION P&L · ATTRIBUTION Edge×Capital), au
+  système Obsidienne : **ObsidienneTooltip RESSUSCITÉ** (LE tooltip
+  unique — les Recharts contentStyle inline 11 px meurent),
+  WinRateDonut migré OBS (zéro glow/gradient, numéral neutre — Analytics
+  hérite sans recomposition), Distribution OBS (ticks 14 tabulaires,
+  fills up/down désaturés, mount-only), PerformanceAttribution scopée
+  via prop `trades` (les filtres pilotent AUSSI l'attribution) avec
+  extrêmes tonés par SIGNE et cas dégénéré best=worst honnête.
+  Sous-titres de scope sur les 3 zones (« 14 trades · gagnants »).
+
+### Modifié
+- Strips de KpiTile, tabs et panneaux flottants des deux pages : MORTS
+  (CSS purgé — pages-*, v3-components : kpi-strip, greeks-freshness,
+  DteBadge coloré, cartes flat). Flat state recomposé en UN panneau
+  cockpit 4 zones ; états vides au cadre cockpit.
+- Chips ALERTS et TAG : tags factuels NEUTRES (l'urgence vit dans GATE,
+  un tag de classification n'est pas décisionnel) ; poubelles en
+  hover-reveal dans les tables cockpit ; toolbar DataTable groupée à
+  gauche (anti-vide) ; zéro négatif des greeks clampé ; garde-fou % de
+  vraisemblance (>999 % → « — ») ; stagger de montage 1.F
+  (RISE_*_VARIANTS) sur les deux pages.
+- **2.A-c1** : « N non-taggués » (attribution) au registre neutre
+  `--ink-mute` — l'ambre ambiant meurt (l'état 0-taggué est durable).
+
+### Vérifié
+- Build vert · color-law 0 · 290 tests verts · audit 12 pages peuplées
+  → `docs/captures/2a-tables/` · 0 overflow @1591 ET @1920 (Chain
+  peuplée, scrollers de tables inclus) · console : tolérés uniquement ·
+  3 passes d'autocritique (dont panel 4 juges) + correctif architecte ·
+  non-régression Analytics (donut) prouvée par capture.
+
+---
+
 ## [1.0.0-rc.9] — 2026-07-31
 
 **Brique 1.F — La bande décision (clôture du Dashboard, Étape 1 CLOSE).**
