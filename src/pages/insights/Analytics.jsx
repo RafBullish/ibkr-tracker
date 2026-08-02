@@ -1,22 +1,40 @@
 // ═══════════════════════════════════════════════════════════════
-//  ANALYTICS v3.0 « Midnight Terminal »
+//  ANALYTICS — page-vitrine au langage cockpit v1.0 (brique 2.B)
 //  /insights/analytics
 //
-//  Post-trade deep analytics per brief §12.6. Retires @uiw/react-
-//  heat-map by swapping the year heatmap to the v3 PnLCalendar
-//  Heatmap mode='year'.
+//  « La forme longue de mon système, l'année en un regard. »
+//
+//  Architecture (§4.5), de haut en bas :
+//    1. BANDEAU DE COMMANDEMENT — 10 KPI en cellules-MONDE (2 rangées) :
+//       Expectancy · Sortino · Calmar · Sharpe · Profit Factor //
+//       Win Rate · Omega · Kelly % · Avg Hold · Max DD. Un RATIO n'est
+//       PAS de l'argent → ratios NEUTRES (loi 2.B §4.6). Seul Max DD $
+//       (perte réelle depuis un pic) reste toné. Caveat d'honnêteté
+//       « préliminaire · échantillon < 1 an » repris tel quel.
+//    2. HÉROÏNE — heatmap P&L annuelle pleine largeur (échelle divergente
+//       enfin lisible, cf. PnLCalendarHeatmap 2.B).
+//    3. ÉTAGE RYTHME & RÉPARTITION — un panneau cockpit, 3 zones aux
+//       rails : P&L par jour de semaine (OBS) · Répartition G/P (donut)
+//       · Breakdown par stratégie.
 // ═══════════════════════════════════════════════════════════════
 
 import { lazy, Suspense, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
-import { BarChart3, Shield, Percent, CalendarDays } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
+import { BarChart3 } from 'lucide-react';
 import { useClosedTrades, useSettings } from '../../store/useStore';
 import { tradePnlUsd } from '../../utils/calculations';
 import { useTradingMetrics } from '../../hooks/useTradingMetrics';
-// A1 — Calmar is no longer emitted by useTradingMetrics (the hook does
-// not receive the initialCapital / yearsActive inputs needed to compute
-// CAGR). Pull it from the canonical single-source pipeline instead.
 import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
 import { holdingDays } from '../../utils/dates';
 import { toFloat } from '../../utils/math';
@@ -26,17 +44,51 @@ import InfoTooltip from '../../components/ui/InfoTooltip';
 import EmptyState from '../../components/ui/EmptyState';
 import WinRateDonut from '../../components/ui/WinRateDonut';
 import PnLCalendarHeatmap from '../../components/charts/PnLCalendarHeatmap';
-import RiskMetricsRow from '../../components/charts/RiskMetricsRow';
-import { CONTAINER_VARIANTS, TILE_VARIANTS } from '../../theme/animationVariants';
+import { OBS, useMountOnlyAnimation } from '../../components/charts/obsidienne';
+import ObsidienneTooltip from '../../components/charts/ObsidienneTooltip';
+import { TickValue } from '../../components/dashboard/decision/parts';
+import { RISE_CONTAINER_VARIANTS, RISE_TILE_VARIANTS } from '../../theme/animationVariants';
 
 const LazyStrategyBreakdown = lazy(() => import('../../components/charts/StrategyBreakdown'));
-const LazyRecharts = lazy(() =>
-  import('recharts').then((mod) => ({ default: ({ children }) => children(mod) }))
-);
+
+const WEEKDAYS = ['Di', 'Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa'];
+const WEEKDAY_FULL = {
+  Di: 'Dimanche',
+  Lu: 'Lundi',
+  Ma: 'Mardi',
+  Me: 'Mercredi',
+  Je: 'Jeudi',
+  Ve: 'Vendredi',
+  Sa: 'Samedi',
+};
+
+// ── Formatters (de-CH, anti-NBSP) ────────────────────────────────
+const nf = (min, max) =>
+  new Intl.NumberFormat('de-CH', { minimumFractionDigits: min, maximumFractionDigits: max });
+function fmtNum(v) {
+  if (v == null || !Number.isFinite(v)) return '—';
+  return nf(0, 2).format(v);
+}
+function fmtR(v) {
+  if (v == null || !Number.isFinite(v)) return '—';
+  return nf(1, 2).format(v) + 'R';
+}
+function fmtPct(v) {
+  if (v == null || !Number.isFinite(v)) return '—';
+  return nf(2, 2).format(v) + '%';
+}
+function fmtUsd(v) {
+  if (v == null || !Number.isFinite(v)) return '—';
+  return (v < 0 ? '-' : '') + '$' + nf(0, 0).format(Math.abs(v));
+}
+function fmtSignedUsd(v) {
+  if (v == null || !Number.isFinite(v)) return '—';
+  const sign = v > 0 ? '+' : v < 0 ? '−' : '';
+  return `${sign}$${nf(0, 0).format(Math.abs(v))}`;
+}
 
 function aggregateDayOfWeek(closedTrades, lr) {
-  const days = ['Di', 'Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa'];
-  const buckets = Array.from({ length: 7 }, (_, d) => ({ day: days[d], count: 0, pnl: 0 }));
+  const buckets = Array.from({ length: 7 }, (_, d) => ({ day: WEEKDAYS[d], count: 0, pnl: 0 }));
   for (const t of closedTrades) {
     if (!t.do) continue;
     try {
@@ -62,125 +114,69 @@ function buildDayPnlMap(closedTrades, lr) {
   return map;
 }
 
-// ── Flat KPI tile (palette canonique — cf. History/Positions/Greeks) ──
-//  Remplace <MetricCard size="compact"> : surface plate, label uppercase
-//  ink-soft, valeur tabular-nums + tonalité sémantique --up/--down/--neutral.
-//  La règle métier (seuils) est passée par `tone` ; aucune sémantique
-//  inventée ici. fmtMetric reproduit à l'identique le formatage Intl de
-//  MetricCard (mêmes locales/décimales → valeurs inchangées).
-const TONE_CLASS = { profit: 'up', loss: 'down', neutral: 'neutral' };
-
-function fmtMetric(value, format = 'number', currency = 'USD') {
-  if (value == null || Number.isNaN(value)) return '—';
-  switch (format) {
-    case 'currency':
-      if ((currency || 'USD') === 'USD') {
-        const f = new Intl.NumberFormat('de-CH', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        });
-        return (value < 0 ? '-' : '') + '$' + f.format(Math.abs(value));
-      }
-      return new Intl.NumberFormat('de-CH', {
-        style: 'currency',
-        currency,
-        currencyDisplay: 'code',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(value);
-    case 'percent':
-      return (
-        new Intl.NumberFormat('de-CH', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(value) + '%'
-      );
-    case 'r-multiple':
-      return (
-        new Intl.NumberFormat('de-CH', {
-          minimumFractionDigits: 1,
-          maximumFractionDigits: 2,
-        }).format(value) + 'R'
-      );
-    case 'number':
-    default:
-      return new Intl.NumberFormat('de-CH', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-      }).format(value);
-  }
-}
-
-function KpiTile({ label, tooltip, value, tone = 'neutral' }) {
+// ── Cellule-MONDE du bandeau (anatomie .pf-c, valeur 34px). Ratios
+// NEUTRES ; seul un montant d'argent réel (Max DD) porte un tone. ──
+function CommandCell({ label, title, value, meta, tone }) {
   return (
-    <div className="analytics-v3__kpi-tile">
-      <span className="analytics-v3__kpi-tile-label">
+    <div className="pf-c analytics-command__cell">
+      <span className="pf-c__label analytics-command__label" title={title || undefined}>
         {label}
-        {tooltip && <InfoTooltip content={tooltip} size={12} />}
       </span>
-      <span className={`analytics-v3__kpi-tile-value analytics-v3__kpi-tile-value--${tone}`}>
-        {value}
-      </span>
+      <TickValue
+        text={value}
+        className={`pf-c__val analytics-command__val${tone ? ` pf-c__val--${tone}` : ''}`}
+      />
+      <span className="pf-c__meta analytics-command__meta">{meta || ' '}</span>
     </div>
   );
 }
 
+// ── P&L par jour de semaine — kit OBS + ObsidienneTooltip (les axes
+// 10px et le tooltip inline 11px MEURENT). Barres vert/rouge = P&L
+// réalisé (exception chartée), aplats désaturés. ──────────────────
 function DayChart({ data }) {
+  const anim = useMountOnlyAnimation();
   return (
-    <Suspense fallback={<div style={{ height: 240 }} />}>
-      <LazyRecharts>
-        {(mod) => (
-          <div style={{ height: 240 }}>
-            <mod.ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-              <mod.BarChart data={data} margin={{ top: 10, right: 16, left: 4, bottom: 4 }}>
-                <mod.CartesianGrid
-                  vertical={false}
-                  stroke="var(--border-subtle)"
-                  strokeDasharray="3 3"
-                />
-                <mod.XAxis
-                  dataKey="day"
-                  tick={{
-                    fill: 'var(--text-tertiary)',
-                    fontSize: 10,
-                    fontFamily: 'var(--font-mono)',
-                  }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <mod.YAxis
-                  tick={{
-                    fill: 'var(--text-tertiary)',
-                    fontSize: 10,
-                    fontFamily: 'var(--font-mono)',
-                  }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={40}
-                  tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v)}
-                />
-                <mod.Tooltip
-                  contentStyle={{
-                    background: 'var(--chart-tooltip-bg)',
-                    border: '1px solid var(--border-default)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--text-primary)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 11,
-                  }}
-                  formatter={(v, k) => (k === 'pnl' ? [`$${v.toFixed(0)}`, 'P&L'] : [v, 'Trades'])}
-                />
-                <mod.Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
-                  {data.map((d, i) => (
-                    <mod.Cell key={i} fill={d.pnl >= 0 ? 'var(--profit)' : 'var(--loss)'} />
-                  ))}
-                </mod.Bar>
-              </mod.BarChart>
-            </mod.ResponsiveContainer>
-          </div>
-        )}
-      </LazyRecharts>
-    </Suspense>
+    <div className="obsidienne-chart analytics-rhythm__chart">
+      <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+        <BarChart data={data} margin={{ top: 10, right: 12, left: 4, bottom: 4 }}>
+          <CartesianGrid vertical={false} stroke={OBS.color.grid} />
+          <XAxis dataKey="day" tick={OBS.tick} axisLine={false} tickLine={false} />
+          <YAxis
+            tick={OBS.tick}
+            axisLine={false}
+            tickLine={false}
+            width={44}
+            tickFormatter={(v) => (Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(0)}k` : v)}
+          />
+          <Tooltip
+            cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+            content={
+              <ObsidienneTooltip
+                formatLabel={(l) => WEEKDAY_FULL[l] || l}
+                rows={(payload) => {
+                  const d = payload?.[0]?.payload;
+                  if (!d) return [];
+                  return [
+                    {
+                      label: 'P&L',
+                      value: fmtSignedUsd(d.pnl),
+                      tone: d.pnl > 0 ? 'up' : d.pnl < 0 ? 'down' : undefined,
+                    },
+                    { label: 'TRADES', value: String(d.count) },
+                  ];
+                }}
+              />
+            }
+          />
+          <Bar dataKey="pnl" radius={[2, 2, 0, 0]} maxBarSize={44} {...anim}>
+            {data.map((d, i) => (
+              <Cell key={i} fill={d.pnl >= 0 ? OBS.color.up : OBS.color.down} fillOpacity={0.62} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
 
@@ -191,16 +187,13 @@ export default function Analytics() {
   const rawClosedTrades = useClosedTrades();
   const settings = useSettings();
   const lr = toFloat(settings?.liveRate) || 1;
-  // Memoize the array reference so downstream useMemos get a stable identity
-  // (zustand selector returns a stable ref, but the `|| []` fallback breaks
-  // that guarantee on every render).
   const closedTrades = useMemo(() => rawClosedTrades || [], [rawClosedTrades]);
 
   const metrics = useTradingMetrics(closedTrades, lr);
-  // A1 — Calmar source : portfolio-level metrics (needs initialCapital).
   const portfolioMetrics = usePortfolioMetrics();
   const dayData = useMemo(() => aggregateDayOfWeek(closedTrades, lr), [closedTrades, lr]);
   const dayMap = useMemo(() => buildDayPnlMap(closedTrades, lr), [closedTrades, lr]);
+
   const avgHold = useMemo(() => {
     const withDur = closedTrades.filter((t) => t.di && t.do);
     if (!withDur.length) return null;
@@ -208,13 +201,41 @@ export default function Analytics() {
     return Math.round(sum / withDur.length);
   }, [closedTrades]);
 
+  // Répartition G/P (densité de la zone donut).
+  const wl = useMemo(() => {
+    let w = 0,
+      l = 0;
+    for (const t of closedTrades) {
+      const p = tradePnlUsd(t, lr);
+      if (p > 0) w++;
+      else if (p < 0) l++;
+    }
+    return { wins: w, losses: l, total: w + l };
+  }, [closedTrades, lr]);
+
+  const pf = metrics?.profitFactor;
+  const omega = metrics?.omega;
+  const expectancyR =
+    metrics && Number.isFinite(metrics.expectancy)
+      ? metrics.expectancy / Math.max(Math.abs(metrics.avgLoss), 1)
+      : null;
+
+  // Caveat d'honnêteté — repris TEL QUEL de RiskMatrix (échantillon < 1 an).
+  const preliminary = portfolioMetrics?.preliminaryRatios;
+  const caveatTitle = `Échantillon court : ${
+    portfolioMetrics?.yearsActive != null
+      ? `${(portfolioMetrics.yearsActive * 365.25).toFixed(0)} j`
+      : '< 1 an'
+  }. Sharpe / Sortino / Calmar extrapolés (Calmar utilise CAGR annualisé = ${
+    portfolioMetrics?.cagrAnnPct != null ? portfolioMetrics.cagrAnnPct.toFixed(1) + '%' : '—'
+  } / |MaxDD ${
+    portfolioMetrics?.maxDrawdownPct != null ? portfolioMetrics.maxDrawdownPct.toFixed(2) + '%' : '—'
+  }|).`;
+
   if (closedTrades.length === 0) {
     return (
-      <div className="page-container">
-        <div
-          className="analytics-v3__panel analytics-v3__panel--subtle"
-          style={{ maxWidth: 640, margin: '60px auto' }}
-        >
+      <div className="page-container analytics-v3">
+        <div className="analytics-v3__panel analytics-v3__panel--subtle analytics-v3__empty-panel">
           <EmptyState
             icon={BarChart3}
             title="Aucune analyse disponible"
@@ -240,11 +261,11 @@ export default function Analytics() {
   return (
     <motion.div
       className="page-container analytics-v3"
-      variants={reducedMotion ? undefined : CONTAINER_VARIANTS}
+      variants={reducedMotion ? undefined : RISE_CONTAINER_VARIANTS}
       initial={reducedMotion ? undefined : 'hidden'}
       animate={reducedMotion ? undefined : 'visible'}
     >
-      <motion.div variants={TILE_VARIANTS} className="page-header">
+      <motion.div variants={RISE_TILE_VARIANTS} className="page-header">
         <div>
           <h1 className="page-title">
             <BarChart3 size={18} aria-hidden="true" />
@@ -252,146 +273,97 @@ export default function Analytics() {
             <StatusBadge variant="accent" label={`${closedTrades.length} trades`} size="xs" />
           </h1>
           <p className="page-subtitle">
-            Analyse post-trade : ratios risque-ajustés, distribution temporelle, heatmap annuelle.
+            La forme longue de ton système — ratios risque-ajustés, rythme, saisonnalité.
           </p>
         </div>
       </motion.div>
 
-      {/* ── Row 1 : Risk-Adjusted Performance (6 compact KPIs) ── */}
-      <motion.div variants={TILE_VARIANTS}>
-        <div className="analytics-v3__panel">
-          <div className="analytics-v3__panel-head">
-            <Shield size={14} aria-hidden="true" style={{ color: 'var(--text-tertiary)' }} />
-            <span className="uppercase-label">Performance risque-ajustée</span>
-            <InfoTooltip
-              content={{
-                title: 'Performance risque-ajustée',
-                body: 'Ratios normalisant le rendement par unité de risque. Sharpe et Sortino sont cappés à [-5, +10] affichage.',
-              }}
-              size={12}
-            />
-          </div>
-          <RiskMetricsRow
-            metrics={{
-              expectancy: metrics ? metrics.expectancy / Math.max(Math.abs(metrics.avgLoss), 1) : 0,
-              // A2a — Sharpe / Sortino / Calmar all sourced from the
-              // canonical pipeline (returns-based, gated). useTradingMetrics
-              // doesn't have the capital / years inputs needed to compute
-              // them, so they're null at that layer.
-              sortino: portfolioMetrics?.sortinoRatio ?? null,
-              calmar: portfolioMetrics?.calmarRatio ?? null,
-              sharpe: portfolioMetrics?.sharpeRatio ?? null,
-              profitFactor: metrics?.profitFactor ?? 0,
-              winRate: metrics?.winRate ?? 0,
-            }}
+      {/* 1 — BANDEAU DE COMMANDEMENT : 10 KPI, ratios NEUTRES. */}
+      <motion.section
+        variants={RISE_TILE_VARIANTS}
+        className="lh-final analytics-command"
+        aria-label="Commandement — performance risque-ajustée"
+      >
+        <div className="analytics-command__grid">
+          <CommandCell
+            label="EXPECTANCY"
+            title="Gain moyen attendu par trade en R-multiples. Positif = espérance mathématique gagnante."
+            value={fmtR(expectancyR)}
+            meta="par trade · R"
+          />
+          <CommandCell
+            label="SORTINO"
+            title="Rendement ajusté à la seule volatilité négative (downside). > 2 excellent, < 0.5 risque excessif."
+            value={fmtNum(portfolioMetrics?.sortinoRatio ?? null)}
+            meta="downside-adj."
+          />
+          <CommandCell
+            label="CALMAR"
+            title="Rendement annualisé / drawdown maximum. Combien tu gagnes par unité de souffrance historique."
+            value={fmtNum(portfolioMetrics?.calmarRatio ?? null)}
+            meta="CAGR / MaxDD"
+          />
+          <CommandCell
+            label="SHARPE"
+            title="Rendement excédentaire par unité de volatilité totale. > 1 acceptable, > 2 excellent."
+            value={fmtNum(portfolioMetrics?.sharpeRatio ?? null)}
+            meta="vol-adj."
+          />
+          <CommandCell
+            label="PROFIT FACTOR"
+            title="Σ gains / |Σ pertes|. > 1 rentable brut, > 2 solide."
+            value={pf === Infinity ? '∞' : fmtNum(pf)}
+            meta="gains / pertes"
+          />
+          <CommandCell
+            label="WIN RATE"
+            title="Pourcentage de trades fermés gagnants. À lire en relatif avec l'Expectancy."
+            value={fmtPct(metrics?.winRate ?? null)}
+            meta="trades gagnants"
+          />
+          <CommandCell
+            label="OMEGA"
+            title="Σ gains / Σ |pertes| au seuil 0. > 1 rentable ; 2 = chaque $ perdu rapporte 2 $."
+            value={omega === Infinity ? '∞' : fmtNum(omega)}
+            meta="Ω ratio"
+          />
+          <CommandCell
+            label="KELLY %"
+            title="Fraction optimale du capital à risquer par trade. > 25 % agressif, > 50 % imprudent."
+            value={fmtPct(metrics?.kellyPct ?? null)}
+            meta="fraction opt."
+          />
+          <CommandCell
+            label="AVG HOLD"
+            title="Durée moyenne de détention (jours) entre open et close. Indicateur de style."
+            value={avgHold != null ? `${avgHold} j` : '—'}
+            meta="jours moyens"
+          />
+          {/* Max DD = argent RÉEL rendu depuis un pic → toné (loi de couleur). */}
+          <CommandCell
+            label="MAX DD"
+            title="Pire perte cumulative historique depuis un pic d'équité. Montant réel."
+            value={fmtUsd(metrics?.maxDrawdown ?? null)}
+            meta="pire perte cumulée"
+            tone="loss"
           />
         </div>
-      </motion.div>
-
-      {/* ── Row 2 : Secondary KPIs (Omega, Kelly, Avg Hold, Max DD) ── */}
-      <motion.div variants={TILE_VARIANTS} className="analytics-v3__kpi-row">
-        <KpiTile
-          label="Omega"
-          value={fmtMetric(metrics?.omega === Infinity ? 999 : metrics?.omega, 'number')}
-          tooltip={{
-            title: 'Omega Ratio',
-            body: 'Σ gains / Σ |pertes|. >1 = rentable brut. 2 = chaque dollar perdu rapporte 2 dollars en gain.',
-            formula: 'Σ gains / Σ |pertes|',
-          }}
-          tone={
-            TONE_CLASS[metrics?.omega > 1.5 ? 'profit' : metrics?.omega < 1 ? 'loss' : 'neutral']
-          }
-        />
-        <KpiTile
-          label="Kelly %"
-          value={fmtMetric(metrics?.kellyPct, 'percent')}
-          tooltip={{
-            title: 'Kelly Criterion',
-            body: 'Part optimale du capital à risquer par trade pour maximiser le taux de croissance log. >20% = agressif, >50% = imprudent.',
-            formula: 'winRate − (1-winRate) × (avgLoss/avgWin)',
-          }}
-          tone={
-            TONE_CLASS[
-              metrics?.kellyPct > 25 ? 'profit' : metrics?.kellyPct < 0 ? 'loss' : 'neutral'
-            ]
-          }
-        />
-        <KpiTile
-          label="Avg Hold"
-          value={fmtMetric(avgHold, 'number')}
-          tooltip={{
-            title: 'Durée moyenne de détention',
-            body: 'Nombre de jours moyen entre open et close. Indicateur de style (swing, position, day-trading).',
-          }}
-          tone="neutral"
-        />
-        <KpiTile
-          label="Max Drawdown"
-          value={fmtMetric(metrics?.maxDrawdown, 'currency', 'USD')}
-          tooltip={{
-            title: 'Max Drawdown',
-            body: "Pire perte cumulative historique depuis un pic d'équité.",
-          }}
-          tone="down"
-        />
-      </motion.div>
-
-      {/* ── Row 3 : Day-of-Week P&L (Hour-of-Day retiré en U15 : t.do est une
-          date sans horodatage intraday → getHours() renvoie toujours 12, le
-          graphe empilait tout dans un seul bucket — trompeur. Flex ne fournit
-          pas l'heure de clôture.) ── */}
-      <motion.div variants={TILE_VARIANTS}>
-        <div className="analytics-v3__panel">
-          <div className="analytics-v3__panel-head">
-            <span className="uppercase-label">P&amp;L par jour de la semaine</span>
-            <InfoTooltip
-              content={{
-                title: 'Day-of-Week P&L',
-                body: 'P&L agrégé par jour de la semaine. Utile pour détecter des biais (Friday slump, Monday open gap).',
-              }}
-              size={12}
-            />
+        {preliminary && (
+          <div className="analytics-command__caveat" title={caveatTitle}>
+            ~ préliminaire · échantillon &lt; 1 an
           </div>
-          <DayChart data={dayData} />
-        </div>
-      </motion.div>
+        )}
+      </motion.section>
 
-      {/* ── Row 4 : Win/Loss breakdown + Strategy ── */}
-      <motion.div variants={TILE_VARIANTS} className="analytics-v3__dual-row">
+      {/* 2 — HÉROÏNE : heatmap P&L annuelle pleine largeur. */}
+      <motion.div variants={RISE_TILE_VARIANTS}>
         <div className="analytics-v3__panel">
           <div className="analytics-v3__panel-head">
-            <Percent size={14} aria-hidden="true" style={{ color: 'var(--text-tertiary)' }} />
-            <span className="uppercase-label">Répartition gagnants / perdants</span>
-          </div>
-          <WinRateDonut winRate={metrics?.winRate ?? null} />
-        </div>
-        <div className="analytics-v3__panel">
-          <div className="analytics-v3__panel-head">
-            <span className="uppercase-label">Breakdown par stratégie</span>
-            <InfoTooltip
-              content={{
-                title: 'Breakdown par stratégie',
-                body: 'Performance par tag de stratégie (Sniper OTM, Swing, Event, etc.) si renseigné dans les trades.',
-              }}
-              size={12}
-            />
-          </div>
-          <Suspense fallback={<div style={{ height: 240 }} />}>
-            <LazyStrategyBreakdown closedTrades={closedTrades} liveRate={lr} />
-          </Suspense>
-        </div>
-      </motion.div>
-
-      {/* ── Row 5 : Year P&L heatmap via PnLCalendarHeatmap (retire @uiw) ── */}
-      <motion.div variants={TILE_VARIANTS}>
-        <div className="analytics-v3__panel">
-          <div className="analytics-v3__panel-head">
-            <CalendarDays size={14} aria-hidden="true" style={{ color: 'var(--text-tertiary)' }} />
             <span className="uppercase-label">Heatmap P&amp;L annuelle</span>
             <InfoTooltip
               content={{
                 title: 'Heatmap annuelle',
-                body: "P&L cumulé par jour sur l'année courante. Permet d'identifier les streaks, les gaps d'activité, et la saisonnalité.",
+                body: "P&L cumulé par jour sur l'année. Repère les streaks, les gaps d'activité et la saisonnalité. Vert = gain, rouge = perte, intensité = ampleur.",
               }}
               size={12}
             />
@@ -399,6 +371,62 @@ export default function Analytics() {
           <PnLCalendarHeatmap dayPnlMap={dayMap} mode="year" currency="USD" />
         </div>
       </motion.div>
+
+      {/* 3 — ÉTAGE RYTHME & RÉPARTITION : un panneau cockpit, 3 zones. */}
+      <motion.section
+        variants={RISE_TILE_VARIANTS}
+        className="lh-final analytics-rhythm"
+        aria-label="Rythme et répartition"
+      >
+        <div className="analytics-rhythm__grid">
+          <div className="analytics-rhythm__zone">
+            <div className="mk-title">P&amp;L PAR JOUR DE SEMAINE</div>
+            <div className="analytics-rhythm__scope">
+              {closedTrades.length} trade{closedTrades.length > 1 ? 's' : ''} · tout l'historique
+            </div>
+            <DayChart data={dayData} />
+          </div>
+
+          <div className="analytics-rhythm__zone">
+            <div className="mk-title">RÉPARTITION G/P</div>
+            <div className="analytics-rhythm__scope">
+              {wl.total} clôture{wl.total > 1 ? 's' : ''}
+            </div>
+            <div className="analytics-rhythm__donut-wrap">
+              <WinRateDonut winRate={metrics?.winRate ?? null} size={108} strokeWidth={9} />
+              <div className="analytics-rhythm__wl">
+                <span className="analytics-rhythm__wl-row">
+                  <span className="analytics-rhythm__wl-dot analytics-rhythm__wl-dot--up" />
+                  <span className="analytics-rhythm__wl-label">Gagnants</span>
+                  <span className="mono analytics-rhythm__wl-val">{wl.wins}</span>
+                </span>
+                <span className="analytics-rhythm__wl-row">
+                  <span className="analytics-rhythm__wl-dot analytics-rhythm__wl-dot--down" />
+                  <span className="analytics-rhythm__wl-label">Perdants</span>
+                  <span className="mono analytics-rhythm__wl-val">{wl.losses}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="analytics-rhythm__zone analytics-rhythm__zone--strat">
+            <div className="mk-title analytics-rhythm__strat-title">
+              BREAKDOWN PAR STRATÉGIE
+              <InfoTooltip
+                content={{
+                  title: 'Breakdown par stratégie',
+                  body: 'Performance par tag de stratégie (Sniper OTM, Swing, Event…) renseigné dans les trades. Les non-tagués tombent dans « Sans tag ».',
+                }}
+                size={12}
+              />
+            </div>
+            <div className="analytics-rhythm__scope">par tag · impact P&amp;L décroissant</div>
+            <Suspense fallback={<div className="analytics-rhythm__chart" />}>
+              <LazyStrategyBreakdown closedTrades={closedTrades} liveRate={lr} />
+            </Suspense>
+          </div>
+        </div>
+      </motion.section>
     </motion.div>
   );
 }

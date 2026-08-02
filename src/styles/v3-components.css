@@ -1571,23 +1571,25 @@
   }
 }
 
-/* Year-mode add-ons */
+/* Year-mode add-ons — sélecteur Année/Mois à l'anatomie des toggles
+   validés (2.B) : chip neutre plat, radius 2, plancher lisible. */
 .pnl-calendar__mode-btn {
   margin-left: var(--qc-space-2);
-  padding: 4px 10px;
-  background: transparent;
-  border: 1px solid var(--qc-border-default);
-  border-radius: var(--radius-full);
-  color: var(--qc-text-secondary);
+  padding: 4px 12px;
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  color: var(--ink-soft);
   font-family: var(--qc-font-sans);
-  font-size: 11px;
-  font-weight: var(--fw-medium);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-out);
 }
 .pnl-calendar__mode-btn:hover {
-  background: var(--surface-3);
-  color: var(--qc-text-primary);
+  background: var(--depth-focus);
+  color: var(--ink-pure);
 }
 
 .pnl-calendar__year-wrap {
@@ -1601,11 +1603,11 @@
 .pnl-calendar__year-months {
   display: grid;
   gap: 2px;
-  color: var(--qc-text-tertiary);
-  font-size: 10px;
+  color: var(--ink-mute);
+  font-size: 12px; /* 2.B — les 10px MEURENT (plancher lisible dataviz). */
   font-weight: var(--fw-medium);
-  height: 14px;
-  padding-left: 22px;
+  height: 16px;
+  padding-left: 26px;
 }
 
 .pnl-calendar__year-month-label {
@@ -1626,15 +1628,15 @@
   display: grid;
   grid-template-rows: repeat(7, 1fr);
   gap: 2px;
-  padding-right: 4px;
-  color: var(--qc-text-tertiary);
-  font-size: 9px;
+  padding-right: 6px;
+  color: var(--ink-mute);
+  font-size: 11px; /* 2.B — les 9px MEURENT. */
   font-weight: var(--fw-medium);
 }
 .pnl-calendar__year-weekdays > span {
   display: flex;
   align-items: center;
-  height: 12px;
+  height: 14px;
 }
 
 .pnl-calendar__year-week {
@@ -1645,11 +1647,11 @@
 
 .pnl-calendar__year-cell {
   width: 100%;
-  min-width: 12px;
-  height: 12px;
-  border: 1px solid var(--qc-border-subtle);
+  min-width: 14px;
+  height: 14px;
+  border: 1px solid var(--line-hairline);
   border-radius: 2px;
-  background: var(--surface-3);
+  background: var(--hm-ghost, rgba(255, 255, 255, 0.035));
   cursor: pointer;
   transition: transform var(--duration-fast) var(--ease-out);
   padding: 0;
@@ -3440,31 +3442,10 @@
    .import-v3__*. */
 
 /* ═══════════════════════════════════════════════════════════════
-   ANALYTICS v3
+   ANALYTICS v3 — layout kpi-row / dual-row RETIRÉ en 2.B (bandeau de
+   commandement + étage rythme, cf. pages-analytics.css). Il ne reste
+   ici que .analytics-v3__panel* (PARTAGÉ avec .journal-v3__panel*).
    ═══════════════════════════════════════════════════════════════ */
-.analytics-v3__kpi-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--qc-space-3);
-}
-
-@media (max-width: 900px) {
-  .analytics-v3__kpi-row {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.analytics-v3__dual-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--qc-space-4);
-}
-
-@media (max-width: 900px) {
-  .analytics-v3__dual-row {
-    grid-template-columns: 1fr;
-  }
-}
 
 /* ═══════════════════════════════════════════════════════════════
    FLAT CHROME (U9) — palette canonique plate, namespacée par page.
@@ -3508,65 +3489,10 @@
   color: var(--ink-soft);
 }
 
-/* Tuile KPI compacte plate (remplace <MetricCard size="compact">). */
-.analytics-v3__kpi-tile,
-.risk-metrics-row__tile {
-  display: flex;
-  flex-direction: column;
-  gap: var(--qc-space-1);
-  padding: var(--qc-space-3) var(--qc-space-4);
-  background: var(--depth-raised);
-  border: 1px solid var(--line-hairline);
-  border-radius: 2px;
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  min-width: 0;
-}
-
-.analytics-v3__kpi-tile-label,
-.risk-metrics-row__tile-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--ink-soft);
-  font-family: var(--type-mono);
-  font-size: var(--type-caption);
-  font-weight: 600; /* D2.E — label KPI au barème D2 (était 500). */
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.analytics-v3__kpi-tile-value,
-.risk-metrics-row__tile-value {
-  color: var(--ink-pure);
-  font-family: var(--type-mono);
-  font-size: var(--type-display);
-  /* D2.E — parité KPI : 34px (--type-display) / 700 comme Dashboard (était 600). */
-  font-weight: 700;
-  font-variant-numeric: tabular-nums slashed-zero;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.analytics-v3__kpi-tile-value--up,
-.risk-metrics-row__tile-value--up {
-  color: var(--pnl-up);
-}
-.analytics-v3__kpi-tile-value--down,
-.risk-metrics-row__tile-value--down {
-  color: var(--pnl-down);
-}
-.analytics-v3__kpi-tile-value--neutral,
-.risk-metrics-row__tile-value--neutral {
-  color: var(--ink-pure);
-}
+/* 2.B — .analytics-v3__kpi-tile* + .risk-metrics-row__tile* RETIRÉS :
+   les 10 KPI vivent désormais dans le bandeau de commandement
+   (cellules .pf-c, pages-analytics.css) et RiskMetricsRow est supprimé.
+*/
 
 /* ═══════════════════════════════════════════════════════════════
    TILT METER
@@ -3898,33 +3824,8 @@
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   RISK METRICS ROW
-   ═══════════════════════════════════════════════════════════════ */
-.risk-metrics-row {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: var(--qc-space-3);
-}
-
-@media (max-width: 1200px) {
-  .risk-metrics-row {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
-  .risk-metrics-row {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.risk-metrics__infinity {
-  color: var(--profit-text);
-  font-family: var(--qc-font-mono);
-  font-size: 14px;
-  font-weight: var(--fw-bold);
-}
+/* 2.B — bloc RISK METRICS ROW (.risk-metrics-row + .risk-metrics__infinity)
+   RETIRÉ : RiskMetricsRow.jsx supprimé, 10 KPI fondus dans le bandeau. */
 
 /* ═══════════════════════════════════════════════════════════════
    DASHBOARD v3 LAYOUT — bento rows with responsive adaptation
