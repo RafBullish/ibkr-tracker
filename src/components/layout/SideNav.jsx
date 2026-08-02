@@ -40,7 +40,6 @@ import {
 import Tooltip from '../ui/Tooltip';
 import { useOpenPositions, useClosedTrades } from '../../store/useStore';
 import { computeMarketPhase } from '../../utils/marketPhase';
-import { FEATURE_GREEK_CENTER } from '../../constants/featureFlags';
 
 // Groupes de navigation (regroupement 1.B.2 conservé, titres morts en
 // 1.S — groupes silencieux). Labels UNIFIÉS EN FRANÇAIS (dette №10).
@@ -49,6 +48,7 @@ import { FEATURE_GREEK_CENTER } from '../../constants/featureFlags';
 // Vérité ⌘9 (dette №3) : ⌘9 cible /settings/import, l'entrée Réglages
 // (clic → /settings/general) n'affiche donc AUCUNE touche.
 // `witness` = clé du témoin d'état (D3 « Marge vive »).
+// Greeks (⌘4) = citoyen PERMANENT depuis 2.B (flag GREEK_CENTER retiré).
 const GROUPS = [
   {
     title: 'OVERVIEW',
@@ -64,7 +64,7 @@ const GROUPS = [
     items: [
       { label: 'Positions', path: '/trading/positions', shortcut: '⌘2', icon: Layers, witness: 'positions' },
       { label: 'Historique', path: '/trading/history', shortcut: '⌘3', icon: History, witness: 'closedToday' },
-      { label: 'Greeks', path: '/trading/greeks', shortcut: '⌘4', icon: Sigma, flag: 'GREEK_CENTER' },
+      { label: 'Greeks', path: '/trading/greeks', shortcut: '⌘4', icon: Sigma },
     ],
   },
   {
@@ -267,10 +267,7 @@ export default function SideNav({ collapsed, onToggle, onOpenCommand }) {
       {/* Navigation — groupes SILENCIEUX (hairlines, sans titres). */}
       <nav className="side-nav__nav" aria-label="Navigation principale">
         {GROUPS.map((group, gi) => {
-          const items = group.items.filter(
-            (i) => !i.flag || (i.flag === 'GREEK_CENTER' && FEATURE_GREEK_CENTER)
-          );
-          if (items.length === 0) return null;
+          const items = group.items;
           return (
             <div className="side-nav__group" key={group.title}>
               {gi > 0 && <div className="side-nav__group-rule" aria-hidden="true" />}

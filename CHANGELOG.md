@@ -6,6 +6,61 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0-rc.11] — 2026-08-02
+
+**Brique 2.B — Analytiques (Greeks · Analytics).** Les deux dernières
+grandes pages pré-Obsidienne passent au langage cockpit v1.0 : bandeaux
+de commandement, héros/étages au système Obsidienne, loi de couleur
+appliquée aux ratios. Deux mensonges tués, une heatmap réparée.
+
+### Ajouté
+- **Greeks — bandeau de commandement** (`.greeks-command`, cadre cockpit
+  `.lh-final`) : 5 cellules-MONDE (OPTIONS · Δ NET · Γ NET · Θ/JOUR · ν NET),
+  valeurs 34 px, TickValue — TOUTES NEUTRES (aucun argent réel sur la page ;
+  un Greek signé n'est pas une perte).
+- **Greeks — héros Projection Theta** pleine largeur : `ThetaDecayProjection`
+  recomposé en Recharts Obsidienne (barres quotidiennes NEUTRES acier + cumul
+  AMBRE = seule série ambre de l'écran, ObsidienneTooltip, animation au premier
+  montage), pied de stats PAR JOUR · CUMUL 7 J · CUMUL 30 J.
+- **Greeks — table par position** au craft v1.0 (moteur maison : rangées à
+  grille propre + hover de ligne, cellules 20/mono 600, rowHeight 47).
+- **Greeks — citoyen permanent** : flag `VITE_FEATURE_GREEK_CENTER` retiré,
+  route + entrée nav + ⌘4 inconditionnels.
+- **Analytics — bandeau de commandement** (`.analytics-command`) : 10 KPI en
+  2 rangées de cellules-MONDE 34 px, caveat d'honnêteté « préliminaire ·
+  échantillon < 1 an ».
+- **Analytics — étage RYTHME & RÉPARTITION** : un panneau cockpit, 3 zones
+  aux rails (P&L par jour de semaine OBS · Répartition G/P donut compact ·
+  Breakdown par stratégie), DayChart migré ObsidienneTooltip.
+- **pages-analytics.css** créée (bandeau + étage), importée avant les v1-*.
+
+### Modifié
+- **LOI DE COULEUR — ratios NEUTRES** : sur Analytics, Sharpe / Sortino /
+  Calmar / Profit Factor / Omega / Kelly % / Win Rate / Expectancy R passent en
+  encre neutre (un ratio n'est pas de l'argent). Seul MAX DD $ (perte réelle)
+  reste toné. Breakdown : chips TAG neutres, Win % neutre, P&L / Best / Worst
+  tonés par signe.
+- **Donut Vega** : gradations ACIER neutres (ex-slice ambre retiré).
+- **Heatmap P&L annuelle RÉPARÉE** (`PnLCalendarHeatmap`, partagée Analytics +
+  Calendar) : les tokens `--hm-pos/neg-*` n'avaient jamais été définis →
+  cellules transparentes (illisible). Échelle divergente en aplats OBS
+  désaturés (rgba) + ghost neutre, labels 9-10 px → 11-12 px, cellules 14 px,
+  toggle Année/Mois à l'anatomie chip validée. Calendar en hérite
+  (non-régression prouvée).
+- **Greeks — icône de titre Σ ambre** (parité chrome 2.A).
+
+### Supprimé
+- **GreekEvolutionChart** (mock aléatoire 30 j — feature fantôme) et
+  **IVRankHistogram** (usine IV Rank jamais construite) : un cockpit ne ment
+  pas.
+- **Colonne RANK** de la table Greeks (IV Rank sans source réelle).
+- **RiskMetricsRow** (fondu dans le bandeau Analytics).
+- `featureFlags.js`, `GREEKS_PHASE`, et la peau CSS morte `.greek-evo*` /
+  `.iv-rank*` / géométrie `.theta-decay__bars/__day` (dont un fusil chargé
+  color-law `[data-tone=profit/loss]` sur le theta).
+
+---
+
 ## [1.0.0-rc.10] — 2026-08-02
 
 **Brique 2.A — Tables (Positions · History), ouverture de l'Étape 2.**

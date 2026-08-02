@@ -9,9 +9,11 @@
 //      entire calendar year. Monday-first; weekend rows greyed.
 //      Month boundaries drawn as subtle vertical dividers.
 //
-//  Both modes share the divergent colour scale via --hm-pos-{0..4}
-//  and --hm-neg-{0..4} tokens, scaled relative to the *visible*
-//  maxAbs P&L for the selected window.
+//  Both modes share the divergent colour scale (2.B) : aplats OBS
+//  désaturés en rgba() — vert #10B981 / rouge #EF4444 à alpha gradué
+//  (HM_ALPHA), relatif au maxAbs P&L *visible* de la fenêtre. Cellule
+//  sans donnée → ghost neutre discret. (Les ex-tokens --hm-pos/neg-*
+//  n'avaient jamais été définis → cellules transparentes ; supprimés.)
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo, useState } from 'react';
@@ -48,12 +50,20 @@ function buildMonthGrid(year, month) {
   return weeks;
 }
 
-// Maps a P&L value to one of the 5-band CSS custom properties
+// 2.B — échelle divergente en aplats DÉSATURÉS sans glow (P&L réalisé par
+// unité = exception chartée, DA §5). Les tokens --hm-pos/neg-{0..4}
+// n'avaient JAMAIS été définis → cellules transparentes (heatmap
+// illisible). On rend ici des rgba OBS (up #10B981 / down #EF4444) à
+// alpha gradué. Cellule sans donnée → ghost neutre discret (grille
+// fantôme, pas un trou). Partagé Analytics + Calendar.
+const HM_GHOST = 'rgba(255,255,255,0.035)';
+const HM_ALPHA = [0.16, 0.32, 0.5, 0.68, 0.85];
 function tokenForPnl(pnl, maxAbs) {
-  if (pnl == null || maxAbs === 0) return 'var(--surface-3)';
+  if (pnl == null || maxAbs === 0) return HM_GHOST;
   const ratio = Math.abs(pnl) / maxAbs;
   const band = ratio <= 0.2 ? 0 : ratio <= 0.4 ? 1 : ratio <= 0.6 ? 2 : ratio <= 0.8 ? 3 : 4;
-  return pnl >= 0 ? `var(--hm-pos-${band})` : `var(--hm-neg-${band})`;
+  const rgb = pnl >= 0 ? '16, 185, 129' : '239, 68, 68';
+  return `rgba(${rgb}, ${HM_ALPHA[band]})`;
 }
 
 function formatShortPnl(pnl, currency = 'USD') {

@@ -10,7 +10,6 @@ import { useFxAutoRefresh } from './hooks/useFxAutoRefresh';
 import { useFxLiveSync } from './hooks/useFxLiveSync';
 import FxStaleBanner from './components/fx/FxStaleBanner';
 import FxInvalidBanner from './components/fx/FxInvalidBanner';
-import { FEATURE_GREEK_CENTER } from './constants/featureFlags';
 import Dashboard from './pages/Dashboard';
 import PreMarketBriefing from './pages/PreMarketBriefing';
 import Positions from './pages/trading/Positions';
@@ -65,18 +64,16 @@ export default function App() {
                   </ErrorBoundary>
                 }
               />
-              {FEATURE_GREEK_CENTER && (
-                <Route
-                  path="/trading/greeks"
-                  element={
-                    <ErrorBoundary>
-                      <Suspense fallback={<Loader />}>
-                        <Greeks />
-                      </Suspense>
-                    </ErrorBoundary>
-                  }
-                />
-              )}
+              <Route
+                path="/trading/greeks"
+                element={
+                  <ErrorBoundary>
+                    <Suspense fallback={<Loader />}>
+                      <Greeks />
+                    </Suspense>
+                  </ErrorBoundary>
+                }
+              />
               <Route
                 path="/insights/analytics"
                 element={

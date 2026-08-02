@@ -2,9 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { MoreHorizontal, Sunrise, X } from 'lucide-react';
 import Icons from '../ui/Icons';
-import { FEATURE_GREEK_CENTER } from '../../constants/featureFlags';
-
-const GREEKS_PHASE = 3;
 
 // Greeks glyph — mono "Σ" (lucide-react has no sigma)
 const SigmaIcon = ({ size = 20 }) => (
@@ -36,9 +33,7 @@ const mainTabs = [
     icon: 'trending',
     ready: true,
   },
-  ...(FEATURE_GREEK_CENTER
-    ? [{ key: 'greeks', path: '/trading/greeks', label: 'Greeks', icon: 'sigma', ready: true }]
-    : []),
+  { key: 'greeks', path: '/trading/greeks', label: 'Greeks', icon: 'sigma', ready: true },
   { key: 'calendar', path: '/insights/calendar', label: 'Calendrier', icon: 'cal', ready: true },
 ];
 
@@ -112,7 +107,7 @@ export default function BottomNav() {
 
   const handleNav = (tab) => {
     if (tab.ready === false) {
-      setToast(`${tab.label} arrive en Phase ${GREEKS_PHASE}`);
+      setToast(`${tab.label} — bientôt disponible`);
       return;
     }
     navigate(tab.path);

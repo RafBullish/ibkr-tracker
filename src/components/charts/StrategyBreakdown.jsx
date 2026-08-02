@@ -1,28 +1,23 @@
 // ═══════════════════════════════════════════════════════════════
-//  STRATEGY BREAKDOWN v3.0 « Midnight Terminal » (P6-27)
+//  STRATEGY BREAKDOWN — craft cockpit (brique 2.B)
 //
-//  Refonte du composant legacy dashboard/StrategyBreakdown. Table
-//  dense listant la performance par tag de stratégie (Sniper OTM,
-//  Suivi plan, FOMO, Revenge, etc.) renseigné via AddTradeModal.
+//  Table dense de la performance par tag de stratégie (Sniper OTM,
+//  Suivi plan, FOMO, Revenge, …), renseigné via AddTradeModal. Rendue
+//  dans l'étage RYTHME & RÉPARTITION d'Analytics (le titre de zone est
+//  porté par l'étage — le composant ne rend que la table).
 //
-//  Colonnes : Stratégie · Trades · Win% · Avg R · Net P&L · Best · Worst
+//  Colonnes : Tag · Trades · Win % · Net P&L · Best · Worst
 //
-//  Tones colorés par signal (profit/loss) sur Net P&L et Win%.
-//  Trades sans tag → bucket "Sans tag" en bas de table.
+//  LOI DE COULEUR (2.B) : chips TAG NEUTRES · Win % NEUTRE (un taux
+//  n'est pas de l'argent) · Net P&L / Best / Worst TONÉS PAR SIGNE
+//  (argent réel). Ligne « Sans tag » honnête, registre neutre.
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo } from 'react';
 import { tradePnlUsd } from '../../utils/calculations';
 import EmptyState from '../ui/EmptyState';
 import StatusBadge from '../ui/StatusBadge';
-import InfoTooltip from '../ui/InfoTooltip';
 import { Layers } from 'lucide-react';
-
-const TOOLTIP = {
-  title: 'Strategy Breakdown',
-  body: "Performance agrégée par tag de stratégie (renseigné lors de l'ajout manuel d'un trade). Les trades sans tag tombent dans le bucket « Sans tag ».",
-  example: 'Sniper OTM · 12 trades · 75% WR · +$4 200 Net → stratégie rentable à conserver.',
-};
 
 const SB_USD_FMT_0D = new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 });
 function fmtCurrency(v) {
@@ -33,6 +28,10 @@ function fmtCurrency(v) {
 function fmtPct(v) {
   if (v == null || !Number.isFinite(v)) return '—';
   return `${v.toFixed(0)}%`;
+}
+// Tonalité loi de couleur : suit le SIGNE de l'argent réel.
+function moneyTone(v) {
+  return v > 0 ? 'profit' : v < 0 ? 'loss' : 'neutral';
 }
 
 function buildBreakdown(closedTrades, lr) {
@@ -48,7 +47,6 @@ function buildBreakdown(closedTrades, lr) {
         pnl: 0,
         best: -Infinity,
         worst: Infinity,
-        rMultiples: [],
       });
     }
     const bucket = buckets.get(tag);
@@ -64,12 +62,11 @@ function buildBreakdown(closedTrades, lr) {
   const rows = Array.from(buckets.values()).map((b) => ({
     ...b,
     winRate: b.count ? (b.wins / b.count) * 100 : 0,
-    avgPnl: b.count ? b.pnl / b.count : 0,
     best: Number.isFinite(b.best) ? b.best : 0,
     worst: Number.isFinite(b.worst) ? b.worst : 0,
   }));
 
-  // Sort by absolute P&L impact descending, "Sans tag" forced last
+  // Impact P&L absolu décroissant, « Sans tag » forcé en dernier.
   rows.sort((a, b) => {
     if (a.tag === 'Sans tag') return 1;
     if (b.tag === 'Sans tag') return -1;
@@ -81,6 +78,7 @@ function buildBreakdown(closedTrades, lr) {
 
 export default function StrategyBreakdown({ closedTrades = [], liveRate = 1 }) {
   const rows = useMemo(() => buildBreakdown(closedTrades, liveRate), [closedTrades, liveRate]);
+  const untagged = rows.find((r) => r.tag === 'Sans tag');
 
   if (!rows.length) {
     return (
@@ -88,23 +86,19 @@ export default function StrategyBreakdown({ closedTrades = [], liveRate = 1 }) {
         size="compact"
         icon={Layers}
         title="Pas encore de breakdown"
-        description="Tague tes trades (Sniper OTM, Suivi plan, etc.) via la modal « Ajouter » sur Historique pour voir leur performance par stratégie."
+        description="Tague tes trades (Sniper OTM, Suivi plan, etc.) via la modal « Ajouter » sur Historique."
       />
     );
   }
 
   return (
     <div className="strategy-breakdown">
-      <div className="strategy-breakdown__head">
-        <span className="uppercase-label">Stratégie</span>
-        <InfoTooltip content={TOOLTIP} size={12} />
-      </div>
       <div
         className="strategy-breakdown__table"
         role="table"
         aria-label="Performance par stratégie"
       >
-        <div className="strategy-breakdown__row strategy-breakdown__row--head">
+        <div className="strategy-breakdown__row strategy-breakdown__row--head" role="row">
           <span className="uppercase-label">Tag</span>
           <span className="uppercase-label" style={{ textAlign: 'right' }}>
             Trades
@@ -123,55 +117,52 @@ export default function StrategyBreakdown({ closedTrades = [], liveRate = 1 }) {
           </span>
         </div>
         {rows.map((r) => {
-          const pnlTone = r.pnl > 0 ? 'profit' : r.pnl < 0 ? 'loss' : 'neutral';
-          const wrTone = r.winRate >= 60 ? 'profit' : r.winRate < 40 ? 'loss' : 'neutral';
           const isUntagged = r.tag === 'Sans tag';
           return (
             <div
               key={r.tag}
               className="strategy-breakdown__row"
               data-untagged={isUntagged || undefined}
+              role="row"
             >
               <span>
-                <StatusBadge
-                  variant={
-                    isUntagged
-                      ? 'na'
-                      : pnlTone === 'profit'
-                        ? 'pass'
-                        : pnlTone === 'loss'
-                          ? 'fail'
-                          : 'accent'
-                  }
-                  label={r.tag}
-                  size="xs"
-                />
+                {/* Chip TAG NEUTRE (le tag n'est pas un signal P&L). */}
+                <StatusBadge variant={isUntagged ? 'na' : 'neutral'} label={r.tag} size="xs" />
               </span>
               <span className="mono" style={{ textAlign: 'right' }}>
                 {r.count}
               </span>
+              {/* Win % NEUTRE — un taux n'est pas de l'argent (§4.6). */}
               <span
-                className={`mono text-${wrTone}`}
+                className="mono"
                 style={{ textAlign: 'right', fontWeight: 'var(--fw-semibold)' }}
               >
                 {fmtPct(r.winRate)}
               </span>
+              {/* Argent réel — toné par signe. */}
               <span
-                className={`mono text-${pnlTone}`}
+                className={`mono text-${moneyTone(r.pnl)}`}
                 style={{ textAlign: 'right', fontWeight: 'var(--fw-bold)' }}
               >
                 {fmtCurrency(r.pnl)}
               </span>
-              <span className="mono text-profit" style={{ textAlign: 'right' }}>
+              <span className={`mono text-${moneyTone(r.best)}`} style={{ textAlign: 'right' }}>
                 {fmtCurrency(r.best)}
               </span>
-              <span className="mono text-loss" style={{ textAlign: 'right' }}>
+              <span className={`mono text-${moneyTone(r.worst)}`} style={{ textAlign: 'right' }}>
                 {fmtCurrency(r.worst)}
               </span>
             </div>
           );
         })}
       </div>
+      {/* « N non-taggués » au registre neutre (parité 2.A-c1). */}
+      {untagged && (
+        <p className="strategy-breakdown__untagged-note">
+          {untagged.count} trade{untagged.count > 1 ? 's' : ''} non-tagué
+          {untagged.count > 1 ? 's' : ''} — tag-les pour affiner l'attribution.
+        </p>
+      )}
     </div>
   );
 }

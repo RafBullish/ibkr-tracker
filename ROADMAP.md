@@ -115,7 +115,33 @@ Objectif : **tag v1.0.0 au 01.09.2026**.
     3. Seuil TIME_STOP hérité (≥5 j sans +15 %) sature ATTENTION en
        usage réel (4/5 CRITICAL). Doctrine à trancher (Rafael +
        architecte) en É3 — aucun changement d'ici là.
-- **2.B** — Analytiques (Greeks · Analytics · Insights).
+- **2.B ✅ (1.0.0-rc.11, 02.08.2026)** — Analytiques (Greeks · Analytics)
+  au langage cockpit v1.0. **Greeks** : bandeau de commandement 5
+  cellules-MONDE (OPTIONS · Δ · Γ · Θ/jour · ν) TOUTES NEUTRES + héros
+  Projection Theta pleine largeur (barres neutres acier + cumul AMBRE =
+  seule série ambre, ObsidienneTooltip) + table par position au craft
+  (moteur maison, hover de ligne, colonne RANK morte) + donut Vega ACIER
+  + **citoyen permanent** (flag GREEK_CENTER retiré, route/nav/⌘4
+  inconditionnels, `featureFlags.js` mort). **Analytics** : bandeau 10
+  KPI en 2 rangées, **ratios NEUTRES** (loi §4.6 — seul Max DD $ toné),
+  caveat « échantillon < 1 an », heatmap annuelle héroïne + étage rythme
+  & répartition (DayChart OBS · donut compact · breakdown chips neutres).
+  **Morts (features fantômes)** : GreekEvolutionChart (mock aléatoire),
+  IVRankHistogram (usine IV Rank jamais construite), RiskMetricsRow.
+  **Heatmap réparée** (`PnLCalendarHeatmap`, partagée Calendar) : tokens
+  `--hm-*` jamais définis → aplats rgba OBS désaturés, non-régression
+  Calendar prouvée.
+  - **Résidus consignés (post-1.0)** :
+    1. **Pipeline IV Rank + affichage `qc:ivHistory`** — colonne RANK et
+       IVRankHistogram tués (features fantômes) ; la vraie usine de
+       données IV Rank reste **non construite**. À rouvrir seulement si
+       source fiable. La série `qc:ivHistory` continue d'être COLLECTÉE
+       par la Chain (intouchée), aucun affichage.
+    2. **Badge STK cyan** — non implémenté ; la table Greeks reste
+       option-only (filtre `as==='Option'`). À tracer → 2.C/É3.
+    3. `.greeks-agg*` (~175 l, `v4-dashboard.css`) — dead-code
+       **pré-existant** (0 consommateur), hors scope 2.B → session
+       dead-code dédiée.
 - **2.C** — Workflow (Chain · PreMarket · Calendar · Journal).
 - **2.D** — Utilitaires (Import · Settings · API).
 

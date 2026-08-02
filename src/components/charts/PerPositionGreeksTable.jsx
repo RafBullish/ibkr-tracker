@@ -1,9 +1,16 @@
 // ═══════════════════════════════════════════════════════════════
-//  PER POSITION GREEKS TABLE v3.0
+//  PER POSITION GREEKS TABLE — moteur maison, craft v1.0 (brique 2.B)
 //
-//  Dense non-virtualized table listing each open option position
-//  with its individual Greeks + IV + IV Rank + USD exposure.
-//  No virtualization (typically < 20 open positions).
+//  Table dense non virtualisée listant chaque position optionnelle
+//  ouverte avec ses Greeks individuels + IV + exposition $. Moteur
+//  MAISON conservé (pas de migration ui/DataTable) mais monté au
+//  langage cockpit : rangées à grille propre (hover de ligne),
+//  en-têtes micro-caps, cellules mono tabulaires, décimales par
+//  grandeur, alignements au cordeau.
+//
+//  Loi de couleur : Δ/Γ/Θ/ν TOUS neutres (un Greek signé n'est pas
+//  une perte). EXPOSITION $ = notionnel hypothétique → NEUTRE aussi.
+//  Colonne RANK retirée (IV Rank n'a jamais eu de vraie source — 2.B).
 // ═══════════════════════════════════════════════════════════════
 
 import EmptyState from '../ui/EmptyState';
@@ -27,6 +34,18 @@ function fmtPct(v) {
   return `${Math.round(v)}%`;
 }
 
+// Colonnes (ordre) — RANK retirée en 2.B (usine IV Rank jamais construite).
+const HEADERS = [
+  { key: 'ticker', label: 'Ticker', align: 'left' },
+  { key: 'type', label: 'Type', align: 'left' },
+  { key: 'delta', label: 'Δ', align: 'right' },
+  { key: 'gamma', label: 'Γ', align: 'right' },
+  { key: 'theta', label: 'Θ', align: 'right' },
+  { key: 'vega', label: 'ν', align: 'right' },
+  { key: 'iv', label: 'IV', align: 'right' },
+  { key: 'exposure', label: 'Exposition', align: 'right' },
+];
+
 export default function PerPositionGreeksTable({ rows = [], className }) {
   if (!rows.length) {
     return (
@@ -41,70 +60,44 @@ export default function PerPositionGreeksTable({ rows = [], className }) {
 
   return (
     <div className={['pos-greeks-table', className].filter(Boolean).join(' ')}>
-      <div className="pos-greeks-table__head">
-        <span className="uppercase-label" style={{ textAlign: 'left' }}>
-          Ticker
-        </span>
-        <span className="uppercase-label">Type</span>
-        <span className="uppercase-label" style={{ textAlign: 'right' }}>
-          Δ
-        </span>
-        <span className="uppercase-label" style={{ textAlign: 'right' }}>
-          Γ
-        </span>
-        <span className="uppercase-label" style={{ textAlign: 'right' }}>
-          Θ
-        </span>
-        <span className="uppercase-label" style={{ textAlign: 'right' }}>
-          ν
-        </span>
-        <span className="uppercase-label" style={{ textAlign: 'right' }}>
-          IV
-        </span>
-        <span className="uppercase-label" style={{ textAlign: 'right' }}>
-          Rank
-        </span>
-        <span className="uppercase-label" style={{ textAlign: 'right' }}>
-          Exposition
-        </span>
+      <div className="pos-greeks-table__head" role="row">
+        {HEADERS.map((h) => (
+          <span key={h.key} className="pos-greeks-table__h" data-align={h.align}>
+            {h.label}
+          </span>
+        ))}
       </div>
+
       {rows.map((r, i) => (
-        <div key={r.id || i} className="pos-greeks-table__row">
-          <span className="mono" style={{ fontWeight: 'var(--fw-semibold)' }}>
+        <div key={r.id || i} className="pos-greeks-table__row" role="row">
+          <span className="pos-greeks-table__c mono pos-greeks-table__ticker" data-align="left">
             {r.ticker}
           </span>
-          <StatusBadge variant="neutral" label={r.type} size="xs" />
-          <span className="mono" style={{ textAlign: 'right' }}>
+          <span className="pos-greeks-table__c" data-align="left">
+            <StatusBadge variant="neutral" label={r.type} size="xs" />
+          </span>
+          {/* Δ/Γ/Θ/ν NEUTRES — un Greek signé n'est pas une perte. */}
+          <span className="pos-greeks-table__c mono" data-align="right">
             {fmtNum(r.delta)}
           </span>
-          <span className="mono" style={{ textAlign: 'right' }}>
+          <span className="pos-greeks-table__c mono" data-align="right">
             {fmtNum(r.gamma, 3)}
           </span>
-          {/* Θ NEUTRE : plus de rouge sur le signe — un Greek signé n'est
-              pas une perte. Hérite ink-pure comme Δ/Γ/ν. */}
-          <span className="mono" style={{ textAlign: 'right' }}>
+          <span className="pos-greeks-table__c mono" data-align="right">
             {fmtNum(r.theta)}
           </span>
-          <span className="mono" style={{ textAlign: 'right' }}>
+          <span className="pos-greeks-table__c mono" data-align="right">
             {fmtNum(r.vega)}
           </span>
           <span
-            className="mono"
-            style={{
-              textAlign: 'right',
-              color: 'var(--text-tertiary)',
-              opacity: r.ivEstimated ? 0.6 : 1,
-              fontStyle: r.ivEstimated ? 'italic' : 'normal',
-            }}
+            className={`pos-greeks-table__c mono pos-greeks-table__iv${r.ivEstimated ? ' pos-iv-est' : ''}`}
+            data-align="right"
             title={r.ivEstimated ? 'IV estimée (mark hors plage no-arbitrage, défaut σ=30%)' : undefined}
           >
             {r.ivEstimated ? '~' : ''}
             {fmtPct(r.iv ? r.iv * 100 : r.iv)}
           </span>
-          <span className="mono" style={{ textAlign: 'right', color: 'var(--text-tertiary)' }}>
-            {fmtPct(r.ivRank)}
-          </span>
-          <span className="mono" style={{ textAlign: 'right' }}>
+          <span className="pos-greeks-table__c mono" data-align="right">
             {fmtUsd(r.exposure)}
           </span>
         </div>

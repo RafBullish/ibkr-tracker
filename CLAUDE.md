@@ -161,8 +161,21 @@ DataTable) + MAX LOSS NEUTRE (amendement 15.07 soldé) + « Σ Valeur
 mark » (§8) ; History = toolbar .lh-toggle + étage ANALYSE Obsidienne
 (ObsidienneTooltip unique, WinRateDonut OBS partagé avec Analytics,
 attribution scopée au sous-ensemble filtré). Chips actifs des toggles :
-ambre gardé (ViewToggle validé). Prochaine brique : **2.B —
-Analytiques (Greeks · Analytics · Insights).**
+ambre gardé (ViewToggle validé). Puis **2.B mergée (1.0.0-rc.11)** —
+Analytiques : /trading/greeks et /insights/analytics au langage cockpit.
+Bandeaux de commandement 34 px ; Greeks = OPTIONS·Δ·Γ·Θ/jour·ν TOUS
+NEUTRES (aucun argent réel sur la page) + héros Projection Theta (barres
+neutres acier + cumul AMBRE = seule série ambre) + table par position
+craft (colonne RANK morte) + donut Vega ACIER + **Greeks citoyen
+permanent** (flag GREEK_CENTER retiré, route/nav/⌘4 inconditionnels) ;
+Analytics = **10 KPI ratios NEUTRES** (LOI §4.6 : un ratio n'est pas de
+l'argent — seul Max DD $ toné) + caveat « échantillon < 1 an » + **heatmap
+annuelle RÉPARÉE** (tokens `--hm-*` jamais définis → aplats rgba OBS
+désaturés, partagée Calendar, non-régression prouvée) + étage rythme &
+répartition. **Morts (features fantômes)** : GreekEvolutionChart (mock
+aléatoire), IVRankHistogram (usine IV Rank jamais construite).
+ObsidienneTooltip sur les charts Recharts des deux pages. Prochaine
+brique : **2.C — Workflow (Chain · PreMarket · Calendar · Journal).**
 
 Repères S2 toujours en vigueur : KPI 44, cellules `.v3-table` 20 (rowHeight 47),
 plancher caption 17, strip 21/16/18, ticks charts plafonnés 14, héros 56/64

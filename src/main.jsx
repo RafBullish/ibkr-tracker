@@ -69,6 +69,10 @@ import './styles/pages-premarket.css';
 // porte uniquement le wrapper .dashboard-page + cibles canoniques neuves
 // (.dashboard-page__panel/__panel-head) pour les futures migrations.
 import './styles/pages-dashboard.css';
+// pages-analytics.css — page-vitrine /insights/analytics (brique 2.B). Créée :
+// la page n'avait pas de feuille dédiée (styles épars dans v3-components.css).
+// Scopée .analytics-v3 / .analytics-command / .analytics-rhythm. Avant les v1-*.
+import './styles/pages-analytics.css';
 // v1-dashboard.css — Dashboard ère produit v1.0 (brique 1.A) : base <1440
 // de la Ligne de commandement (.command-deck). Palier ≥1440 dans c3-hires.
 import './styles/v1-dashboard.css';

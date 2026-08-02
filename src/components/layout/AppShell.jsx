@@ -17,7 +17,7 @@
 //    ⌘B / Ctrl+B  → replier/déployer la SideNav (persisté
 //                   localStorage `qc:sidenav:collapsed`)
 //    ⌘1..9        → jump to nav workspace (1=DASH, 9=IMP)
-//                   ⌘4 = GRKS, no-op when FEATURE_GREEK_CENTER is off
+//                   ⌘4 = GRKS (Greeks — citoyen permanent depuis 2.B)
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect } from 'react';
@@ -32,7 +32,6 @@ import CheatsheetModal from '../ui/CheatsheetModal';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import useIbkrLive from '../../hooks/useIbkrLive';
 import { useIntradayNlvWriter } from '../../hooks/useIntradayNlv';
-import { FEATURE_GREEK_CENTER } from '../../constants/featureFlags';
 
 // Persistance du repli SideNav — pattern qc:* (PAS une slice du store).
 const SIDENAV_COLLAPSED_KEY = 'qc:sidenav:collapsed';
@@ -50,14 +49,14 @@ function readInitialCollapsed() {
 }
 
 // ⌘1..9 navigation map. Order matches CommandBar pills (NAV) so the
-// shortcut shown in tooltip aligns with what the keyboard does. When
-// FEATURE_GREEK_CENTER is off, ⌘4 is a no-op (the slot is reserved
-// to keep the rest of the mapping stable: ⌘5 still = CHN, etc.).
+// shortcut shown in tooltip aligns with what the keyboard does. ⌘4 =
+// Greeks (citoyen permanent depuis 2.B) ; le mapping ⌘1..9 historique
+// reste strictement intact.
 const NAV_PATHS = [
   '/dashboard',
   '/trading/positions',
   '/trading/history',
-  FEATURE_GREEK_CENTER ? '/trading/greeks' : null,
+  '/trading/greeks',
   '/trading/chain',
   '/insights/analytics',
   '/insights/calendar',
@@ -82,7 +81,7 @@ function SubNav({ pathname, navigate }) {
     tabs = [
       { path: '/trading/positions', label: 'Positions' },
       { path: '/trading/history', label: 'Historique' },
-      ...(FEATURE_GREEK_CENTER ? [{ path: '/trading/greeks', label: 'Greeks' }] : []),
+      { path: '/trading/greeks', label: 'Greeks' },
       { path: '/trading/chain', label: 'Options Live' },
     ];
   } else if (pathname === '/premarket') {

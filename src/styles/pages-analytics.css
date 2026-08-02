@@ -1,0 +1,262 @@
+/* ════════════════════════════════════════════════════════════════
+   PAGES-ANALYTICS.CSS — /insights/analytics au langage cockpit v1.0
+   (brique 2.B). CRÉÉ (la page n'avait pas de feuille dédiée ; ses
+   styles vivaient épars dans v3-components.css). Importé dans le bloc
+   pages-* de main.jsx, avant les v1-*.css.
+
+   Toutes les règles sont SCOPÉES à .analytics-v3 / .analytics-command
+   / .analytics-rhythm — n'affectent aucune autre page. Réutilise les
+   recettes v1.0 chargées plus tard : .lh-final (cadre cockpit), .pf-c
+   (cellule-MONDE), .mk-title (titre de zone), .obsidienne-chart.
+
+   LOI DE COULEUR 2.B (§4.6) : un RATIO n'est PAS de l'argent → Sharpe,
+   Sortino, Calmar, Profit Factor, Omega, Kelly %, Win Rate, Expectancy
+   en R = encre NEUTRE. Seuls les MONTANTS réels restent tonés (Max DD $
+   en perte, moyennes $ par signe, P&L par unité des charts).
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Surface de page ──────────────────────────────────────────── */
+.analytics-v3 {
+  background: var(--depth-void);
+  position: relative;
+  z-index: 1;
+}
+.analytics-v3 .page-title {
+  color: var(--ink-pure);
+}
+.analytics-v3 .page-title svg {
+  color: var(--accent);
+  opacity: 1;
+}
+.analytics-v3 .page-subtitle {
+  color: var(--ink-soft);
+}
+.analytics-v3__empty-panel {
+  max-width: 640px;
+  margin: 60px auto;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BANDEAU DE COMMANDEMENT — 10 KPI en 5×2 cellules-MONDE, valeurs
+   34 px (loi ratifiée 2.A). Hairlines verticales entre colonnes,
+   une hairline horizontale entre les 2 rangées.
+   ════════════════════════════════════════════════════════════════ */
+.analytics-command__grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+}
+.analytics-command__cell {
+  padding: 14px 18px 12px;
+  overflow: hidden;
+  border-top: 1px solid var(--line-hairline);
+  border-left: 1px solid var(--line-emphasis);
+}
+/* Colonnes 1 & 6 : pas de bord gauche externe. */
+.analytics-command__cell:nth-child(5n + 1) {
+  border-left: none;
+}
+/* Première rangée : pas de bord haut. */
+.analytics-command__cell:nth-child(-n + 5) {
+  border-top: none;
+}
+.analytics-command__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  line-height: 14px;
+  margin-bottom: 4px;
+}
+/* Valeur au registre display de page (34/700). Neutre par défaut ;
+   seul --loss (Max DD, argent réel) colore. */
+.analytics-command .pf-c__val {
+  font-size: var(--type-display, 34px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.analytics-command__meta {
+  margin-top: 2px;
+}
+/* Caveat d'honnêteté — méta de bandeau (échantillon < 1 an). */
+.analytics-command__caveat {
+  padding: 8px 18px;
+  border-top: 1px solid var(--line-hairline);
+  font-size: 12px;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  color: var(--ink-mute);
+}
+
+@media (max-width: 1280px) {
+  .analytics-command__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .analytics-command__cell {
+    border-left: 1px solid var(--line-emphasis);
+    border-top: 1px solid var(--line-hairline);
+  }
+  .analytics-command__cell:nth-child(3n + 1) {
+    border-left: none;
+  }
+  .analytics-command__cell:nth-child(-n + 3) {
+    border-top: none;
+  }
+}
+@media (max-width: 767px) {
+  .analytics-command__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .analytics-command__cell:nth-child(odd) {
+    border-left: none;
+  }
+  .analytics-command__cell:nth-child(even) {
+    border-left: 1px solid var(--line-emphasis);
+  }
+  .analytics-command__cell:nth-child(-n + 2) {
+    border-top: none;
+  }
+  .analytics-command__cell:nth-child(n + 3) {
+    border-top: 1px solid var(--line-hairline);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ÉTAGE RYTHME & RÉPARTITION — un panneau cockpit, 3 zones aux rails
+   verticaux (parité étage ANALYSE d'History).
+   ════════════════════════════════════════════════════════════════ */
+.analytics-rhythm__grid {
+  display: grid;
+  grid-template-columns: 1.5fr 0.85fr 1.65fr;
+}
+.analytics-rhythm__zone {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px 14px;
+  min-width: 0;
+  overflow: hidden;
+}
+.analytics-rhythm__zone + .analytics-rhythm__zone {
+  border-left: 1px solid var(--line-emphasis);
+}
+.analytics-rhythm__zone > .mk-title {
+  margin-bottom: 0;
+}
+.analytics-rhythm__strat-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Sous-titre de scope honnête (« 100 trades · tout l'historique »). */
+.analytics-rhythm__scope {
+  font-size: 11px;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.analytics-rhythm__chart {
+  height: 200px;
+  width: 100%;
+}
+
+/* Répartition G/P — donut compact (≤ un quart de largeur) + densité. */
+.analytics-rhythm__donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: 1;
+  min-height: 140px;
+}
+.analytics-rhythm__wl {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.analytics-rhythm__wl-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.analytics-rhythm__wl-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.analytics-rhythm__wl-dot--up {
+  background: var(--pnl-up);
+}
+.analytics-rhythm__wl-dot--down {
+  background: var(--pnl-down);
+}
+.analytics-rhythm__wl-label {
+  color: var(--ink-soft);
+}
+.analytics-rhythm__wl-val {
+  margin-left: auto;
+  color: var(--ink-pure);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--fw-semibold);
+}
+
+/* Breakdown par stratégie — craft resserré dans la zone (le cadre est
+   porté par l'étage ; le composant ne garde que sa table + note). */
+.analytics-rhythm .strategy-breakdown {
+  gap: 2px;
+}
+.analytics-rhythm .strategy-breakdown__table {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+.analytics-rhythm .strategy-breakdown__row {
+  grid-template-columns: minmax(92px, 1.5fr) 0.7fr 0.8fr 1.1fr 1fr 1fr;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--line-hairline);
+  font-size: 13px;
+}
+.analytics-rhythm .strategy-breakdown__row--head {
+  background: transparent;
+  border-bottom: 1px solid var(--line-emphasis);
+  padding: 0 0 4px;
+}
+.analytics-rhythm .strategy-breakdown__row:not(.strategy-breakdown__row--head):hover {
+  background: color-mix(in srgb, var(--ink-pure) 3%, transparent);
+}
+.analytics-rhythm .strategy-breakdown__row[data-untagged] {
+  background: transparent;
+  opacity: 0.72;
+}
+.strategy-breakdown__untagged-note {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--ink-mute);
+  line-height: 1.4;
+}
+
+/* Empilements mobiles. */
+@media (max-width: 1100px) {
+  .analytics-rhythm__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .analytics-rhythm__zone--strat {
+    grid-column: 1 / -1;
+    border-left: none;
+    border-top: 1px solid var(--line-emphasis);
+  }
+}
+@media (max-width: 767px) {
+  .analytics-rhythm__grid {
+    grid-template-columns: 1fr;
+  }
+  .analytics-rhythm__zone + .analytics-rhythm__zone {
+    border-left: none;
+    border-top: 1px solid var(--line-emphasis);
+  }
+}
