@@ -283,8 +283,9 @@
   }
 
   /* ══ GREEKS (densif 2.B) — /trading/greeks au langage cockpit.
-     Bandeau .greeks-command : valeurs .pf-c__val déjà à 34px (loi
-     ratifiée 2.A, cf. pages-greeks.css). Table maison .pos-greeks-table :
+     Bandeau .greeks-command : valeurs .pf-c__val au registre
+     --type-display (44px @≥1440, fallback 34 ; parité .pos-command 2.A,
+     cf. pages-greeks.css). Table maison .pos-greeks-table :
      cellules → 20px / mono 600, rangées → 47px (parité .v3-table). Le
      héros Theta + le donut Vega sont des charts Recharts → ticks cap 14.
      Résidus sous-plancher scopés .greeks-page : summary-label du héros
@@ -437,7 +438,8 @@
   }
 
   /* ══ ANALYTICS (densif 2.B) — /insights/analytics au langage cockpit.
-     Bandeau .analytics-command : valeurs .pf-c__val déjà 34px (loi 2.A).
+     Bandeau .analytics-command : valeurs .pf-c__val au registre
+     --type-display (44px @≥1440, fallback 34 ; parité .pos-command 2.A).
      Heatmap année : labels + cellules relevés à un plancher LISIBLE dans
      v3-components.css (les 9-10px MORTS — plus de différé B-final). Résidus
      scopés .analytics-v3 : status-badge__label (header « N trades » + chips

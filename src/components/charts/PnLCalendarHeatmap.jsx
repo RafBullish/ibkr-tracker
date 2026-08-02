@@ -9,9 +9,11 @@
 //      entire calendar year. Monday-first; weekend rows greyed.
 //      Month boundaries drawn as subtle vertical dividers.
 //
-//  Both modes share the divergent colour scale via --hm-pos-{0..4}
-//  and --hm-neg-{0..4} tokens, scaled relative to the *visible*
-//  maxAbs P&L for the selected window.
+//  Both modes share the divergent colour scale (2.B) : aplats OBS
+//  désaturés en rgba() — vert #10B981 / rouge #EF4444 à alpha gradué
+//  (HM_ALPHA), relatif au maxAbs P&L *visible* de la fenêtre. Cellule
+//  sans donnée → ghost neutre discret. (Les ex-tokens --hm-pos/neg-*
+//  n'avaient jamais été définis → cellules transparentes ; supprimés.)
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo, useState } from 'react';

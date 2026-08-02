@@ -22,7 +22,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RTooltip } from 'recharts';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Sigma } from 'lucide-react';
 import { useOpenPositions } from '../../store/useStore';
 import { computeSecondOrderGreeks } from '../../utils/calculations';
 import { aggregateGreeks } from '../../utils/greeks';
@@ -223,7 +223,10 @@ export default function Greeks() {
     >
       <motion.div variants={RISE_TILE_VARIANTS} className="page-header">
         <div>
-          <h1 className="page-title">Options Command Center</h1>
+          <h1 className="page-title">
+            <Sigma size={18} aria-hidden="true" />
+            Options Command Center
+          </h1>
           <p className="page-subtitle">
             Ton exposition grecque, et ce que le temps va te coûter — Δ·Γ·Θ·ν sur le
             portefeuille d'options ouvertes.

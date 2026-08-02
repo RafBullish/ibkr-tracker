@@ -29,6 +29,14 @@
 }
 .greeks-page .page-title {
   color: var(--ink-pure);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* Icône de titre en amber (identité de page — parité 2.A). */
+.greeks-page .page-title svg {
+  color: var(--accent);
+  opacity: 1;
 }
 .greeks-page .page-subtitle {
   color: var(--ink-soft);

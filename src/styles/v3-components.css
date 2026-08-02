@@ -1676,55 +1676,16 @@
   opacity: 0.85;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   GREEK EVOLUTION CHART
-   ═══════════════════════════════════════════════════════════════ */
-.greek-evo {
-  display: flex;
-  flex-direction: column;
-  gap: var(--qc-space-3);
-}
-
-.greek-evo__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--qc-space-2);
-}
-
-.greek-evo__chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: transparent;
-  border: 1px solid var(--qc-border-default);
-  border-radius: var(--radius-full);
-  color: var(--qc-text-tertiary);
-  font-family: var(--qc-font-mono);
-  font-size: 11px;
-  font-weight: var(--fw-medium);
-  cursor: pointer;
-  opacity: 0.55;
-  transition: all var(--duration-fast) var(--ease-out);
-}
-
-.greek-evo__chip[data-active] {
-  opacity: 1;
-  border-color: var(--chip-color);
-  color: var(--qc-text-primary);
-  background: color-mix(in srgb, var(--chip-color) 10%, transparent);
-}
-
-.greek-evo__chip-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--chip-color);
-  flex-shrink: 0;
-}
+/* 2.B — bloc GREEK EVOLUTION CHART (.greek-evo*) RETIRÉ : composant
+   GreekEvolutionChart supprimé (mock aléatoire = feature fantôme). */
 
 /* ═══════════════════════════════════════════════════════════════
-   THETA DECAY PROJECTION
+   THETA DECAY PROJECTION — base structurelle conservée (le nouveau
+   composant Recharts consomme .theta-decay/__head/__summary/
+   __summary-label/__summary-value ; peau vivante dans pages-greeks.css).
+   2.B : géométrie de barres CSS (__bars/__day/__bar/__day-label) +
+   variantes tonées perte/gain RETIRÉES (barres désormais Recharts ;
+   theta NEUTRE — plus de fusil chargé color-law).
    ═══════════════════════════════════════════════════════════════ */
 .theta-decay {
   display: flex;
@@ -1769,154 +1730,11 @@
   font-size: var(--fs-lg);
   font-weight: var(--fw-bold);
 }
-.theta-decay__summary-value[data-tone="profit"] {
-  color: var(--profit-text);
-}
-.theta-decay__summary-value[data-tone="loss"] {
-  color: var(--loss-text);
-}
+/* 2.B — __summary-value[data-tone=profit/loss] + toute la géométrie de
+   barres CSS RETIRÉES (theta NEUTRE ; barres passées en Recharts). */
 
-.theta-decay__bars {
-  display: grid;
-  grid-auto-columns: minmax(6px, 1fr);
-  grid-auto-flow: column;
-  gap: 2px;
-  align-items: flex-end;
-  height: 120px;
-  padding: var(--qc-space-2) 0;
-  border-bottom: 1px solid var(--qc-border-subtle);
-}
-
-.theta-decay__day {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  height: 100%;
-  min-height: 6px;
-}
-
-.theta-decay__bar {
-  width: 100%;
-  border-radius: 2px 2px 0 0;
-  transition: height 400ms var(--ease-out);
-}
-.theta-decay__bar[data-tone="loss"] {
-  background: var(--qc-loss);
-  opacity: 0.7;
-}
-.theta-decay__bar[data-tone="profit"] {
-  background: var(--qc-profit);
-  opacity: 0.7;
-}
-
-.theta-decay__day-label {
-  position: absolute;
-  bottom: -18px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: var(--qc-text-tertiary);
-  font-size: 9px;
-  font-family: var(--qc-font-mono);
-  white-space: nowrap;
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   IV RANK HISTOGRAM
-   ═══════════════════════════════════════════════════════════════ */
-.iv-rank {
-  display: flex;
-  flex-direction: column;
-  gap: var(--qc-space-3);
-  width: 100%;
-}
-
-.iv-rank__head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--qc-text-secondary);
-}
-
-.iv-rank__chart {
-  position: relative;
-  display: flex;
-  gap: var(--qc-space-3);
-  height: 180px;
-  padding-left: 24px;
-  border-left: 1px solid var(--qc-border-subtle);
-}
-
-.iv-rank__scale {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 22px;
-  font-family: var(--qc-font-mono);
-  font-size: 9px;
-  color: var(--qc-text-tertiary);
-}
-
-.iv-rank__scale span {
-  position: absolute;
-  left: 0;
-  transform: translateY(50%);
-}
-
-.iv-rank__bars {
-  display: grid;
-  grid-auto-columns: minmax(28px, 1fr);
-  grid-auto-flow: column;
-  gap: var(--qc-space-2);
-  flex: 1;
-  align-items: stretch;
-}
-
-.iv-rank__col {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.iv-rank__bar-wrap {
-  width: 100%;
-  max-width: 28px;
-  height: 100%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.iv-rank__bar {
-  width: 100%;
-  border-radius: 2px 2px 0 0;
-  transition: height 500ms var(--ease-out);
-}
-.iv-rank__bar[data-tone="accent"] {
-  background: var(--qc-accent);
-}
-.iv-rank__bar[data-tone="loss"] {
-  background: var(--qc-loss);
-}
-.iv-rank__bar[data-tone="warning"] {
-  background: var(--qc-warning);
-}
-
-.iv-rank__value {
-  font-family: var(--qc-font-mono);
-  color: var(--qc-text-secondary);
-  font-size: 10px;
-}
-
-.iv-rank__ticker {
-  font-family: var(--qc-font-mono);
-  color: var(--qc-text-primary);
-  font-size: 10px;
-  font-weight: var(--fw-semibold);
-}
+/* 2.B — bloc IV RANK HISTOGRAM (.iv-rank*) RETIRÉ : composant
+   IVRankHistogram supprimé (usine IV Rank jamais construite). */
 
 /* ═══════════════════════════════════════════════════════════════
    PER POSITION GREEKS TABLE
