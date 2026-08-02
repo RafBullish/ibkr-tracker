@@ -1919,44 +1919,57 @@
 /* ═══════════════════════════════════════════════════════════════
    PER POSITION GREEKS TABLE
    ═══════════════════════════════════════════════════════════════ */
+/* 2.B — moteur MAISON au craft v1.0. 8 colonnes : Ticker · Type · Δ ·
+   Γ · Θ · ν · IV · Exposition (RANK retirée). Head + rows partagent le
+   MÊME template → colonnes alignées ; chaque rangée est un vrai box (le
+   hover de ligne est impossible avec display:contents). Peau (couleurs,
+   plancher, hover) dans pages-greeks.css ; densité dans c3-hires.css. */
 .pos-greeks-table {
-  display: grid;
-  grid-template-columns: 1fr auto repeat(6, 1fr) 1.2fr;
-  gap: 0;
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  font-size: var(--fs-sm);
+}
+
+.pos-greeks-table__head,
+.pos-greeks-table__row {
+  display: grid;
+  grid-template-columns: minmax(56px, 1.1fr) auto repeat(5, 1fr) 1.2fr;
+  align-items: center;
+  column-gap: var(--qc-space-3);
+  padding: 0 var(--qc-space-3);
 }
 
 .pos-greeks-table__head {
-  display: contents;
-  font-family: var(--qc-font-sans);
-}
-
-.pos-greeks-table__head > span {
-  padding: var(--qc-space-2) var(--qc-space-2);
-  border-bottom: 1px solid var(--qc-border-subtle);
-  background: var(--surface-1);
+  min-height: 34px;
 }
 
 .pos-greeks-table__row {
-  display: contents;
+  min-height: 40px;
+  transition: background 120ms var(--ease-out);
 }
 
-.pos-greeks-table__row > * {
-  padding: var(--qc-space-2) var(--qc-space-2);
-  border-bottom: 1px solid var(--qc-border-subtle);
-  align-self: center;
+.pos-greeks-table__c,
+.pos-greeks-table__h {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-
-.pos-greeks-table__row:last-child > * {
-  border-bottom: none;
+.pos-greeks-table__h[data-align='right'],
+.pos-greeks-table__c[data-align='right'] {
+  text-align: right;
+}
+.pos-greeks-table__h[data-align='left'],
+.pos-greeks-table__c[data-align='left'] {
+  text-align: left;
 }
 
 @media (max-width: 900px) {
-  .pos-greeks-table {
+  .pos-greeks-table__head,
+  .pos-greeks-table__row {
     grid-template-columns: 1fr auto 1fr 1fr 1fr;
   }
-  .pos-greeks-table__head > span:nth-child(n + 6),
+  .pos-greeks-table__head > :nth-child(n + 6),
   .pos-greeks-table__row > :nth-child(n + 6) {
     display: none;
   }
@@ -1971,24 +1984,7 @@
   gap: var(--qc-space-4);
 }
 
-.greeks-page__header {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.greeks-page__hero-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--qc-space-3);
-}
-
-.greeks-page__chart-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: var(--qc-space-4);
-}
-
+/* Rangée de clôture 2.B : Exposition Vega | Greeks de second ordre. */
 .greeks-page__dual-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1996,22 +1992,7 @@
 }
 
 @media (max-width: 1200px) {
-  .greeks-page__chart-row {
-    grid-template-columns: 1fr;
-  }
   .greeks-page__dual-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .greeks-page__hero-row {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 480px) {
-  .greeks-page__hero-row {
     grid-template-columns: 1fr;
   }
 }
@@ -2028,24 +2009,6 @@
 }
 .greeks-page__collapse-trigger:hover {
   color: var(--qc-text-primary);
-}
-
-.greeks-page__second-order {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--qc-space-3);
-  margin-top: var(--qc-space-3);
-}
-
-@media (max-width: 900px) {
-  .greeks-page__second-order {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 480px) {
-  .greeks-page__second-order {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* ═══════════════════════════════════════════════════════════════

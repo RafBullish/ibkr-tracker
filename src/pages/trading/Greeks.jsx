@@ -1,115 +1,74 @@
 // ═══════════════════════════════════════════════════════════════
-//  GREEKS CENTER — page-vitrine canonique (CANONICAL-3)
+//  GREEKS CENTER — page-vitrine au langage cockpit v1.0 (brique 2.B)
+//  /trading/greeks — citoyen PERMANENT (flag GREEK_CENTER retiré).
 //
-//  Dedicated route: /trading/greeks
-//  Second consumer of the palette canonique (after /trading/positions).
+//  Architecture (§4.2 brique 2.B), de haut en bas :
+//    1. BANDEAU DE COMMANDEMENT — panneau cockpit (.lh-final),
+//       cellules-MONDE aux hairlines verticales : OPTIONS · Δ NET ·
+//       Γ NET · Θ / JOUR · ν NET. TOUS NEUTRES (loi de couleur : il
+//       n'y a AUCUN argent réel sur cette page ; un Greek signé
+//       n'est pas une perte). Valeurs 34 px (loi ratifiée 2.A).
+//    2. HÉROS — Projection Theta pleine largeur (barres neutres +
+//       cumul ambre = la seule série ambre de l'écran).
+//    3. GREEKS PAR POSITION — table maison au craft v1.0 (RANK morte).
+//    4. RANGÉE DE CLÔTURE — Exposition Vega (donut acier) | 2ᵉ ordre.
+//    États vides DESIGNÉS partout : à 0 option la page reste habitée
+//    (bandeau à zéros, héros/table/donut aux états vides cadrés).
 //
-//  Sémantique appliquée sur les Greeks AGRÉGÉS :
-//    Δ  → ink-pure TOUJOURS (exposition directionnelle, pas $)
-//    Γ  → ink-pure TOUJOURS (dérivée seconde, sans dim. monétaire)
-//    Θ  → ink-pure TOUJOURS (révision : un Greek naturellement signé
-//         — theta ~toujours négatif — n'est PAS une perte ; le rouge
-//         reste réservé aux pertes RÉALISÉES, pas au signe d'un Greek)
-//    ν  → ink-pure TOUJOURS (sensibilité IV, pas $)
-//
-//  Rows:
-//   1. Net Greeks Hero (4 local KPI tiles)
-//   2. Greek Evolution (2/3) + Theta Decay Projection (1/3)
-//   3. Per-Position Greeks Table (full width)
-//   4. Vega Exposure Donut (1/2, palette CATÉGORIELLE) + IV Rank (1/2)
-//   5. Second-Order Greeks panel (collapsed by default)
+//  Morts 2.B : GreekEvolutionChart (mock aléatoire — feature fantôme),
+//  IVRankHistogram (usine IV Rank jamais construite), colonne RANK.
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RTooltip, Legend } from 'recharts';
-import { ChevronDown, Sigma } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RTooltip } from 'recharts';
+import { ChevronDown } from 'lucide-react';
 import { useOpenPositions } from '../../store/useStore';
-// A1 — migrated from legacy computePortfolioGreeks (sign-agnostic,
-// theta/year, vega/1.00-sigma) to aggregateGreeks (sign-aware via pos.dir,
-// theta/day, vega/1%-IV). For Sniper-OTM short premium portfolios this
-// means Theta is now positive (decay encaissé) and Vega negative (short
-// vol). The displayed magnitudes also drop because Theta is divided by
-// 365 and Vega by 100 vs the legacy raw BSM units.
 import { computeSecondOrderGreeks } from '../../utils/calculations';
 import { aggregateGreeks } from '../../utils/greeks';
 import { toFloat, ensurePositive } from '../../utils/math';
 import { getGreeksForAllPositions } from '../../utils/greeksApi';
 
-import StatusBadge from '../../components/ui/StatusBadge';
 import InfoTooltip from '../../components/ui/InfoTooltip';
-import NumAnat from '../../components/ui/NumAnat';
 import EmptyState from '../../components/ui/EmptyState';
-import GreekEvolutionChart from '../../components/charts/GreekEvolutionChart';
 import ThetaDecayProjection from '../../components/charts/ThetaDecayProjection';
-import IVRankHistogram from '../../components/charts/IVRankHistogram';
 import PerPositionGreeksTable from '../../components/charts/PerPositionGreeksTable';
-import { CONTAINER_VARIANTS, TILE_VARIANTS } from '../../theme/animationVariants';
+import ObsidienneTooltip from '../../components/charts/ObsidienneTooltip';
+import { TickValue } from '../../components/dashboard/decision/parts';
+import { RISE_CONTAINER_VARIANTS, RISE_TILE_VARIANTS } from '../../theme/animationVariants';
 
 const GREEK_TOOLTIPS = {
   delta: {
     title: 'Delta net',
-    body: 'Exposition directionnelle agrégée.',
+    body: 'Exposition directionnelle agrégée (sign-aware par direction).',
     formula: 'Σ (Δ × qty × mul)',
   },
   gamma: {
     title: 'Gamma net',
-    body: 'Sensibilité du Delta aux mouvements.',
+    body: 'Sensibilité du Delta aux mouvements du sous-jacent.',
     formula: 'Σ (Γ × qty × mul)',
   },
   theta: {
     title: 'Theta net',
-    body: 'Erosion temporelle quotidienne en $.',
-    formula: 'Σ (Θ × qty × mul)',
+    body: 'Érosion temporelle quotidienne en $ (coût hypothétique, jamais une perte réalisée).',
+    formula: 'Σ (Θ × qty × mul) / jour',
   },
   vega: {
     title: 'Vega net',
-    body: 'Sensibilité à la volatilité implicite.',
-    formula: 'Σ (ν × qty × mul)',
+    body: 'Sensibilité à la volatilité implicite, par +1 % d’IV.',
+    formula: 'Σ (ν × qty × mul) / 1 % IV',
   },
 };
 
-// Palette catégorielle neutre pour le donut Vega (slices = parts d'expo,
-// pas du P&L — d'où l'absence de pnl-up/pnl-down). var(--accent) est
-// réservé au slice « décisionnel » (le plus exposé en valeur absolue).
-const PIE_NEUTRAL_TONES = ['var(--ink-pure)', 'var(--ink-soft)', 'var(--ink-mute)'];
+// Donut Vega — gradations ACIER neutres (2.B) : une part d'exposition
+// n'est pas une décision → aucun ambre. La seule série ambre de la page
+// est le cumul theta du héros (§4.3).
+const PIE_STEEL = ['#C8C8CF', '#9A9AA2', '#77777F', '#585860', '#42424A'];
 function pieFill(rank) {
-  if (rank === 0) return 'var(--accent)';
-  return PIE_NEUTRAL_TONES[(rank - 1) % PIE_NEUTRAL_TONES.length];
+  return PIE_STEEL[rank % PIE_STEEL.length];
 }
 
-// Build a mock evolution series from current Greeks (no historical storage yet)
-function buildMockEvolution(currentGreeks, days = 30) {
-  if (!currentGreeks) return [];
-  const series = [];
-  const now = new Date();
-  for (let i = days; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const iso = d.toISOString().slice(0, 10);
-    // Add small random walk around current values
-    const wobble = (v, scale = 0.15) => v + (Math.random() - 0.5) * Math.abs(v || 1) * scale;
-    series.push({
-      date: iso,
-      delta: +wobble(currentGreeks.delta).toFixed(3),
-      gamma: +wobble(currentGreeks.gamma, 0.2).toFixed(4),
-      theta: +wobble(currentGreeks.theta, 0.1).toFixed(2),
-      vega: +wobble(currentGreeks.vega).toFixed(2),
-    });
-  }
-  // Ensure last point is exactly current
-  if (series.length) {
-    series[series.length - 1] = {
-      date: series[series.length - 1].date,
-      ...currentGreeks,
-    };
-  }
-  return series;
-}
-
-// ── Local formatters — copies the Intl conventions from the legacy
-// MetricCard so the canonical strip displays identically without the
-// glass/blur chrome. ─────────────────────────────────────────────
+// ── Formatters locaux (conventions Intl de-CH, anti-NBSP) ─────────
 function fmtNumber(v) {
   if (v == null || Number.isNaN(v)) return '—';
   return new Intl.NumberFormat('de-CH', {
@@ -135,22 +94,30 @@ function fmtCurrency(v, currency = 'USD') {
   }).format(v);
 }
 
-// Local KPI tile — markup plat, à plat sur var(--depth-raised). Tous les KPI
-// Greeks agrégés sont en encre neutre (ink-pure) : ni vert (profit interdit sur
-// des Greeks agrégés) ni rouge (un Greek signé n'est pas une perte $, Θ inclus).
-// L'ancienne affordance tone="loss" a été retirée (plus aucun consommateur).
-function KpiTile({ label, tooltip, value, compact = false }) {
-  const cls = [
-    'greeks-v3__kpi',
-    compact && 'greeks-v3__kpi--compact',
-  ].filter(Boolean).join(' ');
+// ── Cellule-MONDE du bandeau de commandement (anatomie .pf-c, valeur
+// 34 px via .greeks-command). TOUJOURS neutre : aucun tone P&L sur
+// cette page (loi de couleur). TickValue = micro-mouvement 1.F. ─────
+function CommandCell({ label, title, value, meta }) {
   return (
-    <div className={cls}>
-      <span className="greeks-v3__kpi-label">
+    <div className="pf-c greeks-command__cell">
+      <span className="pf-c__label greeks-command__label" title={title || undefined}>
         {label}
-        {tooltip && <InfoTooltip content={tooltip} size={12} />}
       </span>
-      <span className="greeks-v3__kpi-value"><NumAnat tier="mid">{value}</NumAnat></span>
+      <TickValue text={value} className="pf-c__val greeks-command__val" />
+      <span className="pf-c__meta greeks-command__meta">{meta || ' '}</span>
+    </div>
+  );
+}
+
+// ── Cellule 2ᵉ ordre (anatomie .pf-c, valeur au registre compact 22 px). ──
+function SoCell({ label, title, value }) {
+  return (
+    <div className="pf-c greeks-so__cell">
+      <span className="pf-c__label" title={title || undefined}>
+        {label}
+      </span>
+      <span className="pf-c__val">{value}</span>
+      <span className="pf-c__meta"> </span>
     </div>
   );
 }
@@ -192,8 +159,8 @@ export default function Greeks() {
     return {
       delta: agg.sumDelta,
       gamma: agg.sumGamma,
-      theta: agg.thetaDaily, // USD per day, sign-aware (was: per year, sign-agnostic)
-      vega: agg.vegaPer1Pct, // USD per 1% IV change, sign-aware (was: per 1.00 sigma)
+      theta: agg.thetaDaily, // USD/jour, sign-aware
+      vega: agg.vegaPer1Pct, // USD par 1 % IV, sign-aware
       count: agg.optionsCount,
     };
   }, [openPositions, greeksMap]);
@@ -203,14 +170,8 @@ export default function Greeks() {
     [openPositions, greeksMap]
   );
 
-  // B2-PATCH — unit alignment with aggregateGreeks (cockpit) :
-  //   - theta = thetaBSM (per-share, per-YEAR) × qty × mul / 365   → USD/day
-  //   - vega  = vegaBSM  (per-share, per-1.00σ)  × qty × mul / 100 → USD per 1 %-IV
-  //   - delta / gamma are per-share already and scale naturally × qty × mul
-  // Sign-aware via dir (Short positions flip θ and ν signs — mirrors the
-  // canonical aggregateGreeks convention). PREVIOUSLY this table showed
-  // theta in per-YEAR units (~-7993 instead of -22), inconsistent with the
-  // cockpit Σ Theta which is in per-DAY units.
+  // Rows par position — MÊMES dérivations qu'avant (theta/365 per-day,
+  // vega/100 per-1%-IV, sign-aware via dir). Colonne RANK retirée.
   const perPositionRows = useMemo(() => {
     return optionPositions.map((p) => {
       const g = greeksMap?.get(p.id) || p.greeks || {};
@@ -222,9 +183,7 @@ export default function Greeks() {
       const theta = g.t ?? g.theta ?? 0;
       const vega = g.v ?? g.vega ?? 0;
       const iv = g.iv ?? p.iv ?? null;
-      const ivRank = p.ivRank ?? null;
       const exposure = toFloat(p.pc) * qty * mul * dirSign;
-      // Stocks (no g, no iv) keep null fields per existing UI convention.
       const isAvailable = g && (g.delta != null || g.theta != null);
       return {
         id: p.id,
@@ -235,19 +194,12 @@ export default function Greeks() {
         theta: isAvailable ? (theta / 365) * qty * mul * dirSign : null,
         vega: isAvailable ? (vega / 100) * qty * mul * dirSign : null,
         iv,
-        ivRank,
         exposure,
-        // Cascade σ (positionGreeks) marque la position quand le fallback (c)
-        // a été utilisé — IV de 30% par défaut, donc valeur "approximative".
-        // Surface ~ + italic + opacité dans la cellule IV de la table.
         ivEstimated: !!g.ivEstimated,
       };
     });
   }, [optionPositions, greeksMap]);
 
-  // Donut data : trié par exposition |vega| décroissante. Le 1er slice
-  // (le plus exposé = « décisionnel ») reçoit var(--accent), les autres
-  // cyclent sur les nuances d'ink.
   const vegaPieData = useMemo(() => {
     return perPositionRows
       .filter((r) => Math.abs(r.vega) > 0.01)
@@ -255,117 +207,86 @@ export default function Greeks() {
       .sort((a, b) => b.value - a.value);
   }, [perPositionRows]);
 
-  const ivRankRows = useMemo(() => {
-    return perPositionRows
-      .filter((r) => r.ivRank != null && isFinite(r.ivRank))
-      .map((r) => ({ ticker: r.ticker, ivRank: r.ivRank }));
-  }, [perPositionRows]);
+  const vegaTotal = useMemo(
+    () => vegaPieData.reduce((s, d) => s + d.value, 0),
+    [vegaPieData]
+  );
 
-  const evolutionSeries = useMemo(() => buildMockEvolution(netGreeks, 30), [netGreeks]);
-
-  // CANONICAL-3 (révisé) : les 4 KPI Greeks sont TOUS en ink-pure. Θ n'est
-  // plus rougi sur son signe — le rouge reste réservé aux pertes réalisées,
-  // pas au signe naturel d'un Greek (theta ~toujours négatif).
-
-  // Empty state — no options at all
-  if (optionPositions.length === 0) {
-    return (
-      <div className="page-container greeks-empty">
-        <div className="greeks-empty__panel">
-          <EmptyState
-            icon={Sigma}
-            title="Aucune position optionnelle"
-            description="Le Greeks Center s'allume dès qu'une option est en portefeuille. Tes positions actions restent suivies sur le Dashboard."
-          />
-        </div>
-      </div>
-    );
-  }
+  const optionsLabel = `${netGreeks.count} option${netGreeks.count > 1 ? 's' : ''} suivie${netGreeks.count > 1 ? 's' : ''}`;
 
   return (
     <motion.div
       className="page-container greeks-page"
-      variants={reducedMotion ? undefined : CONTAINER_VARIANTS}
+      variants={reducedMotion ? undefined : RISE_CONTAINER_VARIANTS}
       initial={reducedMotion ? undefined : 'hidden'}
       animate={reducedMotion ? undefined : 'visible'}
     >
-      <motion.div variants={TILE_VARIANTS} className="greeks-page__header">
+      <motion.div variants={RISE_TILE_VARIANTS} className="page-header">
         <div>
-          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            Options Command Center
-            <StatusBadge
-              variant="accent"
-              label={`${netGreeks.count} option${netGreeks.count > 1 ? 's' : ''}`}
-              size="xs"
-            />
-          </h1>
+          <h1 className="page-title">Options Command Center</h1>
           <p className="page-subtitle">
-            Surveillance Greeks Delta·Gamma·Theta·Vega sur le portefeuille d'options ouvertes.
+            Ton exposition grecque, et ce que le temps va te coûter — Δ·Γ·Θ·ν sur le
+            portefeuille d'options ouvertes.
           </p>
         </div>
       </motion.div>
 
-      {/* ── Row 1 : Net Greeks — 4 KPI tiles, règle sémantique stricte ── */}
-      <div className="greeks-page__hero-row">
-        <motion.div variants={TILE_VARIANTS}>
-          <KpiTile
-            label="Δ Delta"
-            tooltip={GREEK_TOOLTIPS.delta}
-            value={fmtNumber(netGreeks.delta)}          />
-        </motion.div>
-        <motion.div variants={TILE_VARIANTS}>
-          <KpiTile
-            label="Γ Gamma"
-            tooltip={GREEK_TOOLTIPS.gamma}
-            value={fmtNumber(netGreeks.gamma)}          />
-        </motion.div>
-        <motion.div variants={TILE_VARIANTS}>
-          <KpiTile
-            label="Θ Theta"
-            tooltip={GREEK_TOOLTIPS.theta}
-            value={fmtCurrency(netGreeks.theta)}          />
-        </motion.div>
-        <motion.div variants={TILE_VARIANTS}>
-          <KpiTile
-            label="ν Vega"
-            tooltip={GREEK_TOOLTIPS.vega}
-            value={fmtCurrency(netGreeks.vega)}          />
-        </motion.div>
-      </div>
+      {/* 1 — BANDEAU DE COMMANDEMENT : cellules-MONDE, TOUTES NEUTRES. */}
+      <motion.section
+        variants={RISE_TILE_VARIANTS}
+        className="lh-final greeks-command"
+        aria-label="Commandement — Greeks nets du portefeuille"
+      >
+        <div className="greeks-command__grid">
+          <CommandCell
+            label="OPTIONS"
+            title="Nombre de positions optionnelles ouvertes suivies sur cette page."
+            value={String(netGreeks.count)}
+            meta="en portefeuille"
+          />
+          <CommandCell
+            label="Δ NET"
+            title={`${GREEK_TOOLTIPS.delta.body} — ${GREEK_TOOLTIPS.delta.formula}`}
+            value={fmtNumber(netGreeks.delta)}
+            meta="directionnel"
+          />
+          <CommandCell
+            label="Γ NET"
+            title={`${GREEK_TOOLTIPS.gamma.body} — ${GREEK_TOOLTIPS.gamma.formula}`}
+            value={fmtNumber(netGreeks.gamma)}
+            meta="convexité"
+          />
+          <CommandCell
+            label="Θ / JOUR"
+            title={`${GREEK_TOOLTIPS.theta.body} — ${GREEK_TOOLTIPS.theta.formula}`}
+            value={fmtCurrency(netGreeks.theta)}
+            meta="érosion / jour"
+          />
+          <CommandCell
+            label="ν NET"
+            title={`${GREEK_TOOLTIPS.vega.body} — ${GREEK_TOOLTIPS.vega.formula}`}
+            value={fmtCurrency(netGreeks.vega)}
+            meta="par +1 % IV"
+          />
+        </div>
+      </motion.section>
 
-      {/* ── Row 2 : Evolution Chart + Theta Decay Projection ── */}
-      <div className="greeks-page__chart-row">
-        <motion.div variants={TILE_VARIANTS} className="greeks-page__chart-main">
-          <div className="greeks-v3__panel">
-            <div className="greeks-v3__panel-head">
-              <span className="uppercase-label">Évolution 30j</span>
-              <InfoTooltip
-                content={{
-                  title: 'Évolution des Greeks',
-                  body: 'Valeurs quotidiennes aggregées par Greek. Les séries peuvent être affichées/masquées via les chips.',
-                }}
-                size={12}
-              />
-            </div>
-            <GreekEvolutionChart data={evolutionSeries} height={300} />
-          </div>
-        </motion.div>
-        <motion.div variants={TILE_VARIANTS} className="greeks-page__chart-side">
-          <div className="greeks-v3__panel" style={{ height: '100%' }}>
-            <ThetaDecayProjection dailyTheta={netGreeks.theta} days={30} />
-          </div>
-        </motion.div>
-      </div>
+      {/* 2 — HÉROS : projection Theta pleine largeur (cumul ambre). */}
+      <motion.div variants={RISE_TILE_VARIANTS}>
+        <div className="greeks-v3__panel greeks-page__hero">
+          <ThetaDecayProjection dailyTheta={netGreeks.theta} days={30} height={320} />
+        </div>
+      </motion.div>
 
-      {/* ── Row 3 : Per-position Greeks table ── */}
-      <motion.div variants={TILE_VARIANTS}>
+      {/* 3 — GREEKS PAR POSITION (table maison, craft v1.0). */}
+      <motion.div variants={RISE_TILE_VARIANTS}>
         <div className="greeks-v3__panel">
           <div className="greeks-v3__panel-head">
             <span className="uppercase-label">Greeks par position</span>
             <InfoTooltip
               content={{
                 title: 'Greeks par position',
-                body: "Valeurs par contrat × quantité × multiplicateur. IV Rank indique la position actuelle de l'IV dans son range 52 semaines.",
+                body: 'Valeurs par contrat × quantité × multiplicateur, sign-aware par direction. Le ~ marque une IV estimée (mark hors plage no-arbitrage, défaut σ=30%).',
               }}
               size={12}
             />
@@ -374,146 +295,135 @@ export default function Greeks() {
         </div>
       </motion.div>
 
-      {/* ── Row 4 : Vega pie + IV Rank ── */}
+      {/* 4 — RANGÉE DE CLÔTURE : Exposition Vega (acier) | 2ᵉ ordre. */}
       <div className="greeks-page__dual-row">
-        <motion.div variants={TILE_VARIANTS}>
+        <motion.div variants={RISE_TILE_VARIANTS}>
           <div className="greeks-v3__panel">
             <div className="greeks-v3__panel-head">
               <span className="uppercase-label">Exposition Vega</span>
               <InfoTooltip
                 content={{
                   title: 'Répartition Vega',
-                  body: 'Partage de la sensibilité IV totale entre les positions. Plus une part est grande, plus elle contribue au risque/récompense IV.',
+                  body: 'Partage de la sensibilité IV totale entre les positions. Plus une part est grande, plus elle porte le risque/récompense IV.',
                 }}
                 size={12}
               />
             </div>
             {vegaPieData.length === 0 ? (
-              <EmptyState size="compact" title="Pas de vega à afficher" />
+              <div className="greeks-vega__empty">
+                <EmptyState size="compact" title="Pas de vega à afficher" />
+              </div>
             ) : (
-              <div style={{ height: 260 }}>
-                {/* B3 — minWidth/minHeight évitent le warning recharts
-                    "width(-1) and height(-1) of chart should be greater
-                    than 0" au premier rendu, avant que le grid
-                    `greeks-page__dual-row` ait propagé sa largeur. */}
-                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                  <PieChart>
-                    <Pie
-                      data={vegaPieData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={95}
-                      paddingAngle={2}
-                      label={false}
-                    >
-                      {vegaPieData.map((d, i) => (
-                        <Cell
-                          key={d.name}
-                          fill={pieFill(i)}
-                          stroke="var(--depth-raised)"
-                          strokeWidth={2}
-                        />
-                      ))}
-                    </Pie>
-                    <RTooltip
-                      cursor={false}
-                      content={({ active, payload }) => {
-                        if (!active || !payload || !payload.length) return null;
-                        const p = payload[0];
-                        const sign = p.payload.original >= 0 ? '+' : '−';
-                        const dotColor = p.payload.fill || 'var(--ink-soft)';
-                        return (
-                          <div className="greeks-v3__pie-tooltip">
-                            <div className="greeks-v3__pie-tooltip-row">
-                              <span
-                                className="greeks-v3__pie-tooltip-dot"
-                                style={{ background: dotColor }}
-                              />
-                              <span className="greeks-v3__pie-tooltip-name">{p.payload.name}</span>
-                              <span>{`${sign}${Math.abs(p.value).toFixed(2)}`}</span>
-                            </div>
-                          </div>
-                        );
-                      }}
-                    />
-                    <Legend
-                      wrapperStyle={{ fontSize: 11, fontFamily: 'var(--type-mono)' }}
-                      formatter={(value) => (
-                        <span style={{ color: 'var(--ink-soft)' }}>{value}</span>
-                      )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+              <div className="greeks-vega">
+                <div className="greeks-vega__donut obsidienne-chart">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                    <PieChart>
+                      <Pie
+                        data={vegaPieData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={52}
+                        outerRadius={82}
+                        paddingAngle={2}
+                        label={false}
+                        stroke="var(--depth-raised)"
+                        strokeWidth={2}
+                      >
+                        {vegaPieData.map((d, i) => (
+                          <Cell key={d.name} fill={pieFill(i)} />
+                        ))}
+                      </Pie>
+                      <RTooltip
+                        cursor={false}
+                        content={
+                          <ObsidienneTooltip
+                            formatLabel={() => 'EXPOSITION VEGA'}
+                            rows={(payload) => {
+                              const p = payload?.[0];
+                              if (!p) return [];
+                              const orig = p.payload?.original ?? 0;
+                              const sign = orig >= 0 ? '+' : '−';
+                              return [
+                                { label: p.payload.name, value: `${sign}${Math.abs(p.value).toFixed(2)}` },
+                              ];
+                            }}
+                          />
+                        }
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="greeks-vega__legend">
+                  {vegaPieData.map((d, i) => (
+                    <div key={d.name} className="greeks-vega__legend-row">
+                      <span
+                        className="greeks-vega__legend-dot"
+                        style={{ background: pieFill(i) }}
+                      />
+                      <span className="greeks-vega__legend-name">{d.name}</span>
+                      <span className="mono greeks-vega__legend-val">
+                        {vegaTotal > 0 ? `${Math.round((d.value / vegaTotal) * 100)}%` : '—'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
         </motion.div>
 
-        <motion.div variants={TILE_VARIANTS}>
+        <motion.div variants={RISE_TILE_VARIANTS}>
           <div className="greeks-v3__panel">
-            <IVRankHistogram data={ivRankRows} />
+            <button
+              type="button"
+              className="greeks-page__collapse-trigger"
+              onClick={() => setShowSecondOrder((v) => !v)}
+              aria-expanded={showSecondOrder}
+            >
+              <span className="uppercase-label">Greeks de second ordre</span>
+              <ChevronDown
+                size={16}
+                aria-hidden="true"
+                style={{
+                  transform: showSecondOrder ? 'rotate(180deg)' : 'none',
+                  transition: 'transform 200ms var(--ease-out)',
+                }}
+              />
+            </button>
+
+            {showSecondOrder ? (
+              <div className="greeks-so">
+                <SoCell
+                  label="Vanna"
+                  title="dDelta/dVol — Sensibilité du Delta à la volatilité."
+                  value={fmtNumber(secondOrder.vanna)}
+                />
+                <SoCell
+                  label="Charm"
+                  title="dDelta/dTime — Décroissance du Delta par jour."
+                  value={fmtNumber(secondOrder.charm)}
+                />
+                <SoCell
+                  label="Vomma"
+                  title="dVega/dVol — Convexité du Vega par rapport à la volatilité."
+                  value={fmtNumber(secondOrder.vomma)}
+                />
+                <SoCell
+                  label="GEX"
+                  title="Gamma Exposure — exposition gamma totale × prix spot."
+                  value={fmtCurrency(secondOrder.gex)}
+                />
+              </div>
+            ) : (
+              <p className="greeks-so__hint">
+                Vanna · Charm · Vomma · GEX — déplie pour les dérivées de second ordre.
+              </p>
+            )}
           </div>
         </motion.div>
       </div>
-
-      {/* ── Row 5 : Second-order Greeks panel (collapsed) ── */}
-      <motion.div variants={TILE_VARIANTS}>
-        <div className="greeks-v3__panel">
-          <button
-            type="button"
-            className="greeks-page__collapse-trigger"
-            onClick={() => setShowSecondOrder((v) => !v)}
-            aria-expanded={showSecondOrder}
-          >
-            <span className="uppercase-label">Greeks de second ordre</span>
-            <ChevronDown
-              size={16}
-              aria-hidden="true"
-              style={{
-                transform: showSecondOrder ? 'rotate(180deg)' : 'none',
-                transition: 'transform 200ms var(--ease-out)',
-              }}
-            />
-          </button>
-
-          {showSecondOrder && (
-            <div className="greeks-page__second-order">
-              <KpiTile
-                label="Vanna"
-                tooltip={{
-                  title: 'Vanna',
-                  body: 'dDelta/dVol — Sensibilité du Delta à la volatilité.',
-                }}
-                value={fmtNumber(secondOrder.vanna)}                compact
-              />
-              <KpiTile
-                label="Charm"
-                tooltip={{ title: 'Charm', body: 'dDelta/dTime — Decay du Delta par jour.' }}
-                value={fmtNumber(secondOrder.charm)}                compact
-              />
-              <KpiTile
-                label="Vomma"
-                tooltip={{
-                  title: 'Vomma',
-                  body: 'dVega/dVol — Convexité du Vega par rapport à la volatilité.',
-                }}
-                value={fmtNumber(secondOrder.vomma)}                compact
-              />
-              <KpiTile
-                label="GEX"
-                tooltip={{
-                  title: 'GEX (Gamma Exposure)',
-                  body: 'Exposition gamma totale du portefeuille multipliée par le prix spot.',
-                }}
-                value={fmtCurrency(secondOrder.gex)}                compact
-              />
-            </div>
-          )}
-        </div>
-      </motion.div>
     </motion.div>
   );
 }

@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 import { useOpenPositions, useSettings } from '../../store/useStore';
 import { calculateOpenPositionPnl } from '../../utils/calculations';
 import { toFloat } from '../../utils/math';
-import { FEATURE_GREEK_CENTER } from '../../constants/featureFlags';
 import T from '../../theme/tokens';
 import Icons from './Icons';
 
@@ -21,9 +20,7 @@ const navItems = [
   { label: 'Pré-marché', shortcut: '⌘0', path: '/premarket', icon: 'gauge' },
   { label: 'Positions', shortcut: '⌘2', path: '/trading/positions', icon: 'trending' },
   { label: 'Historique', shortcut: '⌘3', path: '/trading/history', icon: 'list' },
-  ...(FEATURE_GREEK_CENTER
-    ? [{ label: 'Greeks Center', shortcut: '⌘4', path: '/trading/greeks', icon: 'bar' }]
-    : []),
+  { label: 'Greeks Center', shortcut: '⌘4', path: '/trading/greeks', icon: 'bar' },
   { label: 'Options Live', shortcut: '⌘5', path: '/trading/chain', icon: 'layers' },
   { label: 'Analytics', shortcut: '⌘6', path: '/insights/analytics', icon: 'bar' },
   { label: 'Calendrier', shortcut: '⌘7', path: '/insights/calendar', icon: 'cal' },

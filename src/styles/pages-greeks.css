@@ -1,106 +1,115 @@
 /* ════════════════════════════════════════════════════════════════
-   PAGES-GREEKS.CSS — page-vitrine /trading/greeks (2ème consommatrice
-   de la palette canonique, après /trading/positions).
+   PAGES-GREEKS.CSS — /trading/greeks au langage cockpit v1.0
+   (brique 2.B). Réécrit EN PLACE (position de cascade conservée).
 
-   Toutes les règles sont SCOPÉES à .greeks-page pour ne contaminer
-   aucune autre page. Chargée APRÈS pages-positions.css dans main.jsx.
-   Aucune définition de :root ici — uniquement des règles locales.
+   Toutes les règles sont SCOPÉES à .greeks-page / .greeks-command /
+   .greeks-* pour ne contaminer aucune autre page. Réutilise les
+   recettes v1.0 chargées plus tard dans la cascade : .lh-final (cadre
+   cockpit), .pf-c (cellule-MONDE), .obsidienne-chart (kit data-viz).
 
-   Sémantique des Greeks AGRÉGÉS (rappel ÉTAPE 2 du brief CANONICAL-3) :
-     - Δ  → ink-pure TOUJOURS (exposition directionnelle, pas $)
-     - Γ  → ink-pure TOUJOURS (dérivée seconde, sans dim. monétaire)
-     - Θ  → ink-pure TOUJOURS (révision : un Greek signé n'est pas une
-            perte — le rouge reste réservé aux pertes RÉALISÉES)
-     - ν  → ink-pure TOUJOURS (sensibilité IV, pas $)
+   Chargée APRÈS canonical.css dans main.jsx. Aucune définition de
+   :root ici — uniquement des règles locales.
+
+   LOI DE COULEUR sur cette page : AUCUN argent réel n'y vit. Les
+   Greeks (Δ/Γ/Θ/ν) et le notionnel d'exposition sont TOUS neutres —
+   un Greek signé n'est pas une perte. La SEULE série ambre de l'écran
+   est le cumul theta du héros (série héros, DA §3 usage 3).
+
+   Morts 2.B (composants supprimés) : greek-evo (mock aléatoire),
+   iv-rank (usine jamais construite), colonne RANK, cartes KPI hero-row
+   (remplacées par le bandeau), tooltip pie custom (→ ObsidienneTooltip),
+   branche greeks-empty (la page reste habitée à 0 option).
    ════════════════════════════════════════════════════════════════ */
 
-/* Surface de page : fond le plus profond, opaque (masque le halo
-   indigo/cyan diffusé par body::before depuis aura-boost.css). */
+/* ── Surface de page : fond le plus profond, opaque ──────────────── */
 .greeks-page {
   background: var(--depth-void);
   position: relative;
   z-index: 1;
 }
-
-/* En-tête à plat sur var(--depth-void) — pas de wrapper aura-* glow. */
 .greeks-page .page-title {
   color: var(--ink-pure);
-}
-.greeks-page .page-title svg {
-  color: var(--accent);
-  opacity: 1;
 }
 .greeks-page .page-subtitle {
   color: var(--ink-soft);
 }
 
 /* ════════════════════════════════════════════════════════════════
-   KPI HERO STRIP — markup local (4 cartes plates : Δ Γ Θ ν)
+   BANDEAU DE COMMANDEMENT (§4.2) — cellules-MONDE aux hairlines
+   verticales, valeurs 34 px (loi ratifiée 2.A). TOUTES NEUTRES.
+   .lh-final porte le cadre (depth-raised + hairline-rest + radius 7
+   + overflow hidden) ; ici la seule géométrie interne.
    ════════════════════════════════════════════════════════════════ */
-.greeks-v3__kpi {
-  display: flex;
-  flex-direction: column;
-  gap: var(--qc-space-1);
-  padding: var(--qc-space-3) var(--qc-space-4);
-  background: var(--depth-raised);
-  border: 1px solid var(--line-hairline);
-  border-radius: 2px;
-  min-width: 0;
+.greeks-command__grid {
+  display: grid;
+  grid-template-columns: 0.7fr 1fr 1fr 1.15fr 1.15fr;
 }
-
-.greeks-v3__kpi-label {
+.greeks-command__cell {
+  padding: 14px 18px 12px;
+  overflow: hidden;
+}
+.greeks-command__cell + .greeks-command__cell {
+  border-left: 1px solid var(--line-emphasis);
+}
+.greeks-command__label {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  color: var(--ink-soft);
-  font-family: var(--type-mono);
-  font-size: var(--type-caption);
-  font-weight: 600; /* D2.E — label KPI au barème D2 (était 500). */
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  gap: 7px;
+  line-height: 14px;
+  margin-bottom: 4px;
 }
-
-.greeks-v3__kpi-value {
-  color: var(--ink-pure);
-  font-family: var(--type-mono);
-  font-size: var(--type-display);
-  /* D2.E — parité KPI : 34px (--type-display) / 700 comme Dashboard (était 600). */
-  font-weight: 700;
-  font-variant-numeric: tabular-nums slashed-zero;
-  letter-spacing: -0.01em;
+/* Valeur au registre display de page (34/700) — TOUJOURS ink-pure :
+   aucun argent réel sur cette page (loi de couleur). */
+.greeks-command .pf-c__val {
+  font-size: var(--type-display, 34px);
   line-height: 1.15;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+  color: var(--ink-pure);
+}
+.greeks-command__meta {
+  margin-top: 2px;
 }
 
-/* Variante compacte pour Greeks de second ordre (Vanna/Charm/Vomma/GEX). */
-.greeks-v3__kpi--compact {
-  padding: var(--qc-space-2) var(--qc-space-3);
-  gap: 2px;
+/* Empilement mobile du bandeau (parité pos-command). */
+@media (max-width: 1200px) {
+  .greeks-command__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .greeks-command__cell + .greeks-command__cell {
+    border-left: none;
+  }
+  .greeks-command__cell:nth-child(even) {
+    border-left: 1px solid var(--line-emphasis);
+  }
+  .greeks-command__cell:nth-child(n + 3) {
+    border-top: 1px solid var(--line-hairline);
+  }
 }
-.greeks-v3__kpi--compact .greeks-v3__kpi-value {
-  font-size: var(--type-body);
+@media (max-width: 767px) {
+  .greeks-command__grid {
+    grid-template-columns: 1fr;
+  }
+  .greeks-command__cell:nth-child(even) {
+    border-left: none;
+  }
+  .greeks-command__cell + .greeks-command__cell {
+    border-top: 1px solid var(--line-hairline);
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════
-   PANNEAUX (Évolution / Projection / Donut Vega / IV Rank / Tableau /
-   Second-Order) — surface plate raised, séparateurs murmurés
+   PANNEAUX (héros Theta / table / donut Vega / second-ordre) —
+   surface plate raised, séparateurs murmurés.
    ════════════════════════════════════════════════════════════════ */
 .greeks-v3__panel {
   background: var(--depth-raised);
   border: 1px solid var(--line-hairline);
   border-radius: 2px;
   padding: var(--qc-space-5);
-  /* Annule toute cascade glass-card éventuelle. */
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
-
 .greeks-v3__panel-head {
   display: flex;
   align-items: center;
@@ -108,13 +117,178 @@
   margin-bottom: var(--qc-space-3);
   color: var(--ink-soft);
 }
-
 .greeks-v3__panel-head .uppercase-label {
   color: var(--ink-soft);
 }
 
 /* ════════════════════════════════════════════════════════════════
-   COLLAPSE TRIGGER (Greeks de second ordre)
+   HÉROS — PROJECTION THETA. Barres NEUTRES (acier), cumul AMBRE
+   (série héros). Pied de stats dense (PAR JOUR · CUMUL 7J · 30J).
+   ════════════════════════════════════════════════════════════════ */
+.theta-decay {
+  display: flex;
+  flex-direction: column;
+  gap: var(--qc-space-3);
+}
+.theta-decay__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+}
+.theta-decay__head .uppercase-label {
+  color: var(--ink-soft);
+}
+.theta-decay__canvas {
+  width: 100%;
+}
+.theta-decay__empty {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.theta-decay__summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  background: var(--depth-base);
+  overflow: hidden;
+}
+.theta-decay__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 16px;
+  min-width: 0;
+}
+.theta-decay__stat + .theta-decay__stat {
+  border-left: 1px solid var(--line-hairline);
+}
+.theta-decay__summary-label {
+  font-size: var(--type-caption);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  white-space: nowrap;
+}
+/* Θ NEUTRE (loi de couleur) : le signe du theta ne colore plus. */
+.theta-decay__summary-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink-pure);
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+.theta-decay__summary-value[data-tone='neutral'] {
+  color: var(--ink-pure);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TABLE PAR POSITION — peau cockpit (moteur/grille dans
+   v3-components.css ; densité dans c3-hires.css).
+   ════════════════════════════════════════════════════════════════ */
+.greeks-page .pos-greeks-table__head {
+  border-bottom: 1px solid var(--line-emphasis);
+}
+.greeks-page .pos-greeks-table__h {
+  font-family: var(--qc-font-sans);
+  font-size: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.greeks-page .pos-greeks-table__row {
+  border-bottom: 1px solid var(--line-hairline);
+}
+.greeks-page .pos-greeks-table__row:last-child {
+  border-bottom: none;
+}
+/* Hover de ligne : hairline conservé + fond +3 %, 120 ms (transition
+   portée par v3-components.css). */
+.greeks-page .pos-greeks-table__row:hover {
+  background: color-mix(in srgb, var(--ink-pure) 3%, transparent);
+}
+/* Δ/Γ/Θ/ν + Exposition : encre neutre (aucun argent réel). */
+.greeks-page .pos-greeks-table__c {
+  color: var(--ink-pure);
+  font-variant-numeric: tabular-nums;
+}
+.greeks-page .pos-greeks-table__ticker {
+  font-weight: var(--fw-semibold);
+}
+.greeks-page .pos-greeks-table__iv {
+  color: var(--ink-mute);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DONUT EXPOSITION VEGA — gradations ACIER neutres (aucun ambre),
+   tooltip = ObsidienneTooltip, légende crafttée (pas de Legend
+   Recharts + fontSize inline 11 px → mort).
+   ════════════════════════════════════════════════════════════════ */
+.greeks-vega {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.greeks-vega__donut {
+  width: 200px;
+  height: 200px;
+  flex-shrink: 0;
+}
+.greeks-vega__legend {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.greeks-vega__legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--type-caption);
+}
+.greeks-vega__legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.greeks-vega__legend-name {
+  color: var(--ink-soft);
+  font-family: var(--type-mono);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.greeks-vega__legend-val {
+  margin-left: auto;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+.greeks-vega__empty {
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .greeks-vega {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .greeks-vega__donut {
+    width: 100%;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GREEKS DE SECOND ORDRE — repli conservé, restylé au langage cockpit
+   (cellules-MONDE .pf-c, valeur compacte 22 px, hairlines verticales).
    ════════════════════════════════════════════════════════════════ */
 .greeks-page .greeks-page__collapse-trigger {
   color: var(--ink-soft);
@@ -122,141 +296,45 @@
 .greeks-page .greeks-page__collapse-trigger:hover {
   color: var(--ink-pure);
 }
-
-/* ════════════════════════════════════════════════════════════════
-   GREEK EVOLUTION CHART — chips & canvas, scopés greeks-page
-   ════════════════════════════════════════════════════════════════ */
-.greeks-page .greek-evo__chip {
-  background: transparent;
+.greeks-so {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-top: var(--qc-space-3);
   border: 1px solid var(--line-hairline);
   border-radius: 2px;
-  color: var(--ink-mute);
-}
-.greeks-page .greek-evo__chip[data-active] {
-  background: color-mix(in srgb, var(--chip-color) 14%, transparent);
-  border-color: var(--chip-color);
-  color: var(--ink-pure);
-}
-
-/* ════════════════════════════════════════════════════════════════
-   THETA DECAY PROJECTION — Θ NEUTRE (révision CANONICAL-3).
-   Le JSX émet encore data-tone loss/profit selon le SIGNE, mais on
-   collapse les DEUX sur l'encre neutre : le signe d'un Greek ne colore
-   plus en rouge (le rouge reste réservé aux pertes RÉALISÉES). Le signe
-   reste lisible dans le texte (« -$99 ») et dans la hauteur des barres —
-   seule la COULEUR devient neutre (summary → ink-pure, barres → ink-soft).
-   ════════════════════════════════════════════════════════════════ */
-.greeks-page .theta-decay__head {
-  color: var(--ink-soft);
-}
-.greeks-page .theta-decay__summary {
   background: var(--depth-base);
-  border: 1px solid var(--line-hairline);
-  border-radius: 2px;
+  overflow: hidden;
 }
-.greeks-page .theta-decay__summary-label {
+.greeks-so__cell {
+  padding: 12px 14px;
+}
+.greeks-so__cell + .greeks-so__cell {
+  border-left: 1px solid var(--line-hairline);
+}
+.greeks-so__hint {
+  margin: var(--qc-space-3) 0 0;
+  font-size: var(--type-caption);
   color: var(--ink-mute);
-}
-.greeks-page .theta-decay__summary-value {
-  color: var(--ink-pure);
-}
-.greeks-page .theta-decay__bars {
-  border-bottom: 1px solid var(--line-hairline);
-}
-.greeks-page .theta-decay__bar {
-  background: var(--ink-soft);
-  opacity: 0.6;
-}
-.greeks-page .theta-decay__day-label {
-  color: var(--ink-mute);
+  line-height: 1.5;
 }
 
-/* ════════════════════════════════════════════════════════════════
-   PER-POSITION GREEKS TABLE — panneau plat, séparateurs murmurés
-   (Coloration JSX : Δ/Γ/Θ/ν tous neutres (ink-pure hérité) — Θ n'est
-   plus rougi sur le signe. On retouche fonds / séparateurs / textes.)
-   ════════════════════════════════════════════════════════════════ */
-.greeks-page .pos-greeks-table__head > span {
-  background: var(--depth-raised);
-  border-bottom: 1px solid var(--line-emphasis);
-  color: var(--ink-soft);
+@media (max-width: 900px) {
+  .greeks-so {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .greeks-so__cell:nth-child(n + 3) {
+    border-top: 1px solid var(--line-hairline);
+  }
+  .greeks-so__cell:nth-child(odd) {
+    border-left: none;
+  }
 }
-.greeks-page .pos-greeks-table__row > * {
-  border-bottom: 1px solid var(--line-hairline);
-  color: var(--ink-pure);
-}
-
-/* ════════════════════════════════════════════════════════════════
-   IV RANK HISTOGRAM — scopage tokens canoniques (peau uniquement)
-   ════════════════════════════════════════════════════════════════ */
-.greeks-page .iv-rank__head {
-  color: var(--ink-soft);
-}
-.greeks-page .iv-rank__scale span {
-  color: var(--ink-mute);
-}
-.greeks-page .iv-rank__value {
-  color: var(--ink-pure);
-}
-.greeks-page .iv-rank__ticker {
-  color: var(--ink-soft);
-}
-
-/* ════════════════════════════════════════════════════════════════
-   DONUT EXPOSITION VEGA — palette catégorielle neutre + tooltip
-   ════════════════════════════════════════════════════════════════ */
-.greeks-v3__pie-label {
-  fill: var(--ink-soft);
-  font-family: var(--type-mono);
-  font-size: 11px;
-}
-
-.greeks-v3__pie-tooltip {
-  background: var(--depth-raised);
-  border: 1px solid var(--line-emphasis);
-  border-radius: 2px;
-  padding: 6px 10px;
-  color: var(--ink-pure);
-  font-family: var(--type-mono);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-.greeks-v3__pie-tooltip-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.greeks-v3__pie-tooltip-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-.greeks-v3__pie-tooltip-name {
-  color: var(--ink-soft);
-}
-
-/* ════════════════════════════════════════════════════════════════
-   EMPTY BRANCH (aucune option en portefeuille) — local container plat
-   ════════════════════════════════════════════════════════════════ */
-.greeks-empty {
-  background: var(--depth-void);
-  position: relative;
-  z-index: 1;
-}
-.greeks-empty__panel {
-  max-width: 640px;
-  margin: 60px auto;
-  background: var(--depth-raised);
-  border: 1px solid var(--line-hairline);
-  border-radius: 2px;
-  padding: var(--qc-space-6);
-}
-.greeks-empty .empty-state__title {
-  color: var(--ink-pure);
-}
-.greeks-empty .empty-state__desc {
-  color: var(--ink-soft);
-}
-.greeks-empty .empty-state__icon {
-  color: var(--ink-mute);
+@media (max-width: 480px) {
+  .greeks-so {
+    grid-template-columns: 1fr;
+  }
+  .greeks-so__cell + .greeks-so__cell {
+    border-left: none;
+    border-top: 1px solid var(--line-hairline);
+  }
 }

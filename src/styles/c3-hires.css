@@ -282,45 +282,36 @@
     font-size: 14px; /* D2.F : cap data-viz 14, cf. B4 */
   }
 
-  /* ══ GREEKS (densif) — plancher 13 sur les résidus sous-13 PROPRES à
-     /trading/greeks. Les composants greek-evo / theta-decay / iv-rank /
-     pos-greeks-table sont EXCLUSIFS à cette page ; on les scope quand même
-     .greeks-page (convention pages-greeks.css) pour un plancher page-local.
-     DÉJÀ >=13 (aucune touche) : .uppercase-label (--fs-xs=13), table
-     .pos-greeks-table (--fs-sm=13 → colonnes IV/Rank héritent), KPI second-
-     ordre (label --type-caption=13, valeur --type-body=14), empty-states
-     (title --fs-md=13, desc --fs-sm=13 → « Pas d'IV Rank disponible » OK).
-     Restent les hardcodes sous-13 :
-       · greek-evo__chip 11 (chips Δ/Γ/Θ/ν)
-       · theta-decay__summary-label 10 · theta-decay__day-label 9 (axe J+)
-       · iv-rank__scale 9 · iv-rank__value 10 · iv-rank__ticker 10
-       · status-badge--xs 10 (badge « N options » header + colonne Type) —
-         classe PARTAGÉE, scopée .greeks-page pour ne toucher qu'ici
-       · légende donut recharts 11 (fontSize wrapperStyle inline → on floore
-         l'enfant .recharts-legend-item-text, non-inline, qui bat l'héritage)
-     Colonnes/gaps TENUS : histogramme minmax(28) + scroller table remplis,
-     0 relâche (vérifié @1591). */
-  .greeks-page .greek-evo__chip,
+  /* ══ GREEKS (densif 2.B) — /trading/greeks au langage cockpit.
+     Bandeau .greeks-command : valeurs .pf-c__val déjà à 34px (loi
+     ratifiée 2.A, cf. pages-greeks.css). Table maison .pos-greeks-table :
+     cellules → 20px / mono 600, rangées → 47px (parité .v3-table). Le
+     héros Theta + le donut Vega sont des charts Recharts → ticks cap 14.
+     Résidus sous-plancher scopés .greeks-page : summary-label du héros
+     + status-badge--xs (badge Type de la table). greek-evo / iv-rank
+     MORTS en 2.B (composants supprimés → règles retirées). */
   .greeks-page .theta-decay__summary-label,
-  .greeks-page .theta-decay__day-label,
-  .greeks-page .iv-rank__scale,
-  .greeks-page .iv-rank__value,
-  .greeks-page .iv-rank__ticker,
   .greeks-page .status-badge--xs {
     font-size: var(--type-caption);
   }
 
-  /* Légende donut (data-viz) : cap 14 comme les ticks, cf. B4/D2.F. */
-  .greeks-page .recharts-legend-item-text {
-    font-size: 14px;
+  /* Table par position — parité densité .v3-table (cellules 20, mono 600,
+     rowHeight 47 ; cf. B4/D2.F). */
+  .greeks-page .pos-greeks-table__c {
+    font-size: 20px;
+  }
+  .greeks-page .pos-greeks-table__c.mono {
+    font-weight: 600;
+  }
+  .greeks-page .pos-greeks-table__row {
+    min-height: 47px;
+  }
+  .greeks-page .theta-decay__summary-value {
+    font-size: 20px;
   }
 
-  /* ══ GREEKS · TICKS D'AXE RECHARTS — équivalent scope-greeks du B4.
-     La règle B4 est scopée .dash-shell → n'atteint PAS /trading/greeks.
-     Ici : Évolution 30j (LineChart XAxis/YAxis, ticks fontSize:11 en JSX →
-     attribut de présentation SVG, battu sans !important comme au B4).
-     ⚠ « Projection Theta » n'utilise PAS Recharts (barres CSS custom) — ses
-     labels d'axe J+ sont .theta-decay__day-label, déjà floorés ci-dessus. */
+  /* Ticks d'axe Recharts (héros Theta) — cap data-viz 14, cf. B4/D2.F.
+     La règle B4 est scopée .dash-shell → n'atteint pas /trading/greeks. */
   .greeks-page .recharts-cartesian-axis-tick-value {
     font-size: 14px; /* D2.F : cap data-viz 14, cf. B4 */
   }

@@ -1,27 +1,59 @@
 // ═══════════════════════════════════════════════════════════════
-//  THETA DECAY PROJECTION v3.0
+//  THETA DECAY PROJECTION — héros de page (brique 2.B)
 //
-//  Projects portfolio Theta decay over the next N days as a
-//  horizontal SVG bar chart. Each day's bar = daily theta impact
-//  in $. Cumulative line on top shows total erosion over time.
-//  Honours prefers-reduced-motion via CSS.
+//  Recomposé au système Obsidienne : héros pleine largeur de la page
+//  Greeks. Projette l'érosion Theta du portefeuille sur N jours à
+//  partir du theta quotidien RÉEL déjà agrégé (dailyTheta, sign-aware).
+//
+//  Loi de couleur : le theta est un coût HYPOTHÉTIQUE, jamais une
+//  perte réalisée → barres quotidiennes NEUTRES (acier). La SEULE
+//  série ambre de l'écran = le CUMUL (série héros, DA §3 usage 3).
+//  Tooltip unique ObsidienneTooltip · ticks 14 tabulaires · animation
+//  au premier montage (reduced-motion respecté via useMountOnlyAnimation).
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo } from 'react';
+import {
+  ComposedChart,
+  Bar,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 import InfoTooltip from '../ui/InfoTooltip';
 import EmptyState from '../ui/EmptyState';
 import { Clock } from 'lucide-react';
+import { OBS, obsAreaGradientStops, useMountOnlyAnimation } from './obsidienne';
+import ObsidienneTooltip from './ObsidienneTooltip';
 
 const TOOLTIP = {
   title: 'Projection Theta',
-  body: 'Impact cumulé de la décroissance temporelle quotidienne sur le portefeuille. Suppose toutes choses égales par ailleurs.',
+  body: 'Impact cumulé de la décroissance temporelle quotidienne sur le portefeuille, à theta constant. Suppose toutes choses égales par ailleurs.',
   formula: 'Σ (Theta_contrat × qty × mul) par jour',
 };
+
+function fmtSignedUsd(v) {
+  if (v == null || !Number.isFinite(v)) return '—';
+  const sign = v > 0 ? '+' : v < 0 ? '−' : '';
+  return `${sign}$${Math.round(Math.abs(v)).toLocaleString('de-CH')}`;
+}
+
+// Ticks d'axe $ compacts (cumul en centaines/milliers).
+function fmtAxisUsd(v) {
+  if (!Number.isFinite(v)) return '';
+  const sign = v < 0 ? '−' : '';
+  const abs = Math.abs(v);
+  if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(1)}k`;
+  return `${sign}$${Math.round(abs)}`;
+}
 
 export default function ThetaDecayProjection({
   dailyTheta,
   days = 30,
-  currency = 'USD',
+  height = 300,
   className,
 }) {
   const series = useMemo(() => {
@@ -35,79 +67,129 @@ export default function ThetaDecayProjection({
     return out;
   }, [dailyTheta, days]);
 
-  const maxCum = series.length ? Math.abs(series[series.length - 1].cumulative) : 0;
+  const anim = useMountOnlyAnimation();
 
-  if (!series.length) {
-    return (
-      <EmptyState
-        size="compact"
-        icon={Clock}
-        title="Pas de Theta actif"
-        description="Aucune position optionnelle avec Theta non nul à projeter."
-      />
-    );
-  }
+  const stats = useMemo(() => {
+    if (!series.length) return null;
+    const last = series[series.length - 1].cumulative;
+    const cum7 = series[Math.min(6, series.length - 1)].cumulative;
+    return { perDay: dailyTheta, cum7, cum30: last };
+  }, [series, dailyTheta]);
 
-  const formatCurrency = (v) => {
-    if (currency === 'USD') {
-      const fmt = new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 });
-      const sign = v > 0 ? '+' : v < 0 ? '-' : '';
-      return sign + '$' + fmt.format(Math.abs(v));
-    }
-    return new Intl.NumberFormat('de-CH', {
-      style: 'currency',
-      currency,
-      currencyDisplay: 'code',
-      maximumFractionDigits: 0,
-      signDisplay: 'always',
-    }).format(v);
-  };
+  // Intervalle d'affichage des labels d'axe X (≈ 6 repères max).
+  const xInterval = Math.max(0, Math.ceil(series.length / 6) - 1);
 
   return (
     <div className={['theta-decay', className].filter(Boolean).join(' ')}>
       <div className="theta-decay__head">
-        <span className="uppercase-label">Projection Theta · {days}j</span>
+        <span className="uppercase-label">Projection Theta · J+1 → J+{days}</span>
         <InfoTooltip content={TOOLTIP} size={12} />
       </div>
 
-      <div className="theta-decay__summary">
-        <div>
-          <span className="theta-decay__summary-label">Par jour</span>
-          {/* Θ NEUTRE (loi de couleur) : le signe du theta ne colore plus. */}
-          <span className="theta-decay__summary-value mono" data-tone="neutral">
-            {formatCurrency(dailyTheta)}
-          </span>
+      {!series.length ? (
+        <div className="theta-decay__empty">
+          <EmptyState
+            size="compact"
+            icon={Clock}
+            title="Pas de Theta actif"
+            description="Aucune position optionnelle avec Theta non nul à projeter."
+          />
         </div>
-        <div>
-          <span className="theta-decay__summary-label">Cumul {days}j</span>
-          <span className="theta-decay__summary-value mono" data-tone="neutral">
-            {formatCurrency(series[series.length - 1].cumulative)}
-          </span>
-        </div>
-      </div>
+      ) : (
+        <>
+          <div className="obsidienne-chart theta-decay__canvas" style={{ height }}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+              <ComposedChart
+                data={series}
+                margin={{ top: 12, right: 12, left: 4, bottom: 4 }}
+              >
+                <defs>
+                  <linearGradient id="thetaCumGrad" x1="0" y1="0" x2="0" y2="1">
+                    {obsAreaGradientStops(OBS.color.hero).map((s) => (
+                      <stop key={s.offset} {...s} />
+                    ))}
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} stroke={OBS.color.grid} />
+                <XAxis
+                  dataKey="day"
+                  tickFormatter={(d) => `J+${d}`}
+                  tick={OBS.tick}
+                  axisLine={false}
+                  tickLine={false}
+                  interval={xInterval}
+                />
+                <YAxis
+                  tick={OBS.tick}
+                  tickFormatter={fmtAxisUsd}
+                  axisLine={false}
+                  tickLine={false}
+                  width={56}
+                />
+                <Tooltip
+                  cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                  content={
+                    <ObsidienneTooltip
+                      formatLabel={(l) => `J+${l}`}
+                      rows={(payload) => {
+                        const d = payload?.[0]?.payload;
+                        if (!d) return [];
+                        return [
+                          { label: 'PAR JOUR', value: fmtSignedUsd(d.daily) },
+                          { label: 'CUMUL', value: fmtSignedUsd(d.cumulative) },
+                        ];
+                      }}
+                    />
+                  }
+                />
+                {/* CUMUL = série héros ambre (la seule de l'écran) — aire
+                    ≤12 % + trait 2 px. */}
+                <Area
+                  dataKey="cumulative"
+                  stroke={OBS.color.hero}
+                  strokeWidth={2}
+                  fill="url(#thetaCumGrad)"
+                  {...OBS.stroke}
+                  {...anim}
+                  dot={false}
+                  activeDot={{ r: 3, fill: OBS.color.hero, stroke: 'none' }}
+                />
+                {/* Barres quotidiennes NEUTRES (acier) — coût hypothétique,
+                    jamais de vert/rouge. */}
+                <Bar
+                  dataKey="daily"
+                  fill={OBS.color.context}
+                  fillOpacity={0.5}
+                  radius={[2, 2, 0, 0]}
+                  maxBarSize={18}
+                  {...anim}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
 
-      <div
-        className="theta-decay__bars"
-        role="img"
-        aria-label={`Projection Theta sur ${days} jours`}
-      >
-        {series.map((p, i) => {
-          const ratio = maxCum > 0 ? Math.abs(p.cumulative) / maxCum : 0;
-          return (
-            <div key={i} className="theta-decay__day">
-              <div
-                className="theta-decay__bar"
-                data-tone="neutral"
-                style={{ height: `${Math.max(6, ratio * 100)}%` }}
-                title={`J+${p.day} · cumul ${formatCurrency(p.cumulative)}`}
-              />
-              {(i === 0 || i === series.length - 1 || (i + 1) % 10 === 0) && (
-                <span className="theta-decay__day-label">J+{p.day}</span>
-              )}
+          <div className="theta-decay__summary">
+            <div className="theta-decay__stat">
+              <span className="theta-decay__summary-label">Par jour</span>
+              <span className="theta-decay__summary-value mono" data-tone="neutral">
+                {fmtSignedUsd(stats.perDay)}
+              </span>
             </div>
-          );
-        })}
-      </div>
+            <div className="theta-decay__stat">
+              <span className="theta-decay__summary-label">Cumul 7 j</span>
+              <span className="theta-decay__summary-value mono" data-tone="neutral">
+                {fmtSignedUsd(stats.cum7)}
+              </span>
+            </div>
+            <div className="theta-decay__stat">
+              <span className="theta-decay__summary-label">Cumul {days} j</span>
+              <span className="theta-decay__summary-value mono" data-tone="neutral">
+                {fmtSignedUsd(stats.cum30)}
+              </span>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
