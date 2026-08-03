@@ -73,10 +73,8 @@
   font-variant-numeric: tabular-nums slashed-zero;
   white-space: nowrap;
 }
-/* Ton du PHASE US quand marché ouvert (gain de session = vert marché). */
-.pm-cell .pf-c__val--profit {
-  color: var(--pnl-up);
-}
+/* 2.C1 — le ton vert du PHASE US est RETIRÉ : un état de séance n'est pas
+   un gain d'argent (loi de couleur). Seul le régime VIX élevé garde l'ambre. */
 .pm-cell[data-tone='warn'] .pm-cell__val {
   color: var(--accent);
 }

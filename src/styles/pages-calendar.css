@@ -382,8 +382,8 @@
 .calendar-page__ann-popup-row--expiration {
   color: var(--accent);
 }
-/* Estimations earnings (EPS / CA) dans la popup — teinte sourdine pour ne
-   pas écraser le vert du libellé earnings parent. */
+/* Estimations earnings (EPS / CA) dans la popup — teinte sourdine pour
+   distinguer l'estimation du libellé earnings parent (neutre --ink-pure). */
 .calendar-page__ann-popup-est {
   color: var(--ink-mute);
 }
@@ -809,7 +809,7 @@
   border-radius: 50%;
 }
 .calendar-page__legend-dot--earnings {
-  background: var(--pnl-up);
+  background: var(--ink-pure); /* 2.C1 — earnings = type neutre (parité ann-dot). */
 }
 .calendar-page__legend-dot--macro {
   background: var(--ink-soft);

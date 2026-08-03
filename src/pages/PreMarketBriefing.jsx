@@ -285,6 +285,8 @@ export default function PreMarketBriefing() {
   //    Positions.jsx. Fini le vocabulaire hook (armed/imminent/safe) ;
   //    verdict par position CRITICAL / ARMED (sinon SAFE). ──
   const actionableAlerts = useMemo(() => {
+    // greeksMap non lu par generateAlerts (facteurs = dte/pctChg/daysHeld) →
+    // Map() vide suffit ; classification byte-identique à Positions.jsx.
     const alerts = generateAlerts(openPositions || [], new Map(), lr);
     return alerts.filter((a) => a.severity === 'red' || a.severity === 'orange');
   }, [openPositions, lr]);
@@ -455,11 +457,12 @@ export default function PreMarketBriefing() {
             <span className="pm-command__countdown-val">{phaseInfo.countdownHMS}</span>
             <span className="pf-c__meta pm-cell__meta">séance US · NY</span>
           </div>
+          {/* PHASE US = état de séance (scheduling), PAS un gain d'argent →
+              encre NEUTRE (loi de couleur ; l'état est porté par le libellé). */}
           <Cell
             label="PHASE US"
             value={phaseInfo.label}
             meta={phaseInfo.phase === 'open' ? 'marché ouvert' : phaseInfo.phase === 'pre' ? 'pré-marché' : phaseInfo.phase === 'after' ? 'after-hours' : 'fermé'}
-            tone={phaseInfo.phase === 'open' ? 'profit' : undefined}
           />
           <Cell label="GENÈVE" value={fmtClock(now, 'Europe/Zurich')} meta="CET" live />
           <Cell label="NEW YORK" value={fmtClock(now, 'America/New_York')} meta="ET" live />
