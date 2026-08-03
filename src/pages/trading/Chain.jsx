@@ -22,9 +22,11 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Crosshair } from 'lucide-react';
 import { useDispatch } from '../../store/useStore';
 import OptionsChainTable from '../../components/charts/OptionsChainTable';
 import AddTradeModal from '../../components/trades/AddTradeModal';
+import { TickValue } from '../../components/dashboard/decision/parts';
 import { bsGreeks, RISK_FREE_RATE } from '../../utils/options/blackScholes';
 import { invalidateGreeksMemo } from '../../utils/greeksApi';
 import { appendIvHistory } from '../../utils/ivHistory';
@@ -135,15 +137,34 @@ const fmtPct = (v) => {
   return `${(v * 100).toFixed(1)}%`;
 };
 
-function StatCell({ label, value, sub, tone = 'neutral' }) {
+// Cellule-MONDE du bandeau (label · valeur 34 px · méta), collée à
+// gauche, min-width:0. TickValue = micro-mouvement 1.F au changement de
+// valeur (coupé sous prefers-reduced-motion). `tone` colore la valeur
+// (accent = zone Sniper décisionnelle ; mute = donnée indispo). `valTone`
+// up/down = variation marché du spot (seul rouge/vert autorisé ici).
+function Cell({ label, value, meta, tone, valTone, metaTone }) {
   return (
-    <div className="chain-v5__stat" data-tone={tone}>
-      <span className="chain-v5__stat-label">{label}</span>
-      <span className="chain-v5__stat-value">{value}</span>
-      {sub ? <span className="chain-v5__stat-sub">{sub}</span> : null}
+    <div className="chain-cell pf-c" data-tone={tone || undefined}>
+      <span className="pf-c__label chain-cell__label">{label}</span>
+      <TickValue
+        text={value}
+        className={`pf-c__val chain-cell__val${valTone ? ` pf-c__val--${valTone}` : ''}`}
+      />
+      <span
+        className={`pf-c__meta chain-cell__meta${metaTone ? ` chain-cell__meta--${metaTone}` : ''}`}
+      >
+        {meta || ' '}
+      </span>
     </div>
   );
 }
+
+// Régime GEX en français, registre NEUTRE (ce n'est pas de l'argent).
+const GEX_REGIME_FR = {
+  POSITIVE_GEX: { label: 'POSITIF', sub: 'mean-reverting' },
+  NEGATIVE_GEX: { label: 'NÉGATIF', sub: 'expansion de vol' },
+  NEUTRAL_GEX: { label: 'NEUTRE', sub: 'γ ≈ 0' },
+};
 
 export default function Chain() {
   const dispatch = useDispatch();
@@ -439,9 +460,19 @@ export default function Chain() {
     dispatch({ type: 'ADD_CLOSED_TRADE', payload: trade });
   };
 
+  const spotDir =
+    stats?.dayChangePct == null ? null : stats.dayChangePct > 0 ? 'up' : stats.dayChangePct < 0 ? 'down' : null;
+  const maxPainVsSpot =
+    analytics?.maxPain && stats?.spot
+      ? `${analytics.maxPain.strike > stats.spot ? '+' : '−'}${(
+          (Math.abs(analytics.maxPain.strike - stats.spot) / stats.spot) *
+          100
+        ).toFixed(1)}% vs spot`
+      : null;
+
   return (
     <div className="chain-v5">
-      {/* 1. Topbar : ticker input + load button + history */}
+      {/* 1. Barre de commande : ticker input + Charger + récents (inchangée) */}
       <div className="chain-v5__topbar">
         <div className="chain-v5__search">
           <input
@@ -472,124 +503,233 @@ export default function Chain() {
                 key={h}
                 type="button"
                 className="chain-v5__history-pill"
-                onClick={() => {
-                  setTicker(h);
-                }}
+                onClick={() => setTicker(h)}
               >
                 {h}
               </button>
             ))}
           </div>
         )}
-        {error ? <div className="chain-v5__error">{error}</div> : null}
       </div>
 
-      {/* 2-5 : visible only when chain loaded */}
       {yahooData ? (
         <>
-          {/* 2. Stats strip — Spot, IV30, Strikes, Sniper Count */}
-          <div className="chain-v5__stats">
-            <StatCell
-              label={`${yahooData.ticker} · Spot`}
-              value={fmtUsd(stats?.spot)}
-              sub={
-                stats?.dayChangePct != null
-                  ? `${stats.dayChangePct > 0 ? '+' : ''}${stats.dayChangePct.toFixed(2)}%`
-                  : null
-              }
-              tone={
-                stats?.dayChangePct == null
-                  ? 'strong'
-                  : stats.dayChangePct > 0
-                    ? 'profit'
-                    : stats.dayChangePct < 0
-                      ? 'loss'
-                      : 'strong'
-              }
-            />
-            <StatCell
-              label="ATM IV"
-              value={stats?.atmIv != null ? fmtPct(stats.atmIv) : '——'}
-              sub="median 5 strikes"
-              tone="amber"
-            />
-            <StatCell
-              label="Expirations"
-              value={String(yahooData.expirationDates.length)}
-              sub="dates Yahoo"
-              tone="neutral"
-            />
-            <StatCell
-              label="Strikes visibles"
-              value={String(displayRows.length)}
-              sub={`/ ${rows.length}`}
-              tone="neutral"
-            />
-            <StatCell
-              label="Sniper Zone"
-              value={String(sniperCount)}
-              sub="|Δ| ∈ [0.25, 0.35]"
-              tone={sniperCount > 0 ? 'profit' : 'mute'}
-            />
-            <StatCell label="IVR" value="——" sub="Sprint 6 — IV history" tone="mute" />
+          {/* 2. BANDEAU DE COMMANDEMENT — cellules-MONDE 34 px, cadre cockpit. */}
+          <div className="lh-final chain-command chain-rise">
+            <div className="chain-command__grid">
+              <Cell
+                label={`${yahooData.ticker} · SPOT`}
+                value={fmtUsd(stats?.spot)}
+                valTone={spotDir}
+                meta={
+                  stats?.dayChangePct != null
+                    ? `${stats.dayChangePct > 0 ? '+' : ''}${stats.dayChangePct.toFixed(2)}% · vs veille`
+                    : 'séance'
+                }
+                metaTone={spotDir}
+              />
+              <Cell
+                label="ATM IV"
+                value={stats?.atmIv != null ? fmtPct(stats.atmIv) : '——'}
+                meta="médiane 5 strikes"
+              />
+              <Cell
+                label="Échéances"
+                value={String(yahooData.expirationDates.length)}
+                meta="servies"
+              />
+              <Cell
+                label="Strikes visibles"
+                value={String(displayRows.length)}
+                meta={`sur ${rows.length} chargés`}
+              />
+              <Cell
+                label="Zone Sniper"
+                value={String(sniperCount)}
+                meta="|Δ| 0.25 – 0.35"
+                tone={sniperCount > 0 ? 'accent' : undefined}
+              />
+              <Cell label="IVR" value="——" meta="rang indispo · série en collecte" tone="mute" />
+            </div>
           </div>
 
-          {/* 3. Tenor tabs */}
-          {expiryTabs.length > 0 && (
-            <div className="chain-v5__tenors" role="tablist">
-              {expiryTabs.map((t) => (
-                <button
-                  key={t.key}
-                  type="button"
-                  role="tab"
-                  className="chain-v5__tenor"
-                  data-active={selectedExpiry === t.key || undefined}
-                  aria-selected={selectedExpiry === t.key}
-                  onClick={() => loadExpiry(t.key)}
-                  disabled={loadingExpiry}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* 4. Controls — strike count + Sniper toggle */}
-          <div className="chain-v5__controls">
-            <div className="chain-v5__control-group">
-              <span className="chain-v5__control-label">Strikes</span>
+          {/* 3. Barres échéances + strikes — deux rangées distinctes, respirées. */}
+          <div className="lh-final chain-bars chain-rise">
+            {expiryTabs.length > 0 && (
+              <div className="chain-bar" role="tablist" aria-label="Échéances">
+                <span className="chain-bar__label">Échéances</span>
+                {expiryTabs.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    role="tab"
+                    className="chain-tab"
+                    data-active={selectedExpiry === t.key || undefined}
+                    aria-selected={selectedExpiry === t.key}
+                    onClick={() => loadExpiry(t.key)}
+                    disabled={loadingExpiry}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+                <span className="chain-bar__spacer" />
+                {loadingExpiry ? (
+                  <span className="chain-bar__loading">Chargement {selectedExpiry}…</span>
+                ) : null}
+              </div>
+            )}
+            <div className="chain-bar" aria-label="Strikes">
+              <span className="chain-bar__label">Strikes</span>
               {STRIKE_OPTS.map((o) => (
                 <button
                   key={o.key}
                   type="button"
-                  className="chain-v5__chip"
+                  className="chain-tab"
                   data-active={strikeCount === o.key || undefined}
                   onClick={() => setStrikeCount(o.key)}
                 >
                   {o.label}
                 </button>
               ))}
+              <button
+                type="button"
+                className="chain-sniper-toggle"
+                data-active={sniperFilter || undefined}
+                onClick={() => setSniperFilter((v) => !v)}
+                aria-pressed={sniperFilter}
+              >
+                <span className="chain-sniper-dot" aria-hidden="true" />
+                Sniper OTM
+                {sniperCount > 0 ? <span className="chain-sniper-count">{sniperCount}</span> : null}
+              </button>
+              <span className="chain-bar__spacer" />
+              <span className="chain-bar__hint">
+                {displayRows.length} strike{displayRows.length > 1 ? 's' : ''} affiché
+                {displayRows.length > 1 ? 's' : ''}
+              </span>
             </div>
-            <button
-              type="button"
-              className="chain-v5__sniper-toggle"
-              data-active={sniperFilter || undefined}
-              onClick={() => setSniperFilter((v) => !v)}
-              aria-pressed={sniperFilter}
-            >
-              <span className="chain-v5__sniper-dot" aria-hidden="true" />
-              Sniper OTM
-              {sniperCount > 0 ? (
-                <span className="chain-v5__sniper-count">{sniperCount}</span>
-              ) : null}
-            </button>
-            {loadingExpiry ? (
-              <span className="chain-v5__loading-hint">Chargement {selectedExpiry}…</span>
-            ) : null}
           </div>
 
-          {/* 5. Table */}
-          <div className="chain-v5__table-wrap">
+          {/* 4. ÉTAGE SIGNAUX DU MARCHÉ — remonté AVANT la chaîne. Registre
+              NEUTRE (structure de marché, pas de l'argent réel). */}
+          <div className="lh-final chain-signals chain-rise">
+            <div className="chain-signals__grid">
+              <div className="chain-signals__cell">
+                <span className="chain-signals__label">Max Pain</span>
+                {analytics?.maxPain ? (
+                  <>
+                    <TickValue
+                      text={`$${analytics.maxPain.strike}`}
+                      className="chain-signals__val"
+                    />
+                    <span className="chain-signals__sub">{maxPainVsSpot || 'strike de douleur'}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="chain-signals__val">——</span>
+                    <span className="chain-signals__sub">pas d&apos;OI</span>
+                  </>
+                )}
+              </div>
+
+              <div className="chain-signals__cell">
+                <span className="chain-signals__label">25Δ Risk Reversal</span>
+                {analytics?.rr25 ? (
+                  <>
+                    <TickValue
+                      text={`${analytics.rr25.rr25 > 0 ? '+' : ''}${analytics.rr25.rr25.toFixed(1)}`}
+                      className="chain-signals__val"
+                    />
+                    <span className="chain-signals__sub">
+                      call {analytics.rr25.callIv.toFixed(0)}% − put {analytics.rr25.putIv.toFixed(0)}%
+                      {analytics.rr25.rr25 < -1 ? ' · put-skew' : ''}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="chain-signals__val">——</span>
+                    <span className="chain-signals__sub">pas d&apos;ancre 25Δ</span>
+                  </>
+                )}
+              </div>
+
+              <div className="chain-signals__cell">
+                <span className="chain-signals__label">OI · strikes clés</span>
+                {analytics?.oiTop && analytics.oiTop.length > 0 ? (
+                  <div className="chain-signals__stack">
+                    {analytics.oiTop.map((s) => (
+                      <span key={s.strike} className="chain-signals__row">
+                        <span className="chain-signals__row-k">${s.strike}</span>
+                        <span className="chain-signals__row-v">
+                          {s.total >= 1000 ? `${(s.total / 1000).toFixed(1)}k` : String(s.total)} OI
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <span className="chain-signals__val">——</span>
+                    <span className="chain-signals__sub">pas d&apos;OI</span>
+                  </>
+                )}
+              </div>
+
+              <div className="chain-signals__cell">
+                <span className="chain-signals__label">Net GEX</span>
+                {analytics?.netGex ? (
+                  <>
+                    <TickValue
+                      text={(GEX_REGIME_FR[analytics.netGex.regime] || GEX_REGIME_FR.NEUTRAL_GEX).label}
+                      className="chain-signals__val"
+                    />
+                    <span className="chain-signals__sub">
+                      {(GEX_REGIME_FR[analytics.netGex.regime] || GEX_REGIME_FR.NEUTRAL_GEX).sub}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="chain-signals__val">——</span>
+                    <span className="chain-signals__sub">γ ou OI manquant</span>
+                  </>
+                )}
+              </div>
+
+              <div className="chain-signals__cell">
+                <span className="chain-signals__label">Murs · flip</span>
+                {analytics?.callWall || analytics?.putWall || analytics?.gammaFlip ? (
+                  <div className="chain-signals__stack">
+                    {analytics.callWall ? (
+                      <span className="chain-signals__row">
+                        <span className="chain-signals__tag">CALL</span>
+                        <span className="chain-signals__row-k">${analytics.callWall.strike}</span>
+                      </span>
+                    ) : null}
+                    {analytics.putWall ? (
+                      <span className="chain-signals__row">
+                        <span className="chain-signals__tag chain-signals__tag--put">PUT</span>
+                        <span className="chain-signals__row-k">${analytics.putWall.strike}</span>
+                      </span>
+                    ) : null}
+                    {analytics.gammaFlip ? (
+                      <span className="chain-signals__row">
+                        <span className="chain-signals__tag chain-signals__tag--flip">FLIP</span>
+                        <span className="chain-signals__row-k">${analytics.gammaFlip.strike}</span>
+                      </span>
+                    ) : null}
+                  </div>
+                ) : (
+                  <>
+                    <span className="chain-signals__val">——</span>
+                    <span className="chain-signals__sub">γ-OI manquant</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 5. LA CHAÎNE — héroïne pleine largeur (structure OptionsChainTable
+              conservée : double entrée, thead sticky 2 rangées = acquis). */}
+          <div className="chain-v5__table-wrap chain-rise">
             <OptionsChainTable
               rows={displayRows}
               spot={yahooData.currentPrice}
@@ -597,166 +737,45 @@ export default function Chain() {
               onRowClick={handleRowClick}
             />
           </div>
-
-          {/* 6. Footer analytics — Max Pain · RR25 Skew · OI top */}
-          <div className="chain-v5__footer">
-            <div className="chain-v5__footer-cell">
-              <span className="chain-v5__footer-label">Max Pain</span>
-              {analytics?.maxPain ? (
-                <>
-                  <span className="chain-v5__footer-value">${analytics.maxPain.strike}</span>
-                  {stats?.spot ? (
-                    <span className="chain-v5__footer-sub">
-                      {analytics.maxPain.strike > stats.spot
-                        ? `+${(((analytics.maxPain.strike - stats.spot) / stats.spot) * 100).toFixed(1)}%`
-                        : `−${(((stats.spot - analytics.maxPain.strike) / stats.spot) * 100).toFixed(1)}%`}{' '}
-                      vs spot
-                    </span>
-                  ) : null}
-                </>
-              ) : (
-                <>
-                  <span className="chain-v5__footer-value">——</span>
-                  <span className="chain-v5__footer-sub">pas d&apos;OI</span>
-                </>
-              )}
-            </div>
-            <div className="chain-v5__footer-cell">
-              <span className="chain-v5__footer-label">25Δ Risk Reversal</span>
-              {analytics?.rr25 ? (
-                <>
-                  <span
-                    className="chain-v5__footer-value"
-                    data-tone={
-                      analytics.rr25.rr25 < -1
-                        ? 'loss'
-                        : analytics.rr25.rr25 > 1
-                          ? 'profit'
-                          : 'mute'
-                    }
-                  >
-                    {analytics.rr25.rr25 > 0 ? '+' : ''}
-                    {analytics.rr25.rr25.toFixed(1)}
-                  </span>
-                  <span className="chain-v5__footer-sub">
-                    call {analytics.rr25.callIv.toFixed(0)}% − put {analytics.rr25.putIv.toFixed(0)}
-                    %{analytics.rr25.rr25 < -1 ? ' · put-skew' : ''}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="chain-v5__footer-value">——</span>
-                  <span className="chain-v5__footer-sub">pas d&apos;anchor 25Δ</span>
-                </>
-              )}
-            </div>
-            <div className="chain-v5__footer-cell">
-              <span className="chain-v5__footer-label">OI Top Strikes</span>
-              {analytics?.oiTop && analytics.oiTop.length > 0 ? (
-                <div className="chain-v5__footer-oi">
-                  {analytics.oiTop.map((s) => (
-                    <span key={s.strike} className="chain-v5__footer-oi-row">
-                      <span className="chain-v5__footer-oi-strike">${s.strike}</span>
-                      <span className="chain-v5__footer-oi-total">
-                        {s.total >= 1000 ? `${(s.total / 1000).toFixed(1)}k` : String(s.total)}
-                      </span>
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <>
-                  <span className="chain-v5__footer-value">——</span>
-                  <span className="chain-v5__footer-sub">pas d&apos;OI</span>
-                </>
-              )}
-            </div>
-            <div className="chain-v5__footer-cell">
-              <span className="chain-v5__footer-label">Net GEX</span>
-              {analytics?.netGex ? (
-                <>
-                  <span
-                    className="chain-v5__footer-value"
-                    data-tone={
-                      analytics.netGex.regime === 'POSITIVE_GEX'
-                        ? 'profit'
-                        : analytics.netGex.regime === 'NEGATIVE_GEX'
-                          ? 'loss'
-                          : 'mute'
-                    }
-                  >
-                    {analytics.netGex.regime === 'POSITIVE_GEX'
-                      ? 'POSITIVE'
-                      : analytics.netGex.regime === 'NEGATIVE_GEX'
-                        ? 'NEGATIVE'
-                        : 'NEUTRAL'}
-                  </span>
-                  <span className="chain-v5__footer-sub">
-                    {analytics.netGex.regime === 'POSITIVE_GEX'
-                      ? 'mean-reverting'
-                      : analytics.netGex.regime === 'NEGATIVE_GEX'
-                        ? 'vol expansion'
-                        : 'γ near zero'}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="chain-v5__footer-value">——</span>
-                  <span className="chain-v5__footer-sub">γ ou OI manquant</span>
-                </>
-              )}
-            </div>
-            <div className="chain-v5__footer-cell">
-              <span className="chain-v5__footer-label">Walls / Flip</span>
-              {analytics?.callWall || analytics?.putWall || analytics?.gammaFlip ? (
-                <div className="chain-v5__footer-walls">
-                  {analytics.callWall ? (
-                    <span className="chain-v5__footer-wall-row">
-                      <span className="chain-v5__footer-wall-tag">CALL</span>
-                      <span className="chain-v5__footer-wall-strike">
-                        ${analytics.callWall.strike}
-                      </span>
-                    </span>
-                  ) : null}
-                  {analytics.putWall ? (
-                    <span className="chain-v5__footer-wall-row">
-                      <span className="chain-v5__footer-wall-tag chain-v5__footer-wall-tag--put">
-                        PUT
-                      </span>
-                      <span className="chain-v5__footer-wall-strike">
-                        ${analytics.putWall.strike}
-                      </span>
-                    </span>
-                  ) : null}
-                  {analytics.gammaFlip ? (
-                    <span className="chain-v5__footer-wall-row">
-                      <span className="chain-v5__footer-wall-tag chain-v5__footer-wall-tag--flip">
-                        FLIP
-                      </span>
-                      <span className="chain-v5__footer-wall-strike">
-                        ${analytics.gammaFlip.strike}
-                      </span>
-                    </span>
-                  ) : null}
-                </div>
-              ) : (
-                <>
-                  <span className="chain-v5__footer-value">——</span>
-                  <span className="chain-v5__footer-sub">γ-OI manquant</span>
-                </>
-              )}
-            </div>
-          </div>
         </>
-      ) : (
-        !loading &&
-        !error && (
-          <div className="chain-v5__empty">
-            <div className="chain-v5__empty-title">Aucune chaîne chargée</div>
-            <div className="chain-v5__empty-sub">
-              Tape un ticker en haut puis Entrée. Tu peux essayer SPY, AAPL, NVDA, TSLA, MSFT.
-            </div>
+      ) : error ? (
+        /* État honnête — ticker chargé mais chaîne non servie. */
+        <div className="chain-v5__empty">
+          <Crosshair size={26} aria-hidden="true" style={{ color: 'var(--ink-mute)' }} />
+          <div className="chain-v5__empty-title">Chaîne indisponible</div>
+          <div className="chain-v5__empty-sub">{error}</div>
+          <div className="chain-v5__empty-sub">
+            Vérifie le symbole, ou réessaie — la source options (Yahoo) peut être
+            momentanément muette sur ce ticker.
           </div>
-        )
+        </div>
+      ) : loading ? (
+        <div className="chain-v5__empty">
+          <div className="chain-v5__empty-title">Chargement de la chaîne…</div>
+        </div>
+      ) : (
+        /* État d'accueil — l'écran de tir attend son ticker. */
+        <div className="chain-v5__empty">
+          <Crosshair size={26} aria-hidden="true" style={{ color: 'var(--accent)' }} />
+          <div className="chain-v5__empty-title">Écran de tir · aucune chaîne chargée</div>
+          <div className="chain-v5__empty-sub">
+            Tape un ticker en haut puis Entrée. Le bandeau te donne le spot, l&apos;IV ATM
+            et le compte de contrats dans ta zone Sniper ; les signaux de marché
+            (Max Pain, GEX, murs) se lisent juste au-dessus de la chaîne.
+          </div>
+          <div className="chain-v5__empty-hint">
+            {['SPY', 'AAPL', 'NVDA', 'TSLA', 'MSFT'].map((tk) => (
+              <button
+                key={tk}
+                type="button"
+                className="chain-v5__empty-tk"
+                onClick={() => setTicker(tk)}
+              >
+                {tk}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
       <AddTradeModal

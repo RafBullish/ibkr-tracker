@@ -1,9 +1,23 @@
 /* ════════════════════════════════════════════════════════════════
-   v5-chain.css — Sprint 3 Chain Options institutional refonte
-   /trading/chain. Flat dense Bloomberg-grade chrome over the
-   existing OptionsChainTable component.
+   v5-chain.css — /trading/chain « Options Live » au langage cockpit
+   v1.0 (brique 2.C2). Réécriture EN PLACE de la partie .chain-* — la
+   position de cascade est conservée, le fichier n'est PAS renommé
+   (chantier ultérieur, cf. rapport).
 
-   Loaded after v4-dashboard.css in main.jsx.
+   Recettes v1.0 réutilisées (chargées plus tard) : .lh-final (cadre
+   cockpit), .pf-c (cellule-MONDE), .mk-title (titre de zone). Ordre
+   vertical : barre de commande (ticker) → BANDEAU → barres échéances +
+   strikes → ÉTAGE SIGNAUX (remonté AVANT la table) → la chaîne héroïne.
+
+   NB : ce fichier héberge encore .perf-attr__* (attribution History,
+   page LIVRÉE/gelée) et .cheatsheet__* (modale ⌘/ globale) — laissés
+   INTACTS ici : les déplacer toucherait une page hors périmètre. Split
+   dédié différé (même chantier que le rename). Cf. rapport 2.C2.
+
+   LOI DE COULEUR : les Greeks de la chaîne, les compteurs, les signaux
+   de structure (RR skew, régime GEX, murs) sont NEUTRES. Rouge/vert
+   réservés à l'argent réel + la variation de spot du jour (marché).
+   Ambre = décision (échéance/strike/Sniper sélectionnés, zone Sniper).
    ════════════════════════════════════════════════════════════════ */
 
 .chain-v5 {
@@ -11,21 +25,56 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
+  gap: var(--qc-space-3);
+  padding: var(--qc-space-3);
   font-family: var(--qc-font-mono);
-  background: var(--qc-bg-base);
+  background: var(--depth-void);
 }
 
-/* ─── 1. Topbar ─────────────────────────────────────────────────── */
+/* Stagger de montage par étage (recette 1.F). Joue UNE fois au montage —
+   les étages restent montés lors d'un changement d'échéance (pas de
+   re-slide, la chaîne ne « tique » pas). Coupé sous reduced-motion. */
+@keyframes chainRise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.chain-rise {
+  animation: chainRise 240ms var(--ease-out) both;
+}
+.chain-command.chain-rise {
+  animation-delay: 20ms;
+}
+.chain-bars.chain-rise {
+  animation-delay: 60ms;
+}
+.chain-signals.chain-rise {
+  animation-delay: 100ms;
+}
+.chain-v5__table-wrap.chain-rise {
+  animation-delay: 140ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chain-rise {
+    animation: none;
+  }
+}
+
+/* ─── 1. Barre de commande (ticker input + charger + récents) ─────── */
 
 .chain-v5__topbar {
   display: flex;
   align-items: center;
   gap: 12px;
-  height: 32px;
-  padding: 0 12px;
-  background: var(--bg-elev-1);
-  border-bottom: var(--hairline-strong);
+  min-height: 34px;
+  padding: 0 4px;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .chain-v5__search {
@@ -36,48 +85,48 @@
 }
 
 .chain-v5__input {
-  width: 220px;
-  height: 22px;
-  padding: 0 8px;
+  width: 240px;
+  height: 30px;
+  padding: 0 10px;
   font-family: var(--qc-font-mono);
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--qc-text-primary);
-  background: var(--bg-elev-2);
-  border: 1px solid var(--qc-border-subtle);
-  border-radius: 0;
+  color: var(--ink-pure);
+  background: var(--depth-base);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
   outline: none;
   transition: border-color 80ms ease-out;
 }
 
 .chain-v5__input:focus-visible {
-  border-color: var(--qc-accent);
+  border-color: var(--accent);
 }
 
 .chain-v5__input::placeholder {
-  color: var(--qc-text-tertiary);
+  color: var(--ink-mute);
   text-transform: none;
 }
 
 .chain-v5__load-btn {
-  height: 22px;
-  padding: 0 12px;
-  font-family: var(--qc-font-mono);
-  font-size: 10px;
+  height: 30px;
+  padding: 0 16px;
+  font-family: var(--qc-font-sans);
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--qc-bg-base);
-  background: var(--accent-amber, #ffa028);
-  border: 1px solid var(--accent-amber, #ffa028);
-  border-radius: 0;
+  color: var(--depth-void);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
   cursor: pointer;
   transition: filter 80ms ease-out;
 }
 
 .chain-v5__load-btn:hover:not(:disabled) {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
 }
 
 .chain-v5__load-btn:disabled {
@@ -94,368 +143,395 @@
 }
 
 .chain-v5__history-label {
-  font-size: 9px;
-  font-weight: 500;
+  font-size: var(--type-caption);
+  font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--qc-text-tertiary);
+  color: var(--ink-mute);
   margin-right: 4px;
 }
 
 .chain-v5__history-pill {
-  height: 18px;
-  padding: 0 6px;
+  height: 22px;
+  padding: 0 8px;
   font-family: var(--qc-font-mono);
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 500;
   letter-spacing: 0.04em;
-  color: var(--qc-text-secondary);
+  color: var(--ink-soft);
   background: transparent;
-  border: 1px solid var(--qc-border-subtle);
-  border-radius: 0;
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
   cursor: pointer;
   transition: all 80ms ease-out;
 }
 
 .chain-v5__history-pill:hover {
-  color: var(--qc-text-primary);
-  border-color: var(--accent-amber, #ffa028);
+  color: var(--ink-pure);
+  border-color: var(--accent);
 }
 
-.chain-v5__error {
-  margin-left: auto;
-  padding: 0 8px;
-  height: 18px;
+/* L'erreur de chargement n'est plus un pill rouge dans la barre : elle
+   est routée vers l'état honnête plein cadre (.chain-v5__empty), au
+   registre neutre (un échec de fetch n'est pas une perte d'argent). */
+
+/* ─── 2. BANDEAU DE COMMANDEMENT (cockpit .lh-final, valeurs 34 px) ── */
+
+.chain-command__grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 1.1fr 1.1fr;
+}
+.chain-cell {
+  padding: 14px 18px 12px;
+  min-width: 0;
+  overflow: hidden;
+}
+.chain-command__grid > .chain-cell + .chain-cell {
+  border-left: 1px solid var(--line-emphasis);
+}
+.chain-cell__label {
   display: inline-flex;
   align-items: center;
-  font-size: 10px;
-  color: var(--qc-loss);
-  background: color-mix(in srgb, var(--qc-loss) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--qc-loss) 30%, transparent);
+  gap: 7px;
+  font-size: var(--type-caption);
+  line-height: 14px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chain-cell__val {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chain-command .chain-cell__val {
+  font-size: var(--type-display, 34px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.chain-cell__meta {
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Variation du jour sur le spot = sémantique marché → vert/rouge autorisés. */
+.chain-command .pf-c__val--up {
+  color: var(--pnl-up);
+}
+.chain-command .pf-c__val--down {
+  color: var(--pnl-down);
+}
+.chain-cell__meta--up {
+  color: var(--pnl-up);
+}
+.chain-cell__meta--down {
+  color: var(--pnl-down);
+}
+/* ZONE SNIPER peuplée = zone de décision de la doctrine → ambre. */
+.chain-command .chain-cell[data-tone="accent"] .chain-cell__val {
+  color: var(--accent);
+}
+/* IVR indisponible (pipeline absent) — tiret neutre appuyé. */
+.chain-command .chain-cell[data-tone="mute"] .chain-cell__val {
+  color: var(--ink-mute);
 }
 
-/* ─── 2. Stats strip ─────────────────────────────────────────────── */
+/* ─── 3. Barres échéances + strikes (deux rangées distinctes) ─────── */
 
-.chain-v5__stats {
-  display: flex;
-  align-items: stretch;
-  height: 56px;
-  background: var(--bg-elev-1);
-  border-bottom: var(--hairline-strong);
-  overflow-x: auto;
-  flex-shrink: 0;
-}
-
-.chain-v5__stat {
+.chain-bars {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  flex: 1 1 0;
-  min-width: 130px;
-  padding: 0 14px;
-  border-right: var(--hairline);
-  position: relative;
-}
-
-.chain-v5__stat:last-child {
-  border-right: none;
-}
-
-.chain-v5__stat-label {
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--qc-text-tertiary);
-  white-space: nowrap;
-}
-
-.chain-v5__stat-value {
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: -0.005em;
-  color: var(--qc-text-primary);
-  font-feature-settings:
-    "tnum" 1,
-    "zero" 1;
-  font-variant-numeric: tabular-nums slashed-zero;
-  line-height: 1.1;
-  margin-top: 2px;
-  white-space: nowrap;
-}
-
-.chain-v5__stat-sub {
-  font-size: 9px;
-  color: var(--qc-text-tertiary);
-  margin-top: 2px;
-  font-feature-settings:
-    "tnum" 1,
-    "zero" 1;
-  font-variant-numeric: tabular-nums slashed-zero;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-.chain-v5__stat[data-tone="profit"] .chain-v5__stat-value {
-  color: var(--qc-profit);
-}
-.chain-v5__stat[data-tone="profit"]::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: var(--qc-profit);
-}
-
-.chain-v5__stat[data-tone="loss"] .chain-v5__stat-value {
-  color: var(--qc-loss);
-}
-.chain-v5__stat[data-tone="loss"]::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: var(--qc-loss);
-}
-
-.chain-v5__stat[data-tone="strong"] .chain-v5__stat-value {
-  color: var(--qc-text-primary);
-  font-size: 20px;
-  font-weight: 700;
-}
-.chain-v5__stat[data-tone="strong"]::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: var(--accent-amber, #ffa028);
-}
-
-.chain-v5__stat[data-tone="amber"] .chain-v5__stat-value {
-  color: var(--accent-amber, #ffa028);
-}
-
-.chain-v5__stat[data-tone="mute"] .chain-v5__stat-value {
-  color: var(--qc-text-tertiary);
-  font-weight: 500;
-}
-
-/* ─── 3. Tenor tabs ──────────────────────────────────────────────── */
-
-.chain-v5__tenors {
-  display: flex;
-  align-items: stretch;
-  height: 28px;
-  background: var(--bg-elev-1);
-  border-bottom: var(--hairline-strong);
-  flex-shrink: 0;
-  overflow-x: auto;
-}
-
-.chain-v5__tenor {
-  display: inline-flex;
-  align-items: center;
-  height: 100%;
-  padding: 0 14px;
-  font-family: var(--qc-font-mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  color: var(--qc-text-secondary);
-  background: transparent;
-  border: 0;
-  border-right: var(--hairline);
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    color 80ms ease-out,
-    background-color 80ms ease-out;
-  position: relative;
-}
-
-.chain-v5__tenor:hover {
-  color: var(--qc-text-primary);
-  background: var(--bg-elev-2);
-}
-
-.chain-v5__tenor:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.chain-v5__tenor[data-active] {
-  color: var(--qc-text-primary);
-  background: var(--bg-elev-2);
-  font-weight: 600;
-}
-
-.chain-v5__tenor[data-active]::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 2px;
-  background: var(--accent-amber, #ffa028);
-}
-
-/* ─── 4. Controls ────────────────────────────────────────────────── */
-
-.chain-v5__controls {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  height: 28px;
-  padding: 0 12px;
-  background: var(--bg-elev-1);
-  border-bottom: var(--hairline-strong);
   flex-shrink: 0;
 }
-
-.chain-v5__control-group {
-  display: inline-flex;
+.chain-bar {
+  display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 10px;
+  min-height: 40px;
+  padding: 5px 14px;
+  flex-wrap: wrap;
 }
-
-.chain-v5__control-label {
-  font-size: 9px;
-  font-weight: 500;
+.chain-bars > .chain-bar + .chain-bar {
+  border-top: 1px solid var(--line-hairline);
+}
+.chain-bar__label {
+  font-size: var(--type-caption);
+  font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--qc-text-tertiary);
-  margin-right: 6px;
+  color: var(--ink-mute);
+  flex-shrink: 0;
+}
+.chain-bar__spacer {
+  flex: 1;
+}
+.chain-bar__hint {
+  font-size: var(--type-caption);
+  color: var(--ink-mute);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
-.chain-v5__chip {
-  height: 18px;
-  padding: 0 8px;
-  font-family: var(--qc-font-mono);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  color: var(--qc-text-secondary);
-  background: transparent;
-  border: 1px solid var(--qc-border-subtle);
-  border-radius: var(--qc-radius-sm);
-  cursor: pointer;
-  transition: all 80ms ease-out;
-}
-
-.chain-v5__chip:hover {
-  color: var(--qc-text-primary);
-  border-color: var(--qc-border-strong);
-}
-
-.chain-v5__chip[data-active] {
-  color: var(--accent-amber, #ffa028);
-  border-color: var(--accent-amber, #ffa028);
-  background: color-mix(in srgb, var(--accent-amber, #ffa028) 12%, transparent);
-}
-
-.chain-v5__sniper-toggle {
+/* Toggle à l'anatomie ViewToggle validée (échéances + strikes). */
+.chain-tab {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 18px;
-  padding: 0 10px;
+  height: 28px;
+  padding: 0 12px;
   font-family: var(--qc-font-mono);
-  font-size: 12px;
+  font-size: var(--type-caption);
   font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--qc-text-secondary);
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
   background: transparent;
-  border: 1px solid var(--qc-border-subtle);
-  border-radius: var(--qc-radius-sm);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
   cursor: pointer;
-  transition: all 80ms ease-out;
+  white-space: nowrap;
+  transition: all 100ms var(--ease-out);
+}
+.chain-tab:hover:not(:disabled) {
+  color: var(--ink-pure);
+  border-color: var(--line-emphasis);
+}
+.chain-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* Échéance / strike actif → ambre de sélection. */
+.chain-tab[data-active] {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-weight: 600;
+}
+.chain-tab__dte {
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+.chain-tab[data-active] .chain-tab__dte {
+  color: color-mix(in srgb, var(--accent) 80%, var(--ink-pure));
 }
 
-.chain-v5__sniper-toggle:hover {
-  color: var(--qc-text-primary);
-  border-color: var(--qc-border-strong);
-}
-
-.chain-v5__sniper-toggle[data-active] {
-  color: var(--qc-profit);
-  border-color: color-mix(in srgb, var(--qc-profit) 50%, transparent);
-  background: color-mix(in srgb, var(--qc-profit) 8%, transparent);
-}
-
-.chain-v5__sniper-dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--qc-text-tertiary);
-  flex-shrink: 0;
-  transition: background-color 80ms ease-out;
-}
-
-.chain-v5__sniper-toggle[data-active] .chain-v5__sniper-dot {
-  background: var(--qc-profit);
-}
-
-.chain-v5__sniper-count {
+/* Filtre Sniper OTM — actif = ambre de sélection (pas de vert). */
+.chain-sniper-toggle {
   display: inline-flex;
   align-items: center;
-  height: 12px;
-  padding: 0 4px;
-  font-size: 9px;
+  gap: 7px;
+  height: 28px;
+  padding: 0 12px;
+  font-family: var(--qc-font-mono);
+  font-size: var(--type-caption);
   font-weight: 600;
-  color: var(--qc-bg-base);
-  background: currentColor;
-  border-radius: 0;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 100ms var(--ease-out);
 }
-
-.chain-v5__sniper-count {
-  /* the badge text uses the toggle's color via currentColor — wrap span
-     stays neutral so we override foreground here */
+.chain-sniper-toggle:hover {
+  color: var(--ink-pure);
+  border-color: var(--line-emphasis);
 }
-
-.chain-v5__sniper-toggle .chain-v5__sniper-count {
-  color: var(--qc-bg-base);
-  background: currentColor;
+.chain-sniper-toggle[data-active] {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
-
-.chain-v5__sniper-toggle .chain-v5__sniper-count {
-  /* inherit currentColor from parent — already amber/profit on active */
-  background: currentColor;
+.chain-sniper-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-mute);
+  flex-shrink: 0;
+  transition: background-color 100ms var(--ease-out);
 }
-
-.chain-v5__sniper-toggle .chain-v5__sniper-count {
-  /* readable digit on the colored chip */
+.chain-sniper-toggle[data-active] .chain-sniper-dot {
+  background: var(--accent);
 }
-
-.chain-v5__loading-hint {
-  margin-left: auto;
-  font-size: 10px;
-  color: var(--qc-text-tertiary);
+.chain-sniper-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--depth-void);
+  background: var(--accent);
+  border-radius: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.chain-bar__loading {
+  font-size: var(--type-caption);
+  color: var(--ink-mute);
   letter-spacing: 0.04em;
 }
 
-/* ─── 5. Table wrap ──────────────────────────────────────────────── */
+/* ─── 4. ÉTAGE SIGNAUX DU MARCHÉ (remonté AVANT la table) ─────────── */
+
+.chain-signals__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.chain-signals__cell {
+  padding: 12px 18px 11px;
+  min-width: 0;
+  overflow: hidden;
+}
+.chain-signals__grid > .chain-signals__cell + .chain-signals__cell {
+  border-left: 1px solid var(--line-emphasis);
+}
+.chain-signals__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--type-caption);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-bottom: 5px;
+  white-space: nowrap;
+}
+.chain-signals__val {
+  font-family: var(--qc-font-num);
+  font-size: var(--type-cell-value, 21px);
+  font-weight: 700;
+  color: var(--ink-pure);
+  font-variant-numeric: tabular-nums slashed-zero;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.chain-signals__sub {
+  font-size: var(--type-caption);
+  color: var(--ink-mute);
+  margin-top: 2px;
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Multi-lignes (OI top, murs) — pile compacte alignée à gauche. */
+.chain-signals__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 1px;
+}
+.chain-signals__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+.chain-signals__row-k {
+  color: var(--ink-pure);
+  font-weight: 600;
+  min-width: 0;
+}
+.chain-signals__row-v {
+  color: var(--ink-mute);
+  letter-spacing: 0.03em;
+}
+/* Étiquette de mur — NEUTRE (un niveau de strike n'est pas de l'argent) ;
+   distinction CALL/PUT par l'encre, pas par le rouge/vert. FLIP = pivot
+   de gamma → repère ambre discret (décisionnel). */
+.chain-signals__tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 14px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.chain-signals__tag--put {
+  color: var(--ink-mute);
+}
+.chain-signals__tag--flip {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+/* ─── 5. Table wrap (la chaîne héroïne) ──────────────────────────── */
 
 .chain-v5__table-wrap {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  background: var(--qc-bg-base);
-  padding: 0;
+  background: var(--depth-void);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
 }
 
 .chain-v5__table-wrap > * {
   height: 100%;
 }
 
-/* ─── Empty state ────────────────────────────────────────────────── */
+/* ── Craft de la chaîne (scopé Chain). La STRUCTURE double-entrée + le
+   thead sticky 2 rangées restent l'ACQUIS — on affûte seulement. ── */
+.chain-v5 .options-chain {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+/* Colonne STRIKE centrale nettement affirmée (surface + chiffre appuyé). */
+.chain-v5 .options-chain__strike {
+  background: var(--depth-base);
+}
+.chain-v5 .options-chain__strike-value {
+  color: var(--ink-pure);
+  font-weight: 800;
+}
+/* Repère ATM discret : la ligne du spot porte un filet + teinte ambre de
+   RÉFÉRENCE (le strike ATM était déjà ambre via data-spot). */
+.chain-v5 .options-chain__row[data-spot-row] {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+.chain-v5 .options-chain__row[data-spot-row] .options-chain__strike {
+  box-shadow: inset 0 2px 0 -1px var(--accent);
+}
+/* Bandes ITM au registre le plus discret : teinte NEUTRE (lift d'encre
+   quasi-imperceptible), identique call/put. Les fonds cyan (call) et
+   ambre (put) hérités de v3 MEURENT — un statut ITM n'est ni un signal
+   décisionnel (ambre) ni de l'argent : la colonne indique déjà le côté. */
+.chain-v5 .options-chain__call[data-itm],
+.chain-v5 .options-chain__put[data-itm] {
+  background: color-mix(in srgb, var(--ink-pure) 4%, transparent);
+}
+/* Zone Sniper dans la table = zone de DÉCISION de la doctrine → AMBRE
+   (parité avec la cellule « Zone Sniper » du bandeau). Le vert d'origine
+   meurt : un contrat éligible n'est pas un gain d'argent réel. La zone
+   Sniper l'emporte sur la teinte ITM (elle vient après). */
+.chain-v5 .options-chain__call[data-sniper] {
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.chain-v5 .options-chain__put[data-sniper] {
+  border-right-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+/* Hover de ligne lisible (registre neutre appuyé). */
+.chain-v5 .options-chain__call:hover,
+.chain-v5 .options-chain__put:hover {
+  background: color-mix(in srgb, var(--ink-pure) 5%, transparent);
+}
+
+/* ─── États d'accueil / honnêtes ─────────────────────────────────── */
 
 .chain-v5__empty {
   flex: 1;
@@ -463,27 +539,88 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  background: var(--qc-bg-base);
+  gap: 10px;
+  background: var(--depth-void);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
   padding: 0 32px;
+  text-align: center;
 }
 
 .chain-v5__empty-title {
-  font-family: var(--qc-font-mono);
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--qc-text-secondary);
+  font-family: var(--qc-font-sans);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
 }
 
 .chain-v5__empty-sub {
+  font-family: var(--qc-font-sans);
+  font-size: 13px;
+  color: var(--ink-mute);
+  letter-spacing: 0.01em;
+  line-height: 1.55;
+  max-width: 520px;
+}
+.chain-v5__empty-hint {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
+.chain-v5__empty-tk {
   font-family: var(--qc-font-mono);
-  font-size: 11px;
-  color: var(--qc-text-tertiary);
-  letter-spacing: 0.02em;
-  max-width: 480px;
-  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  padding: 3px 8px;
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+}
+
+/* ── Socle mobile (<1440 n'est jamais la cible mais ne doit pas casser).
+   Le bandeau 6 col + l'étage signaux 5 col se replient ; les barres
+   wrappent déjà (min-height grandit). Cible 1591 intacte au-dessus. ── */
+@media (max-width: 1100px) {
+  .chain-command__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .chain-command__grid > .chain-cell:nth-child(3n + 1) {
+    border-left: none;
+  }
+  .chain-command__grid > .chain-cell:nth-child(n + 4) {
+    border-top: 1px solid var(--line-hairline);
+  }
+  .chain-signals__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .chain-signals__grid > .chain-signals__cell:nth-child(3n + 1) {
+    border-left: none;
+  }
+  .chain-signals__grid > .chain-signals__cell:nth-child(n + 4) {
+    border-top: 1px solid var(--line-hairline);
+  }
+}
+@media (max-width: 640px) {
+  .chain-command__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .chain-command__grid > .chain-cell:nth-child(2n + 1) {
+    border-left: none;
+  }
+  .chain-command__grid > .chain-cell:nth-child(3),
+  .chain-command__grid > .chain-cell:nth-child(n + 3) {
+    border-top: 1px solid var(--line-hairline);
+  }
+  .chain-signals__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .chain-signals__grid > .chain-signals__cell:nth-child(2n + 1) {
+    border-left: none;
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -798,101 +935,10 @@
   color: var(--qc-text-disabled);
 }
 
-/* ════════════════════════════════════════════════════════════════
-   CHAIN FOOTER ANALYTICS — v5 Sprint 3.6
-   Max Pain · 25Δ Risk Reversal · OI Top · Term Structure
-   60 px row anchored at the bottom of /trading/chain.
-   ════════════════════════════════════════════════════════════════ */
-
-.chain-v5__footer {
-  display: flex;
-  align-items: stretch;
-  flex-shrink: 0;
-  height: 64px;
-  background: var(--bg-elev-1);
-  border-top: var(--hairline-strong);
-}
-
-.chain-v5__footer-cell {
-  flex: 1 1 0;
-  min-width: 130px;
-  padding: 8px 14px;
-  border-right: var(--hairline);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.chain-v5__footer-cell:last-child {
-  border-right: none;
-}
-
-.chain-v5__footer-label {
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--qc-text-tertiary);
-  margin-bottom: 4px;
-}
-
-.chain-v5__footer-value {
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -0.005em;
-  color: var(--qc-text-primary);
-  font-feature-settings:
-    "tnum" 1,
-    "zero" 1;
-  font-variant-numeric: tabular-nums slashed-zero;
-  line-height: 1.1;
-}
-
-.chain-v5__footer-value[data-tone="profit"] {
-  color: var(--qc-profit);
-}
-.chain-v5__footer-value[data-tone="loss"] {
-  color: var(--qc-loss);
-}
-.chain-v5__footer-value[data-tone="mute"] {
-  color: var(--qc-text-secondary);
-}
-
-.chain-v5__footer-sub {
-  font-size: 9px;
-  color: var(--qc-text-tertiary);
-  letter-spacing: 0.04em;
-  margin-top: 2px;
-  font-feature-settings:
-    "tnum" 1,
-    "zero" 1;
-}
-
-.chain-v5__footer-oi {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.chain-v5__footer-oi-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  font-feature-settings:
-    "tnum" 1,
-    "zero" 1;
-  font-variant-numeric: tabular-nums slashed-zero;
-}
-
-.chain-v5__footer-oi-strike {
-  color: var(--qc-text-primary);
-  font-weight: 600;
-}
-
-.chain-v5__footer-oi-total {
-  color: var(--accent-amber, #ffa028);
-  letter-spacing: 0.04em;
-}
+/* Le footer analytics d'origine (.chain-v5__footer*) a été REMONTÉ en
+   étage SIGNAUX (.chain-signals__*, plus haut) AVANT la chaîne — on lit
+   Max Pain / GEX / murs avant de choisir un strike, plus après avoir
+   scrollé. Les styles du footer sont supprimés avec lui (brique 2.C2). */
 
 /* ════════════════════════════════════════════════════════════════
    CHEATSHEET MODAL — v5 Sprint 10
@@ -1026,64 +1072,7 @@
   }
 }
 
-/* ════════════════════════════════════════════════════════════════
-   CHAIN FOOTER GEX WALLS — v5 Sprint 9
-   Compact 3-row tag list inside the last footer cell.
-   ════════════════════════════════════════════════════════════════ */
-
-.chain-v5__footer-walls {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.chain-v5__footer-wall-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-feature-settings:
-    "tnum" 1,
-    "zero" 1;
-  font-variant-numeric: tabular-nums slashed-zero;
-}
-
-.chain-v5__footer-wall-tag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 12px;
-  font-size: 8px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: var(--qc-profit);
-  background: color-mix(in srgb, var(--qc-profit) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--qc-profit) 35%, transparent);
-}
-
-.chain-v5__footer-wall-tag--put {
-  color: var(--qc-loss);
-  background: color-mix(in srgb, var(--qc-loss) 12%, transparent);
-  border-color: color-mix(in srgb, var(--qc-loss) 35%, transparent);
-}
-
-.chain-v5__footer-wall-tag--flip {
-  color: var(--accent-amber, #ffa028);
-  background: color-mix(in srgb, var(--accent-amber, #ffa028) 12%, transparent);
-  border-color: color-mix(in srgb, var(--accent-amber, #ffa028) 35%, transparent);
-}
-
-.chain-v5__footer-wall-strike {
-  color: var(--qc-text-primary);
-  font-weight: 600;
-}
-
-/* ════════════════════════════════════════════════════════════════
-   PRE-MARKET BRIEFING — les 61 règles .premarket-* ont été
-   déménagées vers src/styles/pages-premarket.css (rename
-   .premarket__ → .premarket-page__) lors de la migration
-   CANONICAL-7. Les règles .chain-v5__* du présent fichier restent
-   intactes en attendant le futur sprint Chain. v5-chain.css n'est
-   pas renommé pour ne pas casser l'historique d'imports.
-   ════════════════════════════════════════════════════════════════ */
+/* Les murs GEX (ex-.chain-v5__footer-wall*) vivent désormais dans
+   l'étage SIGNAUX (.chain-signals__tag*, plus haut), au registre NEUTRE
+   (CALL/PUT distingués par l'encre, plus par le rouge/vert — un niveau
+   de strike n'est pas de l'argent). Styles du footer supprimés. */

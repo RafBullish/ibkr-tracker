@@ -9,11 +9,14 @@
 //    Center : Strike (mono, bold)
 //    Puts   : IV · Θ · ν · Δ · Bid · Ask
 //
-//  Features:
-//   - ITM/OTM tints (profit-subtle on ITM calls, loss-subtle on ITM puts)
-//   - Sniper OTM zone highlight — rows matching (|Δ| 0.25-0.35 for calls,
-//     |Δ| 0.25-0.35 for puts; OI > 500; spread < 15%) get a left border
-//     profit (calls) or right border loss (puts) and a subtle bg tint
+//  Features (couleur v1.0 cockpit, cf. v5-chain.css — la LOI DE COULEUR
+//  neutralise tout ce qui n'est pas de l'argent réel) :
+//   - Bandes ITM : teinte NEUTRE quasi-imperceptible (lift d'encre),
+//     identique call/put (les fonds cyan/ambre v3 sont morts — un statut
+//     ITM n'est ni un signal décisionnel ni de l'argent).
+//   - Sniper OTM zone highlight — rows matching (|Δ| 0.25-0.35 ; OI > 500 ;
+//     spread < 15%) get an AMBER border + subtle amber tint (zone de
+//     DÉCISION de la doctrine, parité avec la cellule « Zone Sniper »).
 //   - Volume bars overlay: tiny horizontal bars right of each side,
 //     length proportional to volume within the visible strike range
 //   - Click row → onRowClick(type, strike, contract) for trade preset

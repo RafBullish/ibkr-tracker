@@ -2579,13 +2579,12 @@
    .history-page__*) lors de la migration CANONICAL-6.
 
    SEULES restent ici les règles .history-v3__delete-btn (+ hover +
-   focus-visible) parce qu'elles sont PARTAGÉES avec Positions, Journal
-   et Settings General. Elles partiront en même temps que la migration
-   de Journal/Positions vers leurs propres delete-btn canoniques.
+   focus-visible) parce qu'elles sont PARTAGÉES avec Positions et
+   Settings General. (2.C2 : Journal a migré vers .jr-card__delete
+   canonique, pages-journal.css — retiré de ces sélecteurs.)
    ═══════════════════════════════════════════════════════════════ */
 
-.history-v3__delete-btn,
-.journal-v3__entry-delete {
+.history-v3__delete-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2613,14 +2612,12 @@
 .v3-table__row .history-v3__delete-btn:focus-visible {
   opacity: 1;
 }
-.history-v3__delete-btn:hover,
-.journal-v3__entry-delete:hover {
+.history-v3__delete-btn:hover {
   color: var(--loss-text);
   background: var(--qc-loss-bg, rgba(246, 70, 93, 0.08));
   opacity: 1;
 }
-.history-v3__delete-btn:focus-visible,
-.journal-v3__entry-delete:focus-visible {
+.history-v3__delete-btn:focus-visible {
   outline: 2px solid var(--loss-text);
   outline-offset: 1px;
   opacity: 1;
@@ -3270,11 +3267,11 @@
    Copie locale du recipe canonique (cf. .history-page__panel /
    .history-page__kpi-tile) : surface --depth-raised, filet
    --line-hairline, radius 2px, ni ombre ni backdrop-filter. Remplace
-   <GlassCard> / <MetricCard> / .dashboard-v3__panel-head sur Analytics,
-   Journal et RiskMetricsRow. Aucun couplage CSS inter-pages.
+   <GlassCard> / <MetricCard> / .dashboard-v3__panel-head sur Analytics
+   et RiskMetricsRow. (2.C2 : Journal a migré vers .lh-final / pages-
+   journal.css — retiré de ces sélecteurs.) Aucun couplage inter-pages.
    ═══════════════════════════════════════════════════════════════ */
-.analytics-v3__panel,
-.journal-v3__panel {
+.analytics-v3__panel {
   background: var(--depth-raised);
   border: 1px solid var(--line-hairline);
   border-radius: 2px;
@@ -3286,14 +3283,12 @@
 
 /* Variante empty branch : surface plus discrète (depth-base) + padding
    généreux, comme .history-page__panel--subtle (recipe canonique). */
-.analytics-v3__panel--subtle,
-.journal-v3__panel--subtle {
+.analytics-v3__panel--subtle {
   background: var(--depth-base);
   padding: var(--qc-space-6);
 }
 
-.analytics-v3__panel-head,
-.journal-v3__panel-head {
+.analytics-v3__panel-head {
   display: flex;
   align-items: center;
   gap: var(--qc-space-2);
@@ -3302,8 +3297,7 @@
   border-bottom: 1px solid var(--line-hairline);
 }
 
-.analytics-v3__panel-head .uppercase-label,
-.journal-v3__panel-head .uppercase-label {
+.analytics-v3__panel-head .uppercase-label {
   color: var(--ink-soft);
 }
 
@@ -3313,334 +3307,10 @@
 */
 
 /* ═══════════════════════════════════════════════════════════════
-   TILT METER
+   TILT METER + JOURNAL v3 — RETIRÉS (brique 2.C2). Le Journal a été
+   recomposé au langage cockpit ; ses styles (.tilt-meter*, .journal-v3*)
+   vivent désormais dans src/styles/pages-journal.css (canonique).
    ═══════════════════════════════════════════════════════════════ */
-.tilt-meter {
-  display: flex;
-  flex-direction: column;
-  gap: var(--qc-space-3);
-}
-
-.tilt-meter__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--qc-space-3);
-}
-
-.tilt-meter__title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--qc-text-secondary);
-}
-
-.tilt-meter__kill {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 12px;
-  background: var(--qc-loss);
-  color: var(--text-on-accent);
-  border-radius: var(--radius-full);
-  font-family: var(--qc-font-mono);
-  font-size: 11px;
-  font-weight: var(--fw-bold);
-  letter-spacing: var(--ls-wider);
-  animation: pulse-dot 1.5s ease-in-out infinite;
-}
-
-.tilt-meter__track {
-  position: relative;
-  height: 40px;
-  padding: 0 8px;
-}
-
-.tilt-meter__segments {
-  display: grid;
-  grid-template-columns: 25% 25% 25% 25%;
-  gap: 2px;
-  height: 10px;
-  border-radius: var(--radius-full);
-  overflow: hidden;
-  margin-top: 15px;
-}
-
-.tilt-meter__segment {
-  display: block;
-  height: 100%;
-}
-
-.tilt-meter__segment[data-zone="calm"] {
-  background: var(--qc-profit-bg);
-}
-.tilt-meter__segment[data-zone="focus"] {
-  background: var(--qc-info-bg);
-}
-.tilt-meter__segment[data-zone="warn"] {
-  background: var(--qc-warning-bg);
-}
-.tilt-meter__segment[data-zone="tilt"] {
-  background: var(--qc-loss-bg);
-}
-
-.tilt-meter__indicator {
-  position: absolute;
-  top: 10px;
-  width: 2px;
-  height: 20px;
-  background: var(--qc-text-primary);
-  transform: translateX(-50%);
-  transition: left 400ms var(--ease-out);
-}
-
-.tilt-meter__indicator-dot {
-  position: absolute;
-  top: -4px;
-  left: -5px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--qc-text-primary);
-  border: 2px solid var(--surface-2);
-}
-
-.tilt-meter[data-tone="loss"] .tilt-meter__indicator,
-.tilt-meter[data-tone="loss"] .tilt-meter__indicator-dot {
-  background: var(--qc-loss);
-}
-.tilt-meter[data-tone="warning"] .tilt-meter__indicator,
-.tilt-meter[data-tone="warning"] .tilt-meter__indicator-dot {
-  background: var(--qc-warning);
-}
-
-.tilt-meter__footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--qc-space-4);
-  padding-top: var(--qc-space-3);
-  border-top: 1px solid var(--qc-border-subtle);
-  flex-wrap: wrap;
-}
-
-.tilt-meter__score {
-  font-family: var(--qc-font-mono);
-  font-size: var(--fs-3xl);
-  font-weight: var(--fw-bold);
-  color: var(--qc-text-primary);
-  letter-spacing: var(--ls-tighter);
-}
-
-.tilt-meter__score-label {
-  font-size: var(--fs-sm);
-  color: var(--qc-text-tertiary);
-  margin-left: 4px;
-}
-
-.tilt-meter__status {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  text-align: right;
-  min-width: 0;
-}
-
-.tilt-meter__status-label {
-  font-family: var(--qc-font-mono);
-  font-size: var(--fs-md);
-  font-weight: var(--fw-bold);
-  letter-spacing: var(--ls-wider);
-}
-
-.tilt-meter__status-label[data-tone="profit"] {
-  color: var(--profit-text);
-}
-.tilt-meter__status-label[data-tone="accent"] {
-  color: var(--accent-text);
-}
-.tilt-meter__status-label[data-tone="warning"] {
-  color: var(--warning-text);
-}
-.tilt-meter__status-label[data-tone="loss"] {
-  color: var(--loss-text);
-}
-
-.tilt-meter__status-text {
-  color: var(--qc-text-secondary);
-  font-size: var(--fs-sm);
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   JOURNAL v3
-   ═══════════════════════════════════════════════════════════════ */
-.journal-v3__filter-row {
-  display: flex;
-  align-items: center;
-  gap: var(--qc-space-3);
-  flex-wrap: wrap;
-}
-
-/* Daily kill switch warning card (P6-26) */
-.journal-v3__killswitch {
-  display: flex;
-  align-items: center;
-  gap: var(--qc-space-3);
-  padding: var(--qc-space-4) var(--qc-space-5);
-  /* U9 : radius restauré (l'alerte le recevait avant de .glass-card). */
-  border-radius: var(--qc-radius-md);
-  border: 1px solid var(--qc-loss);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--qc-loss) 10%, var(--glass-bg)) 0%, var(--glass-bg) 70%);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--qc-loss) 25%, transparent),
-    var(--shadow-md);
-}
-
-.journal-v3__killswitch-icon {
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--qc-radius-md);
-  background: color-mix(in srgb, var(--qc-loss) 20%, transparent);
-  color: var(--qc-loss);
-}
-
-.journal-v3__killswitch-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.journal-v3__killswitch-body strong {
-  color: var(--qc-text-primary);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-semibold);
-}
-
-.journal-v3__killswitch-body span {
-  color: var(--qc-text-secondary);
-  font-size: var(--fs-xs);
-}
-
-@media (max-width: 640px) {
-  .journal-v3__killswitch {
-    flex-wrap: wrap;
-  }
-  .journal-v3__killswitch-body {
-    min-width: 0;
-    flex-basis: 100%;
-  }
-}
-
-.journal-v3__entries {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: var(--qc-space-3);
-}
-
-.journal-v3__entry {
-  padding: var(--qc-space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--qc-space-2);
-  /* U9 : surface plate canonique (l'entrée s'appuyait avant sur .glass-card). */
-  background: var(--depth-raised);
-  border: 1px solid var(--line-hairline);
-  border-radius: 2px;
-}
-
-.journal-v3__entry-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--qc-space-3);
-}
-
-.journal-v3__entry-ticker {
-  font-size: var(--fs-lg);
-  font-weight: var(--fw-bold);
-  color: var(--qc-text-primary);
-  margin-right: var(--qc-space-2);
-}
-
-.journal-v3__entry-date {
-  color: var(--qc-text-tertiary);
-  font-size: var(--fs-xs);
-}
-
-.journal-v3__entry-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  justify-content: flex-end;
-}
-
-.journal-v3__entry-note {
-  color: var(--qc-text-secondary);
-  font-size: var(--fs-sm);
-  line-height: 1.55;
-  margin: 0;
-  max-height: 8em;
-  overflow-y: auto;
-}
-
-.journal-v3__stars {
-  display: inline-flex;
-  gap: 2px;
-}
-
-.journal-v3__star {
-  background: none;
-  border: none;
-  color: var(--qc-text-tertiary);
-  font-size: 18px;
-  cursor: pointer;
-  padding: 0;
-}
-
-.journal-v3__star[data-filled] {
-  color: var(--qc-warning);
-}
-
-.journal-v3__star:disabled {
-  cursor: default;
-}
-
-.journal-v3__edge-table {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1.2fr;
-  gap: 0;
-}
-
-.journal-v3__edge-row {
-  display: contents;
-}
-
-.journal-v3__edge-row > * {
-  padding: var(--qc-space-2) var(--qc-space-3);
-  border-bottom: 1px solid var(--qc-border-subtle);
-  align-self: center;
-  color: var(--qc-text-primary);
-  font-size: var(--fs-sm);
-}
-
-.journal-v3__edge-row--head > * {
-  background: var(--surface-2);
-  color: var(--qc-text-secondary);
-  font-weight: var(--fw-semibold);
-}
-
-@media (max-width: 600px) {
-  .journal-v3__edge-table {
-    grid-template-columns: 2fr 1fr 1fr;
-  }
-  .journal-v3__edge-row > :nth-child(3) {
-    display: none;
-  }
-}
 
 /* 2.B — bloc RISK METRICS ROW (.risk-metrics-row + .risk-metrics__infinity)
    RETIRÉ : RiskMetricsRow.jsx supprimé, 10 KPI fondus dans le bandeau. */

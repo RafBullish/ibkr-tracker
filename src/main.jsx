@@ -83,6 +83,11 @@ import './styles/v1-dashboard.css';
 // scopées. theme/tokens.js reste intact (ErrorBoundary, CommandPalette,
 // WinRateDonut, ThemeSwitcher en dépendent) — purge dans CANONICAL-PURGE.
 import './styles/pages-calendar.css';
+// pages-journal.css — page-vitrine /insights/journal recomposée au langage
+// cockpit (brique 2.C2). Ses styles vivaient dans v3-components.css (tokens
+// legacy) → purgés là-bas, recomposés ici au système canonique. Dernière
+// consommatrice pages-* avant les v1-*.
+import './styles/pages-journal.css';
 // v1-shell.css — Le Shell v1.0 (brique 1.B) : grille AppShell 3 rangées
 // (TickerTape pleine largeur · SideNav+main · StatusBar) + SideNav base.
 // Juste avant c3-hires.css (qui reste dernier).

@@ -438,54 +438,41 @@
     font-size: 14px; /* D2.F : cap data-viz 14, cf. B4 */
   }
 
-  /* ══ JOURNAL (densif) — /insights/journal. TiltMeter, cartes d'entrée
-     (ticker/date/note/stars), table Edge Leak Audit, filtres mood : TOUS
-     token-based → déjà >=13 (scan @1591). Unique résidu : status-badge__label
-     10 (badge « N entrées » + badges mood/mistake/tag des cartes), flooré
-     scopé .journal-v3 (padding-based, pas de clip). */
-  .journal-v3 .status-badge__label {
-    font-size: var(--type-caption);
+  /* ══ JOURNAL (densif 2.C2) — /insights/journal recomposé au langage
+     cockpit. Bandeau/TiltMeter/chips/cartes = tokens (--type-caption/
+     -display) → densif au palier ACQUISE par cascade. Seule la table
+     Edge Leak Audit reçoit le barème S2 des tables denses (cellules 20 /
+     mono 600 / rowHeight 47, parité .v3-table & pm-gtable, cf. B4). */
+  .journal-page .jr-edge__c {
+    font-size: 20px;
+  }
+  .journal-page .jr-edge__c.mono {
+    font-weight: 600;
+  }
+  .journal-page .jr-edge__row {
+    min-height: 47px;
   }
 
-  /* ══ OPTIONS CHAIN (densif + thead sticky) — /trading/chain. Page la plus
-     dense (feuille pensée 1080p, 40+ hardcodes sub-13). Plancher 13 sur les
-     strips (topbar/stats/tenors/controls/footer) ET la table OptionsChainTable.
-     Table-layout fixed width:100% → PAS d'overflow horizontal ; colonnes data
-     = 113px @1591 >> ~56px d'un nombre à 13px → 0 chevauchement (vérifié). */
+  /* ══ OPTIONS CHAIN (densif + thead sticky) — /trading/chain recomposé au
+     langage cockpit (brique 2.C2). Le bandeau/barres/étage-signaux vivent
+     désormais en tokens (--type-caption/-cell-value/-display) → densif au
+     palier ACQUISE par cascade des tokens (17/21/44). Seuls les résidus
+     hardcodés en px (barre de commande, états, pile signaux) + la table
+     OptionsChainTable (inchangée) reçoivent le plancher explicite ici.
+     Table-layout fixed width:100% → 0 overflow, 0 chevauchement (vérifié). */
   .chain-v5__input,
   .chain-v5__load-btn,
-  .chain-v5__history-label,
-  .chain-v5__history-pill,
-  .chain-v5__error,
-  .chain-v5__stat-label,
-  .chain-v5__stat-sub,
-  .chain-v5__tenor,
-  .chain-v5__control-label,
-  .chain-v5__chip,
-  .chain-v5__sniper-toggle,
-  .chain-v5__sniper-count,
-  .chain-v5__loading-hint,
   .chain-v5__empty-sub,
-  .chain-v5__footer-label,
-  .chain-v5__footer-sub,
-  .chain-v5__footer-oi-strike,
-  .chain-v5__footer-oi-total,
-  .chain-v5__footer-wall-tag,
-  .chain-v5__footer-wall-strike,
+  .chain-v5__empty-tk,
+  .chain-signals__row,
+  .chain-signals__row-k,
+  .chain-signals__row-v,
   .chain-v5 .options-chain__cell,
   .chain-v5 .options-chain__empty,
   .chain-v5 .options-chain__vol-head,
   .chain-v5 .options-chain__strike-head,
   .chain-v5 .options-chain__col-heads .options-chain__side-row {
     font-size: var(--type-caption);
-  }
-
-  /* Badge count h12px : un texte 17px (plancher D2.F) le cliperait → bump
-     21px + line-height 1 (le badge héritait lh 1.5 → line-box 25.5 > 21 ;
-     flex centré, lh 1 suffit). Gaps tenus. */
-  .chain-v5__sniper-count {
-    height: 21px;
-    line-height: 1;
   }
 
   /* THEAD STICKY (fix audit) — le thead n'était pas sticky ; il défilait hors
@@ -566,7 +553,6 @@
   .history-page__panel,
   .greeks-v3__panel,
   .analytics-v3__panel,
-  .journal-v3__panel,
   .import-page__panel,
   .glass-card {
     padding: 14px;
@@ -579,7 +565,6 @@
   .dashboard-page__panel-head,
   .history-page__panel-head,
   .analytics-v3__panel-head,
-  .journal-v3__panel-head,
   .greeks-v3__panel-head,
   .import-page__panel-head {
     margin-bottom: 6px;
