@@ -142,7 +142,32 @@ Objectif : **tag v1.0.0 au 01.09.2026**.
     3. `.greeks-agg*` (~175 l, `v4-dashboard.css`) — dead-code
        **pré-existant** (0 consommateur), hors scope 2.B → session
        dead-code dédiée.
-- **2.C** — Workflow (Chain · PreMarket · Calendar · Journal).
+- **Famille 3 découpée par l'architecte** en **2.C1** (PreMarket · Calendar)
+  et **2.C2** (Chain · Journal) — quatre pages en une session = risque de fin
+  bâclée ; 2.C1 partage la famille de données `useCalendarFeeds`.
+- **2.C1 ✅ (1.0.0-rc.12, 03.08.2026)** — Le poste du matin (PreMarket ·
+  Calendar) au langage cockpit v1.0. **PreMarket** : bandeau de commandement
+  (countdown reine 48 px, tick 1 s) · étage régime UNE grille 8 cellules-MONDE
+  (**chevauchement des ex-bandes 56 px MORT à la racine** — hauteur fixe +
+  cellules sans min-width:0 face au plancher 17 px du palier) · héros revue
+  positions au **classifieur UNIQUE `deriveAttention`** (CRITICAL/ARMED/SAFE,
+  fini `useSniperGates.status` + le libellé IMMINENT orphelin) · étage clôture
+  2-col Agenda|Routine (flex:1 → **vide bas d'écran mort**, jour creux →
+  prochain catalyseur). **Calendar** : bandeau signes vitaux servis · vue
+  Annonces 2 colonnes · **loi de couleur sur les chips** (le ROUGE meurt :
+  impact FORT → ambre, MOYEN/FAIBLE → neutre ; EARN neutralisé ; EXP garde
+  l'ambre) · **badge STK cyan #42A5F5 MORT** · bannière Finnhub durable NEUTRE
+  (fini l'ambre permanent). **CalendarMini** réparé à la racine (fallback macro
+  local greffé, union dédupliquée — parité AgendaCell/page Calendar).
+  - **Résidus consignés** :
+    1. **PreMarket macro = logique OU** (bascule fallback) vs **union
+       dédupliquée** de CalendarMini/AgendaCell — aligner en passe de
+       cohérence future (non bloquant : dev/offline convergent).
+    2. `greeksMap` inerte dans `generateAlerts` (facteurs = dte/pctChg/daysHeld)
+       — commenté ; passer un greeksMap partagé si un jour greek-sensible.
+    3. `docs/ETAT-DU-SITE.md` + `ETAT-DU-SITE-V1.md` listent encore « STK cyan »
+       comme résidu vivant — **abrogé par 2.C1**, à réconcilier à la clôture d'étape.
+- **2.C2** — Workflow (Chain · Journal).
 - **2.D** — Utilitaires (Import · Settings · API).
 
 ## Étape 3 — Cohérence & modales
