@@ -12,8 +12,9 @@
 //   - Rouge   = perte d'argent réelle uniquement
 //   - Vert    = gain d'argent réel uniquement
 //   - Amber   = signal décisionnel (today, action, expirations)
-//   - Ink-*   = catégories neutres (CALL/PUT badges, macro labels)
-//   - #42A5F5 = badge STK conservé (cyan-kill séparée)
+//   - Ink-*   = catégories neutres (CALL/PUT/STK badges, macro labels)
+//   - 2.C1 : badge STK cyan (#42A5F5) MORT → registre neutre ink-soft ;
+//     impact FORT = ambre (le rouge meurt) ; chip EARN neutralisé.
 //
 //  Aucune modification de logique (feeds Finnhub, fallback macro 2026,
 //  agrégation PnL, AnnouncementsView/PnlHeatmap/YearView intacts).
@@ -31,7 +32,8 @@ import PnLCalendarHeatmap from '../../components/charts/PnLCalendarHeatmap';
 import useCalendarFeeds from '../../hooks/useCalendarFeeds';
 import useApiStatus from '../../hooks/useApiStatus';
 import { macroEventsInRange } from '../../data/macroEvents2026';
-import { RefreshCw, AlertTriangle } from 'lucide-react';
+import { RefreshCw, AlertTriangle, CalendarDays } from 'lucide-react';
+import { TickValue } from '../../components/dashboard/decision/parts';
 
 const DAY_HEADERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
@@ -232,8 +234,8 @@ function AnnouncementsView({ viewYear, viewMonth, todayStr, prevMonth, nextMonth
   }, [dateEvents, todayStr]);
 
   return (
-    <>
-      <section className="calendar-page__panel">
+    <div className="calendar-page__ann-2col">
+      <section className="calendar-page__panel calendar-page__ann-gridcol">
         <MonthNav
           viewYear={viewYear}
           viewMonth={viewMonth}
@@ -307,10 +309,14 @@ function AnnouncementsView({ viewYear, viewMonth, todayStr, prevMonth, nextMonth
         </div>
       </section>
 
-      {upcomingEvents.length > 0 && (
-        <div className="calendar-page__upcoming">
-          <div className="calendar-page__upcoming-head">Prochains événements</div>
-          {upcomingEvents.map((ev, i) => {
+      <div className="calendar-page__upcoming">
+        <div className="calendar-page__upcoming-head">Prochains événements</div>
+        {upcomingEvents.length === 0 ? (
+          <div className="calendar-page__upcoming-empty">
+            Aucun événement à venir dans la fenêtre affichée.
+          </div>
+        ) : (
+          upcomingEvents.map((ev, i) => {
             const variant = ev.type === 'earn' ? 'earnings' : ev.type === 'exp' ? 'expiration' : 'macro';
             const label = ev.type === 'earn' ? 'EARN' : ev.type === 'exp' ? 'EXP' : 'MACRO';
             const est = ev.type === 'earn' ? earnEstimateLabel(ev) : null;
@@ -327,12 +333,8 @@ function AnnouncementsView({ viewYear, viewMonth, todayStr, prevMonth, nextMonth
                       {label}
                     </span>
                     {ev.type === 'macro' && ev.impact && (
-                      <span
-                        className={`calendar-page__impact-pill calendar-page__impact-pill--${
-                          ev.impact === 'high' ? 'high' : 'medium'
-                        }`}
-                      >
-                        {ev.impact}
+                      <span className={`calendar-page__impact-pill calendar-page__impact-pill--${ev.impact}`}>
+                        {ev.impact === 'high' ? 'FORT' : ev.impact === 'medium' ? 'MOYEN' : 'FAIBLE'}
                       </span>
                     )}
                     <span className="calendar-page__upcoming-label">{ev.label}</span>
@@ -349,10 +351,10 @@ function AnnouncementsView({ viewYear, viewMonth, todayStr, prevMonth, nextMonth
                 </div>
               </section>
             );
-          })}
-        </div>
-      )}
-    </>
+          })
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -538,8 +540,8 @@ function PnlHeatmapView({ state, viewYear, viewMonth, todayStr, prevMonth, nextM
               ? 'calendar-page__trade-pnl calendar-page__trade-pnl--up'
               : 'calendar-page__trade-pnl calendar-page__trade-pnl--down';
             // Badge type — CALL/PUT/STK sont des TYPES d'instruments, pas
-            // des directions P&L. Tonalité ink-soft neutre pour CALL et PUT.
-            // STK garde son bleu #42A5F5 résiduel (vague cyan-kill séparée).
+            // des directions P&L. Tonalité ink-soft neutre pour les trois
+            // (2.C1 : le bleu STK #42A5F5 est mort).
             const badgeVariant =
               t.as === 'Option'
                 ? t.ty === 'CALL'
@@ -707,14 +709,76 @@ export default function Calendar() {
   const fallbackActive = fallbackMacro.length > 0;
   const sharedProps = { state, viewYear, viewMonth, todayStr, prevMonth, nextMonth };
 
+  // ── Bandeau : signes vitaux du calendrier (données DÉJÀ servies :
+  //    feeds + fallback macro local + expirations locales). ──
+  const upcomingAll = useMemo(() => {
+    const all = [];
+    (earnings || []).forEach((e) => {
+      if (e?.date && e?.symbol) all.push({ date: e.date, type: 'earn', label: `${String(e.symbol).toUpperCase()} · résultats` });
+    });
+    (effectiveMacro || []).forEach((ev) => {
+      const d = ev?.time ? String(ev.time).slice(0, 10) : null;
+      if (d) all.push({ date: d, type: 'macro', label: ev.event, impact: ev.impact });
+    });
+    expirations.forEach((ev) => all.push({ date: ev.date, type: 'exp', label: ev.label }));
+    return all.filter((e) => e.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date));
+  }, [earnings, effectiveMacro, expirations, todayStr]);
+
+  const nextEvent = upcomingAll[0] || null;
+  const nextExp = useMemo(
+    () => expirations.filter((e) => e.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date))[0] || null,
+    [expirations, todayStr]
+  );
+  const highImpact7d = useMemo(() => {
+    const lim = new Date(today.getTime() + 7 * 86400000).toISOString().slice(0, 10);
+    return (effectiveMacro || []).filter((ev) => {
+      const d = ev?.time ? String(ev.time).slice(0, 10) : null;
+      return d && d >= todayStr && d <= lim && ev.impact === 'high';
+    }).length;
+  }, [effectiveMacro, todayStr]);
+  const etaOf = (iso) => {
+    if (!iso) return '—';
+    const diff = Math.ceil((new Date(iso + 'T12:00:00') - today) / 86400000);
+    return diff <= 0 ? 'auj.' : `${diff} j`;
+  };
+
   return (
     <div className="page-container calendar-page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Calendrier</h1>
-          <p className="page-subtitle">Annonces earnings, événements macro, et P&amp;L par jour.</p>
+          <h1 className="page-title">
+            <CalendarDays size={18} aria-hidden="true" />
+            Calendrier
+          </h1>
+          <p className="page-subtitle">Ce qui arrive, quand, et ce que ça touche chez toi.</p>
         </div>
       </div>
+
+      {/* BANDEAU DE COMMANDEMENT — signes vitaux (tous servis). */}
+      <section className="lh-final calendar-command" aria-label="Commandement — agenda">
+        <div className="calendar-command__grid">
+          <div className="pf-c cal-cell">
+            <span className="pf-c__label cal-cell__label">PROCHAIN ÉVÉNEMENT</span>
+            <TickValue text={nextEvent ? etaOf(nextEvent.date) : '—'} className="pf-c__val cal-cell__val" />
+            <span className="pf-c__meta cal-cell__meta">{nextEvent ? nextEvent.label : 'rien à venir'}</span>
+          </div>
+          <div className="pf-c cal-cell">
+            <span className="pf-c__label cal-cell__label">À VENIR</span>
+            <TickValue text={String(upcomingAll.length)} className="pf-c__val cal-cell__val" />
+            <span className="pf-c__meta cal-cell__meta">événements suivis</span>
+          </div>
+          <div className="pf-c cal-cell">
+            <span className="pf-c__label cal-cell__label">PROCHAINE EXP</span>
+            <TickValue text={etaOf(nextExp?.date)} className="pf-c__val cal-cell__val" />
+            <span className="pf-c__meta cal-cell__meta">{nextExp ? nextExp.ticker || nextExp.label : 'aucune option'}</span>
+          </div>
+          <div className="pf-c cal-cell">
+            <span className="pf-c__label cal-cell__label">FORT IMPACT · 7 J</span>
+            <TickValue text={String(highImpact7d)} className="pf-c__val cal-cell__val" />
+            <span className="pf-c__meta cal-cell__meta">macro à fort impact</span>
+          </div>
+        </div>
+      </section>
       <div className="calendar-page__controls">
         <StyledTabs tabs={viewTabs} active={activeTab} onChange={setActiveTab} />
         {activeTab === 'announcements' && (
@@ -747,80 +811,60 @@ export default function Calendar() {
         )}
       </div>
 
-      {/* ── Bannière contextuelle §13.5 fix ─────────────────────
-           Reformule les états API Finnhub + fallback en messages clairs :
-            - connected + events        → LIVE (vert)
-            - connected + empty         → neutral
-            - API down + fallback active → warning (FOMC/CPI/NFP offline)
-            - not configured            → neutral + lien Réglages
-      ─────────────────────────────────────────────────────── */}
+      {/* ── Ligne d'information API (§4.4) : l'état DURABLE « Finnhub
+           indisponible » n'est plus une alerte ambre permanente mais une
+           ligne NEUTRE honnête qui dit ce qui marche quand même. Seul
+           l'état CONNECTÉ+events garde le vert (transitoire, non durable). */}
       {activeTab === 'announcements' &&
         (() => {
-          const finnhubErr = apiStatus.finnhub.error || '';
-          const notConfigured = finnhubDown && /key|configure|missing|401|403/i.test(finnhubErr);
-          const apiDown = finnhubDown && !notConfigured;
           const connected = apiStatus.finnhub.status === 'active';
           const hasEvents = earnings.length > 0 || effectiveMacro.length > 0;
 
-          let variant = '';
-          let icon = null;
-          let content = null;
-
-          if (notConfigured) {
-            icon = <AlertTriangle size={13} style={{ flexShrink: 0 }} />;
-            content = (
-              <span>
-                Clé Finnhub non configurée ·{' '}
-                {/* 1.S dette №4 — lien routeur réel (l'ancien href="#/…"
-                    était une syntaxe HashRouter, mort sous BrowserRouter). */}
-                <Link to="/settings/api" className="calendar-page__api-banner-link">
-                  Réglages → API
-                </Link>
-              </span>
+          // DURABLE — Finnhub non configuré / indisponible : info NEUTRE.
+          if (finnhubDown) {
+            return (
+              <div className="calendar-page__api-banner" role="status" aria-live="polite">
+                <AlertTriangle size={13} style={{ flexShrink: 0 }} />
+                <span>
+                  Finnhub non configuré — calendrier macro servi depuis la source locale (FOMC /
+                  CPI / NFP 2026 + expirations) ; les résultats d'entreprises ne sont pas servis.{' '}
+                  <Link to="/settings/api" className="calendar-page__api-banner-link">
+                    Réglages → API
+                  </Link>
+                </span>
+              </div>
             );
-          } else if (apiDown && fallbackActive) {
-            variant = 'down';
-            icon = <AlertTriangle size={13} style={{ flexShrink: 0 }} />;
-            content = (
-              <span>
-                API Finnhub indisponible · Affichage des événements offline (FOMC / CPI / NFP 2026 +
-                expirations positions)
-                {apiStatus.finnhub.error ? ` · ${apiStatus.finnhub.error}` : ''}
-              </span>
-            );
-          } else if (connected && hasEvents) {
-            variant = 'ok';
-            icon = <span className="calendar-page__api-banner-dot" />;
-            content = (
-              <span>
-                Connecté · {earnings.length} résultat{earnings.length > 1 ? 's' : ''} +{' '}
-                {effectiveMacro.length} événement{effectiveMacro.length > 1 ? 's' : ''} macro à
-                venir
-              </span>
-            );
-          } else if (connected) {
-            content = <span>Connecté · Aucun événement à venir sur la période</span>;
-          } else {
-            return null;
           }
-
-          const cls = variant
-            ? `calendar-page__api-banner calendar-page__api-banner--${variant}`
-            : 'calendar-page__api-banner';
-
-          return (
-            <div className={cls} role="status" aria-live="polite">
-              {icon}
-              {content}
-            </div>
-          );
+          // CONNECTÉ + events → LIVE (vert ; transitoire, pas un état durable).
+          if (connected && hasEvents) {
+            return (
+              <div className="calendar-page__api-banner calendar-page__api-banner--ok" role="status" aria-live="polite">
+                <span className="calendar-page__api-banner-dot" />
+                <span>
+                  Connecté · {earnings.length} résultat{earnings.length > 1 ? 's' : ''} +{' '}
+                  {effectiveMacro.length} événement{effectiveMacro.length > 1 ? 's' : ''} macro à venir
+                </span>
+              </div>
+            );
+          }
+          // CONNECTÉ sans event → neutre.
+          if (connected) {
+            return (
+              <div className="calendar-page__api-banner" role="status" aria-live="polite">
+                <span>Connecté · Aucun événement à venir sur la période</span>
+              </div>
+            );
+          }
+          return null;
         })()}
+      {/* Flux partiel — info NEUTRE (une erreur de flux n'est pas une perte
+          d'argent : le rouge meurt, loi de couleur). */}
       {activeTab === 'announcements' &&
         !fallbackActive &&
         error &&
         apiStatus.finnhub.status === 'active' && (
-          <div className="calendar-page__api-banner calendar-page__api-banner--error">
-            Flux partiel : {error}
+          <div className="calendar-page__api-banner" role="status" aria-live="polite">
+            Flux partiel — {error}
           </div>
         )}
 
