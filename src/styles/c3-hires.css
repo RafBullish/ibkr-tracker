@@ -352,47 +352,30 @@
     font-size: var(--type-caption);
   }
 
-  /* ══ PREMARKET (densif) — page la plus dense (0 @media, feuille pensée
-     1080p). Plancher 13 sur TOUS les résidus sous-13 PROPRES à /premarket
-     (classes BEM .premarket-page__* auto-scopées). DÉJÀ >=13 : clock-value
-     18/20, regime-value 16, check-input caché. */
-  .premarket-page__clock-label,
-  .premarket-page__regime-label,
-  .premarket-page__regime-sub,
-  .premarket-page__section-title,
-  .premarket-page__section-hint,
-  .premarket-page__table,
-  .premarket-page__table thead th,
-  .premarket-page__gate-cell,
-  .premarket-page__status-pill,
-  .premarket-page__check-box,
-  .premarket-page__check-label,
-  .premarket-page__btn,
-  .premarket-page__pill,
-  .premarket-page__held-tag {
+  /* ══ PREMARKET (densif 2.C1) — /premarket recomposé au langage cockpit.
+     Bandeau .pm-command : countdown 48px + cellules .pm-cell__val 34px
+     (--type-display, base). Régime .pm-regime : 8 cellules-MONDE .pf-c à
+     grille AUTO-HAUTEUR (le chevauchement des ex-bandes 56px est MORT — plus
+     de hauteur fixe, plus de hack flex à deux bandes frères). Table de gates
+     .pm-gtable : cellules 20px / mono 600 / rowHeight 47 (parité .v3-table,
+     cf. B4). Labels/hints scopent --type-caption via les tokens (déjà floorés). */
+  .premarket-page .pm-gtable__c {
+    font-size: 20px;
+  }
+  .premarket-page .pm-gtable__c.mono {
+    font-weight: 600;
+  }
+  .premarket-page .pm-gtable__row {
+    min-height: 47px;
+  }
+  /* Plancher lisible sur le texte de l'agenda + routine (13 → caption). */
+  .premarket-page .pm-agenda__row,
+  .premarket-page .pm-agenda__none,
+  .premarket-page .pm-check-label,
+  .premarket-page .pm-agenda-empty__title,
+  .premarket-page .pm-agenda-empty__next,
+  .premarket-page .pm-empty__title {
     font-size: var(--type-caption);
-  }
-
-  /* Pills à hauteur fixe 14px : un texte 17px (plancher D2.F) les cliperait
-     verticalement → bump 24px (line-box mesurée 24 @17px). Accommode le
-     plancher, ne relâche aucun gap (rows 28px absorbent). */
-  .premarket-page__status-pill,
-  .premarket-page__pill {
-    height: 24px;
-  }
-
-  /* Strip FUTURES (ES/NQ/YM) : 3 cellules qui s'étiraient à ~530px = cellules
-     géantes (void interne massif). C'est le 2e bandeau regime CONSÉCUTIF →
-     ciblé seul via `.premarket-page__regime + .premarket-page__regime`. On
-     CAPE ses cellules (contenu + marge de lecture) et on stoppe l'étirement
-     → 3 cellules denses packées à gauche. Header (5) et Regime (6) restent
-     flex:1 : 265-318px sont des cellules data normales (pas géantes) et
-     remplissent la bande sans void. Palier seul → mobile <1440 garde flex:1. */
-  .premarket-page__regime + .premarket-page__regime .premarket-page__regime-cell {
-    /* 1/6 de la bande = MÊME largeur qu'une cellule du strip Regime (6 cells)
-       au-dessus → les 3 futures s'alignent sous VIX/SPX/QQQ, grille cohérente,
-       plus de cellule géante. Responsive : tient l'alignement à 1591 et au-delà. */
-    flex: 0 0 calc(100% / 6);
   }
 
   /* ══ IMPORT (densif + vide #28) — /settings/import.
@@ -699,36 +682,9 @@
   }
   .dash-kpi-card__hero-chart { padding-top: 4px; }
 
-  /* ════════════════════════════════════════════════════════════════
-     D2.D · PREMARKET — recomposition dense (≥1440). Page la plus vide :
-     les 4 sections empilées pleine largeur passent en GRILLE 2 colonnes.
-     Positions/Gates + Routine en pleine largeur ; Macro | Earnings côte à
-     côte ; checklist routine sur 2 colonnes. Objectif : zéro demi-écran
-     mort, tout visible sans scroll @1591. Mobile <1440 = empilé (intact).
-     ════════════════════════════════════════════════════════════════ */
-  .premarket-page__sections {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    align-items: start;
-  }
-  /* Sections devenues cartes côte à côte → filet complet (structure les zones
-     denses, D2.A.2) au lieu du seul border-bottom. */
-  .premarket-page__sections .premarket-page__section {
-    border: 1px solid var(--line-hairline);
-    border-bottom: 1px solid var(--line-hairline);
-    border-radius: 2px;
-  }
-  .premarket-page__section--positions,
-  .premarket-page__section--routine {
-    grid-column: 1 / -1;
-  }
-  /* Checklist routine : 1 → 2 colonnes (6 items → 3 rangées denses). */
-  .premarket-page__section--routine .premarket-page__checklist {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2px 20px;
-  }
+  /* 2.C1 — bloc D2.D (.premarket-page__sections grille 2-col) RETIRÉ :
+     la recomposition vit désormais dans la structure JSX (bandeau + étage
+     régime + héros + étage clôture 2-col qui grandit), cf. pages-premarket.css. */
 
   /* ════════════════════════════════════════════════════════════════
      V1.0 · 1.A — LIGNE DE COMMANDEMENT (.command-deck), palier ≥1440.

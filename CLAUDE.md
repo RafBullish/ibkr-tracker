@@ -174,8 +174,21 @@ annuelle RÉPARÉE** (tokens `--hm-*` jamais définis → aplats rgba OBS
 désaturés, partagée Calendar, non-régression prouvée) + étage rythme &
 répartition. **Morts (features fantômes)** : GreekEvolutionChart (mock
 aléatoire), IVRankHistogram (usine IV Rank jamais construite).
-ObsidienneTooltip sur les charts Recharts des deux pages. Prochaine
-brique : **2.C — Workflow (Chain · PreMarket · Calendar · Journal).**
+ObsidienneTooltip sur les charts Recharts des deux pages. Puis **2.C1
+mergée (1.0.0-rc.12)** — Le poste du matin (Famille 3 découpée par
+l'architecte : 2.C1 = PreMarket + Calendar, 2.C2 = Chain + Journal) :
+/premarket et /insights/calendar au langage cockpit. PreMarket =
+bandeau (countdown reine 48 px, tick 1 s) + étage régime UNE grille
+cellules-MONDE (**chevauchement des ex-bandes 56 px MORT à la racine** :
+hauteur auto + min-width:0) + héros revue positions au **classifieur
+UNIQUE deriveAttention** (CRITICAL/ARMED/SAFE, fini le libellé IMMINENT
+orphelin) + étage clôture 2-col (**vide bas d'écran mort**, jour creux →
+prochain catalyseur). Calendar = bandeau signes vitaux servis + Annonces
+2 colonnes + **loi de couleur sur les chips** (impact FORT ambre, le
+ROUGE meurt ; STK cyan #42A5F5 mort ; bannière Finnhub durable neutre ;
+PHASE US « OPEN » n'est plus vert). **CalendarMini réparé à la racine**
+(fallback macro local greffé — le mini affichait « 0 évt » à tort).
+Prochaine brique : **2.C2 — Workflow (Chain · Journal).**
 
 Repères S2 toujours en vigueur : KPI 44, cellules `.v3-table` 20 (rowHeight 47),
 plancher caption 17, strip 21/16/18, ticks charts plafonnés 14, héros 56/64

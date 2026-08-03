@@ -6,6 +6,55 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0-rc.12] — 2026-08-03
+
+**Brique 2.C1 — Le poste du matin (PreMarket · Calendar).** Les deux pages
+du moment « préparation de la séance » passent au langage cockpit v1.0.
+Famille 3 découpée par l'architecte en 2.C1 (PreMarket + Calendar) et 2.C2
+(Chain + Journal). Un vrai bug de layout tué, un bug de chemin de données
+réparé à la racine.
+
+### Ajouté
+- **PreMarket — bandeau de commandement** (`.lh-final .pm-command`) : le compte
+  à rebours d'ouverture est la valeur reine (48 px, tick 1 s, HH:MM:SS), +
+  PHASE US · Genève · New York · GATES (N/M, compteur NEUTRE).
+- **PreMarket — étage régime** : UNE grille `.pm-regime` de 8 cellules-MONDE
+  (VIX·SPX·QQQ·ES·NQ·YM·USD/CHF·DXY), hauteur auto + min-width:0.
+- **PreMarket — héros revue des positions** au classifieur UNIQUE
+  `deriveAttention` (CRITICAL/ARMED/SAFE, parité Positions / bande décision).
+- **PreMarket — étage de clôture 2 colonnes** (Agenda | Routine) qui remplit
+  l'écran ; jour creux → prochain catalyseur avec horizon.
+- **Calendar — bandeau de commandement** (4 signes vitaux servis) + vue Annonces
+  en 2 colonnes (grille mensuelle | liste dense).
+
+### Modifié
+- **CHEVAUCHEMENT régime PreMarket MORT à la racine** : les 2 bandes à hauteur
+  fixe 56 px (débordement au palier ≥1440 : label/sub 17 px + cellules sans
+  min-width:0) fusionnées en une grille auto-hauteur.
+- **Classifieur unique** : PreMarket abandonne `useSniperGates.status`
+  (armed/imminent/safe + libellé IMMINENT orphelin) pour `deriveAttention`.
+- **LOI DE COULEUR sur Calendar** : le ROUGE meurt sur l'impact (FORT → ambre,
+  MOYEN/FAIBLE → neutre) ; chip TYPE neutre (EARN vert → ink-pure, EXP garde
+  l'ambre) ; PHASE US « OPEN » n'est plus vert (un état de séance n'est pas un
+  gain d'argent).
+- **Bannière Finnhub** : l'ambre PERMANENT (état durable) → ligne d'info NEUTRE
+  honnête (« servi depuis la source locale ; earnings non servis ») ; flux
+  partiel rouge → neutre.
+
+### Corrigé
+- **CalendarMini — bug de chemin de données à la racine** : le mini était le
+  seul des 3 consommateurs (mini / AgendaCell / Calendar) sans fallback macro
+  local → affichait « 0 évt » alors que NFP était à J-4. Greffe de l'union
+  `macro ∪ macroEventsInRange` dédupliquée. Visuel 1.F INTACT.
+
+### Supprimé
+- Badge STK cyan `#42A5F5` (Calendar) → registre neutre ink-soft (grep 0).
+- Anciennes classes CSS PreMarket (`premarket-page__regime/clock/section/table/
+  status-pill/pill/held-tag`), `.calendar-page__panel--subtle`, api-banner
+  `--down`/`--error`.
+
+---
+
 ## [1.0.0-rc.11] — 2026-08-02
 
 **Brique 2.B — Analytiques (Greeks · Analytics).** Les deux dernières

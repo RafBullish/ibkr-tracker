@@ -4,15 +4,21 @@
 //  U8 : vue 7 jours condensée dérivée des MÊMES feeds que la page
 //  Calendar (useCalendarFeeds → earnings + macro, déjà câblé) +
 //  expirations des positions ouvertes. Aucun fetch nouveau. Chaque
-//  ligne ouvre /insights/calendar (navigation pure). Empty state propre
-//  quand la fenêtre 7 j est vide ; si l'API est absente/HS, earnings &
-//  macro reviennent vides (dégradé propre) mais les expirations des
-//  positions restent affichées (source locale).
+//  ligne ouvre /insights/calendar (navigation pure).
+//
+//  2.C1 — CORRECTIF RACINE (chemin de données) : le mini était le SEUL
+//  des trois consommateurs (mini / AgendaCell / page Calendar) à ne pas
+//  fusionner le fallback macro local (FOMC/CPI/NFP 2026). Quand Finnhub
+//  renvoyait un macro vide (clé absente en dev), le mini affichait « 0 »
+//  alors qu'AgendaCell et la page montraient NFP. On greffe ici l'union
+//  `macro (Finnhub) ∪ macroEventsInRange(today, J+7)` dédupliquée, sur le
+//  modèle d'AgendaCell — visuel FIGÉ (1.F), aucune retouche CSS.
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCalendarFeeds from '../../hooks/useCalendarFeeds';
+import { macroEventsInRange } from '../../data/macroEvents2026';
 import { useOpenPositions } from '../../store/useStore';
 
 const DAYS_FR = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
@@ -66,15 +72,33 @@ export default function CalendarMini({ area = 'calendar' }) {
     [openPositions]
   );
 
+  // Union macro Finnhub ∪ fallback local (FOMC/CPI/NFP), dédupliquée
+  // date|libellé — le fallback garantit un agenda JAMAIS faussement vide
+  // (parité AgendaCell du MarketDeck).
+  const macroMerged = useMemo(() => {
+    const norm = (ev) => ({ date: ev?.time ? String(ev.time).slice(0, 10) : null, label: ev?.event });
+    const feed = (macro || []).map(norm);
+    const local = macroEventsInRange(todayStr, limitStr).map(norm);
+    const seen = new Set();
+    const out = [];
+    for (const e of [...feed, ...local]) {
+      if (!e.date || !e.label) continue;
+      const k = `${e.date}|${e.label}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(e);
+    }
+    return out;
+  }, [macro, todayStr, limitStr]);
+
   const events = useMemo(() => {
     const all = [];
     (earnings || []).forEach((e) => {
       if (!e.date || !e.symbol) return;
       all.push({ date: e.date, type: 'earn', label: `${e.symbol} — Résultats` });
     });
-    (macro || []).forEach((ev) => {
-      if (!ev.time) return;
-      all.push({ date: String(ev.time).slice(0, 10), type: 'macro', label: ev.event });
+    macroMerged.forEach((ev) => {
+      all.push({ date: ev.date, type: 'macro', label: ev.label });
     });
     expirations.forEach((ev) => all.push(ev));
 
@@ -82,7 +106,7 @@ export default function CalendarMini({ area = 'calendar' }) {
       .filter((e) => e.date >= todayStr && e.date <= limitStr)
       .sort((a, b) => a.date.localeCompare(b.date))
       .slice(0, 8);
-  }, [earnings, macro, expirations, todayStr, limitStr]);
+  }, [earnings, macroMerged, expirations, todayStr, limitStr]);
 
   const isEmpty = events.length === 0;
 

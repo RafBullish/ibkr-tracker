@@ -1,37 +1,39 @@
 // ═══════════════════════════════════════════════════════════════
-//  PRE-MARKET BRIEFING v5 Sprint 5 — /premarket workspace
+//  PRE-MARKET BRIEFING — « Le poste du matin » (brique 2.C1)
+//  /premarket (⌘0)
 //
-//  Cockpit J-1 / pre-market routine that the trader runs at 14:00
-//  CET ahead of NY open (15:30 CET). Focus on one actionable
-//  workflow : checklist → confirm ready before the bell.
-//
-//  Layout (4 strips) :
-//    1. Header strip 64 px : clock CET / NY + MKT phase + countdown
-//       to next session change
-//    2. Market regime row : VIX / SPX / live phase + gate count
-//       (positions with imminent gates surfaced first)
-//    3. Positions review : table of open positions ordered by gate
-//       proximity (read from useSniperGates ladder)
-//    4. Routine checklist : 6 checkboxes the trader confirms before
-//       the bell. Persisted to localStorage qc:premarket:checks.{date}
-//       so the state resets daily.
-//
-//  Sprint 0 alignment : pas de mock global, empty states '——' quand
-//  les feeds (overnight futures / macro calendar / earnings BMO/AMC)
-//  ne sont pas câblés. Sprint 5 livre le squelette ; les modules
-//  data-source landent progressivement.
+//  Test de la première seconde : « dans combien de temps ça ouvre,
+//  dans quel régime, et qu'est-ce qui réclame mon attention avant la
+//  cloche ». Architecture (§4.1), de haut en bas :
+//    1. BANDEAU DE COMMANDEMENT — countdown = valeur reine (tick 1 s).
+//    2. ÉTAGE RÉGIME — UNE grille au cordeau (le chevauchement des deux
+//       anciennes bandes 56 px meurt à la racine : hauteur auto,
+//       min-width:0, hairlines verticales).
+//    3. HÉROS — REVUE DES POSITIONS · GATES au classifieur UNIQUE
+//       (deriveAttention → CRITICAL / ARMED / SAFE, comme la bande
+//       décision et Positions).
+//    4. ÉTAGE DE CLÔTURE, 2 colonnes — AGENDA DU JOUR | ROUTINE. Le vide
+//       bas d'écran meurt par composition ; jour creux → prochain
+//       catalyseur (donnée déjà servie par useCalendarFeeds).
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, useReducedMotion } from 'framer-motion';
 import useMarketQuotes from '../hooks/useMarketQuotes';
 import useSniperGates from '../hooks/useSniperGates';
+import useDailyKillSwitch from '../hooks/useDailyKillSwitch';
 import { useFx } from '../hooks/useFx';
 import useCalendarFeeds from '../hooks/useCalendarFeeds';
 import useApiStatus from '../hooks/useApiStatus';
-import { useOpenPositions } from '../store/useStore';
+import { useOpenPositions, useSettings } from '../store/useStore';
+import { generateAlerts } from '../utils/alerts';
+import { deriveAttention } from '../components/dashboard/decision/model';
+import { toFloat } from '../utils/math';
 import { macroEventsInRange } from '../data/macroEvents2026';
 import { MAJOR_US_TICKERS } from '../utils/majorTickers';
+import { TickValue } from '../components/dashboard/decision/parts';
+import { RISE_CONTAINER_VARIANTS, RISE_TILE_VARIANTS } from '../theme/animationVariants';
 
 const ROUTINE_ITEMS = [
   { id: 'macro', label: 'Calendrier macro' },
@@ -42,15 +44,7 @@ const ROUTINE_ITEMS = [
   { id: 'watchlist', label: 'Setups watchlist' },
 ];
 
-// U12-bis — symboles indices servis par /api/quote (testé) : '^VIX' (~18.7)
-// et '^GSPC' (~7400) renvoient 200 via Yahoo ; 'VIX'/'SPX' nus → 502. Les
-// cellules lisent donc quotes['^VIX'] / quotes['^GSPC'] (clé = symbole exact).
 const PREMARKET_INDICES = ['^VIX', '^GSPC', 'QQQ'];
-
-// U12 — DXY + futures overnight servis par /api/quote (cascade
-// Finnhub→Yahoo→CBOE). Symboles VALIDÉS en Étape 0 contre l'endpoint réel :
-// DX-Y.NYB sert le DXY (~100.x via Yahoo) ; DXY/^DXY/DX=F NE sont PAS servis
-// (502) → seul DX-Y.NYB retenu. ES=F/NQ=F/YM=F servent les futures (Yahoo).
 const DXY_SYMBOL = 'DX-Y.NYB';
 const FUTURES = [
   { sym: 'ES=F', label: 'ES' },
@@ -110,11 +104,21 @@ function tzMinutes(date, tz) {
   return { hour, minute, weekday, total: hour * 60 + minute };
 }
 
+// Libellé français de la prochaine bascule (la valeur reine du bandeau).
+const NEXT_WHAT = {
+  OPEN: 'OUVERTURE DANS',
+  AFTER: 'CLÔTURE RTH DANS',
+  CLOSED: 'FIN AFTER-HOURS DANS',
+  PRE: 'PRÉ-MARCHÉ DANS',
+};
+
+const pad2 = (n) => String(n).padStart(2, '0');
+
 function nextPhase(now) {
   const ny = tzMinutes(now, 'America/New_York');
   const isWeekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(ny.weekday);
   if (!isWeekday) {
-    return { phase: 'closed', label: 'WEEKEND', countdownLabel: '——' };
+    return { phase: 'closed', label: 'WEEKEND', countdownWhat: 'MARCHÉ FERMÉ', countdownHMS: '——' };
   }
   // 04:00 → pre, 09:30 → open, 16:00 → after, 20:00 → closed
   let phase = 'closed';
@@ -130,14 +134,20 @@ function nextPhase(now) {
     next = { name: 'CLOSED', minutes: 20 * 60 };
   } else {
     phase = 'closed';
-    next = { name: 'PRE', minutes: 4 * 60 + 24 * 60 }; // tomorrow 04:00 NY
+    next = { name: 'PRE', minutes: 4 * 60 + 24 * 60 }; // demain 04:00 NY
   }
-  let mins = next.minutes - ny.total;
-  if (mins < 0) mins += 24 * 60;
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  const countdownLabel = `${next.name} dans ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-  return { phase, label: phase.toUpperCase(), countdownLabel };
+  // Secondes réelles (indépendantes du fuseau) → countdown au 1 s près.
+  let totalSecs = next.minutes * 60 - (ny.total * 60 + now.getSeconds());
+  if (totalSecs < 0) totalSecs += 24 * 3600;
+  const h = Math.floor(totalSecs / 3600);
+  const m = Math.floor((totalSecs % 3600) / 60);
+  const s = totalSecs % 60;
+  return {
+    phase,
+    label: phase.toUpperCase(),
+    countdownWhat: NEXT_WHAT[next.name] || 'PROCHAINE BASCULE',
+    countdownHMS: `${pad2(h)}:${pad2(m)}:${pad2(s)}`,
+  };
 }
 
 function fmtIndex(q) {
@@ -152,27 +162,19 @@ function fmtIndexChg(q) {
   return `${sign}${Math.abs(q.changePercent).toFixed(2)}%`;
 }
 
-// U12 — tonalité de la variation (sur le sub uniquement). Signe nul/absent
-// → neutre (aucun rouge parasite).
-function chgToneClass(q) {
-  if (!q || !Number.isFinite(q.changePercent) || q.changePercent === 0) return '';
-  return q.changePercent > 0
-    ? 'premarket-page__regime-sub--up'
-    : 'premarket-page__regime-sub--down';
+function chgToneAttr(q) {
+  if (!q || !Number.isFinite(q.changePercent) || q.changePercent === 0) return undefined;
+  return q.changePercent > 0 ? 'up' : 'down';
 }
 
 function vixRegime(vix) {
-  if (!vix || !Number.isFinite(vix.price)) return { label: '——', tone: 'mute' };
-  if (vix.price < 15) return { label: 'LOW VOL', tone: 'profit' };
-  if (vix.price < 20) return { label: 'NORMAL', tone: 'neutral' };
+  if (!vix || !Number.isFinite(vix.price)) return { label: '——', tone: undefined };
+  if (vix.price < 15) return { label: 'LOW VOL', tone: undefined };
+  if (vix.price < 20) return { label: 'NORMAL', tone: undefined };
   if (vix.price < 30) return { label: 'ELEVATED', tone: 'warn' };
-  return { label: 'STRESSED', tone: 'loss' };
+  return { label: 'STRESSED', tone: 'warn' };
 }
 
-// ── U11 : date de la séance US ciblée pour le briefing ─────────────
-//  En séance (pre/open) → aujourd'hui (date NY). Hors séance
-//  (after/closed/weekend) → prochain jour ouvré. Filtre macro + earnings
-//  sur la bonne journée.
 function sessionDateStr(now, phase) {
   const ymd = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/New_York',
@@ -191,8 +193,6 @@ function sessionDateStr(now, phase) {
   return d.toISOString().slice(0, 10);
 }
 
-// Plage month±1 (mêmes bornes que useCalendarFeeds) pour le fallback
-// macro offline (FOMC/CPI/NFP 2026) quand Finnhub est absent/HS.
 function monthRangeIso(year, month) {
   const pad = (n) => String(n).padStart(2, '0');
   const from = new Date(Date.UTC(year, month - 1, 1));
@@ -201,7 +201,6 @@ function monthRangeIso(year, month) {
   return { from: iso(from), to: iso(to) };
 }
 
-// Badge horaire earnings (Finnhub `hour` : 'bmo'|'amc'|'dmh'|'').
 function earningsWhen(hour) {
   if (hour === 'bmo') return { label: 'BMO', tone: 'bmo' };
   if (hour === 'amc') return { label: 'AMC', tone: 'amc' };
@@ -209,8 +208,6 @@ function earningsWhen(hour) {
   return null;
 }
 
-// Formatters estimés earnings — mêmes règles que Calendar (null-guard
-// strict, jamais "null"/"undefined" rendu ; revenueEstimate = USD absolu).
 function fmtEpsEstimate(v) {
   if (v == null || !Number.isFinite(v)) return null;
   const sign = v < 0 ? '−' : '';
@@ -228,8 +225,39 @@ function fmtRevenueEstimate(v) {
   return `${sign}$${abs.toFixed(0)}`;
 }
 
+// ETA en jours calendaires entre une date ISO et aujourd'hui.
+function etaDays(iso) {
+  const d = new Date(iso + 'T12:00:00Z');
+  const today = new Date();
+  const diff = Math.round((d.getTime() - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) / 86400000);
+  if (!Number.isFinite(diff)) return '';
+  if (diff <= 0) return "aujourd'hui";
+  if (diff === 1) return 'demain';
+  return `dans ${diff} j`;
+}
+
+// ── Cellule-MONDE (bandeau + régime) : label + valeur + méta collés à
+// gauche, min-width:0. TickValue = micro-mouvement 1.F (sauf countdown). ──
+function Cell({ label, value, meta, tone, marker, live, className }) {
+  return (
+    <div className={`pf-c pm-cell${className ? ` ${className}` : ''}`} data-tone={tone || undefined}>
+      <span className="pf-c__label pm-cell__label">
+        {label}
+        {marker || null}
+      </span>
+      {live ? (
+        <span className={`pf-c__val pm-cell__val${tone ? ` pf-c__val--${tone}` : ''}`}>{value}</span>
+      ) : (
+        <TickValue text={value} className={`pf-c__val pm-cell__val${tone ? ` pf-c__val--${tone}` : ''}`} />
+      )}
+      <span className="pf-c__meta pm-cell__meta">{meta || ' '}</span>
+    </div>
+  );
+}
+
 export default function PreMarketBriefing() {
   const navigate = useNavigate();
+  const reducedMotion = useReducedMotion();
   const [now, setNow] = useState(() => new Date());
   const [dateKey] = useState(todayKey);
   const [checks, setChecks] = useState(() => readChecks(dateKey));
@@ -241,36 +269,48 @@ export default function PreMarketBriefing() {
 
   const { quotes } = useMarketQuotes(QUOTE_SYMBOLS);
   const sniperGates = useSniperGates();
+  const kill = useDailyKillSwitch();
   const { rate: fxRate, formatRate: formatFxRate } = useFx();
+  const openPositions = useOpenPositions();
+  const settings = useSettings();
+  const apiStatus = useApiStatus();
+  const lr = toFloat(settings?.liveRate) || 1;
 
   const phaseInfo = useMemo(() => nextPhase(now), [now]);
   const vixInfo = useMemo(() => vixRegime(quotes?.['^VIX']), [quotes]);
 
-  const armedPositions = useMemo(() => {
-    if (!sniperGates?.rows) return [];
-    return sniperGates.rows
-      .map((row) => {
-        const armedGate = row.gates.find((g) => g.status === 'armed');
-        const imminentGate = row.gates.find((g) => g.status === 'imminent');
-        return {
-          ...row,
-          flagGate: armedGate || imminentGate || null,
-        };
-      })
-      .filter((r) => r.flagGate)
-      .sort((a, b) => {
-        // ARMED first then imminent
-        const order = { armed: 0, imminent: 1 };
-        return order[a.flagGate.status] - order[b.flagGate.status];
-      });
-  }, [sniperGates]);
-
   const allOpenOptions = useMemo(() => sniperGates?.rows || [], [sniperGates]);
 
-  // ── U11 : macro + earnings du jour (réutilise les feeds Finnhub déjà
-  //    câblés sur Calendar — useCalendarFeeds — aucun nouvel endpoint). ──
-  const openPositions = useOpenPositions();
-  const apiStatus = useApiStatus();
+  // ── Classifieur UNIQUE (§4.1) : deriveAttention, à l'identique de
+  //    Positions.jsx. Fini le vocabulaire hook (armed/imminent/safe) ;
+  //    verdict par position CRITICAL / ARMED (sinon SAFE). ──
+  const actionableAlerts = useMemo(() => {
+    // greeksMap non lu par generateAlerts (facteurs = dte/pctChg/daysHeld) →
+    // Map() vide suffit ; classification byte-identique à Positions.jsx.
+    const alerts = generateAlerts(openPositions || [], new Map(), lr);
+    return alerts.filter((a) => a.severity === 'red' || a.severity === 'orange');
+  }, [openPositions, lr]);
+
+  const gateByPos = useMemo(() => {
+    const att = deriveAttention({
+      alerts: actionableAlerts,
+      gateRows: sniperGates?.rows || [],
+      watchedCount: 0,
+      kill: { triggered: kill.triggered, dailyPnlUsd: kill.dailyPnlUsd, maxLoss: kill.maxLoss },
+      maxLines: Infinity,
+    });
+    return new Map(att.lines.map((l) => [l.id, l]));
+  }, [actionableAlerts, sniperGates, kill.triggered, kill.dailyPnlUsd, kill.maxLoss]);
+
+  const gateCounts = useMemo(() => {
+    let critical = 0;
+    let armed = 0;
+    for (const l of gateByPos.values()) {
+      if (l.severity === 'critique') critical++;
+      else armed++;
+    }
+    return { critical, armed, total: critical + armed };
+  }, [gateByPos]);
 
   const heldTickers = useMemo(
     () =>
@@ -280,8 +320,6 @@ export default function PreMarketBriefing() {
     [openPositions]
   );
 
-  // Union tickers majeurs + positions tenues : les earnings des majeurs
-  // sont surfacés, ceux de tes positions ne sont jamais filtrés out.
   const calTickers = useMemo(
     () => Array.from(new Set([...MAJOR_US_TICKERS, ...heldTickers])),
     [heldTickers]
@@ -304,14 +342,18 @@ export default function PreMarketBriefing() {
   }, [sessionDate]);
 
   const finnhubDown = apiStatus?.finnhub?.status === 'inactive';
-  const macroToday = useMemo(() => {
+
+  // Macro effectif (Finnhub ∪ fallback local FOMC/CPI/NFP), plage month±1.
+  const effectiveMacro = useMemo(() => {
     const { from, to } = monthRangeIso(calYear, calMonth);
-    // Fallback offline (FOMC/CPI/NFP 2026) quand Finnhub HS OU feed vide,
-    // exactement comme la bannière contextuelle de Calendar.
     const fallback = finnhubDown || macro.length === 0 ? macroEventsInRange(from, to) : [];
-    const eff = fallback.length > 0 ? fallback : macro;
-    return eff.filter((ev) => ev?.time && String(ev.time).slice(0, 10) === sessionDate);
-  }, [macro, finnhubDown, sessionDate, calYear, calMonth]);
+    return fallback.length > 0 ? fallback : macro;
+  }, [macro, finnhubDown, calYear, calMonth]);
+
+  const macroToday = useMemo(
+    () => effectiveMacro.filter((ev) => ev?.time && String(ev.time).slice(0, 10) === sessionDate),
+    [effectiveMacro, sessionDate]
+  );
 
   const earningsToday = useMemo(() => {
     const held = new Set(heldTickers);
@@ -339,6 +381,28 @@ export default function PreMarketBriefing() {
 
   const heldEarnCount = useMemo(() => earningsToday.filter((e) => e.held).length, [earningsToday]);
 
+  // Prochain catalyseur (jour creux) — donnée DÉJÀ servie (macro ∪ earnings
+  // futurs), aucune requête nouvelle. Sert à ne jamais laisser l'agenda vide.
+  const nextCatalyst = useMemo(() => {
+    const pool = [];
+    for (const ev of effectiveMacro) {
+      const d = ev?.time ? String(ev.time).slice(0, 10) : null;
+      if (d && d > sessionDate) {
+        pool.push({ date: d, label: ev.event, type: 'macro', impact: ev.impact });
+      }
+    }
+    for (const e of earnings || []) {
+      if (e?.date && e.date > sessionDate && e?.symbol) {
+        const sym = String(e.symbol).toUpperCase();
+        if (heldTickers.includes(sym) || MAJOR_US_TICKERS.includes(sym)) {
+          pool.push({ date: e.date, label: `${sym} · résultats`, type: 'earn' });
+        }
+      }
+    }
+    pool.sort((a, b) => a.date.localeCompare(b.date));
+    return pool[0] || null;
+  }, [effectiveMacro, earnings, sessionDate, heldTickers]);
+
   const checkedCount = Object.values(checks).filter(Boolean).length;
   const allReady = checkedCount === ROUTINE_ITEMS.length;
 
@@ -347,387 +411,267 @@ export default function PreMarketBriefing() {
     setChecks(next);
     writeChecks(dateKey, next);
   };
-
   const resetChecks = () => {
     setChecks({});
     writeChecks(dateKey, {});
   };
-
   const confirmReady = () => {
     if (!allReady) return;
-    const stamp = new Date().toISOString();
-    const next = { ...checks, _readyAt: stamp };
+    const next = { ...checks, _readyAt: new Date().toISOString() };
     setChecks(next);
     writeChecks(dateKey, next);
   };
-
   const readyAt = checks?._readyAt;
 
+  const agendaEmpty = macroToday.length === 0 && earningsToday.length === 0;
+
+  // Régime — 8 cellules-MONDE (l'ordre = la lecture : vol, indices, futures, fx).
+  const regimeCells = [
+    { label: 'VIX', value: fmtIndex(quotes?.['^VIX']), meta: vixInfo.label, tone: vixInfo.tone },
+    { label: 'SPX', value: fmtIndex(quotes?.['^GSPC']), meta: fmtIndexChg(quotes?.['^GSPC']) || '——', metaTone: chgToneAttr(quotes?.['^GSPC']) },
+    { label: 'QQQ', value: fmtIndex(quotes?.QQQ), meta: fmtIndexChg(quotes?.QQQ) || '——', metaTone: chgToneAttr(quotes?.QQQ) },
+    { label: 'ES', value: fmtIndex(quotes?.['ES=F']), meta: fmtIndexChg(quotes?.['ES=F']) || '——', metaTone: chgToneAttr(quotes?.['ES=F']) },
+    { label: 'NQ', value: fmtIndex(quotes?.['NQ=F']), meta: fmtIndexChg(quotes?.['NQ=F']) || '——', metaTone: chgToneAttr(quotes?.['NQ=F']) },
+    { label: 'YM', value: fmtIndex(quotes?.['YM=F']), meta: fmtIndexChg(quotes?.['YM=F']) || '——', metaTone: chgToneAttr(quotes?.['YM=F']) },
+    { label: 'USD/CHF', value: fxRate > 0 ? formatFxRate(fxRate) : '——', meta: 'spot' },
+    { label: 'DXY', value: fmtIndex(quotes?.[DXY_SYMBOL]), meta: fmtIndexChg(quotes?.[DXY_SYMBOL]) || '——', metaTone: chgToneAttr(quotes?.[DXY_SYMBOL]) },
+  ];
+
   return (
-    <div className="premarket-page">
-      {/* 1. Header — clocks + phase + countdown */}
-      <div className="premarket-page__header">
-        <div className="premarket-page__clock-cell">
-          <span className="premarket-page__clock-label">CET · Genève</span>
-          <span className="premarket-page__clock-value">{fmtClock(now, 'Europe/Zurich')}</span>
+    <motion.div
+      className="page-container premarket-page"
+      variants={reducedMotion ? undefined : RISE_CONTAINER_VARIANTS}
+      initial={reducedMotion ? undefined : 'hidden'}
+      animate={reducedMotion ? undefined : 'visible'}
+    >
+      {/* 1 — BANDEAU DE COMMANDEMENT : countdown = valeur reine. */}
+      <motion.section
+        variants={RISE_TILE_VARIANTS}
+        className="lh-final pm-command"
+        aria-label="Commandement — ouverture, phase, gates"
+      >
+        <div className="pm-command__grid">
+          <div className="pf-c pm-cell pm-command__countdown">
+            <span className="pf-c__label pm-cell__label">{phaseInfo.countdownWhat}</span>
+            {/* Countdown = tick 1 s natif (pas de TickValue). */}
+            <span className="pm-command__countdown-val">{phaseInfo.countdownHMS}</span>
+            <span className="pf-c__meta pm-cell__meta">séance US · NY</span>
+          </div>
+          {/* PHASE US = état de séance (scheduling), PAS un gain d'argent →
+              encre NEUTRE (loi de couleur ; l'état est porté par le libellé). */}
+          <Cell
+            label="PHASE US"
+            value={phaseInfo.label}
+            meta={phaseInfo.phase === 'open' ? 'marché ouvert' : phaseInfo.phase === 'pre' ? 'pré-marché' : phaseInfo.phase === 'after' ? 'after-hours' : 'fermé'}
+          />
+          <Cell label="GENÈVE" value={fmtClock(now, 'Europe/Zurich')} meta="CET" live />
+          <Cell label="NEW YORK" value={fmtClock(now, 'America/New_York')} meta="ET" live />
+          <Cell
+            label="GATES"
+            value={`${gateCounts.total} / ${allOpenOptions.length}`}
+            meta={
+              gateCounts.total > 0
+                ? [gateCounts.critical ? `${gateCounts.critical} CRITICAL` : null, gateCounts.armed ? `${gateCounts.armed} ARMED` : null].filter(Boolean).join(' · ')
+                : 'aucune attention'
+            }
+          />
         </div>
-        <div className="premarket-page__clock-cell">
-          <span className="premarket-page__clock-label">NY</span>
-          <span className="premarket-page__clock-value">{fmtClock(now, 'America/New_York')}</span>
-        </div>
-        <div
-          className="premarket-page__clock-cell premarket-page__clock-cell--phase"
-          data-phase={phaseInfo.phase}
-        >
-          <span className="premarket-page__clock-label">Phase US</span>
-          <span className="premarket-page__clock-value premarket-page__clock-value--phase">
-            {phaseInfo.label}
-          </span>
-        </div>
-        <div className="premarket-page__clock-cell">
-          <span className="premarket-page__clock-label">Prochaine bascule</span>
-          <span className="premarket-page__clock-value">{phaseInfo.countdownLabel}</span>
-        </div>
-        <div className="premarket-page__clock-cell premarket-page__clock-cell--ready">
-          {readyAt ? (
-            <>
-              <span className="premarket-page__clock-label">Routine confirmée</span>
-              <span className="premarket-page__clock-value premarket-page__clock-value--ok">
-                {new Date(readyAt).toLocaleTimeString('fr-CH', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="premarket-page__clock-label">Routine</span>
-              <span className="premarket-page__clock-value">
-                {checkedCount} / {ROUTINE_ITEMS.length}
-              </span>
-            </>
-          )}
-        </div>
-      </div>
+      </motion.section>
 
-      {/* 2. Market regime row */}
-      <div className="premarket-page__regime">
-        <div className="premarket-page__regime-cell" data-tone={vixInfo.tone}>
-          <span className="premarket-page__regime-label">VIX</span>
-          <span className="premarket-page__regime-value">{fmtIndex(quotes?.['^VIX'])}</span>
-          <span className="premarket-page__regime-sub">{vixInfo.label}</span>
-        </div>
-        <div className="premarket-page__regime-cell">
-          <span className="premarket-page__regime-label">SPX</span>
-          <span className="premarket-page__regime-value">{fmtIndex(quotes?.['^GSPC'])}</span>
-          <span className="premarket-page__regime-sub">{fmtIndexChg(quotes?.['^GSPC']) || '——'}</span>
-        </div>
-        <div className="premarket-page__regime-cell">
-          <span className="premarket-page__regime-label">QQQ</span>
-          <span className="premarket-page__regime-value">{fmtIndex(quotes?.QQQ)}</span>
-          <span className="premarket-page__regime-sub">{fmtIndexChg(quotes?.QQQ) || '——'}</span>
-        </div>
-        <div
-          className="premarket-page__regime-cell"
-          data-tone={armedPositions.length > 0 ? 'loss' : 'profit'}
-        >
-          <span className="premarket-page__regime-label">Gates armés</span>
-          <span className="premarket-page__regime-value">{armedPositions.length}</span>
-          <span className="premarket-page__regime-sub">/ {allOpenOptions.length} positions</span>
-        </div>
-        <div className="premarket-page__regime-cell">
-          <span className="premarket-page__regime-label">USD/CHF</span>
-          <span className="premarket-page__regime-value">
-            {fxRate > 0 ? formatFxRate(fxRate) : '——'}
-          </span>
-        </div>
-        <div className="premarket-page__regime-cell">
-          <span className="premarket-page__regime-label">DXY</span>
-          <span className="premarket-page__regime-value">{fmtIndex(quotes?.[DXY_SYMBOL])}</span>
-          <span className={`premarket-page__regime-sub ${chgToneClass(quotes?.[DXY_SYMBOL])}`}>
-            {fmtIndexChg(quotes?.[DXY_SYMBOL]) || '——'}
-          </span>
-        </div>
-      </div>
-
-      {/* 2b. Futures overnight — ES/NQ/YM via /api/quote (validés Yahoo) */}
-      <div className="premarket-page__regime">
-        {FUTURES.map((f) => {
-          const q = quotes?.[f.sym];
-          return (
-            <div className="premarket-page__regime-cell" key={f.sym}>
-              <span className="premarket-page__regime-label">{f.label}</span>
-              <span className="premarket-page__regime-value">{fmtIndex(q)}</span>
-              <span className={`premarket-page__regime-sub ${chgToneClass(q)}`}>
-                {fmtIndexChg(q) || '——'}
+      {/* 2 — ÉTAGE RÉGIME : UNE grille au cordeau (chevauchement mort). */}
+      <motion.section
+        variants={RISE_TILE_VARIANTS}
+        className="lh-final pm-regime"
+        aria-label="Régime de marché"
+      >
+        <div className="pm-regime__grid">
+          {regimeCells.map((c) => (
+            <div key={c.label} className="pf-c pm-cell pm-regime__cell" data-tone={c.tone || undefined}>
+              <span className="pf-c__label pm-cell__label">{c.label}</span>
+              <TickValue text={c.value} className="pf-c__val pm-cell__val pm-regime__val" />
+              <span className={`pf-c__meta pm-cell__meta${c.metaTone ? ` pm-cell__meta--${c.metaTone}` : ''}`}>
+                {c.meta}
               </span>
             </div>
-          );
-        })}
-      </div>
-
-      {/* D2.D — zones 2/3 en grille dense ≥1440 (recomposition : plus de
-          demi-écran mort). Positions/Gates + Routine pleine largeur ; Macro |
-          Earnings côte à côte. En dessous de 1440 : empilé (mobile intact). */}
-      <div className="premarket-page__sections">
-      {/* 3. Positions review — gates table */}
-      <section className="premarket-page__section premarket-page__section--positions">
-        <header className="premarket-page__section-head">
-          <span className="premarket-page__section-title">Positions Review · Gates</span>
-          <span className="premarket-page__section-hint">
-            {armedPositions.length > 0
-              ? `${armedPositions.length} attention requise · ${allOpenOptions.length} options ouvertes`
-              : `${allOpenOptions.length} options ouvertes · aucune gate critique`}
-          </span>
-        </header>
-        <div className="premarket-page__section-body">
-          {allOpenOptions.length === 0 ? (
-            <div className="module-empty">
-              <span className="module-empty__title">Aucune option ouverte</span>
-              <span className="module-empty__sub">
-                Les gates Sniper s&apos;affichent ici quand tu as des positions options actives ce
-                matin.
-              </span>
-            </div>
-          ) : (
-            <table className="premarket-page__table" aria-label="Positions Review">
-              <thead>
-                <tr>
-                  <th>Ticker</th>
-                  <th>Strat</th>
-                  <th>Strike</th>
-                  <th>DTE</th>
-                  <th>Unreal</th>
-                  <th>Gate critique</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allOpenOptions.map((row) => {
-                  const armed = row.gates.find((g) => g.status === 'armed');
-                  const imminent = row.gates.find((g) => g.status === 'imminent');
-                  const flag = armed || imminent;
-                  const status = armed ? 'ARMED' : imminent ? 'IMMINENT' : 'safe';
-                  return (
-                    <tr
-                      key={row.id}
-                      className="premarket-page__row"
-                      data-status={
-                        status === 'ARMED'
-                          ? 'armed'
-                          : status === 'IMMINENT'
-                            ? 'imminent'
-                            : undefined
-                      }
-                      onClick={() =>
-                        navigate(`/trading/positions?focus=${encodeURIComponent(row.id)}`)
-                      }
-                    >
-                      <td>{row.ticker}</td>
-                      <td className="premarket-page__strat">
-                        {row.dir === 'Short' ? 'S' : 'L'}
-                        {row.type === 'PUT' ? 'P' : row.type === 'CALL' ? 'C' : '—'}
-                      </td>
-                      <td>{row.strike ? `$${row.strike}` : '—'}</td>
-                      <td>{row.dte != null ? `${row.dte}d` : '—'}</td>
-                      <td
-                        className={
-                          row.unrealPct > 0
-                            ? 'premarket-page__cell--profit'
-                            : row.unrealPct < 0
-                              ? 'premarket-page__cell--loss'
-                              : ''
-                        }
-                      >
-                        {row.unrealPct == null
-                          ? '——'
-                          : `${row.unrealPct > 0 ? '+' : ''}${row.unrealPct.toFixed(1)}%`}
-                      </td>
-                      <td className="premarket-page__gate-cell">
-                        {flag ? `${flag.gate} · ${flag.label}` : '—'}
-                      </td>
-                      <td>
-                        <span
-                          className="premarket-page__status-pill"
-                          data-status={
-                            status === 'ARMED'
-                              ? 'armed'
-                              : status === 'IMMINENT'
-                                ? 'imminent'
-                                : 'safe'
-                          }
-                        >
-                          {status}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </section>
-
-      {/* 3b. Calendrier macro du jour (feeds Finnhub + fallback offline) */}
-      <section className="premarket-page__section premarket-page__section--macro">
-        <header className="premarket-page__section-head">
-          <span className="premarket-page__section-title">Calendrier macro · {sessionLabel}</span>
-          <span className="premarket-page__section-hint">
-            {macroToday.length > 0
-              ? `${macroToday.length} événement${macroToday.length > 1 ? 's' : ''} médium+/fort`
-              : 'Finnhub + fallback FOMC / CPI / NFP'}
-          </span>
-        </header>
-        <div className="premarket-page__section-body">
-          {macroToday.length === 0 ? (
-            <div className="module-empty">
-              <span className="module-empty__title">Aucune annonce macro aujourd&apos;hui</span>
-              <span className="module-empty__sub">
-                Aucun événement macro médium ou fort sur la séance.
-              </span>
-            </div>
-          ) : (
-            <table className="premarket-page__table" aria-label="Calendrier macro du jour">
-              <thead>
-                <tr>
-                  <th>Pays</th>
-                  <th>Événement</th>
-                  <th>Impact</th>
-                </tr>
-              </thead>
-              <tbody>
-                {macroToday.map((ev, i) => (
-                  <tr key={i} className="premarket-page__row premarket-page__row--static">
-                    <td>{ev.country || '—'}</td>
-                    <td>{ev.event}</td>
-                    <td>
-                      {ev.impact ? (
-                        <span className="premarket-page__pill" data-impact={ev.impact}>
-                          {ev.impact === 'high' ? 'FORT' : ev.impact === 'medium' ? 'MOYEN' : ev.impact}
-                        </span>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </section>
-
-      {/* 3c. Earnings du jour — BMO / AMC, positions tenues en évidence */}
-      <section className="premarket-page__section premarket-page__section--earnings">
-        <header className="premarket-page__section-head">
-          <span className="premarket-page__section-title">Earnings · {sessionLabel}</span>
-          <span className="premarket-page__section-hint">
-            {earningsToday.length > 0
-              ? `${earningsToday.length} résultat${earningsToday.length > 1 ? 's' : ''}${
-                  heldEarnCount > 0 ? ` · ${heldEarnCount} sur tes positions` : ''
-                }`
-              : 'BMO / AMC · tickers majeurs + tes positions'}
-          </span>
-        </header>
-        <div className="premarket-page__section-body">
-          {earningsToday.length === 0 ? (
-            <div className="module-empty">
-              <span className="module-empty__title">Aucun résultat publié aujourd&apos;hui</span>
-              <span className="module-empty__sub">
-                Aucun earning sur les tickers majeurs ou tes positions pour la séance.
-              </span>
-            </div>
-          ) : (
-            <table className="premarket-page__table" aria-label="Earnings du jour">
-              <thead>
-                <tr>
-                  <th>Ticker</th>
-                  <th>Timing</th>
-                  <th>Est. EPS</th>
-                  <th>Est. CA</th>
-                </tr>
-              </thead>
-              <tbody>
-                {earningsToday.map((e, i) => (
-                  <tr
-                    key={i}
-                    className="premarket-page__row premarket-page__row--static"
-                    data-held={e.held || undefined}
-                  >
-                    <td>
-                      {e.symbol}
-                      {e.held && <span className="premarket-page__held-tag">position</span>}
-                    </td>
-                    <td>
-                      {e.when ? (
-                        <span className="premarket-page__pill" data-when={e.when.tone}>
-                          {e.when.label}
-                        </span>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td>{e.eps || '—'}</td>
-                    <td>{e.rev || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </section>
-
-      {/* 4. Routine checklist */}
-      <section className="premarket-page__section premarket-page__section--routine">
-        <header className="premarket-page__section-head">
-          <span className="premarket-page__section-title">Routine pré-marché · {dateKey}</span>
-          <span className="premarket-page__section-hint">
-            {readyAt
-              ? `Confirmée à ${new Date(readyAt).toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' })}`
-              : `${checkedCount} / ${ROUTINE_ITEMS.length} étapes cochées`}
-          </span>
-        </header>
-        <div className="premarket-page__checklist">
-          {ROUTINE_ITEMS.map((item) => (
-            <label
-              key={item.id}
-              className="premarket-page__check-row"
-              data-checked={!!checks[item.id] || undefined}
-            >
-              <input
-                type="checkbox"
-                className="premarket-page__check-input"
-                checked={!!checks[item.id]}
-                onChange={() => toggleCheck(item.id)}
-              />
-              <span className="premarket-page__check-box" aria-hidden="true">
-                {checks[item.id] ? '✓' : ''}
-              </span>
-              <span className="premarket-page__check-label">{item.label}</span>
-            </label>
           ))}
         </div>
-        <div className="premarket-page__actions">
-          <button
-            type="button"
-            className="premarket-page__btn premarket-page__btn--ghost"
-            onClick={resetChecks}
-            disabled={checkedCount === 0 && !readyAt}
-          >
-            Reset
-          </button>
-          <button
-            type="button"
-            className="premarket-page__btn premarket-page__btn--primary"
-            onClick={confirmReady}
-            disabled={!allReady || !!readyAt}
-          >
-            {readyAt ? 'Confirmée ✓' : 'Confirm Ready'}
-          </button>
+      </motion.section>
+
+      {/* 3 — HÉROS : REVUE DES POSITIONS · GATES (classifieur unique). */}
+      <motion.div variants={RISE_TILE_VARIANTS}>
+        <div className="pm-panel pm-hero">
+          <div className="pm-panel__head">
+            <span className="mk-title">Revue des positions · Gates</span>
+            <span className="pm-panel__hint">
+              {gateCounts.total > 0
+                ? `${gateCounts.total} attention requise · ${allOpenOptions.length} option${allOpenOptions.length > 1 ? 's' : ''} ouverte${allOpenOptions.length > 1 ? 's' : ''}`
+                : `${allOpenOptions.length} option${allOpenOptions.length > 1 ? 's' : ''} ouverte${allOpenOptions.length > 1 ? 's' : ''} · aucune gate critique`}
+            </span>
+          </div>
+          {allOpenOptions.length === 0 ? (
+            <div className="pm-empty">
+              <span className="pm-empty__title">Aucune option ouverte</span>
+              <span className="pm-empty__sub">
+                Les gates Sniper s'affichent ici dès qu'une option est en portefeuille ce matin.
+              </span>
+            </div>
+          ) : (
+            <div className="pm-gtable">
+              <div className="pm-gtable__head" role="row">
+                <span className="pm-gtable__h" data-align="left">Ticker</span>
+                <span className="pm-gtable__h" data-align="left">Strat</span>
+                <span className="pm-gtable__h" data-align="right">Strike</span>
+                <span className="pm-gtable__h" data-align="right">DTE</span>
+                <span className="pm-gtable__h" data-align="right">Unreal</span>
+                <span className="pm-gtable__h" data-align="left">Signal</span>
+                <span className="pm-gtable__h" data-align="left">Gate</span>
+              </div>
+              {allOpenOptions.map((row) => {
+                const g = gateByPos.get(row.id);
+                const sev = g ? g.severity : null;
+                const badge = sev === 'critique' ? 'CRITICAL' : sev === 'arme' ? 'ARMED' : 'SAFE';
+                const badgeSev = sev === 'critique' ? 'critique' : sev === 'arme' ? 'arme' : 'safe';
+                const unrealTone = row.unrealPct > 0 ? 'profit' : row.unrealPct < 0 ? 'loss' : 'neutral';
+                return (
+                  <div
+                    key={row.id}
+                    className="pm-gtable__row"
+                    role="row"
+                    onClick={() => navigate(`/trading/positions?focus=${encodeURIComponent(row.id)}`)}
+                  >
+                    <span className="pm-gtable__c mono pm-gtable__ticker" data-align="left">{row.ticker}</span>
+                    <span className="pm-gtable__c mono" data-align="left">
+                      {row.dir === 'Short' ? 'S' : 'L'}{row.type === 'PUT' ? 'P' : row.type === 'CALL' ? 'C' : '—'}
+                    </span>
+                    <span className="pm-gtable__c mono" data-align="right">{row.strike ? `$${row.strike}` : '—'}</span>
+                    <span className="pm-gtable__c mono" data-align="right">{row.dte != null ? `${row.dte} j` : '—'}</span>
+                    <span className={`pm-gtable__c mono text-${unrealTone}`} data-align="right">
+                      {row.unrealPct == null ? '——' : `${row.unrealPct > 0 ? '+' : ''}${row.unrealPct.toFixed(1)}%`}
+                    </span>
+                    <span className="pm-gtable__c mono pm-gtable__signal" data-align="left">
+                      {g ? g.metric : '—'}
+                    </span>
+                    <span className="pm-gtable__c" data-align="left">
+                      <span className={`db-badge db-badge--${badgeSev}`} title={g ? `${g.metric}${g.others > 0 ? ` · +${g.others} signal${g.others > 1 ? 'aux' : ''}` : ''}` : 'aucune gate active'}>
+                        {badge}
+                      </span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      </section>
-      </div>
-    </div>
+      </motion.div>
+
+      {/* 4 — ÉTAGE DE CLÔTURE : AGENDA | ROUTINE (2 colonnes, vide bas mort). */}
+      <motion.section variants={RISE_TILE_VARIANTS} className="lh-final pm-close" aria-label="Agenda et routine">
+        <div className="pm-close__grid">
+          {/* AGENDA DU JOUR */}
+          <div className="pm-close__zone pm-close__zone--agenda">
+            <div className="mk-title">Agenda du jour · {sessionLabel}</div>
+            {agendaEmpty ? (
+              <div className="pm-agenda-empty">
+                <span className="pm-agenda-empty__title">Séance sans catalyseur programmé</span>
+                {nextCatalyst ? (
+                  <span className="pm-agenda-empty__next">
+                    Prochain catalyseur — <strong>{nextCatalyst.label}</strong>{' '}
+                    <span className="pm-agenda-empty__eta">{etaDays(nextCatalyst.date)}</span>
+                  </span>
+                ) : (
+                  <span className="pm-agenda-empty__sub">Aucune annonce macro ni résultat à venir dans la fenêtre.</span>
+                )}
+              </div>
+            ) : (
+              <div className="pm-agenda">
+                {/* MACRO */}
+                <div className="pm-agenda__group">
+                  <div className="pm-agenda__group-title">Macro</div>
+                  {macroToday.length === 0 ? (
+                    <div className="pm-agenda__none">Aucune annonce macro</div>
+                  ) : (
+                    macroToday.map((ev, i) => (
+                      <div key={`m${i}`} className="pm-agenda__row">
+                        <span className="pm-agenda__country mono">{ev.country || '—'}</span>
+                        <span className="pm-agenda__label">{ev.event}</span>
+                        {ev.impact && (
+                          <span className="pm-agenda__impact" data-impact={ev.impact}>
+                            {ev.impact === 'high' ? 'FORT' : ev.impact === 'medium' ? 'MOYEN' : 'FAIBLE'}
+                          </span>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+                {/* EARNINGS */}
+                <div className="pm-agenda__group">
+                  <div className="pm-agenda__group-title">
+                    Earnings{heldEarnCount > 0 ? ` · ${heldEarnCount} sur tes positions` : ''}
+                  </div>
+                  {earningsToday.length === 0 ? (
+                    <div className="pm-agenda__none">Aucun résultat publié</div>
+                  ) : (
+                    earningsToday.map((e, i) => (
+                      <div key={`e${i}`} className="pm-agenda__row" data-held={e.held || undefined}>
+                        <span className="pm-agenda__country mono">{e.symbol}</span>
+                        <span className="pm-agenda__label">
+                          {e.eps ? `EPS ${e.eps}` : '—'}{e.rev ? ` · CA ${e.rev}` : ''}
+                          {e.held && <span className="pm-agenda__held">position</span>}
+                        </span>
+                        {e.when && <span className="pm-agenda__impact" data-when={e.when.tone}>{e.when.label}</span>}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ROUTINE PRÉ-MARCHÉ */}
+          <div className="pm-close__zone pm-close__zone--routine">
+            <div className="mk-title">
+              Routine pré-marché
+              <span className="pm-close__routine-count">
+                {readyAt
+                  ? `confirmée ${new Date(readyAt).toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' })}`
+                  : `${checkedCount} / ${ROUTINE_ITEMS.length}`}
+              </span>
+            </div>
+            <div className="pm-checklist">
+              {ROUTINE_ITEMS.map((item) => (
+                <label key={item.id} className="pm-check-row" data-checked={!!checks[item.id] || undefined}>
+                  <input
+                    type="checkbox"
+                    className="pm-check-input"
+                    checked={!!checks[item.id]}
+                    onChange={() => toggleCheck(item.id)}
+                  />
+                  <span className="pm-check-box" aria-hidden="true">{checks[item.id] ? '✓' : ''}</span>
+                  <span className="pm-check-label">{item.label}</span>
+                </label>
+              ))}
+            </div>
+            <div className="pm-actions">
+              <button
+                type="button"
+                className="pm-btn pm-btn--ghost"
+                onClick={resetChecks}
+                disabled={checkedCount === 0 && !readyAt}
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                className="pm-btn pm-btn--primary"
+                onClick={confirmReady}
+                disabled={!allReady || !!readyAt}
+              >
+                {readyAt ? 'Confirmée ✓' : 'Confirm Ready'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </motion.section>
+    </motion.div>
   );
 }
