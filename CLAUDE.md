@@ -187,8 +187,27 @@ prochain catalyseur). Calendar = bandeau signes vitaux servis + Annonces
 2 colonnes + **loi de couleur sur les chips** (impact FORT ambre, le
 ROUGE meurt ; STK cyan #42A5F5 mort ; bannière Finnhub durable neutre ;
 PHASE US « OPEN » n'est plus vert). **CalendarMini réparé à la racine**
-(fallback macro local greffé — le mini affichait « 0 évt » à tort).
-Prochaine brique : **2.C2 — Workflow (Chain · Journal).**
+(fallback macro local greffé — le mini affichait « 0 évt » à tort). Puis
+**2.C2 mergée (1.0.0-rc.13)** — Workflow (Chain · Journal), **famille 3
+CLOSE** : /trading/chain et /insights/journal au langage cockpit. Chain =
+outil de tir (structure double-entrée + thead sticky 2 rangées = ACQUIS
+intacts) : bandeau `.lh-final` 34 px (**troncatures mortes à la racine** :
+ex-bande fixe 56 px nowrap → auto-hauteur + min-width:0) + IVR tiret
+honnête (aucun pipeline, « Sprint 6 » mort) + barres échéances/strikes
+distinctes (chevauchement mort) + **étage SIGNAUX REMONTÉ** avant la
+chaîne (Max Pain · 25Δ RR · OI · NET GEX · Murs, **tous NEUTRES**) + craft
+table (STRIKE affirmée, zone Sniper AMBRE, ITM neutralisées cyan/ambre
+morts, Greeks neutres). Journal = miroir psy recomposé : bandeau 34 px +
+héros **TiltMeter EXCEPTION couleur nommée** (vert→ambre→rouge, jauge de
+discipline, lui SEUL) + filtre d'humeur en **chips** (mur de mots mort) +
+cartes denses grille fixe + Edge Leak Audit craft (P&L matché toné,
+comptes neutres) ; humeurs/biais/étoiles NEUTRES ; kill switch **même
+source que la bande décision** (vocabulaire aligné « Limite du jour
+franchie », bande gelée) ; `pages-journal.css` créée (legacy purgé de
+v3-components). **v5-chain.css** : partie `.chain-*` réécrite en place,
+`.perf-attr` (History) + `.cheatsheet` (globale) laissées (split différé,
+fichier non renommé). Prochaine brique : **2.D — Utilitaires (Import ·
+Settings).**
 
 Repères S2 toujours en vigueur : KPI 44, cellules `.v3-table` 20 (rowHeight 47),
 plancher caption 17, strip 21/16/18, ticks charts plafonnés 14, héros 56/64

@@ -167,7 +167,32 @@ Objectif : **tag v1.0.0 au 01.09.2026**.
        — commenté ; passer un greeksMap partagé si un jour greek-sensible.
     3. `docs/ETAT-DU-SITE.md` + `ETAT-DU-SITE-V1.md` listent encore « STK cyan »
        comme résidu vivant — **abrogé par 2.C1**, à réconcilier à la clôture d'étape.
-- **2.C2** — Workflow (Chain · Journal).
+- **2.C2 ✅ (1.0.0-rc.13, 04.08.2026)** — Workflow (Chain · Journal) au langage
+  cockpit v1.0. **Famille 3 CLOSE.** **Chain** (outil de tir ; structure
+  double-entrée + thead sticky 2 rangées = ACQUIS intacts) : bandeau `.lh-final`
+  34 px (**troncatures mortes à la racine** — ex-bande fixe 56 px + labels/valeurs
+  nowrap face au plancher 17 px du palier → auto-hauteur + `.pf-c` min-width:0) ·
+  IVR tiret honnête (« série en collecte » ; aucun pipeline, mention « Sprint 6 »
+  morte) · barres échéances/strikes **distinctes** (chevauchement mort) · **étage
+  SIGNAUX REMONTÉ** avant la chaîne (Max Pain · 25Δ RR · OI · NET GEX · Murs,
+  **tous NEUTRES** — structure de marché ≠ argent) · craft table (colonne STRIKE
+  affirmée, repère ATM ambre, **zone Sniper AMBRE** — vert mort, **bandes ITM
+  NEUTRES** — cyan/ambre v3 morts, Greeks neutres) · états accueil + honnête.
+  **Journal** (miroir psy recomposé) : bandeau 34 px · héros **TiltMeter =
+  EXCEPTION couleur NOMMÉE** (vert→ambre→rouge, jauge de discipline, lui SEUL) ·
+  **filtre d'humeur en chips** (mur de mots collés mort) · cartes denses à grille
+  fixe (carte étirée dans un vide morte) · Edge Leak Audit craft v1.0 (P&L matché
+  toné, comptes NEUTRES) · humeurs/biais/étoiles NEUTRES · kill switch **même
+  source que la bande décision** (`useDailyKillSwitch`, vocabulaire aligné, bande
+  gelée). `pages-journal.css` créée (legacy purgé de v3-components, −330 l).
+  - **Résidus consignés** :
+    1. **`v5-chain.css` héberge 3 univers** — `.chain-*` (réécrit en place) +
+       `.perf-attr` (attribution History, gelée) + `.cheatsheet` (modale globale).
+       Split dédié + rename du fichier **différés** (hors périmètre 2.C2).
+    2. **Pipeline IVR jamais construit** : `appendIvHistory` écrit `qc:ivHistory`
+       mais aucun consommateur ne calcule un rang → cellule tiret honnête en attendant.
+    3. **thead sticky 1 px @palier** : Row1 mesure 43 px vs `top:42px` (D2.F) —
+       décalage invisible (en-têtes opaques), pré-existant, **acquis intouchable**.
 - **2.D** — Utilitaires (Import · Settings · API).
 
 ## Étape 3 — Cohérence & modales

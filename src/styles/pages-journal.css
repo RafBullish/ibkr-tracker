@@ -1,0 +1,645 @@
+/* ════════════════════════════════════════════════════════════════
+   PAGES-JOURNAL.CSS — /insights/journal au langage cockpit v1.0
+   (brique 2.C2). Feuille dédiée créée : le Journal vivait dans
+   v3-components.css (tokens legacy --qc-* et --fs-*) ; ses styles y sont
+   PURGÉS et recomposés ici au système canonique. Importée dans le bloc
+   pages-* avant les v1-*.
+
+   Recettes v1.0 réutilisées (chargées plus tard) : .lh-final (cadre
+   cockpit), .pf-c (cellule-MONDE), .mk-title (titre de zone), .db-badge
+   (registre terminal). Densité ≥1440 via c3-hires (scopée .journal-page).
+
+   LOI DE COULEUR : compteurs, scores et taux NEUTRES (loi 2.B §4.6).
+   Argent réel (P&L jour, P&L matché de l'audit) toné par signe. SEULE
+   EXCEPTION NOMMÉE (§4.3) : le TiltMeter garde son échelle vert → ambre
+   → rouge — c'est une jauge de discipline dont la dérive coûte de
+   l'argent réel, pas un ratio. Elle vaut pour le TiltMeter et rien
+   d'autre. Ambre ailleurs = décision (chip actif, CTA).
+   ════════════════════════════════════════════════════════════════ */
+
+/* Racine = page-container (flex column + gap + padding partagés, parité
+   Analytics/Positions). .journal-page = simple crochet de scoping (densité
+   c3-hires) ; on ne redéfinit pas la mise en page. */
+.journal-page {
+  min-height: 100%;
+}
+.jr-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-hairline);
+}
+.jr-panel-head .mk-title {
+  margin-bottom: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   1 — BANDEAU DE COMMANDEMENT. Signes vitaux SERVIS (loi 34 px 2.A).
+   ════════════════════════════════════════════════════════════════ */
+.journal-command__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.journal-command .pf-c {
+  padding: 14px 18px 12px;
+}
+.journal-command__grid > .pf-c + .pf-c {
+  border-left: 1px solid var(--line-emphasis);
+}
+.journal-command .pf-c__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--type-caption);
+  line-height: 14px;
+  margin-bottom: 4px;
+}
+.journal-command .pf-c__val {
+  font-size: var(--type-display, 34px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+/* Statut du kill switch en marqueur de label (registre terminal). */
+.jr-kill-badge {
+  font-family: var(--qc-font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 1px 6px;
+  border-radius: 2px;
+  border: 1px solid var(--line-hairline);
+  color: var(--ink-mute);
+}
+/* DÉCLENCHÉ = signal décisionnel (« stop trading ») → ambre. */
+.jr-kill-badge[data-on] {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Alerte kill switch (déclenché) — bandeau slim, vocabulaire ALIGNÉ
+   sur la bande décision (§4.5 : « Limite du jour franchie », registre
+   terminal, montants signés). La bande décision est GELÉE → le
+   correctif de vocabulaire vit ici.
+   ════════════════════════════════════════════════════════════════ */
+.jr-killswitch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--depth-raised));
+}
+.jr-killswitch__marker {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.jr-killswitch__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.jr-killswitch__title {
+  font-family: var(--qc-font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink-pure);
+}
+.jr-killswitch__detail {
+  font-size: var(--type-caption);
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   2 — HÉROS : TILTMETER 14 JOURS. Cadre cockpit. EXCEPTION couleur
+   nommée (§4.3) : échelle vert → ambre → rouge conservée.
+   ════════════════════════════════════════════════════════════════ */
+.tilt-hero {
+  padding: 16px 18px 18px;
+}
+.tilt-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.tilt-meter__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.tilt-meter__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tilt-meter__title .mk-title {
+  margin-bottom: 0;
+}
+/* Kill switch actif = signal d'arrêt décisionnel → ambre terminal (pas
+   de rouge pulsé : ni glow, ni confusion avec une perte chiffrée). */
+.tilt-meter__kill {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 10px;
+  font-family: var(--qc-font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border-radius: 2px;
+}
+
+/* La jauge : piste graduée ≥8 px, 4 zones sur le dégradé vert → rouge. */
+.tilt-meter__track {
+  position: relative;
+  height: 34px;
+}
+.tilt-meter__segments {
+  display: grid;
+  grid-template-columns: 25% 25% 25% 25%;
+  gap: 2px;
+  height: 12px;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.tilt-meter__segment {
+  display: block;
+  height: 100%;
+}
+/* EXCEPTION §4.3 : vert (discipline) → ambre (dérive) → rouge (tilt). */
+.tilt-meter__segment[data-zone="calm"] {
+  background: color-mix(in srgb, var(--pnl-up) 55%, var(--depth-base));
+}
+.tilt-meter__segment[data-zone="focus"] {
+  background: color-mix(in srgb, var(--pnl-up) 30%, var(--depth-base));
+}
+.tilt-meter__segment[data-zone="warn"] {
+  background: color-mix(in srgb, var(--accent) 42%, var(--depth-base));
+}
+.tilt-meter__segment[data-zone="tilt"] {
+  background: color-mix(in srgb, var(--pnl-down) 50%, var(--depth-base));
+}
+.tilt-meter__indicator {
+  position: absolute;
+  top: 4px;
+  width: 3px;
+  height: 20px;
+  background: var(--ink-pure);
+  transform: translateX(-50%);
+  transition: left 400ms var(--ease-out);
+  border-radius: 1px;
+}
+.tilt-meter__indicator-dot {
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--ink-pure);
+  border: 2px solid var(--depth-raised);
+}
+.tilt-meter[data-tone="profit"] .tilt-meter__indicator,
+.tilt-meter[data-tone="profit"] .tilt-meter__indicator-dot {
+  background: var(--pnl-up);
+}
+.tilt-meter[data-tone="accent"] .tilt-meter__indicator,
+.tilt-meter[data-tone="accent"] .tilt-meter__indicator-dot {
+  background: color-mix(in srgb, var(--pnl-up) 70%, var(--accent));
+}
+.tilt-meter[data-tone="warning"] .tilt-meter__indicator,
+.tilt-meter[data-tone="warning"] .tilt-meter__indicator-dot {
+  background: var(--accent);
+}
+.tilt-meter[data-tone="loss"] .tilt-meter__indicator,
+.tilt-meter[data-tone="loss"] .tilt-meter__indicator-dot {
+  background: var(--pnl-down);
+}
+
+/* Échelle légendée (lecture explicite de la piste). */
+.tilt-meter__ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-top: 4px;
+}
+
+.tilt-meter__footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-hairline);
+  flex-wrap: wrap;
+}
+.tilt-meter__score {
+  font-family: var(--qc-font-num);
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--ink-pure);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+.tilt-meter[data-tone="profit"] .tilt-meter__score {
+  color: var(--pnl-up);
+}
+.tilt-meter[data-tone="warning"] .tilt-meter__score {
+  color: var(--accent);
+}
+.tilt-meter[data-tone="loss"] .tilt-meter__score {
+  color: var(--pnl-down);
+}
+.tilt-meter__score-label {
+  font-size: var(--type-caption);
+  color: var(--ink-mute);
+  margin-left: 4px;
+}
+.tilt-meter__status {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: right;
+  min-width: 0;
+}
+.tilt-meter__status-label {
+  font-family: var(--qc-font-sans);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ink-pure);
+}
+.tilt-meter__status-label[data-tone="profit"] {
+  color: var(--pnl-up);
+}
+.tilt-meter__status-label[data-tone="warning"] {
+  color: var(--accent);
+}
+.tilt-meter__status-label[data-tone="loss"] {
+  color: var(--pnl-down);
+}
+.tilt-meter__status-text {
+  color: var(--ink-soft);
+  font-size: var(--type-caption);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   3 — ÉTAGE ENTRÉES : filtre d'humeur en CHIPS + cartes denses.
+   ════════════════════════════════════════════════════════════════ */
+.jr-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.jr-filter__label {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-right: 2px;
+}
+/* Chip à l'anatomie ViewToggle. AUCUNE valence : un état émotionnel
+   n'est ni un gain ni une perte. Seul le chip ACTIF porte l'ambre. */
+.jr-chip {
+  height: 28px;
+  padding: 0 12px;
+  font-family: var(--qc-font-sans);
+  font-size: var(--type-caption);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 100ms var(--ease-out);
+  white-space: nowrap;
+}
+.jr-chip:hover {
+  color: var(--ink-pure);
+  border-color: var(--line-emphasis);
+}
+.jr-chip[data-active] {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-weight: 600;
+}
+
+/* Grille de cartes à colonnes FIXES → une seule entrée n'est plus
+   étirée : elle occupe une colonne, le surplus reste vide à droite. */
+.jr-entries {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 360px));
+  justify-content: start;
+  gap: 10px;
+  align-content: start;
+}
+.jr-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+}
+.jr-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+.jr-card__id {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.jr-card__ticker {
+  font-family: var(--qc-font-num);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink-pure);
+  letter-spacing: 0.01em;
+}
+.jr-card__date {
+  font-size: var(--type-caption);
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+.jr-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+  align-items: center;
+}
+/* Chips de carte NEUTRES (humeur, biais, tag stratégie) — un état
+   émotionnel / un biais / une catégorie ne sont pas de l'argent. */
+.jr-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 17px;
+  padding: 0 6px;
+  font-family: var(--qc-font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border-radius: 2px;
+  border: 1px solid var(--line-hairline);
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.jr-tag--mistake {
+  color: var(--ink-mute);
+  border-style: dashed;
+}
+.jr-card__delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 17px;
+  padding: 0;
+  color: var(--ink-mute);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 100ms var(--ease-out);
+}
+.jr-card__delete:hover {
+  color: var(--ink-pure);
+}
+/* Étoiles NEUTRES (une note d'auto-évaluation n'est pas un signal
+   décisionnel → pas d'ambre ambiant). */
+.jr-stars {
+  display: inline-flex;
+  gap: 2px;
+}
+.jr-star {
+  background: none;
+  border: none;
+  color: var(--line-emphasis);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.jr-star[data-filled] {
+  color: var(--ink-pure);
+}
+.jr-star:disabled {
+  cursor: default;
+}
+.jr-card__note {
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   4 — EDGE LEAK AUDIT : crosstab au craft v1.0 (rangées denses, hover).
+   P&L matché toné (argent réel) ; les COMPTES sont NEUTRES.
+   ════════════════════════════════════════════════════════════════ */
+.jr-edge {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.jr-edge__head,
+.jr-edge__row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) 0.9fr 1.1fr 1.2fr;
+  align-items: center;
+  column-gap: 16px;
+  padding: 0 var(--qc-space-2);
+}
+.jr-edge__head {
+  min-height: 34px;
+  border-bottom: 1px solid var(--line-emphasis);
+}
+.jr-edge__row {
+  min-height: 40px;
+  border-bottom: 1px solid var(--line-hairline);
+  transition: background 120ms var(--ease-out);
+}
+.jr-edge__row:last-child {
+  border-bottom: none;
+}
+.jr-edge__row:hover {
+  background: color-mix(in srgb, var(--ink-pure) 3%, transparent);
+}
+.jr-edge__h {
+  font-family: var(--qc-font-sans);
+  font-size: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  min-width: 0;
+}
+.jr-edge__h[data-align="right"],
+.jr-edge__c[data-align="right"] {
+  text-align: right;
+  justify-self: end;
+}
+.jr-edge__c {
+  color: var(--ink-pure);
+  font-variant-numeric: tabular-nums slashed-zero;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jr-edge__tag {
+  font-weight: var(--fw-semibold);
+}
+/* Comptes NEUTRES (gains / pertes en nombre d'entrées). */
+.jr-edge__wl {
+  color: var(--ink-soft);
+}
+.jr-edge__wl-sep {
+  color: var(--ink-mute);
+  margin: 0 3px;
+}
+/* P&L matché = argent réel → toné par signe. */
+.jr-edge__pnl {
+  font-weight: var(--fw-semibold);
+}
+.jr-edge__pnl[data-tone="profit"] {
+  color: var(--pnl-up);
+}
+.jr-edge__pnl[data-tone="loss"] {
+  color: var(--pnl-down);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   États vides designés — registre NEUTRE (l'invitation à taguer n'est
+   PAS de l'ambre, parité 2.A-c1).
+   ════════════════════════════════════════════════════════════════ */
+.jr-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 28px 18px;
+  align-items: flex-start;
+}
+.jr-empty__title {
+  font-family: var(--qc-font-sans);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.jr-empty__sub {
+  font-size: 13px;
+  color: var(--ink-mute);
+  line-height: 1.55;
+  max-width: 620px;
+}
+
+/* CTA « Nouvelle entrée » = zone d'action → ambre (légitime). */
+.jr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 16px;
+  font-family: var(--qc-font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 100ms var(--ease-out);
+  color: var(--depth-void);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+}
+.jr-btn:hover {
+  filter: brightness(1.08);
+}
+.jr-btn--ghost {
+  color: var(--ink-soft);
+  background: transparent;
+  border-color: var(--line-hairline);
+}
+.jr-btn--ghost:hover {
+  color: var(--ink-pure);
+  border-color: var(--line-emphasis);
+  filter: none;
+}
+
+/* Stagger de montage par étage (recette 1.F), coupé sous reduced-motion. */
+@keyframes journalRise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.jr-rise {
+  animation: journalRise 240ms var(--ease-out) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .jr-rise {
+    animation: none;
+  }
+}
+
+/* Empilement mobile (<1100 : bandeau en 2-3 colonnes). */
+@media (max-width: 1100px) {
+  .journal-command__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .journal-command__grid > .pf-c + .pf-c {
+    border-left: none;
+  }
+  .journal-command__grid > .pf-c:not(:nth-child(3n + 1)) {
+    border-left: 1px solid var(--line-emphasis);
+  }
+  .journal-command__grid > .pf-c:nth-child(n + 4) {
+    border-top: 1px solid var(--line-hairline);
+  }
+}
+@media (max-width: 640px) {
+  .journal-command__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .jr-entries {
+    grid-template-columns: 1fr;
+  }
+}

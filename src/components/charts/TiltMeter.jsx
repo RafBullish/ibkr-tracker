@@ -1,16 +1,21 @@
 // ═══════════════════════════════════════════════════════════════
-//  TILT METER v3.0 « Midnight Terminal »
+//  TILT METER — jauge de discipline « Calme → Tilt » (brique 2.C2).
 //
-//  Horizontal gauge "Calme → Tilt" per brief §10. Score 0-100
-//  computed from recent journal-entry violations (fomo, revenge,
-//  overtrading, early_exit, manque_de_discipline) over the last
-//  14 days.
+//  Score 0-100 dérivé des violations documentées dans le journal
+//  (FOMO, Revenge, Overtrading, Early exit, Manque de discipline) sur
+//  les 14 derniers jours.
 //
-//  Thresholds:
-//    0-25   calm      (profit tone)
-//    25-50  focused   (accent tone)
-//    50-75  warning   (warning tone)
-//    75-100 tilt      (loss tone, pulsing)
+//  COULEUR — EXCEPTION NOMMÉE (§4.3) : ce composant, et lui seul sur le
+//  Journal, garde l'échelle vert → ambre → rouge. Il ne mesure ni un
+//  ratio ni un montant, mais un état de discipline dont la dérive
+//  produit la perte d'argent réel — une jauge de risque comportemental,
+//  au même titre qu'un gate CRITICAL. Partout ailleurs : neutre.
+//
+//  Zones :
+//    0-25   CALME   (vert)
+//    25-50  FOCUS   (vert atténué)
+//    50-75  WARNING (ambre)
+//    75-100 TILT    (rouge)
 // ═══════════════════════════════════════════════════════════════
 
 import InfoTooltip from '../ui/InfoTooltip';
@@ -44,7 +49,7 @@ export default function TiltMeter({ score = 0, className, dailyKillSwitchActive 
     <div className={['tilt-meter', className].filter(Boolean).join(' ')} data-tone={tone.tone}>
       <div className="tilt-meter__head">
         <div className="tilt-meter__title">
-          <span className="uppercase-label">Tilt Meter · 14 derniers jours</span>
+          <span className="mk-title">Tilt Meter · 14 derniers jours</span>
           <InfoTooltip content={TILT_TOOLTIP} size={12} />
         </div>
         {dailyKillSwitchActive && (
@@ -71,6 +76,12 @@ export default function TiltMeter({ score = 0, className, dailyKillSwitchActive 
         <div className="tilt-meter__indicator" style={{ left: `${pct}%` }} aria-hidden="true">
           <span className="tilt-meter__indicator-dot" />
         </div>
+      </div>
+
+      <div className="tilt-meter__ticks" aria-hidden="true">
+        <span>0 · Calme</span>
+        <span>50 · Warning</span>
+        <span>100 · Tilt</span>
       </div>
 
       <div className="tilt-meter__footer">

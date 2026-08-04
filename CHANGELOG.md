@@ -6,6 +6,56 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0-rc.13] — 2026-08-04
+
+**Brique 2.C2 — Workflow (Chain · Journal).** Dernière brique de la famille 3 :
+les deux pages du flux de travail passent au langage cockpit v1.0. Chain =
+l'outil de tir affûté (sa structure double-entrée + thead sticky = acquis
+intacts) ; Journal = le miroir psychologique recomposé.
+
+### Ajouté
+- **Chain — bandeau de commandement** (`.lh-final .chain-command`, valeurs 34 px) :
+  SPOT (variation du jour tonée = marché) · ATM IV · ÉCHÉANCES · STRIKES · ZONE
+  SNIPER (ambre décisionnel) · IVR (tiret honnête, « série en collecte »).
+- **Chain — barres échéances + strikes** en deux rangées distinctes (anatomie
+  ViewToggle) ; échéance et filtre Sniper actifs en ambre de sélection.
+- **Chain — étage SIGNAUX REMONTÉ** avant la chaîne (`.chain-signals`) :
+  Max Pain · 25Δ RR · OI · NET GEX · Murs — tous NEUTRES (structure de marché).
+- **Chain — états designés** : accueil « écran de tir » + honnête (ticker non servi).
+- **Journal — bandeau de commandement** (`.lh-final .journal-command`, 34 px) :
+  TILT · ENTRÉES · P&L JOUR · KILL SWITCH · PIRE FUITE D'EDGE.
+- **Journal — héros TiltMeter 14 j** au cadre cockpit (barre graduée + échelle légendée).
+- **Journal — filtre d'humeur en CHIPS**, entrées en cartes denses à grille fixe,
+  Edge Leak Audit au craft v1.0. `pages-journal.css` créée.
+
+### Modifié
+- **BANDEAU CHAIN — troncatures MORTES à la racine** : l'ancienne bande à hauteur
+  fixe 56 px (label/valeur/sub `nowrap`, débordement au palier ≥1440) remplacée
+  par un bandeau `.lh-final` auto-hauteur + cellules `.pf-c` (min-width:0).
+- **Chevauchement échéances/strikes MORT** : deux rangées `.chain-bar` distinctes.
+- **Footer analytics REMONTÉ** en étage signaux (on lit Max Pain/GEX/murs avant
+  de choisir un strike, plus après avoir scrollé toute la chaîne).
+- **LOI DE COULEUR — Chain** : Greeks neutres (inchangés), zone Sniper (table +
+  bandeau) AMBRE (le vert meurt), bandes ITM NEUTRES (cyan/ambre v3 morts),
+  NET GEX / 25Δ RR / Murs CALL·PUT NEUTRES, erreur de fetch neutre (plus de rouge).
+- **Filtre d'humeur** : le mur de mots collés → chips (actif ambre, reste neutre) ;
+  humeurs / biais / étoiles NEUTRES (un état émotionnel n'est pas de l'argent).
+- **Kill switch** : Journal et bande décision lisent la MÊME source
+  (`useDailyKillSwitch`) ; vocabulaire du Journal aligné sur la bande
+  (« Limite du jour franchie », `fmtUsdSigned` partagé). Bande décision gelée.
+- **TiltMeter — EXCEPTION couleur nommée** : garde son échelle vert → ambre →
+  rouge (jauge de discipline dont la dérive coûte de l'argent réel), et pour
+  lui SEUL ; partout ailleurs sur Journal, compteurs/scores/taux NEUTRES.
+
+### Retiré
+- Styles Journal/TiltMeter legacy purgés de `v3-components.css` (−330 lignes,
+  tokens `--qc-*`/`--fs-*`) → recomposés au canonique dans `pages-journal.css`.
+- Mention interne « Sprint 6 » sur la cellule IVR (aucun pipeline IVR n'existe).
+
+### Corrigé
+- Bug de parse `pages-journal.css` (`*/` dans un commentaire fermait le
+  commentaire) attrapé par la vérification VISUELLE malgré un build vert.
+
 ## [1.0.0-rc.12] — 2026-08-03
 
 **Brique 2.C1 — Le poste du matin (PreMarket · Calendar).** Les deux pages
