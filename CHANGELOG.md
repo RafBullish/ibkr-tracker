@@ -6,6 +6,55 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0-rc.14] — 2026-08-04
+
+**Brique 2.D — Utilitaires (Import · Settings General · Settings API).** Dernière
+brique de l'Étape 2 — **ÉTAPE 2 CLOSE**. Trois OUTILS mis au langage cockpit
+(clarté, cohérence, densité, sécurité), et une dette de données réelle soldée.
+
+### Corrigé — dette du token Flex (§4.1)
+- **Source UNIQUE = `sessionStorage`.** Avant : un token saisi dans /settings/api
+  était écrit en `localStorage`, jamais lu par la synchro (qui lit
+  `sessionStorage` via `flexApi`) — deux magasins disjoints. Désormais :
+  `configureFlex` écrit le token en sessionStorage (QueryID non secret en
+  localStorage), `useApiStatus.probeFlex` lit le token en sessionStorage,
+  `clearFlexCredentials` purge le magasin réel + un résidu localStorage.
+- **Migration douce** one-shot au chargement : blob legacy ET token localStorage
+  résiduel → sessionStorage puis effacés — rien à ressaisir, rien en clair
+  persistant. Vérifié en contexte isolé (valeur factice) : après config le
+  localStorage ne contient aucun token ; après effacement les deux magasins
+  sont vides.
+
+### Ajouté
+- **Import** : bandeau (dernière synchro · trades en base · positions · config
+  Flex) · étage SOURCES 2 colonnes (Flex IBKR | CSV, portes équivalentes) ·
+  étage RÉSULTAT (lignes ajoutées, état vide, merge additif annoncé) · étage
+  SAUVEGARDE (export / restauration validée).
+- **Settings General** : bandeau (taux · capital · tier · mode · kill switch,
+  NEUTRES) · corps en DEUX COLONNES (fini le ruban vertical) · titres de zone
+  `.mk-title` · résumé Connexions API compact neutre.
+- **Settings API** : bandeau (actifs/total · échec · dernière sonde) · les 8
+  cartes aux libellés cassés → TABLEAU DENSE (Service · État · Détail · Dernière
+  vérif · Action), états terminal LIVE / DOWN / OFF, repli annoncé.
+- **Zone dangereuse durcie (§4.4)** : séparée pleine largeur, inventaire DÉTRUIT
+  + SURVIVANT (lu dans le reducer), bouton désarmé tant que « RESET » n'est pas
+  tapé (+ confirm en 2e rideau).
+
+### Modifié
+- **LOI DE COULEUR** : le ROUGE n'existe QUE dans la zone dangereuse (EXCEPTION
+  NOMMÉE — destruction de données réelles). Erreur d'import, service DOWN/OFF,
+  « KO » → NEUTRES. CTA « Ajouter » des cash flows → neutre (une écriture
+  comptable n'est pas une décision). Kill switch DÉCLENCHÉ ambre / ARMÉ neutre
+  (parité Journal 2.C2). Icônes de section/panneau neutres.
+- General : rows stackées au palier 2 colonnes (contrôles larges n'écrasent plus
+  la description). Le reducer `RESET_ALL` n'est PAS modifié (seule la porte).
+
+### Retiré
+- **ApiServiceCard supprimé** (plus aucun consommateur) + `.api-service-*` +
+  `.api-v3__grid` + `.settings-v3__input` (Import migré vers `.settings-page__input`)
+  purgés de v3-components.css (−292 lignes JSX/CSS mortes). **GlassCard SURVIT**
+  (App.jsx ErrorBoundary + DataTable.jsx) — non supprimé.
+
 ## [1.0.0-rc.13] — 2026-08-04
 
 **Brique 2.C2 — Workflow (Chain · Journal).** Dernière brique de la famille 3 :

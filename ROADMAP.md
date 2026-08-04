@@ -193,7 +193,29 @@ Objectif : **tag v1.0.0 au 01.09.2026**.
        mais aucun consommateur ne calcule un rang → cellule tiret honnête en attendant.
     3. **thead sticky 1 px @palier** : Row1 mesure 43 px vs `top:42px` (D2.F) —
        décalage invisible (en-têtes opaques), pré-existant, **acquis intouchable**.
-- **2.D** — Utilitaires (Import · Settings · API).
+- **2.D ✅ (1.0.0-rc.14, 04.08.2026)** — Utilitaires (Import · Settings General ·
+  Settings API) au langage cockpit v1.0. **ÉTAPE 2 CLOSE.** Trois OUTILS (clarté,
+  cohérence, densité, sécurité) + dette de données soldée.
+  **DETTE FLEX (§4.1)** : token = source UNIQUE `sessionStorage` (avant :
+  /settings/api écrivait en localStorage, jamais lu par la synchro qui lit
+  sessionStorage — deux magasins disjoints) ; `configureFlex`/`getFlexConfig`
+  sessionStorage + QueryID localStorage, `useApiStatus.probeFlex` corrigé,
+  `clearFlexCredentials` (Import + RESET_ALL), migration douce one-shot (blob
+  legacy + token localStorage résiduel → sessionStorage puis effacés). Prouvé
+  en contexte isolé (valeur factice) : aucun token en clair persistant.
+  **Import** : bandeau + étage SOURCES 2-col (Flex | CSV) + RÉSULTAT (merge
+  additif) + SAUVEGARDE. **General** : bandeau + corps DEUX COLONNES (rows
+  stackées) + `.mk-title` + CTA cash flows NEUTRE + résumé API neutre + **ZONE
+  DANGEREUSE durcie** (inventaire détruit/survivant lu dans le reducer, mot RESET
+  à taper, ROUGE = EXCEPTION NOMMÉE ; reducer RESET_ALL intouché). **API** :
+  grille de 8 cartes cassées → TABLEAU DENSE (LIVE vert / DOWN · OFF neutres).
+  **Morts** : ApiServiceCard + `.api-service-*` + `.api-v3__grid` +
+  `.settings-v3__input` (−292 l). **GlassCard SURVIT** (App.jsx + DataTable.jsx).
+  - **Résidus consignés** :
+    1. Badge « REAL » du mode reste vert (convention StatusBar gelée) — arbitrage
+       architecte si neutralisation app-wide souhaitée.
+    2. RESET_ALL préserve watchlist / FX / tier Sniper (+ hors store : nom de
+       profil, daltonien, seuil kill switch) — comportement du reducer inchangé.
 
 ## Étape 3 — Cohérence & modales
 

@@ -1,17 +1,23 @@
 // ═══════════════════════════════════════════════════════════════
-//  SETTINGS · IMPORT — page-vitrine canonique (CANONICAL-4)
-//  /settings/import
+//  SETTINGS · IMPORT — « d'où viennent mes données, et est-ce que ça
+//  a marché ». Langage cockpit v1.0 (brique 2.D). /settings/import (⌘9)
 //
-//  Troisième consommatrice de la palette canonique (après
-//  /trading/positions et /trading/greeks). Page de configuration
-//  form-only, zéro métrique financière, zéro graphe — utilisée comme
-//  étalon pour le pattern de remplacement <GlassCard> → markup local.
+//  Architecture (§4.2), de haut en bas :
+//    1. BANDEAU — signes vitaux servis (dernière sync, trades en base,
+//       positions ouvertes, configuration Flex).
+//    2. ÉTAGE SOURCES — deux portes d'entrée équivalentes : Flex IBKR |
+//       fichier CSV.
+//    3. ÉTAGE RÉSULTAT — le retour de la dernière opération (compte de
+//       lignes ajoutées), état vide designé. Le merge est ADDITIF.
+//    4. ÉTAGE SAUVEGARDE — export JSON + restauration validée.
 //
-//  Two flows preserved:
-//    1. IBKR Flex API (primary) — submit query id + token, server
-//       fetches the CSV, parser merges into the store
-//    2. CSV upload (drag & drop + file picker) — same parser path
-//       for manual imports
+//  Token Flex : source UNIQUE sessionStorage via flexApi (§4.1). Le
+//  bouton « effacer les identifiants » purge le magasin réellement
+//  utilisé (clearFlexCredentials). Aucun token n'est loggé ni affiché.
+//
+//  Couleur : succès = vert (résultat factuel d'opération, parité LIVE) ;
+//  erreur d'import = registre NEUTRE appuyé (un import échoué n'est pas
+//  une perte d'argent) ; le rouge est réservé à la zone dangereuse.
 // ═══════════════════════════════════════════════════════════════
 
 import { useRef, useState } from 'react';
@@ -22,7 +28,8 @@ import {
   Cloud,
   File as FileIcon,
   CheckCircle2,
-  AlertTriangle,
+  Info,
+  RotateCcw,
 } from 'lucide-react';
 import {
   useOpenPositions,
@@ -34,25 +41,39 @@ import {
 } from '../../store/useStore';
 import { useToast } from '../../components/layout/Toast';
 import { parseIbkrCsv, mergeIbkrData } from '../../utils/ibkrParser';
-import { configureFlex, getFlexConfig, syncFlex } from '../../services/flexApi';
-
-import StatusBadge from '../../components/ui/StatusBadge';
+import {
+  configureFlex,
+  getFlexConfig,
+  syncFlex,
+  clearFlexCredentials,
+} from '../../services/flexApi';
 import InfoTooltip from '../../components/ui/InfoTooltip';
-import { CONTAINER_VARIANTS, TILE_VARIANTS } from '../../theme/animationVariants';
+import { TickValue } from '../../components/dashboard/decision/parts';
+import { RISE_CONTAINER_VARIANTS, RISE_TILE_VARIANTS } from '../../theme/animationVariants';
 
 function formatLastSync(lastSync) {
   if (!lastSync) return null;
   const date = typeof lastSync === 'object' ? lastSync.date : lastSync;
   if (!date) return null;
   try {
-    const d = new Date(date);
-    return d.toLocaleString('fr-CH', { dateStyle: 'short', timeStyle: 'short' });
+    return new Date(date).toLocaleString('fr-CH', { dateStyle: 'short', timeStyle: 'short' });
   } catch {
     return null;
   }
 }
 
-function FlexSection() {
+// Cellule-MONDE du bandeau (label · valeur 34 px · méta), TickValue 1.F.
+function Cell({ label, value, meta, tone }) {
+  return (
+    <div className="pf-c import-cell" data-tone={tone || undefined}>
+      <span className="pf-c__label import-cell__label">{label}</span>
+      <TickValue text={value} className="pf-c__val import-cell__val" />
+      <span className="pf-c__meta import-cell__meta">{meta || ' '}</span>
+    </div>
+  );
+}
+
+function FlexSection({ onResult }) {
   const openPositions = useOpenPositions();
   const closedTrades = useClosedTrades();
   const cashFlows = useCashFlows();
@@ -67,7 +88,7 @@ function FlexSection() {
   const [syncing, setSyncing] = useState(false);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
-  const lastSyncLabel = formatLastSync(settings?.lastSync);
+  const [hasCreds, setHasCreds] = useState(Boolean(saved.token || saved.queryId));
 
   const canSync = token.trim() && queryId.trim() && !syncing;
 
@@ -77,6 +98,7 @@ function FlexSection() {
     if (!tk || !qid) return;
 
     configureFlex(tk, qid);
+    setHasCreds(true);
     setSyncing(true);
     setError('');
     setStatus('Envoi de la requête à IBKR…');
@@ -87,35 +109,31 @@ function FlexSection() {
       const parsed = parseIbkrCsv(csvText);
       const result = mergeIbkrData(parsed, state);
       dispatch({ type: 'IMPORT_DATA', payload: result.mergedData });
+      const s = result.stats || {};
       const syncInfo = {
         date: new Date().toISOString(),
         positions: result.mergedData.openPositions?.length || 0,
         trades: result.mergedData.closedTrades?.length || 0,
-        mouvements: result.stats?.cashFlowsAdded || 0,
+        mouvements: s.cashFlowsAdded || 0,
         fxRate: result.mergedData.settings?.liveRate || settings.liveRate,
-        stats: result.stats,
+        stats: s,
       };
       dispatch({ type: 'IMPORT_DATA', payload: { settings: { lastSync: syncInfo } } });
-
-      const s = result.stats;
-      const parts = [];
-      if (s.positionsAdded > 0)
-        parts.push(`${s.positionsAdded} position${s.positionsAdded > 1 ? 's' : ''}`);
-      if (s.closedTradesAdded > 0)
-        parts.push(`${s.closedTradesAdded} trade${s.closedTradesAdded > 1 ? 's' : ''}`);
-      if (s.cashFlowsAdded > 0)
-        parts.push(`${s.cashFlowsAdded} mouvement${s.cashFlowsAdded > 1 ? 's' : ''}`);
-      const summary = parts.length
-        ? `${parts.join(' · ')} ajouté${parts.length > 1 ? 's' : ''}`
-        : 'Aucune nouvelle donnée';
       setStatus('');
-      showToast.success(summary, {
-        detail: `FX ${result.mergedData.settings?.liveRate?.toFixed?.(4) || '—'} · ${s.closedTradesAdded || 0} trades importés`,
+      onResult({
+        source: 'Flex IBKR',
+        positions: s.positionsAdded || 0,
+        trades: s.closedTradesAdded || 0,
+        cashFlows: s.cashFlowsAdded || 0,
+        at: new Date().toISOString(),
+      });
+      showToast.success('Synchronisation Flex terminée', {
+        detail: `${s.closedTradesAdded || 0} trades · ${s.positionsAdded || 0} positions · ${s.cashFlowsAdded || 0} mouvements ajoutés`,
       });
     } catch (e) {
       setError(e?.message || 'Erreur de synchronisation');
       setStatus('');
-      showToast.error('Sync Flex échoué', {
+      showToast.error('Synchronisation Flex échouée', {
         detail: e?.message || 'Token ou QueryID invalide ?',
         duration: 6000,
       });
@@ -125,7 +143,7 @@ function FlexSection() {
   };
 
   return (
-    <section className="import-page__panel">
+    <section className="import-page__panel import-source">
       <header className="import-page__panel-head">
         <div className="import-page__panel-icon">
           <Cloud size={16} aria-hidden="true" />
@@ -136,16 +154,16 @@ function FlexSection() {
             <InfoTooltip
               content={{
                 title: 'IBKR Flex',
-                body: 'Configure un Flex Query côté IBKR puis colle QueryID + token ci-dessous. La sync déclenche la génération serveur (~10s) puis le parser merge les nouvelles données.',
+                body: 'Configure un Flex Query côté IBKR puis colle QueryID + token ci-dessous. La sync déclenche la génération serveur (~10 s) puis le parser fusionne les nouvelles données.',
               }}
               size={12}
             />
           </h2>
           <p className="import-page__panel-desc">
-            Synchronisation automatique recommandée. Token et QueryID stockés en localStorage.
+            Synchronisation automatique. Le token n&apos;est gardé que le temps de la session
+            (jamais persisté en clair) ; le QueryID reste enregistré.
           </p>
         </div>
-        {lastSyncLabel && <StatusBadge variant="live" label={`Sync ${lastSyncLabel}`} size="xs" />}
       </header>
 
       <div className="import-page__form">
@@ -156,7 +174,7 @@ function FlexSection() {
             value={queryId}
             onChange={(e) => setQueryId(e.target.value)}
             placeholder="1234567"
-            className="settings-v3__input"
+            className="settings-page__input"
           />
         </label>
         <label>
@@ -166,7 +184,7 @@ function FlexSection() {
             value={token}
             onChange={(e) => setToken(e.target.value)}
             placeholder="clé générée côté IBKR"
-            className="settings-v3__input"
+            className="settings-page__input"
           />
         </label>
       </div>
@@ -178,13 +196,33 @@ function FlexSection() {
         </div>
       )}
       {error && (
-        <div className="import-page__status" data-tone="error">
-          <AlertTriangle size={13} aria-hidden="true" />
+        <div className="import-page__status" data-tone="warn">
+          <Info size={13} aria-hidden="true" />
           <span>{error}</span>
         </div>
       )}
 
       <div className="import-page__actions">
+        {hasCreds && (
+          <button
+            type="button"
+            className="pg-mock-btn import-page__btn-clear"
+            onClick={() => {
+              const ok = window.confirm(
+                'Effacer les identifiants Flex ?\n\n' +
+                  'Le Token (session) et le QueryID seront retirés. Tes trades importés ne sont pas affectés.'
+              );
+              if (!ok) return;
+              clearFlexCredentials();
+              setToken('');
+              setQueryId('');
+              setHasCreds(false);
+              showToast.success('Identifiants Flex effacés');
+            }}
+          >
+            Effacer identifiants
+          </button>
+        )}
         <button
           type="button"
           className="pg-mock-btn pg-mock-btn--primary"
@@ -193,36 +231,12 @@ function FlexSection() {
         >
           {syncing ? 'Synchronisation…' : 'Synchroniser'}
         </button>
-        {(saved.token || saved.queryId) && (
-          <button
-            type="button"
-            className="pg-mock-btn import-page__btn-destructive"
-            onClick={() => {
-              const ok = window.confirm(
-                'Effacer les identifiants Flex ?\n\n' +
-                  'Le Token et le QueryID seront retirés du localStorage. Tes trades importés ne sont pas affectés.'
-              );
-              if (!ok) return;
-              try {
-                localStorage.removeItem('ibkr_flex_queryid');
-                localStorage.removeItem('ibkr_flex_token');
-              } catch {
-                /* quota */
-              }
-              setToken('');
-              setQueryId('');
-              showToast.success('Identifiants Flex effacés');
-            }}
-          >
-            Effacer identifiants
-          </button>
-        )}
       </div>
     </section>
   );
 }
 
-function CsvUploadSection() {
+function CsvUploadSection({ onResult }) {
   const openPositions = useOpenPositions();
   const closedTrades = useClosedTrades();
   const cashFlows = useCashFlows();
@@ -232,42 +246,8 @@ function CsvUploadSection() {
   const state = { openPositions, closedTrades, cashFlows, journalEntries, settings };
   const showToast = useToast();
   const inputRef = useRef(null);
-  const jsonInputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
   const [parsing, setParsing] = useState(false);
-  const [lastImport, setLastImport] = useState(null);
-
-  const handleRestoreJson = async (file) => {
-    if (!file) return;
-    try {
-      const text = await file.text();
-      const payload = JSON.parse(text);
-      const isShaped =
-        payload &&
-        typeof payload === 'object' &&
-        (Array.isArray(payload.openPositions) ||
-          Array.isArray(payload.closedTrades) ||
-          Array.isArray(payload.cashFlows) ||
-          Array.isArray(payload.journalEntries));
-      if (!isShaped) {
-        showToast.error('Format de backup invalide', {
-          detail:
-            'Le fichier ne contient aucune des clés attendues (openPositions / closedTrades / cashFlows / journalEntries).',
-          duration: 6000,
-        });
-        return;
-      }
-      dispatch({ type: 'IMPORT_DATA', payload });
-      showToast.success('Backup JSON restauré', {
-        detail: `${payload.closedTrades?.length || 0} trades · ${payload.openPositions?.length || 0} positions · ${payload.journalEntries?.length || 0} entrées journal`,
-      });
-    } catch (e) {
-      showToast.error('Restauration échouée', {
-        detail: e?.message || String(e),
-        duration: 6000,
-      });
-    }
-  };
 
   const processFile = async (file) => {
     if (!file) return;
@@ -277,21 +257,19 @@ function CsvUploadSection() {
       const parsed = parseIbkrCsv(text);
       const result = mergeIbkrData(parsed, state);
       dispatch({ type: 'IMPORT_DATA', payload: result.mergedData });
-      setLastImport({
-        name: file.name,
-        size: file.size,
-        trades: result.stats?.closedTradesAdded || 0,
-        positions: result.stats?.positionsAdded || 0,
-        cashFlows: result.stats?.cashFlowsAdded || 0,
+      const s = result.stats || {};
+      onResult({
+        source: `CSV · ${file.name}`,
+        positions: s.positionsAdded || 0,
+        trades: s.closedTradesAdded || 0,
+        cashFlows: s.cashFlowsAdded || 0,
+        at: new Date().toISOString(),
       });
-      showToast.success('CSV importé avec succès', {
-        detail: `${result.stats?.closedTradesAdded || 0} trades · ${result.stats?.positionsAdded || 0} positions · ${result.stats?.cashFlowsAdded || 0} mouvements`,
+      showToast.success('CSV importé', {
+        detail: `${s.closedTradesAdded || 0} trades · ${s.positionsAdded || 0} positions · ${s.cashFlowsAdded || 0} mouvements`,
       });
     } catch (e) {
-      showToast.error('Import échoué', {
-        detail: e?.message || String(e),
-        duration: 6000,
-      });
+      showToast.error('Import CSV échoué', { detail: e?.message || String(e), duration: 6000 });
     } finally {
       setParsing(false);
     }
@@ -304,37 +282,16 @@ function CsvUploadSection() {
     if (file) processFile(file);
   };
 
-  const handleExport = () => {
-    const payload = {
-      exportedAt: new Date().toISOString(),
-      openPositions: openPositions,
-      closedTrades: closedTrades,
-      cashFlows: cashFlows,
-      journalEntries: journalEntries,
-      settings: settings,
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `quantumcall-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast.success('Backup JSON exporté', {
-      detail: `${closedTrades.length} trades · ${openPositions.length} positions · ${journalEntries.length} entrées journal`,
-    });
-  };
-
   return (
-    <section className="import-page__panel">
+    <section className="import-page__panel import-source">
       <header className="import-page__panel-head">
         <div className="import-page__panel-icon">
           <Upload size={16} aria-hidden="true" />
         </div>
         <div>
-          <h2 className="import-page__panel-title">Upload CSV manuel</h2>
+          <h2 className="import-page__panel-title">Fichier CSV</h2>
           <p className="import-page__panel-desc">
-            Drag &amp; drop un fichier Flex Query CSV ou cliquez pour parcourir.
+            Glisser-déposer un relevé Flex Query CSV, ou cliquer pour parcourir.
           </p>
         </div>
       </header>
@@ -358,7 +315,7 @@ function CsvUploadSection() {
           hidden
           onChange={(e) => processFile(e.target.files?.[0])}
         />
-        <Upload size={28} aria-hidden="true" />
+        <Upload size={26} aria-hidden="true" />
         <div className="import-page__dropzone-title">
           {parsing ? 'Analyse en cours…' : 'Déposez un CSV ici'}
         </div>
@@ -366,24 +323,147 @@ function CsvUploadSection() {
           ou cliquez pour parcourir · format Flex Query IBKR (.csv)
         </div>
       </div>
+    </section>
+  );
+}
 
-      {lastImport && (
-        <div className="import-page__last" role="status">
-          <CheckCircle2 size={13} aria-hidden="true" style={{ color: 'var(--pnl-up)' }} />
-          <div>
-            <strong className="mono-code">{lastImport.name}</strong> (
-            {(lastImport.size / 1024).toFixed(1)} kB)
-            <div className="import-page__last-meta">
-              {lastImport.positions} pos · {lastImport.trades} trades · {lastImport.cashFlows}{' '}
-              mouvements ajoutés
+function ResultStage({ lastResult }) {
+  const total = lastResult
+    ? lastResult.positions + lastResult.trades + lastResult.cashFlows
+    : 0;
+  return (
+    <section className="import-page__panel">
+      <header className="import-page__panel-head">
+        <div className="import-page__panel-icon import-page__panel-icon--neutral">
+          <CheckCircle2 size={16} aria-hidden="true" />
+        </div>
+        <div>
+          <h2 className="import-page__panel-title">Résultat</h2>
+          <p className="import-page__panel-desc">
+            Le merge est <strong>additif</strong> — il ne remplace ni n&apos;efface jamais tes
+            données existantes (déduplication par date × ticker × signature).
+          </p>
+        </div>
+      </header>
+      {lastResult ? (
+        <div className="import-result">
+          <div className="import-result__head">
+            <CheckCircle2 size={14} aria-hidden="true" style={{ color: 'var(--pnl-up)' }} />
+            <span className="import-result__source">{lastResult.source}</span>
+            <span className="import-result__none">
+              {total === 0 ? 'aucune nouvelle donnée (déjà à jour)' : `${total} ligne${total > 1 ? 's' : ''} ajoutée${total > 1 ? 's' : ''}`}
+            </span>
+          </div>
+          <div className="import-result__grid">
+            <div className="import-result__cell">
+              <span className="import-result__n mono">{lastResult.positions}</span>
+              <span className="import-result__k">positions</span>
+            </div>
+            <div className="import-result__cell">
+              <span className="import-result__n mono">{lastResult.trades}</span>
+              <span className="import-result__k">trades clôturés</span>
+            </div>
+            <div className="import-result__cell">
+              <span className="import-result__n mono">{lastResult.cashFlows}</span>
+              <span className="import-result__k">mouvements</span>
             </div>
           </div>
         </div>
+      ) : (
+        <div className="import-empty">
+          <div className="import-empty__title">Aucun import cette session</div>
+          <div className="import-empty__sub">
+            Synchronise via Flex ou dépose un CSV ci-dessus — le compte de lignes ajoutées
+            s&apos;affichera ici.
+          </div>
+        </div>
       )}
+    </section>
+  );
+}
 
-      <div className="import-page__actions">
+function BackupStage() {
+  const openPositions = useOpenPositions();
+  const closedTrades = useClosedTrades();
+  const cashFlows = useCashFlows();
+  const journalEntries = useJournalEntries();
+  const settings = useSettings();
+  const dispatch = useDispatch();
+  const showToast = useToast();
+  const jsonInputRef = useRef(null);
+
+  const handleExport = () => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      openPositions,
+      closedTrades,
+      cashFlows,
+      journalEntries,
+      settings,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `quantumcall-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast.success('Backup JSON exporté', {
+      detail: `${closedTrades.length} trades · ${openPositions.length} positions · ${journalEntries.length} entrées journal`,
+    });
+  };
+
+  const handleRestoreJson = async (file) => {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
+      const isShaped =
+        payload &&
+        typeof payload === 'object' &&
+        (Array.isArray(payload.openPositions) ||
+          Array.isArray(payload.closedTrades) ||
+          Array.isArray(payload.cashFlows) ||
+          Array.isArray(payload.journalEntries));
+      if (!isShaped) {
+        showToast.error('Format de backup invalide', {
+          detail:
+            'Le fichier ne contient aucune des clés attendues (openPositions / closedTrades / cashFlows / journalEntries).',
+          duration: 6000,
+        });
+        return;
+      }
+      const ok = window.confirm(
+        'Restaurer ce backup ?\n\n' +
+          `${payload.closedTrades?.length || 0} trades · ${payload.openPositions?.length || 0} positions · ${payload.journalEntries?.length || 0} entrées journal seront fusionnés (merge additif, aucun écrasement).`
+      );
+      if (!ok) return;
+      dispatch({ type: 'IMPORT_DATA', payload });
+      showToast.success('Backup JSON restauré', {
+        detail: `${payload.closedTrades?.length || 0} trades · ${payload.openPositions?.length || 0} positions · ${payload.journalEntries?.length || 0} entrées journal`,
+      });
+    } catch (e) {
+      showToast.error('Restauration échouée', { detail: e?.message || String(e), duration: 6000 });
+    }
+  };
+
+  return (
+    <section className="import-page__panel">
+      <header className="import-page__panel-head">
+        <div className="import-page__panel-icon import-page__panel-icon--neutral">
+          <RotateCcw size={16} aria-hidden="true" />
+        </div>
+        <div>
+          <h2 className="import-page__panel-title">Sauvegarde</h2>
+          <p className="import-page__panel-desc">
+            Exporte tout ton portefeuille en JSON, ou restaure un backup. La restauration annonce
+            ce qu&apos;elle fera avant de le faire.
+          </p>
+        </div>
+      </header>
+      <div className="import-page__actions import-page__actions--start">
         <button type="button" className="pg-mock-btn" onClick={handleExport}>
-          <Download size={12} aria-hidden="true" /> Export JSON backup
+          <Download size={12} aria-hidden="true" /> Export JSON
         </button>
         <input
           ref={jsonInputRef}
@@ -397,7 +477,7 @@ function CsvUploadSection() {
           }}
         />
         <button type="button" className="pg-mock-btn" onClick={() => jsonInputRef.current?.click()}>
-          <Upload size={12} aria-hidden="true" /> Restaurer un backup JSON
+          <Upload size={12} aria-hidden="true" /> Restaurer un backup
         </button>
       </div>
     </section>
@@ -406,43 +486,75 @@ function CsvUploadSection() {
 
 export default function SettingsImport() {
   const reducedMotion = useReducedMotion();
+  const openPositions = useOpenPositions();
+  const closedTrades = useClosedTrades();
+  const settings = useSettings();
+  const [lastResult, setLastResult] = useState(null);
+
+  const saved = getFlexConfig();
+  const flexConfigured = Boolean(saved.queryId);
+  const lastSyncLabel = formatLastSync(settings?.lastSync);
 
   return (
     <motion.div
       className="page-container import-page"
-      variants={reducedMotion ? undefined : CONTAINER_VARIANTS}
+      variants={reducedMotion ? undefined : RISE_CONTAINER_VARIANTS}
       initial={reducedMotion ? undefined : 'hidden'}
       animate={reducedMotion ? undefined : 'visible'}
     >
-      <motion.div variants={TILE_VARIANTS} className="page-header">
+      <motion.div variants={RISE_TILE_VARIANTS} className="page-header">
         <div>
           <h1 className="page-title">
             <FileIcon size={18} aria-hidden="true" />
-            Import &amp; Backup
+            Import &amp; Sauvegarde
           </h1>
           <p className="page-subtitle">
-            Sync automatique IBKR Flex Query · upload manuel CSV · export backup JSON.
+            Deux portes d&apos;entrée — Flex IBKR ou CSV · export / restauration JSON.
           </p>
         </div>
       </motion.div>
 
-      <motion.div variants={TILE_VARIANTS}>
-        <FlexSection />
+      {/* 1. BANDEAU — signes vitaux servis. */}
+      <motion.section variants={RISE_TILE_VARIANTS} className="lh-final import-command">
+        <div className="import-command__grid">
+          <Cell
+            label="Dernière synchro"
+            value={lastSyncLabel || '——'}
+            meta={lastSyncLabel ? 'Flex IBKR' : 'aucune encore'}
+          />
+          <Cell
+            label="Trades en base"
+            value={String(closedTrades.length)}
+            meta="clôturés cumulés"
+          />
+          <Cell
+            label="Positions"
+            value={String(openPositions.length)}
+            meta="ouvertes"
+          />
+          <Cell
+            label="Config Flex"
+            value={flexConfigured ? 'PRÊTE' : 'À FAIRE'}
+            meta={flexConfigured ? `QueryID ${saved.queryId}` : 'QueryID non enregistré'}
+            tone={flexConfigured ? undefined : 'mute'}
+          />
+        </div>
+      </motion.section>
+
+      {/* 2. ÉTAGE SOURCES — deux portes équivalentes. */}
+      <motion.div variants={RISE_TILE_VARIANTS} className="import-sources">
+        <FlexSection onResult={setLastResult} />
+        <CsvUploadSection onResult={setLastResult} />
       </motion.div>
 
-      <motion.div variants={TILE_VARIANTS}>
-        <CsvUploadSection />
+      {/* 3. ÉTAGE RÉSULTAT. */}
+      <motion.div variants={RISE_TILE_VARIANTS}>
+        <ResultStage lastResult={lastResult} />
       </motion.div>
 
-      <motion.div variants={TILE_VARIANTS}>
-        <aside className="import-page__panel import-page__panel--subtle">
-          <p className="import-page__panel-footer-text">
-            Le merge est <strong>idempotent</strong> : tu peux ré-importer plusieurs fois le même
-            fichier sans créer de doublons (déduplication par date × ticker × signature des fees).
-            Les trades et positions existants ne sont pas écrasés, seules les nouvelles lignes sont
-            ajoutées.
-          </p>
-        </aside>
+      {/* 4. ÉTAGE SAUVEGARDE. */}
+      <motion.div variants={RISE_TILE_VARIANTS}>
+        <BackupStage />
       </motion.div>
     </motion.div>
   );

@@ -147,8 +147,9 @@ un champ greek fait échouer le contrôle.
 
 ### PHASE FINALE v1.0
 
-**Phase finale v1.0 — ÉTAPE 2 EN COURS** (Étape 1 Dashboard close en
-rc.9). Ligne de base v2.3.1 (ea64652). Briques livrées : 1.A→1.F
+**Phase finale v1.0 — ÉTAPE 2 CLOSE** (Étape 1 Dashboard close en rc.9 ;
+Étape 2 Familles de pages close en rc.14 ; prochaine : Étape 3 —
+cohérence & modales). Ligne de base v2.3.1 (ea64652). Briques livrées : 1.A→1.F
 (rc.1→rc.9, dont bande décision : gates doctrine DTE 45/50, badges
 ARMED/CRITICAL, jauge acier→ambre au cap 70 %) et **2.A mergée
 (1.0.0-rc.10)** — Tables : /trading/positions et /trading/history au
@@ -206,8 +207,23 @@ source que la bande décision** (vocabulaire aligné « Limite du jour
 franchie », bande gelée) ; `pages-journal.css` créée (legacy purgé de
 v3-components). **v5-chain.css** : partie `.chain-*` réécrite en place,
 `.perf-attr` (History) + `.cheatsheet` (globale) laissées (split différé,
-fichier non renommé). Prochaine brique : **2.D — Utilitaires (Import ·
-Settings).**
+fichier non renommé). Puis **2.D mergée (1.0.0-rc.14)** — Utilitaires
+(Import · Settings General · Settings API), **ÉTAPE 2 CLOSE** : trois
+OUTILS au langage cockpit + dette de données soldée. **Token Flex =
+source UNIQUE sessionStorage** (avant : /settings/api écrivait en
+localStorage, jamais lu par la synchro qui lit sessionStorage — deux
+magasins disjoints) ; `configureFlex`/`getFlexConfig` sessionStorage +
+QueryID localStorage, `useApiStatus.probeFlex` corrigé, migration douce
+one-shot (rien à ressaisir, rien en clair persistant), `clearFlexCredentials`.
+Import = bandeau + étage SOURCES 2-col (Flex | CSV) + RÉSULTAT + SAUVEGARDE.
+General = bandeau + corps DEUX COLONNES (rows stackées, fini le ruban) +
+`.mk-title` + CTA cash flows NEUTRE + résumé API neutre + **ZONE DANGEREUSE
+durcie** (inventaire détruit/survivant lu dans le reducer, mot RESET à taper,
+ROUGE = EXCEPTION NOMMÉE ; reducer RESET_ALL intouché). API = grille de 8
+cartes cassées → TABLEAU DENSE (LIVE/DOWN/OFF, DOWN/OFF neutres). **Morts** :
+ApiServiceCard + `.api-service-*` + `.api-v3__grid` + `.settings-v3__input`
+(−292 l). **GlassCard SURVIT** (App.jsx + DataTable.jsx). Prochaine :
+**Étape 3 — Cohérence & modales.**
 
 Repères S2 toujours en vigueur : KPI 44, cellules `.v3-table` 20 (rowHeight 47),
 plancher caption 17, strip 21/16/18, ticks charts plafonnés 14, héros 56/64
