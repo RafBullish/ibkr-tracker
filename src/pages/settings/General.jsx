@@ -48,15 +48,16 @@ import {
   useDispatch,
 } from '../../store/useStore';
 import { useFx } from '../../hooks/useFx';
-import useApiStatus, { SERVICE_ORDER } from '../../hooks/useApiStatus';
+import useApiStatus from '../../hooks/useApiStatus';
 import useDailyKillSwitch from '../../hooks/useDailyKillSwitch';
 import { useToast } from '../../components/layout/Toast';
 
 import StatusBadge from '../../components/ui/StatusBadge';
 import ThemeSwitcher from '../../components/ui/ThemeSwitcher';
-import ApiServiceCard from '../../components/ui/ApiServiceCard';
 import InfoTooltip from '../../components/ui/InfoTooltip';
 import Modal from '../../components/ui/Modal';
+import { TickValue } from '../../components/dashboard/decision/parts';
+import { clearFlexCredentials } from '../../services/flexApi';
 import { todayDateString } from '../../utils/dates';
 import {
   tierParams,
@@ -138,7 +139,7 @@ function CashFlowsSection({ cashFlows, onAdd, onDelete }) {
         </label>
         <button
           type="button"
-          className="pg-mock-btn pg-mock-btn--primary"
+          className="pg-mock-btn"
           onClick={handleAdd}
           disabled={!amount || !Number.isFinite(Number(amount)) || Number(amount) <= 0}
         >
@@ -227,6 +228,17 @@ function Row({ label, description, children }) {
   );
 }
 
+// Cellule-MONDE du bandeau (label · valeur 34 px · méta), TickValue 1.F.
+function Cell({ label, value, meta, tone }) {
+  return (
+    <div className="pf-c settings-cell" data-tone={tone || undefined}>
+      <span className="pf-c__label settings-cell__label">{label}</span>
+      <TickValue text={value} className="pf-c__val settings-cell__val" />
+      <span className="pf-c__meta settings-cell__meta">{meta || ' '}</span>
+    </div>
+  );
+}
+
 export default function SettingsGeneral() {
   const reducedMotion = useReducedMotion();
 
@@ -246,7 +258,10 @@ export default function SettingsGeneral() {
   const showToast = useToast();
 
   const [resetOpen, setResetOpen] = useState(false);
-  const [resetConfirmed, setResetConfirmed] = useState(false);
+  // Zone dangereuse durcie (§4.4) : le bouton reste désarmé tant que
+  // Rafael n'a pas tapé le mot RESET (champ dédié, pas une simple case).
+  const [resetConfirmed, setResetConfirmed] = useState('');
+  const resetArmed = resetConfirmed.trim().toUpperCase() === 'RESET';
 
   // Nom du profil — lu UNE fois au mount depuis localStorage (écrit au blur
   // plus bas). Fallback chaîne vide, jamais une valeur en dur.
@@ -276,17 +291,18 @@ export default function SettingsGeneral() {
 
   const handleResetAll = () => {
     dispatch({ type: 'RESET_ALL' });
-    // Also wipe related localStorage keys that live outside the main store.
+    // Purge des clés hors store. Le token Flex vit en sessionStorage
+    // (source unique 2.D) → clearFlexCredentials purge le magasin réel +
+    // le résidu localStorage éventuel + le QueryID.
+    clearFlexCredentials();
     try {
-      localStorage.removeItem('ibkr_flex_queryid');
-      localStorage.removeItem('ibkr_flex_token');
       localStorage.removeItem('ibkr_history_view_mode');
       localStorage.removeItem('chain_history');
     } catch {
       /* quota */
     }
     setResetOpen(false);
-    setResetConfirmed(false);
+    setResetConfirmed('');
     showToast.success('Données effacées', {
       detail: 'Trades, positions, cash flows, journal et identifiants Flex ont été purgés.',
     });
@@ -384,6 +400,48 @@ export default function SettingsGeneral() {
           </p>
         </div>
       </motion.div>
+
+      {/* ── BANDEAU — signes vitaux servis (34 px, tous NEUTRES : un taux,
+          un capital de config, un mode, un seuil ne sont pas de l'argent). ── */}
+      <motion.section variants={TILE_VARIANTS} className="lh-final settings-command">
+        <div className="settings-command__grid">
+          <Cell label="Taux USD/CHF" value={liveRate.toFixed(4)} meta="appliqué aux conversions" />
+          <Cell
+            label="Capital réf."
+            value={
+              initialCapitalChf != null
+                ? new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 }).format(initialCapitalChf)
+                : '——'
+            }
+            meta={initialCapitalChf != null ? 'CHF de référence' : 'non défini'}
+            tone={initialCapitalChf != null ? undefined : 'mute'}
+          />
+          <Cell
+            label="Tier Sniper"
+            value={`${activeTier.e}·${activeTier.c}`}
+            meta={`TIER ${activeTierInfo.label}`}
+          />
+          <Cell
+            label="Mode"
+            value={modeVariant === 'real' ? 'RÉEL' : 'PAPIER'}
+            meta={hasPositions ? `${openPositions.length} position(s)` : 'aucune position'}
+          />
+          <Cell
+            label="Kill switch"
+            value={
+              (killSwitch.maxLoss < 0 ? '−' : '') +
+              '$' +
+              new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 }).format(
+                Math.abs(killSwitch.maxLoss)
+              )
+            }
+            meta={killSwitch.triggered ? 'DÉCLENCHÉ' : killSwitch.maxLoss < 0 ? 'armé · seuil/jour' : 'inactif'}
+          />
+        </div>
+      </motion.section>
+
+      {/* Corps en DEUX COLONNES (fini le long ruban vertical). */}
+      <div className="settings-grid">
 
       {/* ── Profil ── */}
       <motion.div variants={TILE_VARIANTS}>
@@ -633,8 +691,11 @@ export default function SettingsGeneral() {
             label="Statut du garde-fou"
             description="ARMÉ quand le seuil est saisi. DÉCLENCHÉ quand les pertes du jour dépassent la limite."
           >
+            {/* DÉCLENCHÉ = signal décisionnel d'arrêt → ambre (parité Journal
+                2.C2) ; ARMÉ/INACTIF neutres. Pas de rouge/vert : un état de
+                garde-fou n'est pas de l'argent (le rouge vit en zone dangereuse). */}
             <StatusBadge
-              variant={killSwitch.triggered ? 'fail' : killSwitch.maxLoss < 0 ? 'live' : 'na'}
+              variant={killSwitch.triggered ? 'accent' : 'na'}
               label={
                 killSwitch.triggered ? 'Déclenché' : killSwitch.maxLoss < 0 ? 'Armé' : 'Inactif'
               }
@@ -714,12 +775,25 @@ export default function SettingsGeneral() {
           title="Connexions API"
           description="Même vue que la page API détails — source de vérité unique via useApiStatus."
         >
+          {/* Résumé NEUTRE (le détail coloré LIVE/DOWN vit sur la page dédiée ;
+              ici, des compteurs — pas de rouge/vert, pas de re-liste des 8). */}
           <div className="settings-page__api-summary">
-            <div className="settings-page__api-heading">
-              <span className="uppercase-label">{SERVICE_ORDER.length} services</span>
-              <StatusBadge variant="live" label={`${activeCount} actifs`} size="xs" />
+            <div className="settings-api-counts">
+              <span>
+                <strong className="mono">{Object.keys(status).length}</strong> services intégrés
+              </span>
+              <span className="settings-api-sep" aria-hidden="true">·</span>
+              <span>
+                <strong className="mono">{activeCount}</strong> actifs
+              </span>
               {inactiveCount > 0 && (
-                <StatusBadge variant="fail" label={`${inactiveCount} KO`} size="xs" />
+                <>
+                  <span className="settings-api-sep" aria-hidden="true">·</span>
+                  <span>
+                    <strong className="mono">{inactiveCount}</strong> indisponible
+                    {inactiveCount > 1 ? 's' : ''}
+                  </span>
+                </>
               )}
               <button
                 type="button"
@@ -728,11 +802,6 @@ export default function SettingsGeneral() {
               >
                 Voir détails <ChevronRight size={12} aria-hidden="true" />
               </button>
-            </div>
-            <div className="settings-page__api-list">
-              {SERVICE_ORDER.map((key) => (
-                <ApiServiceCard key={key} variant="summary" service={status[key]} />
-              ))}
             </div>
           </div>
         </Section>
@@ -813,69 +882,92 @@ export default function SettingsGeneral() {
         </Section>
       </motion.div>
 
-      {/* ── Zone dangereuse ── */}
-      <motion.div variants={TILE_VARIANTS}>
-        <Section
-          icon={AlertTriangle}
-          title="Zone dangereuse"
-          description="Remise à zéro totale du portefeuille local. Action irréversible — fais un export backup avant."
-          danger
-        >
-          <Row
-            label="Effacer toutes les données"
-            description={`${closedTrades.length} trades · ${openPositions.length} positions · ${cashFlows.length} cash flows · ${journalEntries.length} entrées journal + identifiants Flex`}
-          >
+      </div>{/* fin .settings-grid */}
+
+      {/* ── ZONE DANGEREUSE — séparée, pleine largeur. Le ROUGE y est
+          LÉGITIME (destruction de données réelles) — exception nommée au
+          même titre que le TiltMeter (2.C2). Porte durcie §4.4 : inventaire
+          détruit/survivant + mot RESET à taper. ── */}
+      <motion.section variants={TILE_VARIANTS} className="settings-danger">
+        <header className="settings-danger__head">
+          <div className="settings-danger__icon">
+            <AlertTriangle size={16} aria-hidden="true" />
+          </div>
+          <div>
+            <h2 className="settings-danger__title">Zone dangereuse</h2>
+            <p className="settings-danger__desc">
+              Remise à zéro totale du portefeuille local. Irréversible, aucune copie serveur —
+              fais un export de sauvegarde d&apos;abord.
+            </p>
+          </div>
+        </header>
+        <div className="settings-danger__body">
+          <div className="settings-danger__counts">
+            <span className="mono">{closedTrades.length}</span> trades ·{' '}
+            <span className="mono">{openPositions.length}</span> positions ·{' '}
+            <span className="mono">{cashFlows.length}</span> cash flows ·{' '}
+            <span className="mono">{journalEntries.length}</span> entrées journal
+          </div>
+          <div className="settings-danger__actions">
+            <button
+              type="button"
+              className="pg-mock-btn"
+              onClick={() => navigate('/settings/import')}
+            >
+              <Database size={13} aria-hidden="true" style={{ marginRight: 6 }} /> Exporter une
+              sauvegarde d&apos;abord
+            </button>
             <button
               type="button"
               className="pg-mock-btn settings-page__btn-destructive"
               onClick={() => {
-                setResetConfirmed(false);
+                setResetConfirmed('');
                 setResetOpen(true);
               }}
             >
               <Trash2 size={13} aria-hidden="true" style={{ marginRight: 6 }} />
               Remettre à zéro
             </button>
-          </Row>
-        </Section>
-      </motion.div>
+          </div>
+        </div>
+      </motion.section>
 
-      <Modal
-        open={resetOpen}
-        onClose={() => setResetOpen(false)}
-        title="Effacer toutes les données"
-      >
+      <Modal open={resetOpen} onClose={() => setResetOpen(false)} title="Effacer toutes les données">
         <div className="settings-page__modal-body">
-          <p>Cette action va supprimer définitivement de ce navigateur :</p>
+          <p>Cette action supprime DÉFINITIVEMENT de ce navigateur :</p>
           <ul className="settings-page__danger-list">
             <li>
-              <strong className="mono">{closedTrades.length}</strong> trades clôturés
-            </li>
-            <li>
+              <strong className="mono">{closedTrades.length}</strong> trades clôturés,{' '}
               <strong className="mono">{openPositions.length}</strong> positions ouvertes
             </li>
             <li>
-              <strong className="mono">{cashFlows.length}</strong> cash flows (dépôts / retraits /
-              FX)
-            </li>
-            <li>
+              <strong className="mono">{cashFlows.length}</strong> cash flows,{' '}
               <strong className="mono">{journalEntries.length}</strong> entrées de journal
             </li>
-            <li>
-              Identifiants Flex (QueryID + Token), historique de recherche Chain, préférence Vue
-              Sniper
-            </li>
+            <li>Capital de référence, dernière synchro, snapshots bridge</li>
+            <li>Identifiants Flex, historique de recherche Chain, préférence Vue History</li>
           </ul>
-          <p className="settings-page__danger-text">
-            Irréversible. Aucune copie serveur n'existe — tout vit uniquement dans ton navigateur.
-          </p>
-          <label className="settings-page__modal-checkbox">
+          <p className="settings-danger__survives-title">Ce qui SURVIT (préférences, pas des données comptables) :</p>
+          <ul className="settings-danger__survives-list">
+            <li>Watchlist (tickers suivis)</li>
+            <li>Taux USD/CHF et préférences FX</li>
+            <li>Tier Sniper actif</li>
+            <li>Seuil du kill switch, nom de profil, mode daltonien</li>
+          </ul>
+          <label className="settings-danger__type-label">
+            <span>
+              Tape <strong className="mono">RESET</strong> pour armer le bouton :
+            </span>
             <input
-              type="checkbox"
-              checked={resetConfirmed}
-              onChange={(e) => setResetConfirmed(e.target.checked)}
+              type="text"
+              className="settings-page__input"
+              value={resetConfirmed}
+              onChange={(e) => setResetConfirmed(e.target.value)}
+              placeholder="RESET"
+              autoComplete="off"
+              spellCheck={false}
+              aria-label="Tape RESET pour confirmer"
             />
-            <span>Je comprends que cette action est irréversible</span>
           </label>
           <div className="settings-page__modal-actions">
             <button type="button" className="pg-mock-btn" onClick={() => setResetOpen(false)}>
@@ -883,11 +975,18 @@ export default function SettingsGeneral() {
             </button>
             <button
               type="button"
-              className={`pg-mock-btn pg-mock-btn--primary${
-                resetConfirmed ? ' settings-page__btn-destructive--filled' : ''
-              }`}
-              disabled={!resetConfirmed}
-              onClick={handleResetAll}
+              className={`pg-mock-btn${resetArmed ? ' settings-page__btn-destructive--filled' : ''}`}
+              disabled={!resetArmed}
+              onClick={() => {
+                if (!resetArmed) return;
+                if (
+                  window.confirm(
+                    'Dernière confirmation — effacer définitivement toutes les données comptables ?'
+                  )
+                ) {
+                  handleResetAll();
+                }
+              }}
             >
               Effacer tout
             </button>

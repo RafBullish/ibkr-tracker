@@ -378,46 +378,33 @@
     font-size: var(--type-caption);
   }
 
-  /* ══ IMPORT (densif + vide #28) — /settings/import.
-     Typo : ENTIÈREMENT token-based (--fs-* → 13/14 au palier), zéro hardcode
-     sub-13 dans pages-import.css → densif déjà acquise par le plancher token.
-     Seul résidu = StatusBadge xs (10px, badge « Sync {date} », padding-based
-     → pas de clip). */
-  .import-page .status-badge--xs {
-    font-size: var(--type-caption);
-  }
-
-  /* VIDE #28 : le form QueryID/Token en grid 1fr/1fr étirait les 2 inputs à
-     ~550px chacun (void interne massif pour un QueryID 7 chiffres + un token).
-     On CAPE la largeur TOTALE du form → inputs ~330px alignés à gauche (layout
-     form standard). La MQ 600px (1 colonne) reste intacte. Palier seul. */
+  /* ══ IMPORT (densif 2.D) — /settings/import recomposé (bandeau + étage
+     sources 2-col + résultat + sauvegarde). Typo token-based (--type-*),
+     densif au palier acquise par cascade. Le cap de largeur du form Flex
+     reste utile (le form vit dans un panneau source ~demi-largeur). */
   .import-page__form {
     max-width: 680px;
   }
 
-  /* ══ SETTINGS (densif + vide #30) — /settings/general (+ /settings/api,
-     /insights/journal qui partagent .settings-page). Typo pages-settings.css
-     ENTIÈREMENT token-based (--fs-* → 13/14 au palier) → densif déjà acquise.
-     Résidus partagés (scan @1591) : status-badge__label 10, api-service-row__time
-     10 → floorés scopés .settings-page (badges padding-based, pas de clip). */
-  .settings-page .status-badge__label,
-  .settings-page .api-service-row__time {
+  /* ══ SETTINGS (densif 2.D) — /settings/general (2 colonnes) + /settings/api
+     (tableau dense), partagent .settings-page. Bandeaux/panneaux token-based.
+     status-badge__label (badges mode / kill switch de General) flooré. */
+  .settings-page .status-badge__label {
     font-size: var(--type-caption);
   }
 
-  /* VIDE #30 : les rows en flex space-between + label flex:1 poussaient le
-     contrôle au bord droit (row = 1492px), creusant un gouffre label↔contrôle
-     ~1200px sur les labels courts. On bascule en layout 2 colonnes : label =
-     colonne FIXE 420px, contrôle packé juste après (justify-content flex-start)
-     → contrôles alignés verticalement à x~436 sur TOUTES les sections, gouffre
-     supprimé. Descriptions lisibles à 420px ; contrôles larges (Sniper E×C,
-     Capital+preview) tiennent sans overflow (row reste pleine largeur, void à
-     droite). Palier seul → MQ 600px (colonne) + <1440 intacts. */
-  .settings-page__row {
-    justify-content: flex-start;
+  /* VIDE #30 abrogé par le layout 2 colonnes (2.D) : la disposition des
+     rows (STACK label/contrôle en colonnes ~660 px) vit désormais dans
+     pages-settings.css @≥1000 px, avec le passage à 2 colonnes — plus de
+     gouffre label↔contrôle, plus d'écrasement des contrôles larges. */
+
+  /* Tableau des services API : barème S2 (rangée 47, service 20/600). Le
+     détail/heure restent au plancher caption (colonne prose lisible). */
+  .api-page .api-table__row {
+    min-height: 47px;
   }
-  .settings-page__row-label {
-    flex: 0 0 420px;
+  .api-page .api-table__svc {
+    font-size: 20px;
   }
 
   /* ══ ANALYTICS (densif 2.B) — /insights/analytics au langage cockpit.

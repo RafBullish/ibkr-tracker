@@ -176,8 +176,10 @@ function probeFlex() {
   // Flex isn't HTTP-probed live (it's a heavy sync). We derive status from
   // persisted credentials and the last-sync timestamp.
   try {
+    // Source unique (2.D) : QueryID en localStorage (non secret), token en
+    // sessionStorage (magasin réellement consommé par flexApi.syncFlex).
     const queryId = window.localStorage.getItem('ibkr_flex_queryid');
-    const token = window.localStorage.getItem('ibkr_flex_token');
+    const token = window.sessionStorage.getItem('ibkr_flex_token');
     if (!queryId || !token) {
       return { status: 'unconfigured', latency: null, error: 'Credentials manquants' };
     }

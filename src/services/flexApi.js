@@ -16,23 +16,40 @@ const TOKEN_KEY = 'ibkr_flex_token';
 // Legacy key retained for one-shot migration — older versions wrote both fields.
 const LEGACY_KEY = 'ibkr_flex_config';
 
-function migrateLegacyIfPresent() {
+// SOURCE UNIQUE DU TOKEN = sessionStorage (décision architecte, brique 2.D).
+// Deux migrations douces one-shot, jouées au chargement du module :
+//   (a) ancien blob combiné localStorage[LEGACY_KEY] {queryId, token}
+//   (b) token résiduel écrit en localStorage[TOKEN_KEY] par l'ancienne
+//       page /settings/api (pré-2.D) — déplacé vers sessionStorage puis
+//       effacé du magasin persistant. Rafael n'a rien à ressaisir, et
+//       aucun secret ne survit en clair dans un magasin persistant.
+function migrateTokenStores() {
   try {
     const raw = localStorage.getItem(LEGACY_KEY);
-    if (!raw) return;
-    const cfg = JSON.parse(raw);
-    if (cfg?.queryId && !localStorage.getItem(QUERY_KEY)) {
-      localStorage.setItem(QUERY_KEY, cfg.queryId);
+    if (raw) {
+      const cfg = JSON.parse(raw);
+      if (cfg?.queryId && !localStorage.getItem(QUERY_KEY)) {
+        localStorage.setItem(QUERY_KEY, cfg.queryId);
+      }
+      if (cfg?.token && !sessionStorage.getItem(TOKEN_KEY)) {
+        sessionStorage.setItem(TOKEN_KEY, cfg.token);
+      }
+      localStorage.removeItem(LEGACY_KEY);
     }
-    if (cfg?.token && !sessionStorage.getItem(TOKEN_KEY)) {
-      sessionStorage.setItem(TOKEN_KEY, cfg.token);
-    }
-    localStorage.removeItem(LEGACY_KEY);
   } catch {
     /* corrupted legacy blob — ignore */
   }
+  try {
+    const stray = localStorage.getItem(TOKEN_KEY);
+    if (stray) {
+      if (!sessionStorage.getItem(TOKEN_KEY)) sessionStorage.setItem(TOKEN_KEY, stray);
+      localStorage.removeItem(TOKEN_KEY);
+    }
+  } catch {
+    /* quota / disabled */
+  }
 }
-migrateLegacyIfPresent();
+migrateTokenStores();
 
 /** Save Flex token (session-scoped) + query ID (persistent). */
 export function configureFlex(token, queryId) {
@@ -47,6 +64,26 @@ export function getFlexConfig() {
     token: sessionStorage.getItem(TOKEN_KEY) || '',
     queryId: localStorage.getItem(QUERY_KEY) || '',
   };
+}
+
+/**
+ * Purge des identifiants Flex — magasin réellement utilisé (sessionStorage
+ * pour le token) + résidu localStorage éventuel (sécurité) + QueryID local.
+ * Source unique : après appel, ni sessionStorage ni localStorage ne
+ * contiennent de token.
+ */
+export function clearFlexCredentials() {
+  try {
+    sessionStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* disabled */
+  }
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(QUERY_KEY);
+  } catch {
+    /* quota */
+  }
 }
 
 /**

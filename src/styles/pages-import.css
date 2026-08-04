@@ -53,21 +53,6 @@
   -webkit-backdrop-filter: none;
 }
 
-/* Variante subtile : footer info ("Le merge est idempotent…"). Fond un
-   cran plus discret (depth-base) pour signaler "remarque", pas "action". */
-.import-page__panel--subtle {
-  background: var(--depth-base);
-  padding: var(--qc-space-4);
-  gap: var(--qc-space-2);
-}
-
-.import-page__panel-footer-text {
-  color: var(--ink-mute);
-  margin: 0;
-  font-size: var(--fs-xs);
-  line-height: 1.6;
-}
-
 /* ════════════════════════════════════════════════════════════════
    PANEL HEAD — icône + titre + description + badge optionnel
    (ex- .import-v3__card-head)
@@ -81,15 +66,18 @@
   flex-wrap: wrap;
 }
 
-.import-page__panel-icon {
+/* Icône de panneau NEUTRE (cohérence avec .settings-page__section-icon ;
+   l'ambre reste réservé aux CTA/signaux décisionnels, DA §3). */
+.import-page__panel-icon,
+.import-page__panel-icon--neutral {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 36px;
   height: 36px;
   border-radius: 2px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--depth-base);
+  color: var(--ink-soft);
   flex-shrink: 0;
 }
 
@@ -143,15 +131,18 @@
   border-radius: 2px;
   font-size: var(--fs-sm);
 }
+/* Feedback d'opération NEUTRE : ni l'attente (info) ni l'échec (warn) ne
+   sont de l'argent ni une décision → registre neutre appuyé, pas de rouge
+   ni d'ambre (loi de couleur §4.2 ; le rouge est réservé zone dangereuse). */
 .import-page__status[data-tone="info"] {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border: 1px solid var(--accent);
+  background: var(--depth-base);
+  color: var(--ink-soft);
+  border: 1px solid var(--line-hairline);
 }
-.import-page__status[data-tone="error"] {
-  background: color-mix(in srgb, var(--pnl-down) 14%, transparent);
-  color: var(--pnl-down);
-  border: 1px solid var(--pnl-down);
+.import-page__status[data-tone="warn"] {
+  background: var(--depth-base);
+  color: var(--ink-pure);
+  border: 1px solid var(--line-emphasis);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -211,31 +202,136 @@
   font-size: var(--fs-xs);
 }
 
-/* ════════════════════════════════════════════════════════════════
-   LAST IMPORT SUMMARY (ex- .import-v3__last) — confirmation après
-   import réussi, tonalité pnl-up sourde.
-   ════════════════════════════════════════════════════════════════ */
-.import-page__last {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--qc-space-2);
-  padding: var(--qc-space-3);
-  background: color-mix(in srgb, var(--pnl-up) 10%, transparent);
-  border: 1px solid var(--pnl-up);
-  border-radius: 2px;
+.import-page__actions--start {
+  justify-content: flex-start;
+}
+
+/* Bouton « effacer identifiants » : NEUTRE — effacer une clé de connexion
+   n'est pas la destruction de données comptables (le rouge est réservé à
+   la zone dangereuse RESET_ALL, §4.4). */
+.import-page__btn-clear {
+  color: var(--ink-soft);
+}
+.import-page__btn-clear:hover {
   color: var(--ink-pure);
+  border-color: var(--line-emphasis);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   1 — BANDEAU DE COMMANDEMENT (cadre cockpit .lh-final, valeurs 34 px)
+   ════════════════════════════════════════════════════════════════ */
+.import-command__grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1.3fr;
+}
+.import-command .import-cell {
+  padding: 14px 18px 12px;
+}
+.import-command__grid > .import-cell + .import-cell {
+  border-left: 1px solid var(--line-emphasis);
+}
+.import-cell__label {
+  font-size: var(--type-caption);
+  margin-bottom: 4px;
+}
+.import-command .import-cell__val {
+  font-size: var(--type-display, 34px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.import-command .import-cell[data-tone="mute"] .import-cell__val {
+  color: var(--ink-mute);
+}
+.import-cell__meta {
+  margin-top: 2px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   2 — ÉTAGE SOURCES : deux portes équivalentes (Flex | CSV), grille.
+   ════════════════════════════════════════════════════════════════ */
+.import-sources {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--qc-space-4);
+  align-items: stretch;
+}
+.import-source {
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .import-sources {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   3 — ÉTAGE RÉSULTAT : retour de la dernière opération. Succès = vert
+   (résultat factuel d'opération, parité LIVE) ; état vide neutre.
+   ════════════════════════════════════════════════════════════════ */
+.import-result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--qc-space-3);
+}
+.import-result__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: var(--fs-sm);
 }
-
-.import-page__last-meta {
+.import-result__source {
+  color: var(--ink-pure);
+  font-weight: var(--fw-semibold);
+}
+.import-result__none {
   color: var(--ink-mute);
-  font-size: var(--fs-xs);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+.import-result__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line-hairline);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.import-result__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px;
+  background: var(--depth-base);
+}
+.import-result__n {
+  font-family: var(--qc-font-num);
+  font-size: var(--type-cell-value, 21px);
+  font-weight: 700;
+  color: var(--ink-pure);
+  font-variant-numeric: tabular-nums slashed-zero;
+  line-height: 1.1;
+}
+.import-result__k {
+  font-size: var(--type-caption);
+  color: var(--ink-mute);
+  letter-spacing: 0.03em;
 }
 
-/* ════════════════════════════════════════════════════════════════
-   ACTION BUTTONS (utility) — coloration d'un bouton destructeur
-   ("Effacer identifiants") en pnl-down sémantique.
-   ════════════════════════════════════════════════════════════════ */
-.import-page__btn-destructive {
-  color: var(--pnl-down);
+.import-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px 4px;
+}
+.import-empty__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.import-empty__sub {
+  font-size: 13px;
+  color: var(--ink-mute);
+  line-height: 1.55;
+  max-width: 560px;
 }

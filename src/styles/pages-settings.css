@@ -47,11 +47,6 @@
   -webkit-backdrop-filter: none;
 }
 
-/* Variante zone dangereuse : bord top en line-emphasis (signale
-   l'attention) et l'icône passe en accent amber dans le head. */
-.settings-page__section--danger {
-  border-top-color: var(--line-emphasis);
-}
 
 /* ════════════════════════════════════════════════════════════════
    SECTION HEAD — icône + titre + description
@@ -79,18 +74,15 @@
   flex-shrink: 0;
 }
 
-.settings-page__section--danger .settings-page__section-icon {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
+/* Titre de section au registre .mk-title (zone title cockpit, §4.3.2). */
 .settings-page__section-title {
   margin: 0;
   font-family: var(--qc-font-sans);
-  font-size: var(--fs-md);
-  font-weight: var(--fw-bold);
-  color: var(--ink-pure);
-  letter-spacing: var(--ls-tight);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
 }
 
 .settings-page__section-desc {
@@ -232,11 +224,24 @@
   gap: var(--qc-space-3);
 }
 
-.settings-page__api-heading {
+/* Résumé Connexions API compact NEUTRE (2.D) — compteurs, pas de
+   re-liste colorée des 8 services (le détail LIVE/DOWN vit sur la page
+   dédiée). Aucun rouge/vert ici. */
+.settings-api-counts {
   display: flex;
   align-items: center;
   gap: var(--qc-space-2);
   flex-wrap: wrap;
+  color: var(--ink-soft);
+  font-size: var(--fs-sm);
+}
+.settings-api-counts .mono {
+  color: var(--ink-pure);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+.settings-api-sep {
+  color: var(--ink-mute);
 }
 
 .settings-page__view-all {
@@ -263,12 +268,6 @@
   background: var(--accent-soft);
   border-color: var(--accent);
   color: var(--accent);
-}
-
-.settings-page__api-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--qc-space-2);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -335,13 +334,6 @@
 /* ════════════════════════════════════════════════════════════════
    DANGER ZONE — bloc final spécifique
    ════════════════════════════════════════════════════════════════ */
-.settings-page__danger-text {
-  color: var(--pnl-down);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-semibold);
-  margin: 0;
-}
-
 .settings-page__danger-list {
   margin: 0;
   padding-left: var(--space-5);
@@ -405,10 +397,327 @@
   gap: var(--qc-space-2);
   justify-content: flex-end;
 }
-.settings-page__modal-checkbox {
+
+/* ════════════════════════════════════════════════════════════════
+   BANDEAU DE COMMANDEMENT (2.D) — cadre cockpit .lh-final, cellules-MONDE
+   34 px. Signes vitaux servis, tous NEUTRES (taux/capital/mode/seuil ne
+   sont pas de l'argent ; l'ambre reste aux CTA/décisions).
+   ════════════════════════════════════════════════════════════════ */
+.settings-command__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.settings-command .settings-cell {
+  padding: 14px 18px 12px;
+}
+.settings-command__grid > .settings-cell + .settings-cell {
+  border-left: 1px solid var(--line-emphasis);
+}
+.settings-cell__label {
+  font-size: var(--type-caption);
+  margin-bottom: 4px;
+}
+.settings-command .settings-cell__val {
+  font-size: var(--type-display, 34px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.settings-command .settings-cell[data-tone="mute"] .settings-cell__val {
+  color: var(--ink-mute);
+}
+.settings-cell__meta {
+  margin-top: 2px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CORPS EN DEUX COLONNES (§4.3.2) — la page cesse d'être un ruban
+   vertical. Masonry via CSS multi-colonnes ; sections insécables.
+   Mobile <1000 (socle, hors cible) : une seule colonne.
+   ════════════════════════════════════════════════════════════════ */
+.settings-grid {
+  column-gap: var(--qc-space-4);
+}
+.settings-grid > * {
+  break-inside: avoid;
+  margin-bottom: var(--qc-space-4);
+}
+@media (min-width: 1000px) {
+  .settings-grid {
+    columns: 2;
+  }
+  /* En colonnes ~660 px, les rows STACKENT (label + description au-dessus,
+     contrôle en dessous, pleine largeur) : les contrôles larges (tier E×C
+     + méta, capital + preview) ne peuvent plus écraser la description à un
+     mot par ligne. Rythme 8 px conservé. */
+  .settings-grid .settings-page__row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--qc-space-2);
+  }
+  .settings-grid .settings-page__row-control {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ZONE DANGEREUSE (§4.4) — séparée, pleine largeur. Le ROUGE y est
+   LÉGITIME (destruction de données réelles) = EXCEPTION NOMMÉE. Porte
+   durcie : inventaire détruit/survivant + mot RESET à taper.
+   ════════════════════════════════════════════════════════════════ */
+.settings-danger {
+  background: color-mix(in srgb, var(--pnl-down) 6%, var(--depth-raised));
+  border: 1px solid color-mix(in srgb, var(--pnl-down) 45%, transparent);
+  border-radius: 2px;
+  padding: var(--qc-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--qc-space-4);
+}
+.settings-danger__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--qc-space-3);
+  padding-bottom: var(--qc-space-3);
+  border-bottom: 1px solid color-mix(in srgb, var(--pnl-down) 25%, transparent);
+}
+.settings-danger__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--pnl-down) 14%, transparent);
+  color: var(--pnl-down);
+  flex-shrink: 0;
+}
+.settings-danger__title {
+  margin: 0;
+  font-family: var(--qc-font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pnl-down);
+}
+.settings-danger__desc {
+  margin: 2px 0 0;
+  color: var(--ink-soft);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.settings-danger__body {
   display: flex;
   align-items: center;
-  gap: var(--qc-space-2);
-  cursor: pointer;
+  justify-content: space-between;
+  gap: var(--qc-space-4);
+  flex-wrap: wrap;
+}
+.settings-danger__counts {
+  color: var(--ink-soft);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+.settings-danger__counts .mono {
   color: var(--ink-pure);
+  font-weight: var(--fw-semibold);
+}
+.settings-danger__actions {
+  display: flex;
+  gap: var(--qc-space-2);
+  flex-wrap: wrap;
+}
+/* Modal : inventaire survivant (neutre) + champ RESET. */
+.settings-danger__survives-title {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+.settings-danger__survives-list {
+  margin: 0;
+  padding-left: var(--qc-space-5);
+  color: var(--ink-mute);
+  line-height: 1.7;
+  font-size: var(--fs-sm);
+}
+.settings-danger__type-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--qc-space-2);
+  color: var(--ink-pure);
+  font-size: var(--fs-sm);
+}
+.settings-danger__type-label .settings-page__input {
+  min-width: 160px;
+  max-width: 220px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-family: var(--qc-font-mono);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SETTINGS API (2.D) — scopée .settings-page. Bandeau 3 cellules,
+   tableau dense des services, panneaux cockpit (ex-GlassCard).
+   ════════════════════════════════════════════════════════════════ */
+.api-page {
+  background: var(--depth-void);
+  position: relative;
+  z-index: 1;
+}
+/* Override 3 colonnes pour le bandeau API (le bandeau General est à 5). */
+.api-command__grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* Tableau dense (craft v1.0) — remplace la grille de 8 cartes. */
+.api-table {
+  display: flex;
+  flex-direction: column;
+  background: var(--depth-raised);
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.api-table__head,
+.api-table__row {
+  display: grid;
+  grid-template-columns: 1.4fr 0.7fr 2.2fr 1fr auto;
+  align-items: center;
+  column-gap: var(--qc-space-4);
+  padding: 0 var(--qc-space-4);
+}
+.api-table__head {
+  min-height: 34px;
+  border-bottom: 1px solid var(--line-emphasis);
+  background: var(--depth-base);
+}
+.api-table__row {
+  min-height: 40px;
+  border-bottom: 1px solid var(--line-hairline);
+  transition: background 120ms var(--ease-out);
+}
+.api-table__row:last-child {
+  border-bottom: none;
+}
+.api-table__row:hover {
+  background: color-mix(in srgb, var(--ink-pure) 3%, transparent);
+}
+.api-table__h {
+  font-family: var(--qc-font-sans);
+  font-size: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  min-width: 0;
+}
+.api-table__h[data-align="right"],
+.api-table__c[data-align="right"] {
+  text-align: right;
+  justify-self: end;
+}
+.api-table__c {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink-soft);
+  font-size: var(--fs-sm);
+}
+.api-table__svc {
+  color: var(--ink-pure);
+  font-weight: var(--fw-semibold);
+}
+.api-table__detail {
+  color: var(--ink-mute);
+}
+.api-table__time {
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: var(--type-caption);
+}
+.api-table__dash {
+  color: var(--ink-mute);
+}
+.api-table__action {
+  height: 24px;
+  padding: 0 10px;
+  font-size: var(--type-caption);
+}
+
+/* Badge d'état terminal : LIVE vert (fait factuel, parité StatusBar) ;
+   DOWN / OFF NEUTRES (un service indispo n'est pas une perte d'argent,
+   un état durable n'est jamais ambre). */
+.api-state {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 8px;
+  font-family: var(--qc-font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border-radius: 2px;
+  border: 1px solid var(--line-hairline);
+  color: var(--ink-mute);
+}
+.api-state--live {
+  color: var(--pnl-up);
+  border-color: color-mix(in srgb, var(--pnl-up) 40%, transparent);
+  background: color-mix(in srgb, var(--pnl-up) 10%, transparent);
+}
+.api-state--down {
+  color: var(--ink-soft);
+  border-color: var(--line-emphasis);
+}
+.api-state--off {
+  color: var(--ink-mute);
+}
+
+/* Panneaux info (ex-GlassCard) — flex row icône · corps · contrôle. */
+.api-page .settings-page__section {
+  padding: var(--qc-space-4);
+}
+.api-panel {
+  display: flex;
+  align-items: center;
+  gap: var(--qc-space-3);
+}
+.api-panel__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  background: var(--depth-base);
+  color: var(--ink-soft);
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+.api-panel__body {
+  flex: 1;
+  min-width: 0;
+}
+.api-panel__desc {
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+}
+
+@media (max-width: 900px) {
+  .api-command__grid {
+    grid-template-columns: 1fr;
+  }
+  .api-table__head,
+  .api-table__row {
+    grid-template-columns: 1.2fr 0.7fr 1.6fr auto;
+  }
+  .api-table__head > :nth-child(4),
+  .api-table__row > :nth-child(4) {
+    display: none;
+  }
 }
