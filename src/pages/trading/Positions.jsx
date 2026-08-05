@@ -458,7 +458,6 @@ function PositionDetailBody({ row, greeks, posAlerts, navigate, onEdit, onCloseM
   const pnlTone = pnl > 0 ? 'profit' : pnl < 0 ? 'loss' : 'neutral';
   const sl = effectiveSlDollar(pos);
   const dir = pos.dir || (isOpt ? 'Long' : '—');
-  const alertTone = (sev) => (sev === 'red' ? 'loss' : sev === 'orange' ? 'warn' : 'profit');
   return (
     <div className="position-detail">
       <div className="position-detail__head">
@@ -562,13 +561,12 @@ function PositionDetailBody({ row, greeks, posAlerts, navigate, onEdit, onCloseM
             Aucune alerte active
           </span>
         ) : (
+          // É3 §4.3 — alertes FACTUELLES NEUTRES (parité RowAlerts 2.A :
+          // un signal n'est pas une perte d'argent réel ; l'urgence est
+          // portée par le badge GATE du classifieur unique).
           <div className="position-detail__alerts">
             {posAlerts.map((a, i) => (
-              <div
-                key={`${a.type}-${i}`}
-                className="position-detail__alert"
-                data-tone={alertTone(a.severity)}
-              >
+              <div key={`${a.type}-${i}`} className="position-detail__alert">
                 {a.message}
               </div>
             ))}

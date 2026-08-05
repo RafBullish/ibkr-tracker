@@ -28,7 +28,8 @@ export default function Modal({ open, onClose, title, titleStyle, children }) {
       <Dialog.Portal>
         <Dialog.Overlay className="modal-v3__overlay" />
         <Dialog.Content className="modal-v3__content" aria-describedby={undefined}>
-          <div className="modal-v3__drag-bar" aria-hidden="true" />
+          {/* É3 §4.3 — drag-bar décorative morte (aucune affordance
+              réelle : la Dialog ne se déplace pas). */}
           <header className="modal-v3__head">
             <Dialog.Title className="modal-v3__title" style={titleStyle}>
               {title}

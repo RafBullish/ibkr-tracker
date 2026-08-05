@@ -1,0 +1,557 @@
+/* ════════════════════════════════════════════════════════════════
+   modals.css — LA maison des modales et du chrome flottant global
+   (Étape 3 « Cohérence & modales », É3 §4.3).
+
+   ANATOMIE UNIQUE : cadre cockpit (plan raised + filet murmuré +
+   radius 7 + overflow hidden) · en-tête à titre au registre mk-title
+   + bouton de fermeture · corps au rythme 8 px · pied d'actions
+   (secondaire à gauche, primaire ambre à droite).
+
+   Habitants : Modal générique (Radix Dialog) · AddTradeModal +
+   ConfigFlexModal (add-trade-form) · CheatsheetModal (cheatsheet,
+   rapatriée de l'ex-v5-chain, É3 §4.2.10) · CommandPalette (cmdk,
+   ex-styles inline). Le Toast reste dans components.css (chrome
+   d'angle transitoire, pas une modale).
+
+   LOI DE COULEUR : l'ambre = CTA primaire, sélection, ligne focus.
+   Aucun rouge/vert hors argent réel (le P&L des positions dans la
+   palette est de l'argent réel → toné).
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── MODALE GÉNÉRIQUE (Radix Dialog) ─────────────────────────────── */
+
+.modal-v3__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.65);
+  animation: modal-fade-in 150ms ease-out;
+}
+
+.modal-v3__content {
+  position: fixed;
+  z-index: 101;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--depth-raised);
+  border: 1px solid var(--hairline-rest);
+  border-radius: 7px;
+  max-width: 560px;
+  width: calc(100% - 32px);
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  animation: modal-scale-in 150ms ease-out;
+}
+
+.modal-v3__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--hairline-rest);
+  flex-shrink: 0;
+}
+
+/* Titre de modale = registre mk-title (13 caps espacées), encre soft
+   (fenêtre focale : un cran au-dessus du titre de zone). */
+.modal-v3__title {
+  font-family: var(--qc-font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  line-height: 1.2;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modal-v3__close {
+  background: transparent;
+  border: 1px solid var(--hairline-rest);
+  border-radius: 2px;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  color: var(--ink-mute);
+  transition:
+    color 120ms ease-out,
+    border-color 120ms ease-out;
+}
+
+.modal-v3__close:hover {
+  color: var(--ink-pure);
+  border-color: var(--hairline-hover);
+}
+
+.modal-v3__close:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.modal-v3__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-scale-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -49%) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-v3__overlay,
+  .modal-v3__content {
+    animation-duration: 0.01ms;
+  }
+}
+
+/* ── FORMULAIRE DE MODALE (AddTradeModal · ConfigFlexModal) ──────── */
+
+.add-trade-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.add-trade-form__row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.add-trade-form__row > label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Champ creusé : un plan SOUS le panneau (base), filet murmuré,
+   focus = ligne ambre (zone de saisie active = décision). */
+.add-trade-form__row input,
+.add-trade-form__row textarea {
+  padding: 8px 10px;
+  background: var(--depth-base);
+  border: 1px solid var(--hairline-rest);
+  border-radius: 2px;
+  color: var(--ink-pure);
+  font-family: var(--qc-font-num);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  transition: border-color 120ms ease-out;
+}
+
+.add-trade-form__row input:focus,
+.add-trade-form__row textarea:focus {
+  border-color: var(--accent);
+}
+
+.add-trade-form__toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--depth-base);
+  border: 1px solid var(--hairline-rest);
+  border-radius: 2px;
+}
+
+.add-trade-form__toggle button {
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  color: var(--ink-mute);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  font-family: var(--qc-font-sans);
+  transition:
+    color 120ms ease-out,
+    background-color 120ms ease-out;
+}
+
+/* Chip actif = AMBRE (sélection, loi ratifiée 2.A ViewToggle). */
+.add-trade-form__toggle button[data-active] {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+}
+
+.add-trade-form__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.add-trade-form__tag {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--hairline-rest);
+  border-radius: 2px;
+  color: var(--ink-mute);
+  font-family: var(--qc-font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color 120ms ease-out,
+    border-color 120ms ease-out,
+    background-color 120ms ease-out;
+}
+
+.add-trade-form__tag:hover {
+  color: var(--ink-soft);
+  border-color: var(--hairline-hover);
+}
+
+.add-trade-form__tag[data-active] {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* Pied d'actions — anatomie unique : secondaire à GAUCHE, primaire
+   ambre à DROITE (É3 §4.3). */
+.add-trade-form__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--hairline-rest);
+}
+
+/* ── CHEATSHEET (⌘/) — aide-mémoire des raccourcis ──────────────── */
+
+.cheatsheet {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: var(--qc-font-mono);
+  font-size: 11px;
+  color: var(--ink-soft);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.cheatsheet__section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Titre de section = registre mk-title (encre sourde — un titre
+   d'aide n'est pas une décision, l'ambre n'y a pas sa place). */
+.cheatsheet__section-title {
+  margin: 0 0 4px 0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--hairline-rest);
+}
+
+.cheatsheet__row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--hairline-rest);
+}
+
+.cheatsheet__row:last-child {
+  border-bottom: none;
+}
+
+.cheatsheet__keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.cheatsheet__kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  padding: 0 6px;
+  font-family: var(--qc-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink-pure);
+  background: var(--depth-base);
+  border: 1px solid var(--hairline-hover);
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.cheatsheet__or {
+  font-size: 10px;
+  color: var(--ink-mute);
+  margin: 0 2px;
+}
+
+.cheatsheet__desc {
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+}
+
+.cheatsheet__footer {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--hairline-rest);
+  font-size: 10px;
+  color: var(--ink-mute);
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+@media (max-width: 767px) {
+  .cheatsheet__row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
+
+/* ── COMMAND PALETTE (⌘K) — verre sombre, registre terminal ──────── */
+
+.cmdk__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0, 0, 0, 0.6);
+  animation: modal-fade-in 150ms ease-out;
+}
+
+.cmdk__wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 301;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: min(20vh, 140px);
+  pointer-events: none;
+}
+
+.cmdk__panel {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 16px;
+  background: color-mix(in srgb, var(--depth-raised) 92%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--hairline-rest);
+  border-radius: 7px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: cmdk-drop 150ms ease-out;
+}
+
+@keyframes cmdk-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cmdk__inputrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--hairline-rest);
+  color: var(--ink-mute);
+}
+
+.cmdk__input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--ink-pure);
+  font-family: var(--qc-font-sans);
+  font-size: 14px;
+  caret-color: var(--accent);
+}
+
+.cmdk__input::placeholder {
+  color: var(--ink-mute);
+}
+
+.cmdk__list {
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.cmdk__heading {
+  font-family: var(--qc-font-sans);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-mute);
+  font-weight: 600;
+  padding: 8px 10px 5px;
+}
+
+.cmdk__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-family: var(--qc-font-sans);
+  transition: background-color 120ms ease-out;
+}
+
+.cmdk__item:hover {
+  background: color-mix(in srgb, var(--ink-pure) 3%, transparent);
+}
+
+/* Ligne focus = filet ambre inset (registre lignes ATTENTION). */
+.cmdk__item[data-selected] {
+  background: color-mix(in srgb, var(--ink-pure) 4%, transparent);
+  color: var(--ink-pure);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.cmdk__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--ink-mute);
+}
+
+.cmdk__item[data-selected] .cmdk__icon {
+  color: var(--accent);
+}
+
+/* Badge type CALL/PUT/STK — catégorie d'instrument NEUTRE (loi). */
+.cmdk__type {
+  font-family: var(--qc-font-num);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 2px;
+  border: 1px solid var(--hairline-rest);
+  color: var(--ink-mute);
+  flex-shrink: 0;
+}
+
+.cmdk__ticker {
+  font-family: var(--qc-font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cmdk__desc {
+  color: var(--ink-mute);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* P&L latent de la position = argent réel → toné (seule couleur
+   sémantique de la palette). */
+.cmdk__pnl {
+  margin-left: auto;
+  font-family: var(--qc-font-num);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.cmdk__pnl--profit {
+  color: var(--pnl-up);
+}
+
+.cmdk__pnl--loss {
+  color: var(--pnl-down);
+}
+
+.cmdk__kbd {
+  margin-left: auto;
+  font-family: var(--qc-font-mono);
+  font-size: 10px;
+  color: var(--ink-mute);
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: var(--depth-base);
+  border: 1px solid var(--hairline-rest);
+  font-variant-numeric: tabular-nums;
+}
+
+/* État vide designé (anatomie unique É3 §4.3). */
+.cmdk__empty {
+  padding: 24px 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cmdk__empty-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.cmdk__empty-sub {
+  font-size: 11px;
+  color: var(--ink-mute);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cmdk__overlay,
+  .cmdk__panel {
+    animation-duration: 0.01ms;
+  }
+}

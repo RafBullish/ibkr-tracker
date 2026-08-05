@@ -952,14 +952,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             <span>▼ Performance Metrics</span>
             {m.preliminaryRatios && (
               <span
-                style={{
-                  marginLeft: 10,
-                  fontSize: 12,
-                  letterSpacing: '0.04em',
-                  fontStyle: 'italic',
-                  opacity: 0.7,
-                  textTransform: 'none',
-                }}
+                className="risk-matrix__preliminary"
                 title={`Échantillon court : ${m.yearsActive != null ? `${(m.yearsActive * 365.25).toFixed(0)} j` : '< 1 an'}. Sharpe / Sortino / Calmar extrapolés (Calmar utilise CAGR annualisé = ${m.cagrAnnPct != null ? m.cagrAnnPct.toFixed(1) + '%' : '—'} / |MaxDD ${m.maxDrawdownPct != null ? m.maxDrawdownPct.toFixed(2) + '%' : '—'}|).`}
               >
                 ~ préliminaire · échantillon &lt; 1 an
