@@ -4,13 +4,19 @@
 //
 //  ATTENTION — fusion des DEUX moteurs existants, sans recalcul :
 //    · generateAlerts (utils/alerts, moteur canonique U7) filtré
-//      red/orange — signaux P&L/temps (STOP_LOSS, TIME_STOP,
-//      TP2_REACHED, TP1_REACHED). Les seuils DTE legacy 90/100 j
-//      (DTE_CRITICAL, DTE_WARNING) sont RETIRÉS de la bande
-//      (correctif architecte 1.F-c1 C2) : ils armaient toute entrée
-//      Sniper dès sa naissance (~45-60 DTE) → bruit permanent. Leur
-//      maison reste la colonne DTE de LivePositions + la page
-//      Positions ; la position réapparaît ici dès DTE ≤ 50.
+//      red/orange — signaux P&L (STOP_LOSS, TP2_REACHED,
+//      TP1_REACHED). Les seuils DTE legacy 90/100 j (DTE_CRITICAL,
+//      DTE_WARNING) sont RETIRÉS de la bande (correctif architecte
+//      1.F-c1 C2) : ils armaient toute entrée Sniper dès sa naissance
+//      (~45-60 DTE) → bruit permanent. Leur maison reste la colonne
+//      DTE de LivePositions + la page Positions ; la position
+//      réapparaît ici dès DTE ≤ 50. TIME_STOP (« ≥5 j sans +15 % »)
+//      est RETIRÉ au même titre (É3 §4.2.2) : la doctrine Sniper ne
+//      documente aucun seuil temporel intermédiaire (trades tenus
+//      90-155 j au réel → 4/5 positions CRITICAL en permanence, un
+//      signal permanent n'informe de rien). La donnée « jours tenus »
+//      reste affichée (DAYS-IN LivePositions, DTE riche Positions,
+//      détail de position) — zéro donnée perdue.
 //    · useSniperGates.rows — règle DTE DOCTRINE de la bande :
 //      CRITICAL quand la gate est franchie (DTE ≤ 45), ARMED dans la
 //      fenêtre d'approche (45 < DTE ≤ 50), rien au-delà. Le palier
@@ -56,12 +62,14 @@ function alertToSignal(a) {
   switch (a.type) {
     case 'STOP_LOSS':
       return { topic: 'pnl', severity: SEV.CRITIQUE, fill: 100 + (Math.abs(v) - SL_PCT), metric: `P&L ${pct0(v)} ≤ SL −${SL_PCT} %` };
-    case 'TIME_STOP':
-      return { topic: 'time', severity: SEV.CRITIQUE, fill: 100 + (v - 5), metric: `${v} j sans +15 %` };
     // DTE_CRITICAL / DTE_WARNING (seuils legacy 90/100 j du moteur U7) :
     // RETIRÉS de la bande (1.F-c1 C2) — le sujet DTE appartient à la
     // seule règle doctrine (gateSignals). Leur maison : colonne DTE de
     // LivePositions + page Positions.
+    // TIME_STOP (« ≥5 j sans +15 % ») : RETIRÉ de la bande (É3
+    // §4.2.2, même mécanisme que les DTE legacy) — seuil hérité non
+    // doctrinal qui saturait ATTENTION. « Jours tenus » reste visible
+    // dans les tables et le détail de position.
     case 'TP2_REACHED':
       return { topic: 'tp', severity: SEV.ARME, fill: 100 + (v - TP2_PCT), metric: `${pct0(v)} ≥ TP ${TP2_PCT} %` };
     case 'TP1_REACHED':
@@ -215,7 +223,8 @@ export function deriveForme({ perTrade = [], matrix = null, currentStreak = null
 
 /**
  * Dérive la zone CAPITAL — mêmes formules que hero1/model.deriveKpisReal
- * (miroir strict : DÉPLOYÉ = metrics.totalExposure, DISPONIBLE =
+ * (miroir strict : EXPOSITION = metrics.totalExposure = Σ |valeur mark|
+ * (É3 §4.2.7 — le libellé dit la vérité du calcul), DISPONIBLE =
  * resolveLiveAvailableUsd sinon estimation, RISK $ = totalSlDollar).
  */
 export function deriveCapital({ metrics, greeks, availableUsd, availableIsReal, riskDollar, tier }) {

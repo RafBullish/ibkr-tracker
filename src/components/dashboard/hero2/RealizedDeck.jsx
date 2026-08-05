@@ -12,6 +12,8 @@
 import { fmtUsd, fmtUsdSigned, fmtChf, toneSign } from '../hero1/kit';
 // 1.F — tick au changement de valeur (cf. PortfolioDeck, même portée).
 import { TickValue } from '../decision/parts';
+// É3 §4.2.5 — même gate que la bande décision (une seule vérité).
+import { MIN_DECISIVE_WINRATE } from '../../../utils/significance';
 
 // Cellule-MONDE (identique 1.D) — value null → cellule ignorée.
 function Cell({ label, value, chf, sub, tone, bar }) {
@@ -37,12 +39,22 @@ function Cell({ label, value, chf, sub, tone, bar }) {
 export default function RealizedDeck({ m, rate, range }) {
   const mx = m.matrix;
   const chf = (usd, signed) => (Number.isFinite(usd) && Number.isFinite(rate) && rate > 0 ? fmtChf(usd, rate, signed) : null);
+  // É3 §4.2.5 — expectancy gatée comme dans la bande (deriveForme) :
+  // « — » honnête sous MIN_DECISIVE_WINRATE trades décisifs (wins+losses).
+  const decisive = mx.wins + mx.losses;
+  const expectancyOk = decisive >= MIN_DECISIVE_WINRATE;
 
   const matrix = [
     { label: 'WIN RATE', value: mx.n ? `${mx.winRate.toFixed(0)} %` : null, sub: `${mx.wins}↑ / ${mx.losses}↓`, bar: { pct: mx.winRate } },
     { label: 'PROFIT FACTOR', value: mx.profitFactor == null ? null : Number.isFinite(mx.profitFactor) ? mx.profitFactor.toFixed(2) : '∞', sub: 'gains / pertes' },
     { label: 'PAYOFF', value: mx.payoff == null ? null : Number.isFinite(mx.payoff) ? `${mx.payoff.toFixed(2)}×` : '∞', sub: 'gain / perte moy.' },
-    { label: 'EXPECTANCY', value: mx.n ? fmtUsdSigned(mx.expectancy) : null, chf: chf(mx.expectancy, true), sub: '/ clôture', tone: toneSign(mx.expectancy) },
+    {
+      label: 'EXPECTANCY',
+      value: mx.n ? (expectancyOk ? fmtUsdSigned(mx.expectancy) : '—') : null,
+      chf: expectancyOk ? chf(mx.expectancy, true) : null,
+      sub: expectancyOk ? '/ clôture' : `${decisive} décisifs / ${MIN_DECISIVE_WINRATE} requis`,
+      tone: expectancyOk ? toneSign(mx.expectancy) : undefined,
+    },
     { label: 'MAX DD CUMUL', value: mx.maxDD > 0 ? fmtUsd(-mx.maxDD) : mx.n ? '$0' : null, chf: mx.maxDD > 0 ? chf(-mx.maxDD) : null, sub: 'pic → creux', tone: mx.maxDD > 0 ? 'loss' : undefined },
     { label: 'RECOVERY', value: mx.recovery == null ? null : `${mx.recovery.toFixed(2)}×`, sub: 'réalisé / DD' },
   ];

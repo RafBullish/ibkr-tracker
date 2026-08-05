@@ -452,121 +452,11 @@ function Row3({ label, value, valueTone, sub, subTone, alert }) {
   );
 }
 
-// ─── Greeks strip (B4) — Σ Δ/Γ/Θ/ν permanent sous le subheader ──
-//
-// Lit le hook useGreeksAggregate hissé au Dashboard. Aucun calcul
-// ici, juste affichage. Sémantique de tone copiée sur GreeksAggregate
-// (ref) : Δ profit/loss/mute, Γ toujours mute, Θ et ν profit si >0.
-// Pour Sniper OTM short-call : Θ vert (encaisse), ν rouge (short vol).
-
-const fmtUsdSigned2 = (v) => {
-  if (v == null || !Number.isFinite(v)) return '—';
-  if (v === 0) return '$0.00';
-  const sign = v > 0 ? '+' : '−';
-  return `${sign}$${Math.abs(v).toFixed(2)}`;
-};
-
-const fmtNumSigned = (v, decimals = 0) => {
-  if (v == null || !Number.isFinite(v)) return '—';
-  const sign = v > 0 ? '+' : v < 0 ? '−' : '';
-  return `${sign}${Math.abs(v).toFixed(decimals)}`;
-};
-
-const fmtUsdCompact = (v) => {
-  if (v == null || !Number.isFinite(v)) return '—';
-  const sign = v > 0 ? '+' : v < 0 ? '−' : '';
-  return `${sign}$${Math.abs(Math.round(v)).toLocaleString('de-CH')}`;
-};
-
-const GREEKS_LABELS = ['Σ DELTA', 'Σ GAMMA', 'Σ THETA', 'Σ VEGA', 'OPTIONS'];
-
-function GreeksStripCell({ label, value, sub, tone }) {
-  return (
-    <div className="risk-matrix__greek-cell">
-      <span className="risk-matrix__greek-label">{label}</span>
-      <span
-        className={`risk-matrix__greek-value risk-matrix__greek-value--${tone || 'mute'}`}
-      >
-        {value}
-      </span>
-      <span className="risk-matrix__greek-sub">{sub}</span>
-    </div>
-  );
-}
-
-function GreeksStrip({ greeks }) {
-  const g = greeks || {};
-  const loading = g.loading === true;
-  const hasError = g.error != null;
-  const noOptions = !loading && (g.optionsCount === 0 || hasError);
-
-  if (loading) {
-    return (
-      <div className="risk-matrix__greeks-strip" aria-label="Greeks loading">
-        {GREEKS_LABELS.map((lbl) => (
-          <GreeksStripCell key={lbl} label={lbl} value="…" sub="fetching" tone="mute" />
-        ))}
-      </div>
-    );
-  }
-
-  if (noOptions) {
-    return (
-      <div
-        className="risk-matrix__greeks-strip"
-        aria-label={hasError ? 'Greeks unavailable' : 'No options'}
-      >
-        {GREEKS_LABELS.map((lbl) => (
-          <GreeksStripCell
-            key={lbl}
-            label={lbl}
-            value="—"
-            sub={hasError ? 'unavailable' : 'no options'}
-            tone="mute"
-          />
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="risk-matrix__greeks-strip" aria-label="Options greeks aggregated">
-      {/* LOI DE COULEUR : les 4 Greeks agrégés (Δ/Γ/Θ/ν) sont TOUJOURS neutres
-          (tone="mute") — un Greek signé n'est pas une perte $. Le rouge reste
-          réservé aux pertes d'argent réelles (P&L, Max Loss). */}
-      <GreeksStripCell
-        label="Σ DELTA"
-        value={fmtNumSigned(g.sumDelta, 0)}
-        sub={`exp ${fmtUsdCompact(g.notionalDelta)}`}
-        tone="mute"
-      />
-      <GreeksStripCell
-        label="Σ GAMMA"
-        value={fmtNum(g.sumGamma, 2)}
-        sub="per $1↑"
-        tone="mute"
-      />
-      <GreeksStripCell
-        label="Σ THETA"
-        value={fmtUsdSigned2(g.thetaDaily)}
-        sub="/jour"
-        tone="mute"
-      />
-      <GreeksStripCell
-        label="Σ VEGA"
-        value={fmtUsdSigned2(g.vegaPer1Pct)}
-        sub="per 1%IV"
-        tone="mute"
-      />
-      <GreeksStripCell
-        label="OPTIONS"
-        value={String(g.optionsCount ?? 0)}
-        sub="ouvertes"
-        tone="neutral"
-      />
-    </div>
-  );
-}
+// É3 §4.2.3 — la GreeksStrip (Σ Δ/Γ/Θ/ν/OPTIONS) est MORTE ici :
+// triplication éteinte. Le résumé décisionnel vit dans la bande
+// CAPITAL (Δ NET, Θ TOTAL), le portefeuille dans le PortfolioDeck
+// (Δ/Γ/Θ/V NET), le détail par position dans les tables et la page
+// Greeks (⌘4). RiskMatrix reste la vue détaillée historique/statistique.
 
 // ─── Main component ─────────────────────────────────────────────
 
@@ -1055,8 +945,6 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
         </div>
       </div>
 
-      <GreeksStrip greeks={m.greeks} />
-
       <div className="risk-matrix__body">
         {/* ─────────────── COL 1 : Performance + R-Distribution ─────────── */}
         <div className="risk-matrix__col risk-matrix__col--left">
@@ -1300,6 +1188,9 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             <DdSparkline data={ddCurve60} />
           </div>
 
+          {/* É3 §4.2.4 — COMPTEURS de streak NEUTRES (parité bande FORME
+              1.F : un compteur n'est pas de l'argent). Le P&L $ cumulé de
+              la streak courante (sub) reste toné : argent réel. */}
           <Row3
             label="Streak Current"
             value={
@@ -1309,7 +1200,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
                   ? `▼ ${Math.abs(m.currentStreak)}L`
                   : '—'
             }
-            valueTone={m.currentStreak > 0 ? 'profit' : m.currentStreak < 0 ? 'loss' : 'mute'}
+            valueTone="mute"
             sub={streakPnlSum != null ? fmtUsdSigned(streakPnlSum) : '—'}
             subTone={
               streakPnlSum == null ? 'mute' : streakPnlSum > 0 ? 'profit' : 'loss'
@@ -1318,14 +1209,14 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
           <Row3
             label="Max Win Streak"
             value={`${m.maxWinStreak ?? 0}W`}
-            valueTone={m.maxWinStreak > 0 ? 'profit' : 'mute'}
+            valueTone="mute"
             sub={streakDates.winRange || '—'}
-            subTone={streakDates.winRange ? 'mute' : 'mute'}
+            subTone="mute"
           />
           <Row3
             label="Max Loss Streak"
             value={`${m.maxLossStreak ?? 0}L`}
-            valueTone={m.maxLossStreak > 0 ? 'loss' : 'mute'}
+            valueTone="mute"
             sub={streakDates.lossRange || '—'}
             subTone="mute"
           />

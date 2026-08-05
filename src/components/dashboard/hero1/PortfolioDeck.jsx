@@ -17,6 +17,8 @@ import { fmtUsd, fmtUsdSigned, fmtUsdCompact, fmtChf, toneSign } from './kit';
 // coupé sous prefers-reduced-motion). Portée sanctionnée : cellules
 // des decks Héros 1/2 + bande décision. MarketDeck : NON (gelé).
 import { TickValue } from '../decision/parts';
+// É3 §4.2.5 — même gate d'expectancy que la bande (une seule vérité).
+import { MIN_DECISIVE_WINRATE } from '../../../utils/significance';
 
 const sharesSigned = (v) => (v == null || !Number.isFinite(v) ? null : `${v >= 0 ? '+' : '−'}${Math.abs(Math.round(v)).toLocaleString('de-CH')}`);
 const num2 = (v) => (v == null || !Number.isFinite(v) ? null : v.toFixed(2));
@@ -55,11 +57,14 @@ export default function PortfolioDeck({ kpi, rate }) {
   const chf = (usd, signed) => (Number.isFinite(usd) && Number.isFinite(rate) && rate > 0 ? fmtChf(usd, rate, signed) : null);
 
   // Chaque panneau = liste de cellules (les null sont filtrées au rendu).
+  // É3 §4.2.7 — EXPOSURE : la méta dit la vérité du calcul
+  // (totalExposure = Σ |valeur mark|, pas le coût des primes engagées).
   const capital = [
-    { label: 'EXPOSURE', value: k.exposure == null ? null : fmtUsdCompact(k.exposure), chf: chf(k.exposure), sub: k.expoPct != null ? `${Math.round(k.expoPct)} % NLV` : null, bar: k.expoPct != null ? { pct: k.expoPct, mark: 70 } : null },
+    { label: 'EXPOSURE', value: k.exposure == null ? null : fmtUsdCompact(k.exposure), chf: chf(k.exposure), sub: k.expoPct != null ? `Σ valeur mark · ${Math.round(k.expoPct)} % NLV` : 'Σ valeur mark', bar: k.expoPct != null ? { pct: k.expoPct, mark: 70 } : null },
     { label: 'NOTIONNEL', value: k.notional == null ? null : fmtUsdCompact(k.notional), chf: chf(k.notional) },
     { label: 'POSITIONS', value: k.positionsCount == null ? null : `${k.positionsCount}`, sub: 'ouvertes' },
-    { label: 'DTE PROCHE', value: k.dte == null ? null : `${k.dte} j`, sub: k.dteTicker || null },
+    // É3 §4.2.6 — expirée = « EXP » honnête, jamais « 0 j » ambigu.
+    { label: 'DTE PROCHE', value: k.dte == null ? null : k.dteExpired ? 'EXP' : `${k.dte} j`, sub: k.dteTicker || null },
   ];
   const pnl = [
     { label: 'DAY', value: k.dayPnl == null ? null : fmtUsdSigned(k.dayPnl), chf: chf(k.dayPnl, true), sub: k.dayPct != null ? `${k.dayPct >= 0 ? '+' : '−'}${Math.abs(k.dayPct).toFixed(2)} %` : null, tone: toneSign(k.dayPnl) },
@@ -81,7 +86,14 @@ export default function PortfolioDeck({ kpi, rate }) {
   const perf = [
     { label: 'WIN RATE', value: k.winRate == null ? null : `${k.winRate.toFixed(0)} %`, sub: k.tradesCount != null ? `${k.tradesCount} clôt.` : null },
     { label: 'PROFIT FACTOR', value: k.profitFactor == null ? null : (Number.isFinite(k.profitFactor) ? k.profitFactor.toFixed(2) : '∞') },
-    { label: 'EXPECTANCY', value: k.expectancy == null ? null : fmtUsdSigned(k.expectancy), chf: chf(k.expectancy, true), sub: '/ clôt.' },
+    // É3 §4.2.5 — « — » honnête sous 10 décisifs (cellule retirée
+    // seulement quand il n'y a AUCUNE clôture, convention du deck).
+    {
+      label: 'EXPECTANCY',
+      value: k.tradesCount ? (k.expectancy == null ? '—' : fmtUsdSigned(k.expectancy)) : null,
+      chf: k.expectancy == null ? null : chf(k.expectancy, true),
+      sub: k.expectancy == null ? `${k.expectancyDecisive ?? 0} décisifs / ${MIN_DECISIVE_WINRATE} requis` : '/ clôt.',
+    },
     { label: 'GAIN MOY.', value: k.avgWin == null ? null : fmtUsdSigned(Math.abs(k.avgWin)), chf: chf(Math.abs(k.avgWin), true), tone: k.avgWin ? 'profit' : undefined },
     { label: 'PERTE MOY.', value: k.avgLoss == null ? null : fmtUsdSigned(-Math.abs(k.avgLoss)), chf: chf(-Math.abs(k.avgLoss), true), tone: k.avgLoss ? 'loss' : undefined },
     { label: 'CLÔTURES', value: k.tradesCount == null ? null : `${k.tradesCount}`, sub: 'total' },

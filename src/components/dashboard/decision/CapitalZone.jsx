@@ -1,12 +1,14 @@
 // ═══════════════════════════════════════════════════════════════
 //  BANDE DÉCISION (1.F) — ZONE CAPITAL.
-//  « Ai-je de la marge ? » — jauge de déploiement (remplissage AMBRE,
+//  « Ai-je de la marge ? » — jauge d'exposition (remplissage AMBRE,
 //  usage sanctionné « jauge de capital/exposition », repère au cap
-//  tier 70 %) + cellules-MONDE : DÉPLOYÉ · DISPONIBLE (IBKR/est.,
-//  même source que Héros 1) · RISK $ (NEUTRE — montant hypothétique,
-//  amendement 15.07) · Δ NET et Θ TOTAL (NEUTRES — loi de couleur) ·
-//  TIER actif (chip sobre). Sources = miroir strict de Héros 1
-//  (decision/model.deriveCapital).
+//  tier 70 %) + cellules-MONDE : EXPOSITION (É3 §4.2.7 — le libellé
+//  dit la vérité du calcul : totalExposure = Σ |valeur mark|, PAS le
+//  coût des primes engagées ; l'ex-« DÉPLOYÉ » mentait) · DISPONIBLE
+//  (IBKR/est., même source que Héros 1) · RISK $ (NEUTRE — montant
+//  hypothétique, amendement 15.07) · Δ NET et Θ TOTAL (NEUTRES — loi
+//  de couleur) · TIER actif (chip sobre). Sources = miroir strict de
+//  Héros 1 (decision/model.deriveCapital).
 // ═══════════════════════════════════════════════════════════════
 
 import { fmtUsd, fmtUsdSigned, fmtChf } from '../hero1/kit';
@@ -45,13 +47,13 @@ export default function CapitalZone({ capital, rate }) {
       <div className="mk-title">CAPITAL</div>
       <div className="db-gaugewrap">
         <span className="db-gauge__lbl">
-          DÉPLOIEMENT{pct != null ? ` · ${Math.round(pct)} %` : ''}
+          EXPOSITION{pct != null ? ` · ${Math.round(pct)} %` : ''}
           <span className="db-gauge__cap"> · cap {Math.round(cap)} %</span>
         </span>
         <span
           className="db-gauge"
           role="img"
-          aria-label={pct != null ? `${Math.round(pct)} % du NLV déployé — cap ${Math.round(cap)} %` : 'déploiement inconnu'}
+          aria-label={pct != null ? `Exposition ${Math.round(pct)} % du NLV — cap ${Math.round(cap)} %` : 'exposition inconnue'}
         >
           {[25, 50, 75].map((g) => (
             <span key={g} className="db-gauge__grad" style={{ left: `${g}%` }} aria-hidden="true" />
@@ -69,11 +71,14 @@ export default function CapitalZone({ capital, rate }) {
         </span>
       </div>
       <div className="db-grid3">
+        {/* É3 §4.2.7 — « EXPOSITION » : la vérité du calcul
+            (totalExposure = Σ |valeur mark| des positions ouvertes),
+            dite aussi en méta. Le calcul n'est PAS modifié. */}
         <Cell
-          label="DÉPLOYÉ"
+          label="EXPOSITION"
           value={c.deployed == null ? '—' : fmtUsd(c.deployed)}
           chf={chf(c.deployed)}
-          sub={c.deployedPct != null ? `${Math.round(c.deployedPct)} % NLV` : null}
+          sub={c.deployedPct != null ? `Σ valeur mark · ${Math.round(c.deployedPct)} % NLV` : 'Σ valeur mark'}
         />
         <Cell
           label={

@@ -13,9 +13,9 @@
 //     OTM v1.0 Finale : E0 IVR<25, E1 25-40, E2 40-55, E3 55-70,
 //     E4 ≥70).
 //
-//  v5 Sprint 1.3 : nextGate (objet { gateType, daysToTrigger, dte })
-//  est calculé par computeNextGate(pos, now). Remplace l'ancien
-//  champ `gates` (array) qui dépendait de la fixture Sniper.
+//  É3 §4.2.1 : le champ nextGate (computeNextGate, vocabulaire propre
+//  « SL35 ARMED ») est MORT — la colonne GATE de LivePositions lit le
+//  classifieur unique deriveAttention via useAttentionMap.
 //
 //  Greeks live (delta / theta / ivr live) toujours hors scope ici —
 //  les colonnes Δ et IVR rendent les snapshots from sidecar fixture
@@ -30,10 +30,10 @@ import {
   unrealizedPnlUsd,
   unrealizedPnlPct,
   dteFromExp,
+  isExpired,
   daysHeld,
   detectAlert,
   deriveEdgeTier,
-  computeNextGate,
 } from '../utils/positions';
 import { readSniperMeta } from '../utils/sniperMeta';
 
@@ -56,6 +56,9 @@ function useSniperMetaVersion() {
 function buildRow(pos, context) {
   const isStock = pos.as === 'Action';
   const dte = isStock ? null : dteFromExp(pos.ex, context.now);
+  // É3 §4.2.6 — une option expirée s'affiche comme telle (« EXP »),
+  // jamais un DTE négatif ni un « 0 » ambigu.
+  const expired = isStock ? false : isExpired(pos.ex, context.now);
   const days = daysHeld(pos.di, context.now);
   const unrealDollar = unrealizedPnlUsd(pos);
   const unrealPct = unrealizedPnlPct(pos);
@@ -78,10 +81,6 @@ function buildRow(pos, context) {
   const edgeTier = sidecar?.edgeTier ?? pos.edgeTier ?? deriveEdgeTier(ivrSnapshot) ?? null;
   const capitalTier = sidecar?.capitalTier ?? pos.capitalTier ?? null;
   const betaSPY = sidecar?.betaSPY ?? null;
-
-  // Sprint 1.3 : nextGate computed from expiry alone (SL35 / DTE45).
-  // EARN-J2 / EARN+J30 / TP / TR will land here progressively.
-  const nextGate = isStock ? null : computeNextGate(pos, context.now);
 
   const alert = detectAlert(pos, {
     now: context.now,
@@ -117,6 +116,7 @@ function buildRow(pos, context) {
     strike: isStock ? null : pos.st || null,
     exp: isStock ? null : pos.ex || null,
     dte,
+    expired,
     qty: toFloat(pos.ct) || 0,
     entry: toFloat(pos.pi) || 0,
     mark: toFloat(pos.pc) || 0,
@@ -131,9 +131,8 @@ function buildRow(pos, context) {
     edgeTier,
     capitalTier,
     betaSPY,
-    nextGate,
     // gates kept for legacy fixture compat (some test rendering
-    // paths still iterate this array). New code uses nextGate.
+    // paths still iterate this array).
     gates: Array.isArray(pos.gates) ? pos.gates : [],
     daysHeld: days,
     spark7d: Array.isArray(pos.spark7d) ? pos.spark7d : null,
