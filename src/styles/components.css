@@ -1165,13 +1165,8 @@
   overflow-y: auto;
   box-shadow: var(--shadow-modal);
 }
-.modal-drag-bar {
-  width: 40px;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.18);
-  margin: 12px auto 8px;
-}
+/* É3 §4.3 — .modal-drag-bar legacy MORTE (0 consommateur ; la jumelle
+   .modal-v3__drag-bar est morte au même passage). */
 
 /* ─────────────────────────────────────
    TEXT UTILITIES
@@ -1588,20 +1583,25 @@
   transform: translateX(0);
   opacity: 1;
 }
+/* É3 §4.3 — registres du Toast : succès = fait factuel d'opération
+   (vert autorisé) ; information = NEUTRE ; erreur / avertissement =
+   NEUTRE APPUYÉ (une opération échouée n'est pas une perte d'argent —
+   le rouge meurt, l'ambre d'alerte ambiant aussi ; aucune émission
+   réelle ne signale une destruction/perte, vérifié site par site). */
 .toast[data-type="success"] {
-  border-left-color: var(--qc-profit);
-  background: color-mix(in srgb, var(--qc-profit-bg) 40%, var(--toast-bg));
+  border-left-color: var(--pnl-up);
+  background: color-mix(in srgb, var(--pnl-up) 7%, var(--toast-bg));
 }
 .toast[data-type="error"] {
-  border-left-color: var(--qc-loss);
-  background: color-mix(in srgb, var(--qc-loss-bg) 40%, var(--toast-bg));
+  border-left-color: var(--line-emphasis);
+  background: var(--toast-bg);
 }
 .toast[data-type="warning"] {
-  border-left-color: var(--qc-warning);
-  background: color-mix(in srgb, var(--qc-warning-bg) 40%, var(--toast-bg));
+  border-left-color: var(--line-emphasis);
+  background: var(--toast-bg);
 }
 .toast[data-type="info"] {
-  border-left-color: var(--qc-info);
+  border-left-color: var(--hairline-rest);
 }
 .toast__icon {
   display: inline-flex;
@@ -1609,16 +1609,16 @@
   color: var(--toast-icon);
 }
 .toast[data-type="success"] .toast__icon {
-  color: var(--qc-profit);
+  color: var(--pnl-up);
 }
-.toast[data-type="error"] .toast__icon {
-  color: var(--qc-loss);
-}
+/* Erreur/avertissement : icône ENCRE PURE (appuyé sans sémantique
+   d'argent) ; info : encre sourde. */
+.toast[data-type="error"] .toast__icon,
 .toast[data-type="warning"] .toast__icon {
-  color: var(--qc-warning);
+  color: var(--ink-pure);
 }
 .toast[data-type="info"] .toast__icon {
-  color: var(--qc-info);
+  color: var(--ink-mute);
 }
 .toast__body {
   flex: 1;

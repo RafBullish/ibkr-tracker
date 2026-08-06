@@ -8,15 +8,15 @@
 //
 //  19 colonnes ordre exact spec v5 :
 //    TICKER · TYPE · STR · EXP · DTE · QTY · ENTRY · MARK ·
-//    UNREAL$ · UNREAL% · Δ · Θ · IVR · EDGE · C-TIER · GATE-NXT ·
+//    UNREAL$ · UNREAL% · Δ · Θ · IVR · EDGE · C-TIER · GATE ·
 //    DAYS-IN · SPARK 7D · ALERT
 //
-//  v5 Sprint 1.3 deltas vs v4 :
-//    - EDGE (was combined "E3C2") split into two cols : EDGE + C-TIER.
-//    - GATE renamed GATE-NXT and reads pos.nextGate object (computed
-//      via computeNextGate util) instead of pos.gates[0]. Renders
-//      "TKR DTE45 in Xd" or "SL35 ARMED" semantics.
-//    - DAYS renamed DAYS-IN for clarity (days-in-trade convention).
+//  É3 §4.2.1 — colonne GATE au classifieur UNIQUE deriveAttention
+//  (useAttentionMap) : badges ARMED/CRITICAL, anatomie IDENTIQUE à la
+//  page Positions et à la bande décision. computeNextGate et son
+//  vocabulaire propre (« SL35 ARMED ») sont MORTS — une position
+//  CRITICAL dans la bande est CRITICAL ici, même verdict partout.
+//    - DAYS-IN : days-in-trade convention (donnée conservée).
 //
 //  Phase C.2.10-V3 — harmonisation design sur TradeHistory :
 //    + Sub-header riche (Σ Δ · Σ Θ · Σ Unreal · Best · Worst + OPEN N).
@@ -32,6 +32,7 @@
 import { useMemo, useState } from 'react';
 import PositionSparkline from './PositionSparkline';
 import SniperMetaEditor from './SniperMetaEditor';
+import useAttentionMap from '../../hooks/useAttentionMap';
 
 const FR_MONTHS = [
   'Jan',
@@ -92,26 +93,18 @@ const toneFromSign = (v) => {
   return v > 0 ? 'profit' : 'loss';
 };
 
-const ALERT_TONE = {
-  DTE: 'warn',
-  EARN: 'info',
-  IV: 'warn',
-  PRICE: 'warn',
-  TIME: 'warn',
-};
-
 function IvrCell({ ivr }) {
   if (ivr == null || !Number.isFinite(ivr)) return <span className="live-pos__mute">—</span>;
   const pct = Math.max(0, Math.min(100, ivr));
-  // High-IV bar color = profit (premium-rich for short premium strategies),
-  // low-IV bar color = mute, mid = neutral.
-  const tone = pct > 70 ? 'profit' : pct < 20 ? 'loss' : 'mute';
+  // É3 panel — barre IVR NEUTRE (loi de couleur : un IV Rank n'est pas
+  // de l'argent ; l'ex-vert >70 / rouge <20 était une fuite, et son
+  // commentaire « short premium » contredisait la doctrine long premium).
   return (
     <span className="live-pos__ivr">
       <span className="live-pos__ivr-num">{Math.round(pct)}</span>
       <span className="live-pos__ivr-bar">
         <span
-          className={`live-pos__ivr-fill live-pos__ivr-fill--${tone}`}
+          className="live-pos__ivr-fill live-pos__ivr-fill--mute"
           style={{ width: `${pct}%` }}
         />
       </span>
@@ -163,35 +156,30 @@ function CTierPill({ cap, onTag }) {
   );
 }
 
-// v5 Sprint 1.3 : nextGate is { gateType, daysToTrigger, dte } | null.
-// Format : "DTE45 in 12d" / "SL35 ARMED" / "SL35 in 3d".
-function GatePill({ nextGate }) {
-  if (!nextGate) return <span className="live-pos__mute">—</span>;
-  const { gateType, daysToTrigger } = nextGate;
-  let suffix;
-  if (daysToTrigger > 0) {
-    suffix = ` ${daysToTrigger}d`;
-  } else if (daysToTrigger === 0) {
-    suffix = ' 0d';
-  } else {
-    suffix = ' ARMED';
-  }
-  const tone = daysToTrigger <= 0 ? 'armed' : daysToTrigger <= 7 ? 'imminent' : 'normal';
+// É3 §4.2.1 — badge GATE au classifieur unique (deriveAttention) :
+// MÊME anatomie que la colonne Gate de la page Positions (db-badge,
+// CRITICAL plein / ARMED filet, title = métrique + signaux annexes).
+function GateBadge({ line }) {
+  if (!line) return <span className="live-pos__mute">—</span>;
   return (
-    <span className={`live-pos__gate-pill live-pos__gate-pill--${tone}`}>
-      {gateType}
-      <span className="live-pos__gate-pill-sub">{suffix}</span>
+    <span
+      className={`db-badge db-badge--${line.severity}`}
+      title={`${line.metric}${line.others > 0 ? ` · +${line.others} signal${line.others > 1 ? 'aux' : ''}` : ''}`}
+    >
+      {line.severity === 'critique' ? 'CRITICAL' : 'ARMED'}
     </span>
   );
 }
 
+// É3 panel — pastille ALERT NEUTRE (parité RowAlerts 2.A : un signal
+// n'est pas une perte ; l'ambre durable et le cyan --info sont morts,
+// l'urgence vit dans la colonne GATE du classifieur unique).
 function AlertPill({ alert }) {
   if (!alert) return <span className="live-pos__mute">—</span>;
-  const tone = ALERT_TONE[alert] || 'warn';
-  return <span className={`live-pos__alert-pill live-pos__alert-pill--${tone}`}>{alert}</span>;
+  return <span className="live-pos__alert-pill">{alert}</span>;
 }
 
-function PositionRow({ pos, onTag }) {
+function PositionRow({ pos, gateLine, onTag }) {
   const isStock = pos.type === 'STK';
   // B5 fix 3 — rail tone-coloré gauche selon P&L non-réalisé.
   const rowTone = toneFromSign(pos.unrealDollar);
@@ -212,6 +200,11 @@ function PositionRow({ pos, onTag }) {
       <td>
         {isStock || pos.dte == null ? (
           '—'
+        ) : pos.expired ? (
+          // É3 §4.2.6 — libellé honnête : option expirée, pas « 0d ».
+          <span className="live-pos__mute" title="Option expirée">
+            EXP
+          </span>
         ) : (
           <>
             {pos.dte}
@@ -246,7 +239,7 @@ function PositionRow({ pos, onTag }) {
         <CTierPill cap={pos.capitalTier} onTag={() => onTag(pos)} />
       </td>
       <td>
-        {isStock ? <span className="live-pos__mute">—</span> : <GatePill nextGate={pos.nextGate} />}
+        {isStock ? <span className="live-pos__mute">—</span> : <GateBadge line={gateLine} />}
       </td>
       <td>
         {pos.daysHeld}
@@ -273,6 +266,9 @@ export default function LivePositions({ data, area = 'positions' }) {
   // Opens when the user clicks the EDGE / C-TIER pill or its 'Tag'
   // placeholder in a row.
   const [editorPos, setEditorPos] = useState(null);
+
+  // É3 §4.2.1 — verdict de gate par position (classifieur unique).
+  const attentionMap = useAttentionMap();
 
   // Phase C.2.10-V3 — stats agrégés pour sub-header + footer.
   // Une seule passe sur positions calcule toutes les dérivations
@@ -346,7 +342,7 @@ export default function LivePositions({ data, area = 'positions' }) {
 
       if (Number.isFinite(p.dte)) {
         if (!closestDte || p.dte < closestDte.dte) {
-          closestDte = { ticker: p.ticker, dte: p.dte };
+          closestDte = { ticker: p.ticker, dte: p.dte, expired: !!p.expired };
         }
       }
     }
@@ -377,15 +373,6 @@ export default function LivePositions({ data, area = 'positions' }) {
       inLossCount,
     };
   }, [positions]);
-
-  // CLOSEST DTE color logic : ≤14j = loss (urgent expiry),
-  // ≤45j = profit (sweet spot Sniper OTM v1), >45 = neutre.
-  const closestDteClass =
-    stats.closestDte && stats.closestDte.dte <= 14
-      ? 'live-pos__footer-value--loss'
-      : stats.closestDte && stats.closestDte.dte <= 45
-        ? 'live-pos__footer-value--profit'
-        : '';
 
   const headerHint = isEmpty
     ? 'Σ Notional $0 · Σ Max Risk $0'
@@ -499,7 +486,7 @@ export default function LivePositions({ data, area = 'positions' }) {
                 <th>IVR</th>
                 <th>Edge</th>
                 <th>C-Tier</th>
-                <th>Gate Nxt</th>
+                <th>Gate</th>
                 <th>Days In</th>
                 <th>Spark 7D</th>
                 <th>Alert</th>
@@ -517,6 +504,7 @@ export default function LivePositions({ data, area = 'positions' }) {
                     `pos-${pos.ticker || 'x'}-${pos.exp || 'x'}-${pos.strike || 'x'}-${i}`
                   }
                   pos={pos}
+                  gateLine={attentionMap.get(pos.id)}
                   onTag={setEditorPos}
                 />
               ))}
@@ -542,8 +530,10 @@ export default function LivePositions({ data, area = 'positions' }) {
             </span>
           </div>
           <div className="live-pos__footer-cell">
+            {/* É3 panel — montant HYPOTHÉTIQUE → NEUTRE (amendement
+                15.07, déjà soldé côté /trading/positions en 2.A). */}
             <span className="live-pos__footer-label">Σ MAX RISK</span>
-            <span className="live-pos__footer-value live-pos__footer-value--loss">
+            <span className="live-pos__footer-value live-pos__footer-value--mute">
               {fmtUsdSigned(totalMaxRisk, 0)}
             </span>
           </div>
@@ -560,10 +550,12 @@ export default function LivePositions({ data, area = 'positions' }) {
             </span>
           </div>
           <div className="live-pos__footer-cell">
+            {/* É3 panel — DTE NEUTRE (le temps n'est pas de l'argent,
+                décision 2.A) + « EXP » honnête si l'option est expirée. */}
             <span className="live-pos__footer-label">CLOSEST DTE</span>
-            <span className={`live-pos__footer-value ${closestDteClass}`}>
+            <span className="live-pos__footer-value">
               {stats.closestDte
-                ? `${stats.closestDte.ticker} ${stats.closestDte.dte}j`
+                ? `${stats.closestDte.ticker} ${stats.closestDte.expired ? 'EXP' : `${stats.closestDte.dte}j`}`
                 : '—'}
             </span>
           </div>

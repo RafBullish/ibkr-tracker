@@ -202,7 +202,8 @@
   height: 20px;
   background: var(--ink-pure);
   transform: translateX(-50%);
-  transition: left 400ms var(--ease-out);
+  /* É3 §4.3 — mouvement de valeur au registre tick (180 ms). */
+  transition: left 180ms var(--ease-out);
   border-radius: 1px;
 }
 .tilt-meter__indicator-dot {

@@ -232,6 +232,9 @@
   flex-direction: column;
   gap: var(--space-2);
 }
+/* É3 §4.3 — alertes FACTUELLES NEUTRES (les variantes rouge/ambre/
+   vert par sévérité sont mortes : un signal n'est pas une perte
+   d'argent, l'urgence vit dans le badge GATE du classifieur). */
 .position-detail__alert {
   font-size: 12px;
   color: var(--ink-soft);
@@ -239,15 +242,6 @@
   border-left: 2px solid var(--line-emphasis);
   background: var(--depth-base);
   border-radius: var(--qc-radius-sm);
-}
-.position-detail__alert[data-tone='loss'] {
-  border-left-color: var(--pnl-down);
-}
-.position-detail__alert[data-tone='warn'] {
-  border-left-color: var(--accent);
-}
-.position-detail__alert[data-tone='profit'] {
-  border-left-color: var(--pnl-up);
 }
 .position-detail__no-alert {
   font-size: 12px;

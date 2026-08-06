@@ -12,9 +12,10 @@
 //    - detectAlert        : alerte la plus pressante {DTE | EARN | IV | …}
 //    - sparkTrend         : direction sémantique d'une mini-série price
 //                           (sign-aware via dir : ↑ price short = loss)
-//    - formatGate         : raccourcit le nom d'un gate Sniper pour pill
 //    - deriveEdgeTier     : E0..E4 from ivRank (v5 Sprint 1.3)
-//    - computeNextGate    : SL35 / DTE45 candidate per position (v5 Sprint 1.3)
+//
+//  É3 §4.2.1 : computeNextGate et formatGate sont MORTS (0 consommateur
+//  après le passage de la colonne GATE au classifieur deriveAttention).
 // ═══════════════════════════════════════════════════════════════
 
 import { toFloat, ensurePositive } from './math';
@@ -53,6 +54,9 @@ export function unrealizedPnlPct(pos) {
 /**
  * Jours calendaires depuis une date de référence (default: now)
  * jusqu'à l'expiration `exp`. Returns null si exp manquante / invalide.
+ * É3 §4.2.6 — moteur DTE UNIQUE de l'app, clampé à 0 : jamais de
+ * « DTE −3 j » à l'écran. Une position expirée se détecte via
+ * isExpired() et s'affiche comme telle (libellé honnête).
  */
 export function dteFromExp(exp, ref) {
   if (!exp) return null;
@@ -60,6 +64,19 @@ export function dteFromExp(exp, ref) {
   const refMs = ref instanceof Date ? ref.getTime() : ref ? Date.parse(ref) : Date.now();
   if (!Number.isFinite(expMs) || !Number.isFinite(refMs)) return null;
   return Math.max(0, Math.round((expMs - refMs) / 86_400_000));
+}
+
+/**
+ * Option déjà expirée ? Même arithmétique que dteFromExp AVANT clamp
+ * (round négatif = date passée) — les deux restent alignés par
+ * construction. false si exp manquante / invalide.
+ */
+export function isExpired(exp, ref) {
+  if (!exp) return false;
+  const expMs = Date.parse(exp);
+  const refMs = ref instanceof Date ? ref.getTime() : ref ? Date.parse(ref) : Date.now();
+  if (!Number.isFinite(expMs) || !Number.isFinite(refMs)) return false;
+  return Math.round((expMs - refMs) / 86_400_000) < 0;
 }
 
 /**
@@ -130,27 +147,8 @@ export function sparkTrend(prices, dir) {
   return delta * dirSign > 0 ? 'profit' : 'loss';
 }
 
-/**
- * Convertit un nom de gate en sa version pill courte (≤ 5 chars).
- *   'EARN-J2'  → 'E-J2'
- *   'EARN+J30' → 'E+J30'
- *   'TP+TRAIL' → 'TP+TR'
- *   autres     → input as-is
- */
-const GATE_DISPLAY = {
-  SL35: 'SL35',
-  DTE45: 'DTE45',
-  'EARN-J2': 'E-J2',
-  'EARN+J30': 'E+J30',
-  'TP+TRAIL': 'TP+TR',
-};
-export function formatGate(gate) {
-  if (!gate) return null;
-  return GATE_DISPLAY[gate] || gate;
-}
-
 // ═══════════════════════════════════════════════════════════════
-//  v5 Sprint 1.3 — Edge Tier derivation + Next Gate per position
+//  v5 Sprint 1.3 — Edge Tier derivation
 // ═══════════════════════════════════════════════════════════════
 
 /**
@@ -172,32 +170,4 @@ export function deriveEdgeTier(ivRank) {
   if (ivRank < 55) return 'E2';
   if (ivRank < 70) return 'E3';
   return 'E4';
-}
-
-const NEXT_GATE_DTE45 = 45;
-const NEXT_GATE_SL35 = 35;
-
-/**
- * Compute the closest upcoming Sniper gate for an open position.
- * Sprint 1.3 scope : SL35 + DTE45 (the two derivable from `ex` alone).
- * EARN-J2 / EARN+J30 / TP / TR land in this util progressively as
- * earnings calendar (Sprint 5/6) and sniper-meta tagging (Sprint 2)
- * surface their respective inputs.
- *
- * Returns { gateType, daysToTrigger, dte } or null when the position
- * has no parseable expiry or is a stock.
- */
-export function computeNextGate(pos, ref) {
-  if (!pos) return null;
-  if (pos.as === 'Action') return null;
-  const dte = dteFromExp(pos.ex, ref);
-  if (dte == null) return null;
-
-  const daysToDTE45 = dte - NEXT_GATE_DTE45;
-  if (daysToDTE45 > 0) {
-    return { gateType: 'DTE45', daysToTrigger: daysToDTE45, dte };
-  }
-  // DTE45 already passed — SL35 is the next milestone.
-  const daysToSL35 = dte - NEXT_GATE_SL35;
-  return { gateType: 'SL35', daysToTrigger: daysToSL35, dte };
 }

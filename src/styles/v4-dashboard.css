@@ -1455,68 +1455,18 @@
   letter-spacing: 0.04em;
 }
 
-/* B4 — Strip Options Greeks permanent entre subheader et body.
-   5 cellules Σ Δ/Γ/Θ/ν + N options, séparées par border-right subtle.
-   Lit useGreeksAggregate via metrics.greeks (hissé au Dashboard). */
-.risk-matrix__greeks-strip {
-  display: flex;
-  align-items: stretch;
-  height: 50px;
-  background: color-mix(in srgb, var(--qc-accent) 4%, transparent);
-  border-bottom: 1px solid var(--qc-border-subtle);
-  flex-shrink: 0;
-}
+/* É3 §4.2.3 — .risk-matrix__greeks-strip + __greek-* MORTES
+   (triplication Σ Δ/Σ Θ éteinte : bande CAPITAL + PortfolioDeck +
+   page Greeks restent les maisons des Greeks agrégés). */
 
-.risk-matrix__greek-cell {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 0 14px;
-  border-right: 1px solid var(--qc-border-subtle);
-  min-width: 0;
-  gap: 2px;
-}
-
-.risk-matrix__greek-cell:last-child {
-  border-right: none;
-}
-
-.risk-matrix__greek-label {
-  font-family: var(--qc-font-sans);
+/* É3 §4.3 — caveat « échantillon court » des ratios (ex-style inline). */
+.risk-matrix__preliminary {
+  margin-left: 10px;
   font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  color: var(--qc-text-tertiary);
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.risk-matrix__greek-value {
-  font-family: var(--qc-font-mono);
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  font-variant-numeric: tabular-nums slashed-zero;
-  line-height: 1.1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.risk-matrix__greek-value--profit { color: var(--qc-profit); }
-.risk-matrix__greek-value--loss { color: var(--qc-loss); }
-.risk-matrix__greek-value--mute { color: var(--qc-text-tertiary); }
-.risk-matrix__greek-value--neutral { color: var(--qc-text-primary); }
-
-.risk-matrix__greek-sub {
-  font-family: var(--qc-font-mono);
-  font-size: 12px;
-  color: var(--qc-text-tertiary);
   letter-spacing: 0.04em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-style: italic;
+  opacity: 0.7;
+  text-transform: none;
 }
 
 .risk-matrix__footer-cmd-wrap {
@@ -1955,12 +1905,8 @@
   height: 100%;
 }
 
-.live-pos__ivr-fill--profit {
-  background: var(--qc-profit);
-}
-.live-pos__ivr-fill--loss {
-  background: var(--qc-loss);
-}
+/* É3 panel — variantes profit/loss MORTES (un IV Rank n'est pas de
+   l'argent) : la barre IVR est neutre, une seule encre. */
 .live-pos__ivr-fill--mute {
   background: var(--qc-text-tertiary);
 }
@@ -1980,60 +1926,8 @@
   border-radius: 0;
 }
 
-.live-pos__gate-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  height: 11px;
-  padding: 0 4px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--qc-warning);
-  border: 1px solid color-mix(in srgb, var(--qc-warning) 30%, transparent);
-  background: color-mix(in srgb, var(--qc-warning) 6%, transparent);
-  border-radius: 0;
-}
-
-/* v5 Sprint 1.3 — Gate-NXT countdown semantics */
-.live-pos__gate-pill--normal {
-  color: var(--accent-amber, #ffa028);
-  border-color: color-mix(in srgb, var(--accent-amber, #ffa028) 30%, transparent);
-  background: color-mix(in srgb, var(--accent-amber, #ffa028) 6%, transparent);
-}
-.live-pos__gate-pill--imminent {
-  color: var(--qc-warning);
-  border-color: color-mix(in srgb, var(--qc-warning) 35%, transparent);
-  background: color-mix(in srgb, var(--qc-warning) 8%, transparent);
-}
-.live-pos__gate-pill--armed {
-  color: var(--qc-loss);
-  border-color: color-mix(in srgb, var(--qc-loss) 35%, transparent);
-  background: color-mix(in srgb, var(--qc-loss) 8%, transparent);
-  animation: gate-armed-pulse 2s ease-in-out infinite;
-}
-.live-pos__gate-pill-sub {
-  opacity: 0.85;
-  font-weight: 500;
-  font-feature-settings:
-    "tnum" 1,
-    "zero" 1;
-  font-variant-numeric: tabular-nums slashed-zero;
-}
-@keyframes gate-armed-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.55;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .live-pos__gate-pill--armed {
-    animation: none;
-  }
-}
+/* É3 §4.2.1 — .live-pos__gate-pill* MORTES (la colonne GATE rend le
+   badge partagé .db-badge--critique/--arme de v1-decision.css). */
 
 /* v5 Sprint 1.3 — C-TIER pill (separate from EDGE) */
 .live-pos__ctier-pill {
@@ -2050,6 +1944,10 @@
   border-radius: 0;
 }
 
+/* É3 panel — pastille ALERT NEUTRE (parité RowAlerts 2.A). Les
+   variantes --warn (ambre durable) et --info (cyan, mort depuis 2.C1)
+   sont MORTES : un signal n'est pas une perte, l'urgence vit dans la
+   colonne GATE. */
 .live-pos__alert-pill {
   display: inline-flex;
   align-items: center;
@@ -2058,20 +1956,9 @@
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
+  color: var(--ink-soft);
   border: 1px solid var(--qc-border-subtle);
   border-radius: 0;
-}
-
-.live-pos__alert-pill--warn {
-  color: var(--qc-warning);
-  border-color: color-mix(in srgb, var(--qc-warning) 30%, transparent);
-  background: color-mix(in srgb, var(--qc-warning) 6%, transparent);
-}
-
-.live-pos__alert-pill--info {
-  color: var(--qc-info);
-  border-color: color-mix(in srgb, var(--qc-info) 30%, transparent);
-  background: color-mix(in srgb, var(--qc-info) 6%, transparent);
 }
 
 /* ─── Sparkline 60×14 inline ────────────────────────────────── */
@@ -4524,15 +4411,14 @@
   color: var(--qc-accent);
 }
 
-/* B5 fix 4 — badges IN PROFIT / IN LOSS (miroir TH WINS/LOSSES). */
-.live-pos__ctx-badge--wins {
-  background: color-mix(in srgb, var(--qc-profit) 8%, transparent);
-  color: var(--qc-profit);
-}
-
+/* É3 panel §4.2.4 — badges IN PROFIT / IN LOSS NEUTRES (des COMPTEURS,
+   pas de l'argent — même motif que les streaks RiskMatrix ; le P&L
+   toné vit dans les cellules Unreal). Miroir TH WINS/LOSSES, neutralisé
+   au même passage. */
+.live-pos__ctx-badge--wins,
 .live-pos__ctx-badge--losses {
-  background: color-mix(in srgb, var(--qc-loss) 8%, transparent);
-  color: var(--qc-loss);
+  background: color-mix(in srgb, var(--ink-pure) 4%, transparent);
+  color: var(--ink-soft);
 }
 
 .live-pos__spark-placeholder {
@@ -5015,14 +4901,12 @@
 
 /* Phase C.2.6.7 — 2 badges séparés Wins/Losses pour clarté
    (remplace l'ancien badge unique "EDGE+ XW · YL"). */
-.trade-history__ctx-badge--wins {
-  background: color-mix(in srgb, var(--qc-profit) 8%, transparent);
-  color: var(--qc-profit);
-}
-
+/* É3 panel §4.2.4 — WINS / LOSSES NEUTRES (des COMPTEURS, pas de
+   l'argent — même passage que IN PROFIT/IN LOSS de LivePositions). */
+.trade-history__ctx-badge--wins,
 .trade-history__ctx-badge--losses {
-  background: color-mix(in srgb, var(--qc-loss) 8%, transparent);
-  color: var(--qc-loss);
+  background: color-mix(in srgb, var(--ink-pure) 4%, transparent);
+  color: var(--ink-soft);
 }
 
 /* ─── Body + table ───────────────────────────────────────────── */

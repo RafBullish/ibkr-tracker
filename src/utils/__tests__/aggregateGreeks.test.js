@@ -169,9 +169,10 @@ describe('aggregateGreeks — B2C 0-position book', () => {
   });
 
   it('only stock positions → stockDelta only, optionsCount=0', () => {
-    // Le RiskMatrix GreeksStrip check `optionsCount === 0` pour render
-    // "no options" — vérifier que ce signal reste accurate quand on a
-    // QUE des stocks (qui ne contribuent qu'à sumDelta, pas aux options).
+    // optionsCount=0 pilote les états « no options » des consommateurs
+    // (page Greeks, bande CAPITAL) — vérifier que ce signal reste
+    // accurate avec QUE des stocks (contribuent à sumDelta seulement).
+    // (L'ex-GreeksStrip de RiskMatrix est morte en É3 §4.2.3.)
     const r = aggregateGreeks(
       [
         {
@@ -187,7 +188,7 @@ describe('aggregateGreeks — B2C 0-position book', () => {
       new Map()
     );
     expect(r.sumDelta).toBe(50);
-    expect(r.optionsCount).toBe(0); // ← GreeksStrip render path
+    expect(r.optionsCount).toBe(0); // ← signal « no options » cross-app
     expect(r.thetaDaily).toBe(0);
     expect(r.vegaPer1Pct).toBe(0);
   });

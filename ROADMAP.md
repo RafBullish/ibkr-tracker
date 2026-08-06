@@ -219,7 +219,47 @@ Objectif : **tag v1.0.0 au 01.09.2026**.
 
 ## Étape 3 — Cohérence & modales
 
-Chrome traité en 1.B ; reste : cohérence transverse + modales.
+- **É3 ✅ (1.0.0-rc.15, 06.08.2026)** — Les 12 pages parlent d'une seule
+  voix. **Les 11 points arbitrés (§4.2), leur sort :**
+  1. GATE de LivePositions → classifieur UNIQUE `deriveAttention` via le
+     hook partagé **`useAttentionMap`** (bande = Positions = LivePositions
+     = PreMarket) ; `computeNextGate`/`formatGate`/« SL35 ARMED » MORTS.
+  2. TIME_STOP RETIRÉ de la zone ATTENTION (seuil hérité non doctrinal,
+     même mécanisme que DTE legacy 1.F-c1) ; « jours tenus » conservé
+     partout (matrice de non-perte).
+  3. GreeksStrip de RiskMatrix MORTE (triplication Σ Δ/Σ Θ éteinte) ;
+     doublon CAPITAL↔PortfolioDeck CONSERVÉ (décision assumée).
+  4. Streaks RiskMatrix NEUTRES + extension même-motif : compteurs
+     IN PROFIT/LOSS (LivePositions), WINS/LOSSES (TradeHistory),
+     Wins/Losses (RiskMatrix) neutralisés ($ tonés conservés).
+  5. Expectancy gatée MIN_DECISIVE (10) dans les decks Héros 1 ET 2 —
+     « — » + « N décisifs / 10 requis » (vérifié à 9 et 10).
+  6. Moteur DTE UNIQUE `dteFromExp` clampé 0 (`daysToExpiration` MORT) +
+     `isExpired()` → « EXP » honnête (tables, détail, DTE PROCHE,
+     CLOSEST DTE).
+  7. Libellé d'exposition = vérité du calcul : « EXPOSITION · Σ valeur
+     mark » (bande + jauge + PortfolioDeck) ; calcul intouché ;
+     CLAUDE.md §8 corrigé.
+  8. Macro = UNION dédupliquée partout (PreMarket + Calendar alignés sur
+     CalendarMini/MarketDeck) ; bascule OU morte.
+  9. Cheatsheet ⌘/ réécrite sur la vérité du code (mnemonics/CommandBar/
+     GitHub morts, chaque ligne vérifiée).
+  10. Split v5-chain.css : perf-attr → pages-history (byte-identique),
+      cheatsheet → modals.css ; renommée **pages-chain.css**.
+  11. Docs internes périmées : LISTÉES seulement → corrigées en É4 (§5.6).
+  **Modales & chrome (§4.3)** : `modals.css` maison unique (anatomie
+  cockpit, drag-bars mortes), palette ⌘K `.cmdk` + lucide (bug lignes
+  fantômes corrigé), Toast erreur/warning neutre appuyé,
+  `--text-on-accent` → void, alertes détail neutres, fallback route
+  sobre, TiltMeter au tick 180 ms.
+  - **Résidus consignés** :
+    1. Gisement couleur PRÉEXISTANT de RiskMatrix (EDGE+/− vert/rouge,
+       jauges de ratios Sharpe & co, Kelly ambre, vol verte, R toné) —
+       passe dédiée post-É3 (constat panel, hors mandat §4.2).
+    2. Icons.jsx : 11/18 entrées mortes (BottomNav mobile n'en consomme
+       que 9) — purge É4 §5.3.
+    3. Bannière Calendar « Connecté · N » : le compte reflète le
+       calendrier AFFICHÉ (union Finnhub ∪ local) — nuance assumée.
 
 ## Étape 4 — Recette v1.0
 

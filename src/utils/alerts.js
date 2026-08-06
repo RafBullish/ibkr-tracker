@@ -2,7 +2,10 @@
 //  ALERTS ENGINE — Sniper OTM strategy alerts
 // ═══════════════════════════════════════════════════════════════
 
-import { daysToExpiration } from './dates';
+// É3 §4.2.6 — moteur DTE UNIQUE : dteFromExp (clampé à 0), convention
+// cross-app. L'ex-daysToExpiration (non clampé, « DTE −3 j » possible)
+// est mort avec ce correctif.
+import { dteFromExp } from './positions';
 import { calculateOpenPositionPnl } from './calculations';
 import { toFloat } from './math';
 
@@ -18,8 +21,8 @@ export function generateAlerts(positions, greeksMap, fxRate) {
   for (const pos of positions) {
     if (pos.as !== 'Option') continue;
 
-    const dte = daysToExpiration(pos.ex);
-    if (typeof dte !== 'number') continue;
+    const dte = dteFromExp(pos.ex);
+    if (dte == null) continue;
 
     const r = calculateOpenPositionPnl(pos, fxRate);
     const costBasis = Math.abs(r.costBasisUsd);

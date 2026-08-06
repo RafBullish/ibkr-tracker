@@ -40,13 +40,16 @@ describe('deriveAttention — matrice de non-perte (chaque signal AlertsFeed a u
     expect(a.lines[0].metric).toContain('−38 %');
   });
 
-  it('TIME_STOP (red) → ligne CRITIQUE « j sans +15 % »', () => {
+  it('TIME_STOP RETIRÉ de la bande (É3 §4.2.2) — maison : DAYS-IN/détail', () => {
+    // Seuil hérité non doctrinal (« ≥5 j sans +15 % ») : saturait
+    // ATTENTION (trades tenus 90-155 j au réel). Même mécanisme que
+    // les seuils DTE legacy 90/100 j.
     const a = deriveAttention({
       alerts: [alert({ type: 'TIME_STOP', value: 8 })],
       gateRows: [gateRow()],
     });
-    expect(a.lines[0].severity).toBe('critique');
-    expect(a.lines[0].metric).toBe('8 j sans +15 %');
+    expect(a.lines).toHaveLength(0);
+    expect(a.empty).toBe(true);
   });
 
   it('seuils DTE legacy 90/100 j RETIRÉS de la bande (1.F-c1 C2) — maison : LivePositions/Positions', () => {

@@ -209,6 +209,18 @@ hr {
   line-height: var(--lh-tight);
 }
 
+/* É3 §4.3 — fallback de route code-split (anatomie unique des états
+   de chargement : discret, encre sourde, aucun saut de mise en page). */
+.route-loader {
+  display: flex;
+  justify-content: center;
+  padding-top: 80px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
 .text-profit {
   color: var(--profit-text);
 }

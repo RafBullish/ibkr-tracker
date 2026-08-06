@@ -5,7 +5,6 @@ import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import AppShell from './components/layout/AppShell';
 import ErrorBoundary from './components/ui/ErrorBoundary';
-import GlassCard from './components/ui/GlassCard';
 import { useFxAutoRefresh } from './hooks/useFxAutoRefresh';
 import { useFxLiveSync } from './hooks/useFxLiveSync';
 import FxStaleBanner from './components/fx/FxStaleBanner';
@@ -24,15 +23,9 @@ const Chain = lazy(() => import('./pages/trading/Chain'));
 const Greeks = lazy(() => import('./pages/trading/Greeks'));
 const Analytics = lazy(() => import('./pages/insights/Analytics'));
 
-const Loader = () => (
-  <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
-    <GlassCard style={{ padding: '40px 60px', textAlign: 'center' }}>
-      <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--text-muted)' }}>
-        Chargement…
-      </div>
-    </GlassCard>
-  </div>
-);
+// É3 §4.3 — fallback de route code-split : discret, sans carte verre,
+// sans saut de mise en page (anatomie unique des états de chargement).
+const Loader = () => <div className="route-loader">Chargement…</div>;
 
 export default function App() {
   // FX cascade : Frankfurter (boot + 5min auto, fallback) puis Yahoo live

@@ -222,8 +222,32 @@ durcie** (inventaire détruit/survivant lu dans le reducer, mot RESET à taper,
 ROUGE = EXCEPTION NOMMÉE ; reducer RESET_ALL intouché). API = grille de 8
 cartes cassées → TABLEAU DENSE (LIVE/DOWN/OFF, DOWN/OFF neutres). **Morts** :
 ApiServiceCard + `.api-service-*` + `.api-v3__grid` + `.settings-v3__input`
-(−292 l). **GlassCard SURVIT** (App.jsx + DataTable.jsx). Prochaine :
-**Étape 3 — Cohérence & modales.**
+(−292 l). Puis **É3 mergée (1.0.0-rc.15)** — Cohérence & modales,
+**ÉTAPE 3 CLOSE** : les 11 divergences arbitrées éteintes — classifieur
+UNIQUE servi par le hook partagé `useAttentionMap` (bande = Positions =
+LivePositions = PreMarket ; `computeNextGate`/« SL35 ARMED » MORTS) ;
+TIME_STOP retiré d'ATTENTION (seuil non doctrinal, jours tenus
+conservés) ; GreeksStrip de RiskMatrix MORTE (triplication Σ Δ/Σ Θ
+éteinte ; doublon CAPITAL↔PortfolioDeck conservé, assumé) ;
+streaks/compteurs NEUTRES cross-app (IN PROFIT/LOSS, WINS/LOSSES,
+Wins/Losses) ; expectancy gatée 10 décisifs dans les DEUX decks (« — »
+honnête) ; moteur DTE unique `dteFromExp` clampé 0 (`daysToExpiration`
+MORT) + `isExpired` → « EXP » partout ; libellé d'exposition =
+**vérité du calcul** (« EXPOSITION · Σ valeur mark », l'ex-DÉPLOYÉ
+mentait, calcul intouché) ; macro = union dédupliquée partout (bascule
+OU morte). Modales unifiées : **`modals.css`** maison unique (cadre
+raised + hairline + radius 7, titre registre mk-title, pied secondaire/
+primaire ambre, drag-bar morte) ; split `v5-chain.css` → renommée
+**`pages-chain.css`** (perf-attr → pages-history, cheatsheet → modals) ;
+Cheatsheet ⌘/ réécrite sur la vérité du code (mnemonics/CommandBar
+morts) ; palette ⌘K en classes `.cmdk` cockpit + lucide (bug lignes
+fantômes corrigé, purge → /settings/general) ; Toast erreur/warning
+NEUTRE APPUYÉ ; `--text-on-accent` → void (contraste ~10:1) ; alertes
+détail position neutres ; fuites LivePositions soldées (Σ MAX RISK
+neutre — amendement 15.07 —, IVR neutre, ALERT neutre, CLOSEST DTE
+neutre). **Résidu consigné** : gisement couleur préexistant RiskMatrix
+(EDGE+/−, jauges ratios, Kelly ambre) → passe dédiée. Prochaine :
+**Étape 4 — Recette v1.0.**
 
 Repères S2 toujours en vigueur : KPI 44, cellules `.v3-table` 20 (rowHeight 47),
 plancher caption 17, strip 21/16/18, ticks charts plafonnés 14, héros 56/64
@@ -303,9 +327,11 @@ Distinctions à respecter dans le code, les labels et les tooltips :
 - **Risk $** (exposition ajustée au stop) **≠ Max Loss** (prime totale engagée).
 - **Capital engagé** (coût d'entrée : entry × qty × mul) **≠ valeur mark** (valeur
   courante). Deux chiffres différents, deux sens différents.
-- Carte **EXPOSURE / DÉPLOYÉ** = capital **DÉPLOYÉ** (coût des primes engagées, hors
-  P&L latent). Ce n'est **pas** le « notionnel » (qui serait strike × 100 × contrats).
-  Le label doit dire ce qu'il montre.
+- Carte **EXPOSITION / EXPOSURE** = `totalExposure` = **Σ |valeur mark|** des
+  positions ouvertes (É3 §4.2.7 — le libellé dit la vérité du calcul ; la méta
+  précise « Σ valeur mark »). Ce n'est **ni** le capital engagé (coût des primes,
+  hors P&L latent), **ni** le « notionnel » (strike × 100 × contrats). Le label
+  doit dire ce qu'il montre.
 
 ---
 

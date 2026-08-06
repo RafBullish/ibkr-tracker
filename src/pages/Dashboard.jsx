@@ -12,7 +12,7 @@
 //    8. Rangée de clôture « veille » : Watchlist | CalendarMini
 //
 //  RiskMatrix reçoit un objet metrics fusionné :
-//    { ...usePortfolioMetrics(), ...useRiskMatrix(), equityHistory, greeks }
+//    { ...usePortfolioMetrics(), ...useRiskMatrix(), equityHistory }
 //  afin d'accéder à toutes les métriques (sharpe, sortino, sqn, cagr,
 //  rMultiples, currentStreak…) sans dupliquer les hook-calls.
 //  DecisionBand reçoit metrics + greeks par le même pattern.
@@ -95,10 +95,9 @@ export default function Dashboard() {
   const closedTrades = useClosedTrades();
   const portfolioMetrics = usePortfolioMetrics();
   const riskMatrixData = useRiskMatrix();
-  // B4 — greeks hissés ici pour alimenter le strip dans le cockpit.
-  // DashboardKPICards garde son propre appel autonome (back-compat).
-  // Single source of truth pour Δ/Θ par position : on injecte greeksMap
-  // dans useLivePositions pour que la table Live Positions affiche les
+  // Greeks hissés ici : DecisionBand (zone CAPITAL) + single source of
+  // truth pour Δ/Θ par position — greeksMap injecté dans
+  // useLivePositions pour que la table Live Positions affiche les
   // greeks calculés (cascade σ a→b→c) au lieu de '—'.
   const greeks = useGreeksAggregate();
   const positions = useLivePositions({ greeksMap: greeks.greeksMap });
@@ -107,11 +106,12 @@ export default function Dashboard() {
   // Merge portfolioMetrics (sharpe/sortino/sqn/cagr/recovery/rMultiples/
   // streaks/breakEven/fees/fxImpact/monthly) + riskMatrixData
   // (currentDDPct/maxDDYtdPct/recoveryPctValue/volAnnPct) + equityHistory
-  // + greeks (Σ Δ/Γ/Θ/ν pour le strip Options Greeks B4)
   // pour que RiskMatrix puisse tout dériver via un seul objet `metrics`.
+  // É3 §4.2.3 : greeks retiré du merge — la GreeksStrip de RiskMatrix
+  // est morte (triplication Σ Δ/Σ Θ éteinte).
   const riskMetrics = useMemo(
-    () => ({ ...portfolioMetrics, ...riskMatrixData, equityHistory, greeks }),
-    [portfolioMetrics, riskMatrixData, equityHistory, greeks]
+    () => ({ ...portfolioMetrics, ...riskMatrixData, equityHistory }),
+    [portfolioMetrics, riskMatrixData, equityHistory]
   );
 
   // Persiste un snapshot quotidien des métriques (cf. useDailySnapshot.js).

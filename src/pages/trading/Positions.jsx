@@ -28,8 +28,9 @@ import { Briefcase, Crosshair, ArrowUpRight, Trash2 } from 'lucide-react';
 import { useOpenPositions, useSettings, useClosedTrades, useDispatch } from '../../store/useStore';
 import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
 import useLivePositions from '../../hooks/useLivePositions';
-import useSniperGates from '../../hooks/useSniperGates';
-import useDailyKillSwitch from '../../hooks/useDailyKillSwitch';
+// É3 §4.2.1 — classifieur de gates PARTAGÉ (bande / Positions /
+// LivePositions) : une position CRITICAL dans la bande = CRITICAL ici.
+import useAttentionMap from '../../hooks/useAttentionMap';
 import { calculateOpenPositionPnl, tradePnlUsd } from '../../utils/calculations';
 // A1 — migrated from legacy computePortfolioGreeks (sign-agnostic) to
 // aggregateGreeks (sign-aware via pos.dir + correct units : theta/day,
@@ -41,9 +42,6 @@ import { toFloat, ensurePositive, generateId } from '../../utils/math';
 import { getGreeksForAllPositions } from '../../utils/greeksApi';
 import { generateAlerts, getPositionAlerts } from '../../utils/alerts';
 import { effectiveSlDollar } from '../../utils/risk';
-// 2.A — classifieur de gates de la BANDE DÉCISION (module pur) : une
-// position CRITICAL dans la bande = CRITICAL ici, toujours.
-import { deriveAttention } from '../../components/dashboard/decision/model';
 import { TickValue } from '../../components/dashboard/decision/parts';
 import { fmtUsd, fmtUsdSigned, fmtChf } from '../../components/dashboard/hero1/kit';
 
@@ -460,7 +458,6 @@ function PositionDetailBody({ row, greeks, posAlerts, navigate, onEdit, onCloseM
   const pnlTone = pnl > 0 ? 'profit' : pnl < 0 ? 'loss' : 'neutral';
   const sl = effectiveSlDollar(pos);
   const dir = pos.dir || (isOpt ? 'Long' : '—');
-  const alertTone = (sev) => (sev === 'red' ? 'loss' : sev === 'orange' ? 'warn' : 'profit');
   return (
     <div className="position-detail">
       <div className="position-detail__head">
@@ -468,7 +465,8 @@ function PositionDetailBody({ row, greeks, posAlerts, navigate, onEdit, onCloseM
         <TypeBadge as={pos.as} ty={pos.ty} />
         <StatusBadge variant="neutral" label={dir} size="xs" />
         {isOpt && Number.isFinite(dte) && (
-          <StatusBadge variant="neutral" label={`DTE ${dte}j`} size="xs" />
+          // É3 §4.2.6 — expirée = « EXP » honnête.
+          <StatusBadge variant="neutral" label={row.expired ? 'EXP' : `DTE ${dte}j`} size="xs" />
         )}
       </div>
 
@@ -563,13 +561,12 @@ function PositionDetailBody({ row, greeks, posAlerts, navigate, onEdit, onCloseM
             Aucune alerte active
           </span>
         ) : (
+          // É3 §4.3 — alertes FACTUELLES NEUTRES (parité RowAlerts 2.A :
+          // un signal n'est pas une perte d'argent réel ; l'urgence est
+          // portée par le badge GATE du classifieur unique).
           <div className="position-detail__alerts">
             {posAlerts.map((a, i) => (
-              <div
-                key={`${a.type}-${i}`}
-                className="position-detail__alert"
-                data-tone={alertTone(a.severity)}
-              >
+              <div key={`${a.type}-${i}`} className="position-detail__alert">
                 {a.message}
               </div>
             ))}
@@ -945,6 +942,7 @@ export default function Positions() {
           strike: isOpt ? toFloat(pos.st) : null,
           exp: isOpt ? pos.ex : null,
           dte: isOpt ? (Number.isFinite(lrow.dte) ? lrow.dte : null) : Infinity,
+          expired: isOpt ? !!lrow.expired : false,
           qty: toFloat(pos.ct),
           entry: toFloat(pos.pi),
           mark: toFloat(pos.pc),
@@ -975,21 +973,11 @@ export default function Positions() {
     [alerts]
   );
 
-  // 2.A — classifieur de gates de la bande décision (module pur) :
-  // MÊME règle, MÊMES entrées (alerts red/orange + rows useSniperGates
-  // + kill switch) → une position CRITICAL dans la bande = CRITICAL ici.
-  const gates = useSniperGates();
-  const kill = useDailyKillSwitch();
-  const gateByPos = useMemo(() => {
-    const att = deriveAttention({
-      alerts: actionableAlerts,
-      gateRows: gates.rows,
-      watchedCount: 0,
-      kill: { triggered: kill.triggered, dailyPnlUsd: kill.dailyPnlUsd, maxLoss: kill.maxLoss },
-      maxLines: Infinity,
-    });
-    return new Map(att.lines.map((l) => [l.id, l]));
-  }, [actionableAlerts, gates.rows, kill.triggered, kill.dailyPnlUsd, kill.maxLoss]);
+  // É3 §4.2.1 — classifieur de gates de la bande décision, servi par le
+  // hook PARTAGÉ useAttentionMap (mêmes entrées, même Map) : une
+  // position CRITICAL dans la bande = CRITICAL ici = CRITICAL dans
+  // LivePositions. Zéro assemblage local divergent.
+  const gateByPos = useAttentionMap();
 
   // Bandeau + footer : agrégats (une passe).
   const summary = useMemo(() => {
@@ -1020,7 +1008,8 @@ export default function Positions() {
         thetaDollar += dirSign * row.theta * row.qty * mul;
       }
       if (row.isOpt && Number.isFinite(row.dte)) {
-        if (!closest || row.dte < closest.dte) closest = { ticker: row.tk, dte: row.dte };
+        if (!closest || row.dte < closest.dte)
+          closest = { ticker: row.tk, dte: row.dte, expired: row.expired };
       }
     }
     return {
@@ -1149,14 +1138,19 @@ export default function Positions() {
         <span>
           <span className="v3-table__tf-label">DTE proche</span>
           <span className="v3-table__tf-value">
-            {summary.closest ? `${summary.closest.ticker} ${summary.closest.dte} j` : '—'}
+            {summary.closest
+              ? `${summary.closest.ticker} ${summary.closest.expired ? 'EXP' : `${summary.closest.dte} j`}`
+              : '—'}
           </span>
         </span>
       ),
       // DTE NEUTRE (2.A) : le temps n'est pas de l'argent — l'urgence est
       // portée par la colonne GATE (classifieur de la bande décision).
+      // É3 §4.2.6 : option expirée = « EXP » honnête, jamais « 0 j ».
       render: (v, row) => {
         if (!row.isOpt) return <Cell2 value="∞" meta={row.daysIn != null ? `${row.daysIn} j in` : null} />;
+        if (row.expired)
+          return <Cell2 value="EXP" meta={row.daysIn != null ? `${row.daysIn} j in` : null} />;
         return (
           <Cell2
             value={Number.isFinite(v) ? `${v} j` : '—'}

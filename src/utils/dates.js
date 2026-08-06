@@ -16,13 +16,9 @@ export function extractMonthKey(dateStr) {
   return dateStr ? dateStr.slice(0, 7) : '';
 }
 
-export function daysToExpiration(expirationDate) {
-  if (!expirationDate) return '-';
-  const now = new Date();
-  now.setHours(12, 0, 0, 0);
-  const expiry = new Date(expirationDate + 'T12:00:00');
-  return Math.round((expiry - now) / 86400000);
-}
+// É3 §4.2.6 — daysToExpiration (non clampé, pouvait rendre un DTE
+// négatif) est MORT : le moteur DTE unique est dteFromExp
+// (utils/positions.js, clampé à 0).
 
 export function holdingDays(dateIn, dateOut) {
   if (!dateIn || !dateOut) return 0;

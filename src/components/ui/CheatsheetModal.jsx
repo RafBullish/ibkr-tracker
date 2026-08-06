@@ -1,67 +1,51 @@
 // ═══════════════════════════════════════════════════════════════
-//  CHEATSHEET MODAL v5 Sprint 10 — keyboard shortcuts reference
+//  CHEATSHEET MODAL (⌘/) — aide-mémoire des raccourcis clavier.
 //
-//  Mounted globally in AppShell. Opens with Cmd+/ (or Ctrl+/).
-//  Lists every shortcut in the app organized by section so the
-//  trader can ramp up without reading docs.
+//  Montée globalement dans AppShell. RÉÉCRITE en É3 §4.2.9 sur la
+//  VÉRITÉ du code : chaque ligne est vérifiée contre AppShell
+//  (NAV_PATHS ⌘1..9, ⌘0, ⌘K, ⌘/, ⌘B) et contre les interactions
+//  réellement câblées. Les mnemonics 4-lettres (CommandBar morte en
+//  1.B, jamais matchés par la palette) et le hover-underline de
+//  module (chrome disparu) sont MORTS. Rien n'est annoncé qui
+//  n'existe pas.
 //
-//  Three sections :
-//    - Navigation (workspace + commands)
-//    - Grid (vim-style positions / history table)
-//    - Mnemonics (Bloomberg-style 4-letter codes via CommandBar pills)
-//
-//  Pure presentation : no state apart from open/close (controlled
-//  by parent). Uses the existing Modal primitive (Radix Dialog).
+//  Présentation pure : aucun état hors open/close (contrôlé par le
+//  parent). Utilise la primitive Modal (Radix Dialog).
 // ═══════════════════════════════════════════════════════════════
 
 import Modal from './Modal';
 
+// Mapping RÉEL AppShell (⌘ = Ctrl sous Windows) — jamais remappé ici.
 const NAVIGATION = [
-  { keys: ['⌘ K', 'Ctrl K'], desc: 'Ouvrir la palette de commandes (recherche globale)' },
-  { keys: ['⌘ /', 'Ctrl /'], desc: 'Ouvrir cette aide-mémoire' },
+  { keys: ['⌘ K', 'Ctrl K'], desc: 'Palette de commandes (pages, actions, positions)' },
+  { keys: ['⌘ /', 'Ctrl /'], desc: 'Cette aide-mémoire' },
   { keys: ['⌘ B', 'Ctrl B'], desc: 'Replier / déployer la navigation' },
-  { keys: ['⌘ 0'], desc: 'Aller à Pré-marché' },
-  { keys: ['⌘ 1'], desc: 'Aller à Tableau de bord' },
-  { keys: ['⌘ 2'], desc: 'Aller à Positions' },
-  { keys: ['⌘ 3'], desc: 'Aller à Historique' },
-  { keys: ['⌘ 4'], desc: 'Aller à Greeks Center' },
-  { keys: ['⌘ 5'], desc: 'Aller à Options Live' },
-  { keys: ['⌘ 6'], desc: 'Aller à Analytics' },
-  { keys: ['⌘ 7'], desc: 'Aller à Calendrier' },
-  { keys: ['⌘ 8'], desc: 'Aller à Journal' },
-  { keys: ['⌘ 9'], desc: 'Aller à Import' },
-  { keys: ['Esc'], desc: 'Fermer une modal ou annuler la palette' },
+  { keys: ['⌘ 0'], desc: 'Pré-marché' },
+  { keys: ['⌘ 1'], desc: 'Tableau de bord' },
+  { keys: ['⌘ 2'], desc: 'Positions' },
+  { keys: ['⌘ 3'], desc: 'Historique' },
+  { keys: ['⌘ 4'], desc: 'Greeks' },
+  { keys: ['⌘ 5'], desc: 'Options Live' },
+  { keys: ['⌘ 6'], desc: 'Analytics' },
+  { keys: ['⌘ 7'], desc: 'Calendrier' },
+  { keys: ['⌘ 8'], desc: 'Journal' },
+  { keys: ['⌘ 9'], desc: 'Import' },
+  { keys: ['Esc'], desc: 'Fermer une modale ou la palette' },
 ];
 
-const MNEMONICS = [
-  { code: 'DASH', desc: 'Tableau de bord (workspace principal)' },
-  { code: 'POS', desc: 'Positions ouvertes' },
-  { code: 'HIST', desc: 'Historique des trades' },
-  { code: 'GRKS', desc: 'Greeks Center' },
-  { code: 'CHN', desc: 'Options Live · ATM-anchored' },
-  { code: 'ANLY', desc: 'Analytics · KPIs avancés' },
-  { code: 'CAL', desc: 'Calendrier · earnings + macro' },
-  { code: 'JRNL', desc: 'Journal de trading' },
-  { code: 'IMP', desc: 'Import IBKR Flex / API' },
-];
-
-const TABLE_TIPS = [
+// Interactions réellement câblées (vérifiées contre le code, É3).
+const INTERACTIONS = [
   {
-    keys: ['Click cell EDGE', 'Click cell C-TIER'],
-    desc: 'Ouvrir le Sniper Meta Editor pour la position',
+    keys: ['Clic EDGE / C-TIER'],
+    desc: 'Tagger la méta Sniper de la position (éditeur Edge · Capital · β-SPY)',
   },
-  { keys: ['Click row Watchlist'], desc: 'Naviguer vers /trading/chain pour ce ticker' },
-  { keys: ['Hover cell heatmap'], desc: 'Voir le détail (n / win rate / total P&L) en tooltip' },
-];
-
-const TRADING_TIPS = [
-  { keys: ['Cmd+K', 'puis tape ticker'], desc: 'Recherche fuzzy de positions / pages / actions' },
+  { keys: ['Clic ligne Watchlist'], desc: 'Ouvrir la chaîne d’options (Options Live)' },
+  { keys: ['Clic ligne Positions'], desc: 'Ouvrir le détail de la position' },
   {
-    keys: ['Type Tag dans LivePositions'],
-    desc: 'Tag manuel Edge/Capital/β-SPY (sidecar localStorage)',
+    keys: ['Survol heatmap P&L'],
+    desc: 'Détail de l’unité (n trades · win rate · P&L) en tooltip',
   },
-  { keys: ['Type ticker /trading/chain'], desc: "Charger la chaîne d'options Yahoo Finance" },
-  { keys: ['Hover module header'], desc: 'Underline ambre identifie le module actif' },
+  { keys: ['Ticker + Charger', 'Options Live'], desc: 'Charger la chaîne d’options du sous-jacent' },
 ];
 
 function ShortcutRow({ keys, desc }) {
@@ -80,17 +64,6 @@ function ShortcutRow({ keys, desc }) {
   );
 }
 
-function MnemonicRow({ code, desc }) {
-  return (
-    <div className="cheatsheet__row">
-      <div className="cheatsheet__keys">
-        <span className="cheatsheet__mnemonic">{code}</span>
-      </div>
-      <div className="cheatsheet__desc">{desc}</div>
-    </div>
-  );
-}
-
 export default function CheatsheetModal({ open, onClose }) {
   return (
     <Modal open={open} onClose={onClose} title="Aide-mémoire · raccourcis clavier">
@@ -103,40 +76,13 @@ export default function CheatsheetModal({ open, onClose }) {
         </section>
 
         <section className="cheatsheet__section">
-          <h3 className="cheatsheet__section-title">Mnemonics 4-lettres (CommandBar)</h3>
-          <p className="cheatsheet__section-hint">
-            Pills cliquables en haut. Inspirés des function codes du Bloomberg Terminal.
-          </p>
-          {MNEMONICS.map((m) => (
-            <MnemonicRow key={m.code} code={m.code} desc={m.desc} />
-          ))}
-        </section>
-
-        <section className="cheatsheet__section">
-          <h3 className="cheatsheet__section-title">Interactions tableaux + modules</h3>
-          {TABLE_TIPS.map((t, i) => (
+          <h3 className="cheatsheet__section-title">Interactions</h3>
+          {INTERACTIONS.map((t, i) => (
             <ShortcutRow key={i} keys={t.keys} desc={t.desc} />
           ))}
         </section>
 
-        <section className="cheatsheet__section">
-          <h3 className="cheatsheet__section-title">Workflows trading</h3>
-          {TRADING_TIPS.map((t, i) => (
-            <ShortcutRow key={i} keys={t.keys} desc={t.desc} />
-          ))}
-        </section>
-
-        <div className="cheatsheet__footer">
-          QuantumCall v5 · Sniper OTM v1.0 Finale ·{' '}
-          <a
-            href="https://github.com/RafBullish/ibkr-tracker"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cheatsheet__link"
-          >
-            github.com/RafBullish/ibkr-tracker
-          </a>
-        </div>
+        <div className="cheatsheet__footer">QuantumCall v1.0 · Sniper OTM</div>
       </div>
     </Modal>
   );

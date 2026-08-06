@@ -10,9 +10,9 @@
    styles + 8 <GlassCard>). Cette migration retire l'import T et
    remplace par var(--*) canoniques ou classes scopées ci-dessous.
 
-   `theme/tokens.js` reste intact (ErrorBoundary, CommandPalette,
-   WinRateDonut, ThemeSwitcher en dépendent encore) — sa suppression
-   viendra dans CANONICAL-PURGE.
+   `theme/tokens.js` reste intact (ErrorBoundary, ThemeSwitcher,
+   useLiveTheme en dépendent encore ; CommandPalette libérée en É3) —
+   sa suppression viendra dans CANONICAL-PURGE.
 
    Sémantique appliquée (cohérente avec les 7 pages précédentes) :
    - Rouge   = perte d'argent réelle (jour PnL <0, monthTotal, worst)

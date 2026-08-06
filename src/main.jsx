@@ -22,8 +22,11 @@ import './styles/v3-components.css';
 import './styles/v4-shell.css';
 // v4-dashboard.css adds the 12-col bento grid for /dashboard.
 import './styles/v4-dashboard.css';
-// v5-chain.css : Sprint 3 institutional refonte of /trading/chain.
-import './styles/v5-chain.css';
+// pages-chain.css (ex-v5-chain.css, renommée + splittée É3 §4.2.10) :
+// /trading/chain au langage cockpit. Position de cascade INCHANGÉE ;
+// .perf-attr__* vivent dans pages-history.css, .cheatsheet__* dans
+// modals.css.
+import './styles/pages-chain.css';
 // canonical.css — palette canonique (DA Brutalisme Financier). Chargé en dernier
 // pour faire autorité quand les pages migreront. Étape additive : aucune page
 // ne le consomme encore, aucun changement visuel attendu.
@@ -80,8 +83,9 @@ import './styles/v1-dashboard.css';
 // consommation des tokens canoniques. Calendar a été désintoxiquée de la
 // palette JS divergente (`T from '../../theme/tokens'`) — l'import T est
 // retiré, les 99 références T.* converties en var(--*) canoniques ou classes
-// scopées. theme/tokens.js reste intact (ErrorBoundary, CommandPalette,
-// WinRateDonut, ThemeSwitcher en dépendent) — purge dans CANONICAL-PURGE.
+// scopées. theme/tokens.js reste intact (ErrorBoundary, ThemeSwitcher,
+// useLiveTheme en dépendent ; CommandPalette libérée en É3) — purge dans
+// CANONICAL-PURGE.
 import './styles/pages-calendar.css';
 // pages-journal.css — page-vitrine /insights/journal recomposée au langage
 // cockpit (brique 2.C2). Ses styles vivaient dans v3-components.css (tokens
@@ -105,6 +109,11 @@ import './styles/v1-heros2.css';
 // (Watchlist/CalendarMini). Classes .db-* ; réutilise .mk-title/.pf-c
 // (v1-heros.css). Après v1-heros2.css, avant c3-hires.css.
 import './styles/v1-decision.css';
+// modals.css — LA maison des modales et du chrome flottant (É3 §4.3) :
+// Modal générique cockpit, add-trade-form, cheatsheet (⌘/), palette ⌘K
+// (.cmdk). Après les feuilles de pages (ses règles remplacent les
+// ex-blocs de v3-components/v5-chain), avant c3-hires.css.
+import './styles/modals.css';
 // c3-hires.css — PALIER HAUTE RÉSOLUTION C.3.0 (≥1440px). Importé EN
 // DERNIER pour gagner par ordre de source. Densifie l'usage fenêtré
 // ~1591 px / dpr 1.35 ; n'affecte pas le mobile (<1440).

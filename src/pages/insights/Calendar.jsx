@@ -684,14 +684,27 @@ export default function Calendar() {
     return { from: iso(from), to: iso(to) };
   }, [viewYear, viewMonth]);
 
-  // ─── Fallback: when Finnhub is down OR the macro feed came back
-  //     empty, surface the hardcoded FOMC/CPI/NFP 2026 schedule so
-  //     the Announcements grid is never visually dead.
+  // É3 §4.2.8 — macro effectif = UNION dédupliquée Finnhub ∪ fallback
+  // local FOMC/CPI/NFP (clé date|libellé, parité CalendarMini /
+  // MarketDeck / PreMarket). La bascule OU est morte : rien ne peut
+  // disparaître parce qu'une source répond partiellement.
   const finnhubDown = apiStatus.finnhub.status === 'inactive';
-  const fallbackMacro = useMemo(() => {
-    if (!finnhubDown && macro.length > 0) return [];
-    return macroEventsInRange(rangeIso.from, rangeIso.to);
-  }, [finnhubDown, macro.length, rangeIso]);
+  const effectiveMacro = useMemo(() => {
+    const seen = new Set();
+    const out = [];
+    for (const ev of [...(macro || []), ...macroEventsInRange(rangeIso.from, rangeIso.to)]) {
+      const d = ev?.time ? String(ev.time).slice(0, 10) : null;
+      if (!d || !ev.event) continue;
+      const key = `${d}|${String(ev.event).toUpperCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(ev);
+    }
+    return out;
+  }, [macro, rangeIso]);
+  // Le local est-il la seule source macro servie ? (pilote la bannière
+  // « Flux partiel » — sémantique de l'ex-fallbackActive conservée.)
+  const localOnly = finnhubDown || macro.length === 0;
 
   // ─── Open-position expirations (always surfaced) ─────────────
   const expirations = useMemo(() => {
@@ -704,9 +717,7 @@ export default function Calendar() {
       }));
   }, [openPositions]);
 
-  const effectiveMacro = fallbackMacro.length > 0 ? fallbackMacro : macro;
   const feeds = { earnings, macro: effectiveMacro, expirations };
-  const fallbackActive = fallbackMacro.length > 0;
   const sharedProps = { state, viewYear, viewMonth, todayStr, prevMonth, nextMonth };
 
   // ── Bandeau : signes vitaux du calendrier (données DÉJÀ servies :
@@ -860,7 +871,7 @@ export default function Calendar() {
       {/* Flux partiel — info NEUTRE (une erreur de flux n'est pas une perte
           d'argent : le rouge meurt, loi de couleur). */}
       {activeTab === 'announcements' &&
-        !fallbackActive &&
+        !localOnly &&
         error &&
         apiStatus.finnhub.status === 'active' && (
           <div className="calendar-page__api-banner" role="status" aria-live="polite">

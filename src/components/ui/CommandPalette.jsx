@@ -1,26 +1,60 @@
 // ═══════════════════════════════════════════════════════════════
-//  COMMAND PALETTE — ⌘K quick search, Calm Trading style
+//  COMMAND PALETTE (⌘K) — recherche globale pages · actions ·
+//  positions. É3 §4.3 : refonte au langage cockpit — les styles
+//  inline (palette JS legacy « T ») sont MORTS, remplacés par les
+//  classes .cmdk__* (modals.css : verre sombre, hairlines, registre
+//  terminal, ligne focus ambre). Icônes lucide (jeu unique É3).
+//
+//  Entrées vérifiées contre les routes réelles : hints ⌘0..9 alignés
+//  sur AppShell NAV_PATHS (affichage seulement, rien n'est remappé
+//  ici) ; « Purge des données » cible /settings/general (la zone
+//  dangereuse vit là depuis 2.D — l'ex-cible Import était fausse).
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  Search,
+  LayoutGrid,
+  Gauge,
+  TrendingUp,
+  List,
+  BarChart3,
+  Layers,
+  Calendar,
+  BookOpen,
+  Upload,
+  Settings,
+  Shield,
+  RefreshCw,
+  Trash2,
+} from 'lucide-react';
 import { useOpenPositions, useSettings } from '../../store/useStore';
 import { calculateOpenPositionPnl } from '../../utils/calculations';
 import { toFloat } from '../../utils/math';
-import T from '../../theme/tokens';
-import Icons from './Icons';
 
-// 1.C — hints alignés sur le mapping RÉEL ⌘1..9 (AppShell NAV_PATHS).
-// Affichage seulement : rien n'est remappé ici. 1.S : vérité ⌘9 (la
-// cible réelle est /settings/import → chip sur l'entrée Import,
-// Réglages sans touche), Pré-marché désenclavée (dette №2), entrée
-// Réglages — API (dette №4), doublon Options Live purgé (dette №10).
+const ICONS = {
+  grid: LayoutGrid,
+  gauge: Gauge,
+  trending: TrendingUp,
+  list: List,
+  bar: BarChart3,
+  layers: Layers,
+  cal: Calendar,
+  book: BookOpen,
+  upload: Upload,
+  settings: Settings,
+  shield: Shield,
+  refresh: RefreshCw,
+  trash: Trash2,
+};
+
 const navItems = [
   { label: 'Tableau de bord', shortcut: '⌘1', path: '/dashboard', icon: 'grid' },
   { label: 'Pré-marché', shortcut: '⌘0', path: '/premarket', icon: 'gauge' },
   { label: 'Positions', shortcut: '⌘2', path: '/trading/positions', icon: 'trending' },
   { label: 'Historique', shortcut: '⌘3', path: '/trading/history', icon: 'list' },
-  { label: 'Greeks Center', shortcut: '⌘4', path: '/trading/greeks', icon: 'bar' },
+  { label: 'Greeks', shortcut: '⌘4', path: '/trading/greeks', icon: 'bar' },
   { label: 'Options Live', shortcut: '⌘5', path: '/trading/chain', icon: 'layers' },
   { label: 'Analytics', shortcut: '⌘6', path: '/insights/analytics', icon: 'bar' },
   { label: 'Calendrier', shortcut: '⌘7', path: '/insights/calendar', icon: 'cal' },
@@ -32,7 +66,7 @@ const navItems = [
 
 const quickActions = [
   { label: 'Synchroniser (Flex)', icon: 'refresh', path: '/settings/import' },
-  { label: 'Purge des données', icon: 'settings', path: '/settings/import' },
+  { label: 'Purge des données', icon: 'trash', path: '/settings/general' },
 ];
 
 export default function CommandPalette({ open, onClose }) {
@@ -59,13 +93,19 @@ export default function CommandPalette({ open, onClose }) {
         ticker: pos.tk,
         desc,
         pnl: `${pctChg >= 0 ? '+' : ''}${pctChg.toFixed(1)}%`,
-        positive: pctChg >= 0,
+        // É3 panel — convention toneFromSign : zéro n'est ni gain ni
+        // perte → encre neutre (l'ex `>= 0` peignait 0.0 % en vert).
+        tone: pctChg > 0 ? 'profit' : pctChg < 0 ? 'loss' : 'mute',
         type: isOpt ? pos.ty : 'STK',
       };
     });
   }, [openPositions, lr]);
 
-  // Build flat list for keyboard nav
+  // Build flat list for keyboard nav. Discriminant `kind` distinct du
+  // champ `type` des positions (CALL/PUT/STK) — l'ancien code posait
+  // `{ type: 'position', ...i }` et le spread ÉCRASAIT le discriminant :
+  // les positions se rendaient en lignes fantômes sans label (bug
+  // attrapé en É3, corrigé à la racine).
   const allItems = useMemo(() => {
     const q = query.toLowerCase();
     const filteredActions = quickActions.filter((i) => i.label.toLowerCase().includes(q));
@@ -76,21 +116,21 @@ export default function CommandPalette({ open, onClose }) {
 
     const items = [];
     if (filteredActions.length) {
-      items.push({ type: 'heading', label: 'Actions rapides' });
-      filteredActions.forEach((i) => items.push({ type: 'action', ...i }));
+      items.push({ kind: 'heading', label: 'Actions rapides' });
+      filteredActions.forEach((i) => items.push({ ...i, kind: 'action' }));
     }
     if (filteredNav.length) {
-      items.push({ type: 'heading', label: 'Navigation' });
-      filteredNav.forEach((i) => items.push({ type: 'nav', ...i }));
+      items.push({ kind: 'heading', label: 'Navigation' });
+      filteredNav.forEach((i) => items.push({ ...i, kind: 'nav' }));
     }
     if (filteredPos.length) {
-      items.push({ type: 'heading', label: 'Positions ouvertes' });
-      filteredPos.forEach((i) => items.push({ type: 'position', ...i }));
+      items.push({ kind: 'heading', label: 'Positions ouvertes' });
+      filteredPos.forEach((i) => items.push({ ...i, kind: 'position' }));
     }
     return items;
   }, [query, livePositions]);
 
-  const selectableItems = useMemo(() => allItems.filter((i) => i.type !== 'heading'), [allItems]);
+  const selectableItems = useMemo(() => allItems.filter((i) => i.kind !== 'heading'), [allItems]);
 
   // Reset on open
   useEffect(() => {
@@ -108,7 +148,7 @@ export default function CommandPalette({ open, onClose }) {
   const executeItem = useCallback(
     (item) => {
       if (item.path) navigate(item.path);
-      else if (item.type === 'position') navigate('/trading/positions');
+      else if (item.kind === 'position') navigate('/trading/positions');
       onClose();
     },
     [navigate, onClose]
@@ -145,102 +185,35 @@ export default function CommandPalette({ open, onClose }) {
 
   return (
     <>
-      {/* Overlay */}
-      <div
-        onClick={onClose}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 300,
-          background: 'rgba(0,0,0,0.60)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          animation: 'fadeIn 0.15s ease-out',
-        }}
-      />
+      <div className="cmdk__overlay" onClick={onClose} />
 
-      {/* Modal */}
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 301,
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'center',
-          paddingTop: 'min(20vh, 140px)',
-          pointerEvents: 'none',
-        }}
-      >
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            pointerEvents: 'auto',
-            width: '100%',
-            maxWidth: 520,
-            margin: '0 16px',
-            background: 'rgba(17,20,28,0.92)',
-            backdropFilter: 'blur(20px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-            border: `1px solid ${T.glass.borderHover}`,
-            borderRadius: 20,
-            boxShadow:
-              '0 24px 80px rgba(0,0,0,0.60), 0 0 60px rgba(99,102,241,0.06), 0 0 0 1px rgba(255,255,255,0.05)',
-            overflow: 'hidden',
-            animation: 'slideDown 0.2s cubic-bezier(0.4,0,0.2,1)',
-          }}
-        >
-          {/* Input */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '14px 18px',
-              borderBottom: `1px solid rgba(148,163,184,0.08)`,
-            }}
-          >
-            {Icons.search(T.text.muted, 16)}
+      <div className="cmdk__wrap">
+        <div className="cmdk__panel" onClick={(e) => e.stopPropagation()}>
+          <div className="cmdk__inputrow">
+            <Search size={15} aria-hidden="true" />
             <input
               ref={inputRef}
+              className="cmdk__input"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Rechercher page, action, ticker…"
-              style={{
-                flex: 1,
-                background: 'none',
-                border: 'none',
-                outline: 'none',
-                color: T.text.primary,
-                fontFamily: T.fonts.sans,
-                fontSize: 15,
-                caretColor: T.accent.main,
-              }}
+              aria-label="Recherche globale"
             />
           </div>
 
-          {/* List */}
-          <div style={{ maxHeight: 360, overflowY: 'auto', padding: 8 }}>
+          <div className="cmdk__list" role="listbox" aria-label="Résultats">
             {allItems.length === 0 && (
-              <div style={{ padding: 24, textAlign: 'center', color: T.text.muted, fontSize: 13 }}>
-                Aucun résultat
+              <div className="cmdk__empty">
+                <span className="cmdk__empty-title">Aucun résultat</span>
+                <span className="cmdk__empty-sub">
+                  Cherche une page, une action ou un ticker de position ouverte.
+                </span>
               </div>
             )}
             {allItems.map((item) => {
-              if (item.type === 'heading') {
+              if (item.kind === 'heading') {
                 return (
-                  <div
-                    key={`h-${item.label}`}
-                    style={{
-                      fontSize: 9,
-                      textTransform: 'uppercase',
-                      letterSpacing: 1.5,
-                      color: T.text.muted,
-                      fontWeight: 600,
-                      padding: '8px 10px 6px',
-                      fontFamily: T.fonts.sans,
-                    }}
-                  >
+                  <div key={`h-${item.label}`} className="cmdk__heading">
                     {item.label}
                   </div>
                 );
@@ -249,94 +222,43 @@ export default function CommandPalette({ open, onClose }) {
               selectableIdx++;
               const isSelected = selectableIdx === selectedIdx;
 
-              if (item.type === 'position') {
-                const pnlColor = item.positive ? T.profit : T.loss;
+              if (item.kind === 'position') {
                 return (
                   <div
                     key={`p-${item.id}`}
+                    className="cmdk__item"
+                    data-selected={isSelected || undefined}
                     onClick={() => executeItem(item)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '10px 12px',
-                      borderRadius: 8,
-                      cursor: 'pointer',
-                      background: isSelected ? T.surface.overlay : 'transparent',
-                      color: isSelected ? T.text.primary : T.text.secondary,
-                      fontSize: 13,
-                      fontFamily: T.fonts.sans,
-                      transition: 'background 0.12s',
-                    }}
+                    role="option"
+                    aria-selected={isSelected}
                   >
-                    <span
-                      style={{
-                        fontSize: 9,
-                        fontWeight: 700,
-                        padding: '2px 6px',
-                        borderRadius: 4,
-                        // Colour law: CALL/PUT/STK are neutral instrument
-                        // categories, never money tones — ink-soft only.
-                        background: `${T.text.secondary}1F`,
-                        color: T.text.secondary,
-                      }}
-                    >
-                      {item.type}
-                    </span>
-                    <span style={{ fontFamily: T.fonts.mono, fontWeight: 700 }}>{item.ticker}</span>
-                    <span style={{ color: T.text.muted, fontSize: 12 }}>{item.desc}</span>
-                    <span
-                      style={{
-                        marginLeft: 'auto',
-                        fontFamily: T.fonts.mono,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: pnlColor,
-                      }}
-                    >
-                      {item.pnl}
-                    </span>
+                    <span className="cmdk__type">{item.type}</span>
+                    <span className="cmdk__ticker">{item.ticker}</span>
+                    <span className="cmdk__desc">{item.desc}</span>
+                    {/* P&L latent = argent réel → toné (loi de couleur ;
+                        zéro = neutre). */}
+                    <span className={`cmdk__pnl cmdk__pnl--${item.tone}`}>{item.pnl}</span>
                   </div>
                 );
               }
 
-              // nav or action
+              const Icon = ICONS[item.icon];
               return (
                 <div
-                  key={`${item.type}-${item.label}`}
+                  key={`${item.kind}-${item.label}`}
+                  className="cmdk__item"
+                  data-selected={isSelected || undefined}
                   onClick={() => executeItem(item)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '10px 12px',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    background: isSelected ? T.surface.overlay : 'transparent',
-                    color: isSelected ? T.text.primary : T.text.secondary,
-                    fontSize: 13,
-                    fontFamily: T.fonts.sans,
-                    transition: 'background 0.12s',
-                  }}
+                  role="option"
+                  aria-selected={isSelected}
                 >
-                  {Icons[item.icon]?.(isSelected ? T.accent.main : T.text.muted, 15)}
+                  {Icon ? (
+                    <span className="cmdk__icon">
+                      <Icon size={15} aria-hidden="true" />
+                    </span>
+                  ) : null}
                   <span>{item.label}</span>
-                  {item.shortcut && (
-                    <kbd
-                      style={{
-                        marginLeft: 'auto',
-                        fontFamily: T.fonts.mono,
-                        fontSize: 9,
-                        color: T.text.muted,
-                        padding: '2px 6px',
-                        borderRadius: 4,
-                        background: 'rgba(148,163,184,0.05)',
-                        border: `1px solid rgba(148,163,184,0.08)`,
-                      }}
-                    >
-                      {item.shortcut}
-                    </kbd>
-                  )}
+                  {item.shortcut && <kbd className="cmdk__kbd">{item.shortcut}</kbd>}
                 </div>
               );
             })}

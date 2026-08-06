@@ -22,14 +22,13 @@ import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import useMarketQuotes from '../hooks/useMarketQuotes';
 import useSniperGates from '../hooks/useSniperGates';
-import useDailyKillSwitch from '../hooks/useDailyKillSwitch';
 import { useFx } from '../hooks/useFx';
 import useCalendarFeeds from '../hooks/useCalendarFeeds';
-import useApiStatus from '../hooks/useApiStatus';
-import { useOpenPositions, useSettings } from '../store/useStore';
-import { generateAlerts } from '../utils/alerts';
-import { deriveAttention } from '../components/dashboard/decision/model';
-import { toFloat } from '../utils/math';
+// É3 §4.2.1 — classifieur de gates PARTAGÉ (même hook que Positions
+// et LivePositions) : l'assemblage local generateAlerts+deriveAttention
+// est mort ici.
+import useAttentionMap from '../hooks/useAttentionMap';
+import { useOpenPositions } from '../store/useStore';
 import { macroEventsInRange } from '../data/macroEvents2026';
 import { MAJOR_US_TICKERS } from '../utils/majorTickers';
 import { TickValue } from '../components/dashboard/decision/parts';
@@ -269,38 +268,18 @@ export default function PreMarketBriefing() {
 
   const { quotes } = useMarketQuotes(QUOTE_SYMBOLS);
   const sniperGates = useSniperGates();
-  const kill = useDailyKillSwitch();
   const { rate: fxRate, formatRate: formatFxRate } = useFx();
   const openPositions = useOpenPositions();
-  const settings = useSettings();
-  const apiStatus = useApiStatus();
-  const lr = toFloat(settings?.liveRate) || 1;
 
   const phaseInfo = useMemo(() => nextPhase(now), [now]);
   const vixInfo = useMemo(() => vixRegime(quotes?.['^VIX']), [quotes]);
 
   const allOpenOptions = useMemo(() => sniperGates?.rows || [], [sniperGates]);
 
-  // ── Classifieur UNIQUE (§4.1) : deriveAttention, à l'identique de
-  //    Positions.jsx. Fini le vocabulaire hook (armed/imminent/safe) ;
-  //    verdict par position CRITICAL / ARMED (sinon SAFE). ──
-  const actionableAlerts = useMemo(() => {
-    // greeksMap non lu par generateAlerts (facteurs = dte/pctChg/daysHeld) →
-    // Map() vide suffit ; classification byte-identique à Positions.jsx.
-    const alerts = generateAlerts(openPositions || [], new Map(), lr);
-    return alerts.filter((a) => a.severity === 'red' || a.severity === 'orange');
-  }, [openPositions, lr]);
-
-  const gateByPos = useMemo(() => {
-    const att = deriveAttention({
-      alerts: actionableAlerts,
-      gateRows: sniperGates?.rows || [],
-      watchedCount: 0,
-      kill: { triggered: kill.triggered, dailyPnlUsd: kill.dailyPnlUsd, maxLoss: kill.maxLoss },
-      maxLines: Infinity,
-    });
-    return new Map(att.lines.map((l) => [l.id, l]));
-  }, [actionableAlerts, sniperGates, kill.triggered, kill.dailyPnlUsd, kill.maxLoss]);
+  // ── Classifieur UNIQUE : useAttentionMap (É3 §4.2.1) — le MÊME hook
+  //    que Positions.jsx et LivePositions. Verdict par position
+  //    CRITICAL / ARMED (sinon SAFE), zéro assemblage local divergent. ──
+  const gateByPos = useAttentionMap();
 
   const gateCounts = useMemo(() => {
     let critical = 0;
@@ -341,14 +320,24 @@ export default function PreMarketBriefing() {
     return `${dd}/${mm}`;
   }, [sessionDate]);
 
-  const finnhubDown = apiStatus?.finnhub?.status === 'inactive';
-
-  // Macro effectif (Finnhub ∪ fallback local FOMC/CPI/NFP), plage month±1.
+  // É3 §4.2.8 — macro effectif = UNION dédupliquée Finnhub ∪ fallback
+  // local FOMC/CPI/NFP (clé date|libellé, parité CalendarMini /
+  // MarketDeck), plage month±1. La bascule OU est morte : rien ne peut
+  // disparaître parce qu'une source répond partiellement.
   const effectiveMacro = useMemo(() => {
     const { from, to } = monthRangeIso(calYear, calMonth);
-    const fallback = finnhubDown || macro.length === 0 ? macroEventsInRange(from, to) : [];
-    return fallback.length > 0 ? fallback : macro;
-  }, [macro, finnhubDown, calYear, calMonth]);
+    const seen = new Set();
+    const out = [];
+    for (const ev of [...(macro || []), ...macroEventsInRange(from, to)]) {
+      const d = ev?.time ? String(ev.time).slice(0, 10) : null;
+      if (!d || !ev.event) continue;
+      const key = `${d}|${String(ev.event).toUpperCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(ev);
+    }
+    return out;
+  }, [macro, calYear, calMonth]);
 
   const macroToday = useMemo(
     () => effectiveMacro.filter((ev) => ev?.time && String(ev.time).slice(0, 10) === sessionDate),
