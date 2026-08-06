@@ -1,11 +1,10 @@
 // ═══════════════════════════════════════════════════════════════
 //  formatKpi — formateurs KPI partagés (v1.0 · 1.C)
 //
-//  Convention monétaire des decks (héritée des KPI cards, extraite du
-//  CommandDeck 1.A — décision loggée n°5) : arrondi entier, séparateur
-//  de milliers de-CH (apostrophe), signes + / − typographiques,
-//  « M » au-delà du million. UNE seule convention pour CommandDeck,
-//  MarketDeck et les briques 1.D-1.F.
+//  Convention monétaire des decks (décision loggée n°5, 1.A) :
+//  arrondi entier, séparateur de milliers de-CH (apostrophe), signes
+//  + / − typographiques, « M » au-delà du million. UNE seule
+//  convention pour le MarketDeck et les briques 1.D-1.F.
 // ═══════════════════════════════════════════════════════════════
 
 export const fmtUsdCompact = (v) => {

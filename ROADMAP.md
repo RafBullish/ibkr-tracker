@@ -1,8 +1,9 @@
 # Roadmap — Phase finale v1.0
 
-**Phase finale v1.0 OUVERTE** (15.07.2026, verdict architecte + GO Rafael).
-Ligne de base : **v2.3.1** (`ea64652` ; baseline effective `1254a34`).
-Objectif : **tag v1.0.0 au 01.09.2026**.
+**PHASE FINALE CLOSE — v1.0.0 LIVRÉE le 06.08.2026** (tag `v1.0.0`,
+prod ibkr-tracker-lemon.vercel.app), avec 26 jours d'avance sur
+l'objectif du 01.09. Ligne de base : **v2.3.1** (`ea64652`).
+Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
 
 ---
 
@@ -263,7 +264,35 @@ Objectif : **tag v1.0.0 au 01.09.2026**.
 
 ## Étape 4 — Recette v1.0
 
-Recette complète → **tag v1.0.0 (01.09.2026)**.
+- **É4 ✅ (1.0.0, tag v1.0.0, 06.08.2026)** — la passe finale :
+  1. **Audit exercé** des 12 routes @1591 dpr 1.35 ET @1920 (isolé,
+     seedé) : 0 overflow, 0 erreur JS, modales/palette/raccourcis
+     exercés, reduced-motion émulé. Captures `docs/captures/final-v1/`
+     (12 @1591 + 12 @1920).
+  2. **Performance mesurée** : lazy de toutes les routes sauf
+     /dashboard → index 655→448 kB (gzip 197→139, −29 %) ; recharts
+     inchangé (hors chemin critique, décision stabilité).
+  3. **Purge orphelins −1 629 l** (grep 0 chacun) : CommandDeck,
+     KpiZones, EquityChart, useDailySnapshot, exports morts
+     (MoneyDual/KpiCell/KpiBelt/TIMEFRAMES×2/SYNC_FLEX/ibkrOrders),
+     11 icônes, CSS .command-deck*/.greeks-agg*/.stat-row*, proxy
+     /api/ibkr, listener ibkr:open-command, @number-flow/react ;
+     en-têtes remis à la vérité. ibkrSummary conservé + documenté.
+  4. **Sécurité re-prouvée** : token Flex = sessionStorage seul
+     (isolé, valeur factice) ; clés réelles jamais approchées.
+  5. **Docs finales** : ETAT-DU-SITE-V1 rafraîchi v1.0.0 (référence),
+     CLAUDE.md/CHANGELOG/ROADMAP à jour.
+
+## Backlog post-1.0 (explicite)
+
+1. RiskMatrix — passe couleur dédiée (EDGE+/−, jauges ratios, Kelly
+   ambre, vol verte, R toné — constat panel É3, préexistant).
+2. Badge REAL vert StatusBar (arbitrage architecte si neutralisation).
+3. Pipeline IV Rank (source fiable requise ; qc:ivHistory collecte).
+4. Thème daylight sur pages canoniques.
+5. CANONICAL-PURGE (zone TRANSITION + theme/tokens.js legacy).
+6. api/account-summary/sync.js serveur (fast-follow 1.D).
+7. Cosmétique : double scrollbar cheatsheet.
 
 ---
 

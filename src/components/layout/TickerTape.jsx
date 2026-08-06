@@ -5,8 +5,8 @@
 //  largement la viewport → marquee CSS infinite (translateX 0 → -50%
 //  sur contenu dupliqué) révèle progressivement tout le contenu.
 //  Hover pause. prefers-reduced-motion : pas d'animation, scroll manuel
-//  via overflow-x auto (fallback minimal). Hauteur 64 px via le token
-//  --qc-ticker-h (cf. tokens.css).
+//  via overflow-x auto (fallback minimal). Hauteur via le token
+//  --qc-ticker-h (92 px ≥1440 depuis 1.B, barème calibré au lab).
 //
 //  Liste curée, éditable à la main. Le book d'open positions vit
 //  ailleurs (LivePositions), ce bandeau = contexte marché pur.

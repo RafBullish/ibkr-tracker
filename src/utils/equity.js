@@ -140,4 +140,5 @@ const TF_DAYS = {
   '1Y': 365,
 };
 
-export const TIMEFRAMES = ['5D', '1M', '3M', 'YTD', '1Y', 'ALL'];
+// É4 §5.3 — l'export TIMEFRAMES est MORT (dernier consommateur :
+// EquityChart, supprimé ; la liste vivante est celle de nlvSeries.js).

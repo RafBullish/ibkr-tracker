@@ -4,7 +4,7 @@
 //  Footer strip avec une structure flex en 3 zones séparées par des
 //  hairlines verticaux internes à chaque cellule (border-right).
 //
-//    Zone gauche  : data feeds IBKR · FNHB · CBOE + compteur POS.
+//    Zone gauche  : data feeds IBKR · FNHB · CHART + compteur POS.
 //                   Le dot IBKR porte un halo subtle (feature flag).
 //    Zone milieu  : 4 horloges fuseaux NY / GVA / LDN / TKY avec
 //                   badge OUVERT / FERMÉ (NY/LDN/TKY uniquement —

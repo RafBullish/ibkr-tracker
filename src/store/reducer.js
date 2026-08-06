@@ -333,32 +333,19 @@ export function applyAction(state, action) {
           ...state.settings,
           liveRate: sync.fxRate || state.settings.liveRate,
           lastSync: sync.timestamp,
+          // ibkrSummary : écrit par le bridge, persisté, AUCUN lecteur
+          // UI (documenté É4 §5.3 — conservé : le flux d'écriture vit).
           ibkrSummary: sync.summary,
           ibkrLedger: sync.ledger,
           ibkrLiveData: sync.ibkrLiveData || null,
-          ibkrOrders: sync.orders || state.settings.ibkrOrders || [],
+          // É4 §5.3 — ibkrOrders MORT : écrit ici, jamais lu par
+          // personne, jamais persisté (useStore ne le sauve pas).
         },
       };
     }
 
-    case 'SYNC_FLEX': {
-      const flex = action.payload;
-      const existingTradeSigs = new Set(
-        state.closedTrades.map((t) => `${t.tk}_${t.do}_${t.pi}_${t.po}_${t.ct}`)
-      );
-      const newTrades = (flex.closedTrades || [])
-        .filter((t) => !existingTradeSigs.has(`${t.tk}_${t.do}_${t.pi}_${t.po}_${t.ct}`))
-        .map((t) => ({ ...t, id: generateId() }));
-      const existingFlowSigs = new Set(state.cashFlows.map((f) => `${f.da}_${f.ty}_${f.a1}`));
-      const newFlows = (flex.cashFlows || [])
-        .filter((f) => !existingFlowSigs.has(`${f.da}_${f.ty}_${f.a1}`))
-        .map((f) => ({ ...f, id: generateId() }));
-      return {
-        ...state,
-        closedTrades: [...state.closedTrades, ...newTrades],
-        cashFlows: [...state.cashFlows, ...newFlows],
-      };
-    }
+    // É4 §5.3 — case 'SYNC_FLEX' MORT (0 dispatcheur : la synchro Flex
+    // réelle passe par l'import additif de /settings/import).
 
     case 'RESET_ALL':
       // Preserve the user's FX preferences (rate + mode + last-update +

@@ -6,6 +6,58 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0] — 2026-08-06
+
+**Étape 4 — Recette v1.0. LE TAG.** La passe finale : on vérifie, on purge,
+on mesure, on documente, on tague. QuantumCall v1.0.0 est l'outil livré.
+
+### Audit exercé (§5.1)
+- Les 12 routes exercées @1591×900 dpr 1.35 ET @1920 en contexte isolé
+  seedé : 0 overflow partout, 0 erreur JS, modales/palette/raccourcis/
+  filtres exercés, `prefers-reduced-motion` prouvé par émulation.
+- Captures finales versionnées : `docs/captures/final-v1/` (12 pages @1591
+  + 12 @1920).
+
+### Performance (§5.2, mesurée avant/après)
+- **Lazy de toutes les routes sauf /dashboard** (page reine) — même
+  mécanique ErrorBoundary+Suspense que Chain/Greeks/Analytics, barrière
+  unique + fallback `.route-loader`.
+- `index` : 655 kB (gzip 197) → **448 kB (gzip 139), −29 %** ; chaque page
+  a son chunk (15-34 kB). `recharts` (542/150) inchangé : déjà hors chemin
+  critique (3 routes lazy seulement) — stabilité prime.
+
+### Purge des orphelins (§5.3, grep 0 prouvé par suppression)
+- Fichiers : CommandDeck.jsx, hero1/KpiZones.jsx, charts/EquityChart.jsx,
+  hooks/useDailySnapshot.js, src/contexts/ vide.
+- Exports : MoneyDual/KpiCell/KpiBelt (hero1/parts), TIMEFRAMES
+  (utils/equity), TIMEFRAMES+filterByTimeframe doublons (hero1/kit), case
+  `SYNC_FLEX` du reducer, `settings.ibkrOrders` ; `settings.ibkrSummary`
+  CONSERVÉ + documenté (écrit par le bridge vivant, 0 lecteur UI).
+- Icons.jsx : 11 entrées mortes purgées (9 gardées pour BottomNav mobile).
+- CSS : `.command-deck*` (v1-dashboard + c3-hires), `.greeks-agg*` (~175 l),
+  `.stat-row*`. Config : proxy vite `/api/ibkr`, listener
+  `ibkr:open-command`, `@number-flow/react` désinstallée, .gitignore
+  iosevka-source. En-têtes remis à la vérité (hero1 « LAB » → PROD, tape
+  92 px, StatusBar CHART, notes CommandDeck/DashboardKPICards). Total
+  **−1 629 lignes**.
+
+### Sécurité & données (§5.5)
+- Token Flex RE-PROUVÉ en isolé (valeur factice) : sessionStorage
+  uniquement, localStorage = QueryID seul. Les clés `ibkr_u_*` réelles
+  n'ont jamais été approchées (session `--isolated` de bout en bout).
+
+### Documentation (§5.6)
+- `docs/ETAT-DU-SITE-V1.md` **rafraîchi à l'état v1.0.0** (10 sections,
+  résidus abrogés retirés, backlog post-1.0 explicite). CLAUDE.md §5/§6 à
+  jour (SideNav 220, v1.0 livrée), ROADMAP close.
+
+### Gates
+Build vert · check:color-law 0 · 290/290 tests · 12 pages peuplées
+@1591+@1920, 0 overflow · console = bruit toléré documenté uniquement ·
+prod READY sur ibkr-tracker-lemon.vercel.app · **tag `v1.0.0`**.
+
+---
+
 ## [1.0.0-rc.15] — 2026-08-06
 
 **Étape 3 — Cohérence & modales.** Les 12 pages parlent d'une seule voix :

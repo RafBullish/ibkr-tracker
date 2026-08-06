@@ -1745,23 +1745,7 @@
   border-color: var(--qc-accent);
 }
 
-/* ─────────────────────────────────────
-   STAT ROW (ratio bar variant)
-   ───────────────────────────────────── */
-.stat-row__bar {
-  height: 2px;
-  background: var(--qc-border-subtle);
-  border-radius: 1px;
-  overflow: hidden;
-  margin-top: 4px;
-}
-.stat-row__bar-fill {
-  display: block;
-  height: 100%;
-  background: var(--qc-accent);
-  border-radius: inherit;
-  transition: width 500ms var(--ease-spring);
-}
+/* É4 §5.3 — .stat-row* MORT (0 consommateur JSX). */
 
 /* ─────────────────────────────────────
    PAGE LAYOUT — shared wrapper for sub-pages

@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
-//  LAB /lab/heros — PerfBand : bande AU-DESSUS du graphe qui se
-//  RECALCULE par période. « Sur cette période, voilà. » DEV-only.
+//  HÉROS 1 — PerfBand PROD (citoyen depuis 1.D, ex-lab) : bande
+//  AU-DESSUS du graphe qui se RECALCULE par période. « Sur cette
+//  période, voilà. »
 //
 //  Présentation PROPRE et UNIFORME : période en tête de bande, chaque
 //  cellule = libellé court + valeur (± sous-ligne). Métriques concrètes

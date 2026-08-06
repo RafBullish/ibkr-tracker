@@ -88,7 +88,7 @@ Si VS Code demande une permission (git push…), demande à Rafael de cliquer
   valeurs de couleur en dur ; on cible les `var(--*)` canoniques.
 - **Chrome commun (v1.0, brique 1.B)** : grille AppShell 3 rangées —
   **TickerTape** pleine largeur bord à bord (92 px ≥1440, barème calibré au lab,
-  flash au tick via `usePriceFlash`) · **SideNav** verticale 232 px repliable
+  flash au tick via `usePriceFlash`) · **SideNav** verticale 220 px repliable
   64 px (**⌘B**, persistance `qc:sidenav:collapsed`, groupes OVERVIEW/TRADING/
   INSIGHTS/SYSTÈME, « Options Live » = route `/trading/chain`, badge REAL/LIVE,
   ⌘K) · **StatusBar** en bas (inchangée). La CommandBar horizontale est morte
@@ -246,8 +246,18 @@ NEUTRE APPUYÉ ; `--text-on-accent` → void (contraste ~10:1) ; alertes
 détail position neutres ; fuites LivePositions soldées (Σ MAX RISK
 neutre — amendement 15.07 —, IVR neutre, ALERT neutre, CLOSEST DTE
 neutre). **Résidu consigné** : gisement couleur préexistant RiskMatrix
-(EDGE+/−, jauges ratios, Kelly ambre) → passe dédiée. Prochaine :
-**Étape 4 — Recette v1.0.**
+(EDGE+/−, jauges ratios, Kelly ambre) → passe dédiée. Enfin **É4
+mergée (1.0.0, tag v1.0.0)** — Recette : audit exercé 12 pages
+@1591+@1920 (0 overflow, 0 erreur JS, reduced-motion émulé) ;
+**code-splitting** (toutes les routes lazy sauf Dashboard — index
+655→448 kB, −29 % gzip ; recharts déjà hors chemin critique) ; purge
+orphelins −1 629 l (CommandDeck/KpiZones/EquityChart/useDailySnapshot,
+exports et CSS morts, `@number-flow/react` désinstallée, en-têtes
+remis à la vérité) ; sécurité token re-prouvée (sessionStorage seul) ;
+`docs/ETAT-DU-SITE-V1.md` rafraîchi = cartographie de référence
+v1.0.0 ; captures `docs/captures/final-v1/`.
+**QuantumCall v1.0.0 est LIVRÉ** — maintenance sur demande explicite,
+backlog post-1.0 dans ROADMAP/ETAT-DU-SITE §9.
 
 Repères S2 toujours en vigueur : KPI 44, cellules `.v3-table` 20 (rowHeight 47),
 plancher caption 17, strip 21/16/18, ticks charts plafonnés 14, héros 56/64
