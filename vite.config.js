@@ -152,7 +152,7 @@ export default defineConfig({
   plugins: [
     react(),
     vercelDevApi({
-      skipPrefixes: ['/api/cboe', '/api/ibkr'],
+      skipPrefixes: ['/api/cboe'],
     }),
   ],
   build: {
@@ -165,7 +165,7 @@ export default defineConfig({
             '@radix-ui/react-dropdown-menu',
             '@radix-ui/react-dialog',
           ],
-          'motion-vendor': ['framer-motion', '@number-flow/react'],
+          'motion-vendor': ['framer-motion'],
           'table-vendor': ['@tanstack/react-table', '@tanstack/react-virtual'],
           vendor: ['react', 'react-dom', 'react-router-dom'],
         },
@@ -182,12 +182,9 @@ export default defineConfig({
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
       },
-      '/api/ibkr': {
-        target: 'https://localhost:5000',
-        changeOrigin: true,
-        secure: false, // Self-signed certificate
-        rewrite: (path) => path.replace(/^\/api\/ibkr/, ''),
-      },
+      // É4 §5.3 — le proxy `/api/ibkr` (Gateway direct :5000) est MORT :
+      // 0 consommateur dans src/ ; le flux IBKR vivant passe par le
+      // bridge local ci-dessous.
       // Local IBKR bridge (bridge/serve.py on 127.0.0.1:8765). Same-origin
       // path so the app's CSP `connect-src 'self'` is not violated — no
       // vercel.json change needed. Dev only; in production the bridge lives

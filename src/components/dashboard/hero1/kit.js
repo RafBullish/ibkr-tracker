@@ -1,6 +1,9 @@
 // ═══════════════════════════════════════════════════════════════
-//  LAB /lab/heros — kit : formatters (de-CH, cohérents app) + stats
-//  denses dérivées d'une série equity. DEV-only, purgé fin 1.D.
+//  HÉROS 1 — kit PROD (citoyen depuis 1.D, ex-lab) : formatters
+//  de-CH cohérents app (fmtUsd/fmtUsdSigned/fmtChf/toneSign…) +
+//  stats denses dérivées d'une série equity. Consommé par les decks
+//  Héros 1/2, la bande décision et les pages (Positions/History/
+//  Journal).
 // ═══════════════════════════════════════════════════════════════
 
 export const fmtUsd = (v) => {
@@ -160,23 +163,6 @@ export function deriveStats(data, base = 0) {
   };
 }
 
-// Filtre par timeframe (mêmes clés que l'app : 5D/1M/3M/YTD/1Y/ALL).
-const TF_DAYS = { '5D': 5, '1M': 30, '3M': 90, '1Y': 365 };
-export const TIMEFRAMES = ['5D', '1M', '3M', 'YTD', '1Y', 'ALL'];
-
-export function filterByTimeframe(points, range) {
-  if (!points || !points.length || range === 'ALL') return points || [];
-  const ref = points[points.length - 1].date;
-  const refMs = Date.parse(ref);
-  if (!Number.isFinite(refMs)) return points;
-  let cutoff;
-  if (range === 'YTD') {
-    const d = new Date(refMs);
-    cutoff = Date.UTC(d.getUTCFullYear(), 0, 1);
-  } else {
-    const days = TF_DAYS[range];
-    if (!Number.isFinite(days)) return points;
-    cutoff = refMs - days * 86_400_000;
-  }
-  return points.filter((p) => Date.parse(p.date) >= cutoff);
-}
+// É4 §5.3 — TIMEFRAMES + filterByTimeframe locaux MORTS (doublons
+// 0-consommateur ; les vivants sont nlvSeries.TIMEFRAMES et
+// utils/equity.filterByTimeframe).

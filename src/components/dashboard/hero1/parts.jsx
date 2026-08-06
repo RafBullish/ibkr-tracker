@@ -7,18 +7,10 @@
 import { TIMEFRAMES } from '../../../utils/nlvSeries';
 import { fmtUsd, fmtPct, fmtChf } from './kit';
 
-const isSigned = (s) => typeof s === 'string' && (s[0] === '+' || s[0] === '−' || s[0] === '-');
+// É4 §5.3 — MoneyDual, KpiCell et KpiBelt (exports 0-consommateur,
+// vestiges de l'itération 1.D pré-PortfolioDeck) sont MORTS.
 
-// ── Double devise : USD (grand) + CHF (petit, converti FX live) ──
-export function MoneyDual({ usdText, usd, rate, size = 'md', tone }) {
-  const chf = fmtChf(usd, rate, isSigned(usdText));
-  return (
-    <span className={`lh-money lh-money--${size}`}>
-      <span className={`lh-money__usd${tone ? ` lh-money__usd--${tone}` : ''}`}>{usdText}</span>
-      {chf ? <span className="lh-money__chf">{chf}</span> : null}
-    </span>
-  );
-}
+const isSigned = (s) => typeof s === 'string' && (s[0] === '+' || s[0] === '−' || s[0] === '-');
 
 // ── Frontière marché / portefeuille (sommet du bloc, structurelle) ─
 export function Frontier() {
@@ -79,37 +71,6 @@ export function NlvHero({ nlv, rate, dayPnl, dayPct, spark, size = 'md' }) {
         {pill ? <span className={`lh-hero__pill lh-hero__pill--${tone}`}>{pill}<span className="lh-hero__pill-cap"> jour</span></span> : null}
       </div>
       {chf ? <span className="lh-hero__chf">{chf}</span> : null}
-    </div>
-  );
-}
-
-// ── Cellule KPI (double devise, dense, spark inline) ────────────
-export function KpiCell({ cell, rate }) {
-  const showChf = cell.money && Number.isFinite(cell.usd) && Number.isFinite(rate) && rate > 0;
-  const chf = showChf ? fmtChf(cell.usd, rate, isSigned(cell.value)) : null;
-  const spark = Array.isArray(cell.spark) && cell.spark.length >= 2 ? cell.spark : null;
-  return (
-    <div className="lh-kpi" title={cell.hint || undefined}>
-      <span className="lh-kpi__label">
-        {cell.label}
-        {cell.est ? <span className="lh-kpi__est">est</span> : null}
-      </span>
-      <div className="lh-kpi__main">
-        <span className={`lh-kpi__value${cell.tone ? ` lh-kpi__value--${cell.tone}` : ''}`}>{cell.value}</span>
-        {spark ? <MiniSpark points={spark} w={48} h={18} /> : null}
-      </div>
-      {chf ? <span className="lh-kpi__chf">{chf}</span> : null}
-      {cell.sub != null ? <span className="lh-kpi__sub">{cell.sub}</span> : <span className="lh-kpi__sub lh-kpi__sub--empty" />}
-    </div>
-  );
-}
-
-export function KpiBelt({ cells, rate, layout = 'row' }) {
-  return (
-    <div className={`lh-belt lh-belt--${layout}`}>
-      {cells.map((c) => (
-        <KpiCell key={c.id} cell={c} rate={rate} />
-      ))}
     </div>
   );
 }

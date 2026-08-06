@@ -184,21 +184,12 @@
     height: 360px;
   }
 
-  /* ══ B4 · TICKS D'AXE RECHARTS — dernier trou du plancher 13 ════
-     Les ticks XAxis/YAxis des 3 graphes héros (equity/dailypnl/3e)
-     sont rendus par `tick={{fontSize:11}}` en JSX. Recharts 3.8 passe
-     `fontSize` comme PROP SVG → React l'émet en ATTRIBUT de présentation
-     `font-size="11"` (vérifié dans recharts/es6 : svgPropertiesNoEvents
-     autorise fontSize ; Text.js spread via svgPropertiesAndEvents). Les
-     attributs de présentation ont la priorité la plus BASSE du cascade
-     → cette règle de classe les bat SANS !important. Le commentaire B3
-     (« non couvert par CSS ») présumait à tort un style inline.
-     CSS-ONLY volontaire : on NE touche PAS le JSX → mobile <1440 garde
-     11px, et surtout les constantes HERO_CHART_* (géométrie x→index du
-     hover, note CRITIQUE DashboardKPICards.jsx:51) restent intactes.
-     Pas de clip : YAxis width=88 >> ~55px@13px ; XAxis minTickGap=42
-     auto-drop. Scopé .dash-shell → n'affecte QUE le dashboard (autres
-     pages recharts hors palier). */
+  /* ══ TICKS D'AXE RECHARTS du Dashboard (plafond data-viz) ══════
+     Les attributs de présentation SVG émis par Recharts ont la
+     priorité la plus basse de la cascade → cette règle de classe les
+     bat SANS important. Scopé .dash-shell → n'affecte QUE le
+     dashboard. (La note historique B4 citait des composants morts —
+     réécrite en É4 §5.3.) */
   .dash-shell .recharts-cartesian-axis-tick-value {
     /* D2.F : ticks d'axe plafonnés à 14 (12 × 1.30 = 15.6 → cap 14, spec) —
        data-viz, pas du texte de lecture ; suivre le plancher 17 gonflerait
@@ -655,55 +646,8 @@
      la recomposition vit désormais dans la structure JSX (bandeau + étage
      régime + héros + étage clôture 2-col qui grandit), cf. pages-premarket.css. */
 
-  /* ════════════════════════════════════════════════════════════════
-     V1.0 · 1.A — LIGNE DE COMMANDEMENT (.command-deck), palier ≥1440.
-     UNE rangée de 6 zones sur un panneau continu ; hairlines verticales
-     entre zones ; valeurs alignées sur une même ligne de base via
-     subgrid (3 rangées partagées : tête / valeur / sous-ligne).
-     Échelle S2 : NLV 56 · monétaires 44 (--type-display) · WR/PF 23
-     (--fs-2xl) · MTD 21 (--type-cell-value) · captions 17 (plancher).
-     ════════════════════════════════════════════════════════════════ */
-  /* 1.B — fractions re-réglées pour la largeur de contenu du Shell
-     (1591 − sidebar 232 ≈ 1359) : la zone 6 (WIN RATE · PROFIT FACTOR,
-     min-content 253px) reçoit 1.55fr, padding resserré 20 → 16.
-     Tailles S2 FIXES, aucune régression. */
-  .command-deck {
-    grid-template-columns: 1.4fr 0.92fr 0.95fr 1fr 1.08fr 1.55fr;
-    grid-template-rows: auto auto 1fr;
-    min-height: 112px;
-  }
-
-  .command-deck__zone {
-    display: grid;
-    grid-template-rows: subgrid;
-    grid-row: 1 / 4;
-    gap: 6px 0;
-    padding: 14px 16px 12px;
-    border-top: none;
-  }
-
-  .command-deck__zone--nlv {
-    grid-column: auto;
-  }
-
-  /* Hairlines VERTICALES sur les zones 2-6 (la base <1440 posait des
-     séparateurs horizontaux + un vertical inter-colonne : annulés). */
-  .command-deck__zone:not(.command-deck__zone--nlv),
-  .command-deck__zone:nth-child(odd):not(.command-deck__zone--nlv) {
-    border-left: 1px solid var(--hairline-rest);
-  }
-
-  /* Ligne de base partagée : les valeurs (rangée 2 du subgrid)
-     s'alignent baseline d'une zone à l'autre. */
-  .command-deck__value {
-    align-self: baseline;
-  }
-
-  /* Zone 6 : le gap de zone (6px 0) écraserait le column-gap de la
-     grille duo — on le re-pose. */
-  .command-deck__zone--duo {
-    column-gap: 14px;
-  }
+  /* É4 §5.3 — le palier ≥1440 de l'ex-Ligne de commandement est MORT
+     (composant CommandDeck supprimé, 0 consommateur depuis 1.D). */
 
   /* ════════════════════════════════════════════════════════════════
      V1.0 · 1.C.10 — MARKET DECK D2-FINALE, palier ≥1440.
@@ -779,48 +723,17 @@
     margin: 3px 0 4px;
   }
 
-  .command-deck__label,
-  .command-deck__live-text {
-    font-size: var(--type-caption); /* 17 — plancher S2 */
-  }
 
-  .command-deck__value {
-    font-size: var(--type-display); /* 44 */
-  }
 
-  .command-deck__value--nlv {
-    font-size: 56px;
-  }
 
-  .command-deck__value--duo {
-    font-size: var(--fs-2xl); /* 23 */
-  }
 
   /* Sous-lignes v2 (1.C) : valeurs 17 (fourchette 17-18 du brief —
      17 retenu pour la tenue des zones étroites), labels/percents 14. */
-  .command-deck__subline-value {
-    font-size: 17px;
-  }
 
-  .command-deck__subline-label {
-    font-size: 14px;
-  }
 
-  .command-deck__subline-sep {
-    font-size: 15px;
-  }
 
-  .command-deck__subline-pct {
-    font-size: 14px;
-  }
 
-  .command-deck__caption {
-    font-size: var(--type-caption); /* 17 */
-  }
 
-  .command-deck__gauge {
-    margin: 8px 0 4px;
-  }
 
   /* ════════════════════════════════════════════════════════════════
      V1.0 · 1.B → 1.S — LE SHELL, palier ≥1440.

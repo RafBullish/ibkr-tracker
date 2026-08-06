@@ -1,8 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
-//  LAB /lab/heros — TvChart : le graphe « terminal » (canvas).
-//  DEV-only, purgé fin 1.D. Prototype avec lightweight-charts v5
-//  (TradingView, Apache-2.0, ~canvas) — dépendance ratifiée POUR LE
-//  LAB. Importé UNIQUEMENT ici → tree-shaken du bundle prod.
+//  HÉROS 1 — TvChart PROD (citoyen depuis 1.D, ex-lab) : le graphe
+//  « terminal » (canvas) sur lightweight-charts v5 (TradingView,
+//  Apache-2.0) — dépendance RATIFIÉE 1.D, chargée code-split.
 //
 //  Rendu « TradingView en plus simple » : ligne nette, remplissage
 //  dégradé qui s'estompe, grille fine régulière, axe Y à droite avec

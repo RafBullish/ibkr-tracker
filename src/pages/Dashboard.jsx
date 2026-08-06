@@ -114,16 +114,15 @@ export default function Dashboard() {
     [portfolioMetrics, riskMatrixData, equityHistory]
   );
 
-  // Persiste un snapshot quotidien des métriques (cf. useDailySnapshot.js).
+  // Persiste un snapshot quotidien des métriques (clé dailySnapshots —
+  // consommée par la série NLV de nlvSeries.js).
   useDailySnapshotWriter();
 
   return (
     <div className="dashboard-page">
-      {/* v1.0 · 1.C.2 — LE COCKPIT : une seule pièce d'instrument soudée
-          (full-bleed, dockée sous la hairline du tape). Étage marché
-          (MarketDeck) + hairline interne + étage portefeuille (CommandDeck). */}
-      {/* 1.C — étage marché (intangible). Le CommandDeck (KPI portefeuille)
-          a migré dans le bloc Héros 1 (zone haute KPI « Bi-héros »). */}
+      {/* v1.0 — LE COCKPIT : l'étage marché (MarketDeck, 1.C intangible)
+          dans son cadre d'instrument (1.D). Les KPI portefeuille vivent
+          dans le bloc Héros 1 depuis 1.D. */}
       <section className="cockpit" aria-label="Cockpit — marché">
         <MarketDeck />
       </section>

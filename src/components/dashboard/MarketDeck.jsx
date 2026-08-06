@@ -1,8 +1,8 @@
 // ═══════════════════════════════════════════════════════════════
 //  MARKET DECK — D2-FINALE (v1.0 · 1.C.10)
 //
-//  Étage MARCHÉ du cockpit (le conteneur .cockpit soude cet étage à
-//  l'étage portefeuille — CommandDeck — sous la hairline du tape).
+//  Étage MARCHÉ du cockpit (conteneur .cockpit, sous la hairline du
+//  tape ; les KPI portefeuille vivent dans Héros 1 depuis 1.D).
 //  Composition D2 « double étage » choisie par Rafael aux labs I-VI,
 //  amendée : AGENDA au rail du temps (gauche), FUT·O/N au rail des
 //  entrailles (droite). ADN du croquis (atomes portés du lab, gelés).

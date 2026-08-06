@@ -76,8 +76,9 @@ import './styles/pages-dashboard.css';
 // la page n'avait pas de feuille dédiée (styles épars dans v3-components.css).
 // Scopée .analytics-v3 / .analytics-command / .analytics-rhythm. Avant les v1-*.
 import './styles/pages-analytics.css';
-// v1-dashboard.css — Dashboard ère produit v1.0 (brique 1.A) : base <1440
-// de la Ligne de commandement (.command-deck). Palier ≥1440 dans c3-hires.
+// v1-dashboard.css — cockpit du Dashboard v1.0 : cadre .cockpit (1.D)
+// + MarketDeck .mk-* (étage marché 1.C, base <1440 ; palier ≥1440 dans
+// c3-hires). L'ex-Ligne de commandement est morte (É4 §5.3).
 import './styles/v1-dashboard.css';
 // pages-calendar.css — page-vitrine /insights/calendar, huitième et dernière
 // consommation des tokens canoniques. Calendar a été désintoxiquée de la

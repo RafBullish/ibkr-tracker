@@ -1486,197 +1486,34 @@
   font-weight: 500;
 }
 
-/* ════════════════════════════════════════════════════════════════
-   GREEKS AGGREGATE — brick 5
-   Split 50/50 — KPI strip 109 px (top) + per-position table 108 px (bottom).
-   ════════════════════════════════════════════════════════════════ */
+/* É4 §5.3 — le bloc GREEKS AGGREGATE (.greeks-agg*, ~175 l, brick 5)
+   est MORT : dead-code 0-consommateur consigné depuis 2.B, purgé. */
 
-.greeks-agg .module-body,
-.greeks-agg__body {
-  /* Pas utilisé — on rend top + bottom en frères directs sous l'header */
-}
 
-.greeks-agg__top {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
-  background: var(--qc-border-subtle);
-  height: 109px;
-  border-bottom: 1px solid var(--qc-border-subtle);
-  flex-shrink: 0;
-}
 
-.greeks-agg__kpi {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 3px;
-  padding: 0 8px;
-  background: var(--bg-elev-1);
-  font-family: var(--qc-font-mono);
-  min-width: 0;
-}
 
-.greeks-agg__kpi-label {
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--qc-text-secondary);
-  white-space: nowrap;
-}
 
-.greeks-agg__kpi-value {
-  font-size: 13px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums slashed-zero;
-  line-height: 1.2;
-}
 
-.greeks-agg__kpi-value--profit {
-  color: var(--qc-profit);
-}
-.greeks-agg__kpi-value--loss {
-  color: var(--qc-loss);
-}
-.greeks-agg__kpi-value--mute {
-  color: var(--qc-text-primary);
-}
 
-.greeks-agg__kpi-sub {
-  font-size: 12px;
-  color: var(--qc-text-tertiary);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
-.greeks-agg__bottom {
-  height: 108px;
-  overflow: auto;
-  flex: 1;
-}
 
-.greeks-agg__table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: var(--qc-font-mono);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums slashed-zero;
-}
 
-.greeks-agg__table thead {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: color-mix(in srgb, var(--qc-bg-base) 80%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 1px 0 0 var(--qc-border-subtle);
-}
 
-.greeks-agg__table thead th {
-  height: 22px;
-  padding: 0 6px;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--qc-text-tertiary);
-  border-bottom: 1px solid var(--qc-border-subtle);
-  background: transparent;
-  text-align: right;
-  white-space: nowrap;
-}
 
-.greeks-agg__table thead th:first-child,
-.greeks-agg__table thead th:nth-child(2) {
-  text-align: left;
-}
 
-.greeks-agg__table tbody tr {
-  height: var(--row-h-15);
-  border-bottom: 1px solid var(--qc-border-subtle);
-  transition: background 80ms ease-out;
-}
 
-.greeks-agg__table tbody tr:last-child {
-  border-bottom: none;
-}
 
-.greeks-agg__table tbody tr:hover {
-  background: var(--row-hover);
-}
 
-.greeks-agg__table tbody td {
-  padding: 0 6px;
-  text-align: right;
-  white-space: nowrap;
-  color: var(--qc-text-secondary);
-}
 
-.greeks-agg__table tbody td.greeks-agg__ticker {
-  text-align: left;
-  color: var(--qc-text-primary);
-  font-weight: 600;
-}
 
-.greeks-agg__table tbody td:nth-child(2) {
-  text-align: left;
-}
 
 /* Type pills (CALL / PUT / STK) */
-.greeks-agg__type-pill {
-  display: inline-flex;
-  align-items: center;
-  height: 11px;
-  padding: 0 4px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  border: 1px solid var(--qc-border-subtle);
-  border-radius: 0;
-}
 
-.greeks-agg__type-pill--CALL {
-  color: var(--qc-profit);
-  border-color: color-mix(in srgb, var(--qc-profit) 30%, transparent);
-  background: color-mix(in srgb, var(--qc-profit) 6%, transparent);
-}
 
-.greeks-agg__type-pill--PUT {
-  color: var(--qc-loss);
-  border-color: color-mix(in srgb, var(--qc-loss) 30%, transparent);
-  background: color-mix(in srgb, var(--qc-loss) 6%, transparent);
-}
 
-.greeks-agg__type-pill--STK {
-  color: var(--qc-text-tertiary);
-}
 
 /* Tones cellules (Δ Γ Θ ν) */
-.greeks-agg__cell--profit {
-  color: var(--qc-profit);
-}
-.greeks-agg__cell--loss {
-  color: var(--qc-loss);
-}
-.greeks-agg__cell--mute {
-  color: var(--qc-text-tertiary);
-}
 
-.greeks-agg__empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  font-size: 12px;
-  color: var(--qc-text-tertiary);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-family: var(--qc-font-mono);
-}
 
 /* ════════════════════════════════════════════════════════════════
    LIVE POSITIONS — brick 6 (col 1-12 row 2, 160 px)

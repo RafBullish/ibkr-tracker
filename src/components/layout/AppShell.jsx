@@ -214,15 +214,11 @@ export default function AppShell() {
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
-  // Open the command palette from anywhere (e.g. legacy CockpitHeader
-  // search button still dispatches this event).
-  useEffect(() => {
-    const open = () => setCmdOpen(true);
-    window.addEventListener('ibkr:open-command', open);
-    return () => window.removeEventListener('ibkr:open-command', open);
-  }, []);
+  // É4 §5.3 — le listener `ibkr:open-command` est MORT (0 dispatcheur :
+  // le CockpitHeader legacy qui l'émettait a disparu ; la palette
+  // s'ouvre via ⌘K et le bouton Rechercher de la SideNav).
 
-  // v5 Sprint 10 : CommandBar ⌘/ pill click dispatches this event.
+  // Le bouton « Aide ⌘/ » de la SideNav dispatch cet événement.
   useEffect(() => {
     const open = () => setCheatOpen(true);
     window.addEventListener('qc:open-cheatsheet', open);
