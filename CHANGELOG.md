@@ -6,6 +6,86 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.0-rc.15] — 2026-08-06
+
+**Étape 3 — Cohérence & modales.** Les 12 pages parlent d'une seule voix :
+divergences éteintes (les 11 points arbitrés par l'architecte), modales et
+chrome global unifiés, dettes de registre soldées. **ÉTAPE 3 CLOSE.**
+
+### Divergences éteintes (§4.2)
+- **Classifieur UNIQUE partout** : nouveau hook partagé `useAttentionMap`
+  (mêmes entrées que la bande décision) — la colonne GATE de LivePositions
+  passe aux badges `ARMED`/`CRITICAL` (anatomie identique Positions/PreMarket).
+  `computeNextGate`, `formatGate`, `GatePill` et son vocabulaire propre
+  (« SL35 ARMED ») sont MORTS (grep 0) ; la pill `--armed` était ROUGE (fuite
+  en moins). Positions et PreMarket migrent au même hook (3 assemblages → 1).
+- **TIME_STOP retiré de la zone ATTENTION** (même mécanisme que les seuils DTE
+  legacy en 1.F-c1) : seuil hérité non doctrinal (« ≥5 j sans +15 % ») qui
+  saturait la bande (4/5 CRITICAL au réel). « Jours tenus » reste affiché
+  partout (DAYS-IN, DTE riche, détail) — zéro donnée perdue.
+- **Triplication Σ Δ/Σ Θ éteinte** : la GreeksStrip de RiskMatrix est MORTE
+  (bande CAPITAL + PortfolioDeck + page Greeks restent les maisons). Doublon
+  CAPITAL↔PortfolioDeck CONSERVÉ (deux moments de lecture, décision assumée).
+- **Streaks NEUTRES** (RiskMatrix + bande) : un compteur n'est pas de l'argent ;
+  le P&L $ de la streak courante reste toné.
+- **Expectancy gatée à 10 trades décisifs** (MIN_DECISIVE_WINRATE) dans les
+  decks Héros 1 ET Héros 2 — « — » honnête + « N décisifs / 10 requis »
+  (une seule vérité avec la bande, vérifié à 9 et à 10 décisifs).
+- **Moteur DTE UNIQUE clampé à 0** : `daysToExpiration` (négatif possible) est
+  MORT, `alerts.js` migre sur `dteFromExp` (déclenchements identiques prouvés) ;
+  nouveau `isExpired()` ; une option expirée s'affiche **« EXP »** partout
+  (LivePositions, Positions, détail, DTE PROCHE, CLOSEST DTE).
+- **Le libellé d'exposition dit la vérité du calcul** (`totalExposure` =
+  Σ |valeur mark|) : bande « EXPOSITION · Σ valeur mark », jauge EXPOSITION,
+  méta PortfolioDeck « Σ mark · % NLV ». Calcul intouché. L'ex-« DÉPLOYÉ »
+  (coût des primes) mentait.
+- **Macro = union dédupliquée partout** (date|libellé) : PreMarket et Calendar
+  alignés sur CalendarMini/MarketDeck — la bascule OU est morte, rien ne
+  disparaît sur réponse partielle de Finnhub.
+
+### Modales & chrome global (§4.3)
+- **`src/styles/modals.css` créée** — la maison des modales : anatomie unique
+  cockpit (plan raised + filet murmuré + radius 7, en-tête registre mk-title +
+  fermeture, corps 8 px, pied secondaire gauche / primaire ambre droite).
+  Modal générique, AddTradeModal, ConfigFlexModal, détail de position,
+  CheatsheetModal. Drag-bar décorative MORTE (les deux jumelles).
+- **Split de `v5-chain.css`** : `.perf-attr__*` rapatriées dans
+  pages-history.css (byte-identique, cascade préservée), `.cheatsheet__*` dans
+  modals.css ; fichier renommé **`pages-chain.css`**.
+- **CheatsheetModal (⌘/) réécrite sur la vérité du code** : ⌘0..9/K/B/Esc
+  vérifiés contre AppShell, interactions réellement câblées seulement ;
+  mnemonics 4-lettres MORTS (CommandBar morte en 1.B), hover-underline MORT,
+  footer « v5 + GitHub » → « v1.0 ».
+- **CommandPalette (⌘K) au langage cockpit** : styles inline (palette JS
+  legacy) → classes `.cmdk` (verre sombre, hairlines, ligne focus ambre,
+  état vide designé), icônes lucide (jeu unique). « Purge des données » cible
+  /settings/general (l'ex-cible Import était fausse). **Bug corrigé** : le
+  spread écrasait le discriminant des positions → lignes fantômes sans label.
+- **Toast** : erreur/avertissement = NEUTRE APPUYÉ (une opération échouée
+  n'est pas une perte), info neutre, succès vert (fait factuel d'opération).
+- **Contraste CTA** : `--text-on-accent` → encre void (parité badge CRITICAL ;
+  le blanc-sur-ambre hérité de l'ère cyan tenait ~1.9:1, void tient ~10:1).
+- Alertes du détail de position NEUTRES (parité RowAlerts 2.A) ; fallback de
+  route sobre (GlassCard retirée d'App) ; aiguille TiltMeter au registre tick
+  (180 ms) ; caveat ratios RiskMatrix ex-inline → classe.
+
+### Panel adversarial (passe 2 — corrections)
+- LivePositions : Σ MAX RISK NEUTRE (amendement 15.07), CLOSEST DTE neutre +
+  EXP, barre IVR neutre, pastilles ALERT neutres (cyan mort), badges
+  IN PROFIT/IN LOSS neutres ; TradeHistory WINS/LOSSES neutres ; RiskMatrix
+  compteurs Wins/Losses neutres ; compteur n sparse de l'attribution → encre
+  sourde ; palette : zéro ni gain ni perte ; méta EXPOSITION sans troncature
+  (mesuré) ; code mort raté purgé (useDailyKillSwitch de PreMarket, champ
+  `gates`, `.modal-drag-bar`, 4 commentaires périmés).
+
+### Gates
+Build vert · check:color-law 0 violation · 290/290 tests · 12 pages peuplées
+@1591 dpr 1.35 (docs/captures/e3-coherence/) · 0 overflow @1591 ET @1920 sur
+les 12 routes · prefers-reduced-motion prouvé par émulation (4 pages) ·
+console = bruit toléré uniquement (finnhub 500, quotes 429).
+
+---
+
 ## [1.0.0-rc.14] — 2026-08-04
 
 **Brique 2.D — Utilitaires (Import · Settings General · Settings API).** Dernière
