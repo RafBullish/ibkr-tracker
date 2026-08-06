@@ -131,9 +131,6 @@ function buildRow(pos, context) {
     edgeTier,
     capitalTier,
     betaSPY,
-    // gates kept for legacy fixture compat (some test rendering
-    // paths still iterate this array).
-    gates: Array.isArray(pos.gates) ? pos.gates : [],
     daysHeld: days,
     spark7d: Array.isArray(pos.spark7d) ? pos.spark7d : null,
     alert,

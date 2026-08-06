@@ -678,8 +678,11 @@
   /* Half-opacity flag for n < 3 */
   opacity: 0.5;
 }
+/* É3 panel — le compteur n des cellules à échantillon faible passe à
+   l'encre sourde : l'ambre sur un état DURABLE non décisionnel était
+   une fuite (même motif que la mort de l'ex-untagged ambre en 2.A-c1). */
 .perf-attr__cell--sparse .perf-attr__cell-n {
-  color: var(--accent-amber, #ffa028);
+  color: var(--ink-mute);
 }
 .perf-attr__cell--empty {
   background: var(--bg-elev-2);

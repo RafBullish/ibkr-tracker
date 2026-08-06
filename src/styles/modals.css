@@ -515,6 +515,10 @@
   color: var(--pnl-down);
 }
 
+.cmdk__pnl--mute {
+  color: var(--ink-mute);
+}
+
 .cmdk__kbd {
   margin-left: auto;
   font-family: var(--qc-font-mono);

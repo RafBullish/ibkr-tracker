@@ -60,7 +60,7 @@ export default function PortfolioDeck({ kpi, rate }) {
   // É3 §4.2.7 — EXPOSURE : la méta dit la vérité du calcul
   // (totalExposure = Σ |valeur mark|, pas le coût des primes engagées).
   const capital = [
-    { label: 'EXPOSURE', value: k.exposure == null ? null : fmtUsdCompact(k.exposure), chf: chf(k.exposure), sub: k.expoPct != null ? `Σ valeur mark · ${Math.round(k.expoPct)} % NLV` : 'Σ valeur mark', bar: k.expoPct != null ? { pct: k.expoPct, mark: 70 } : null },
+    { label: 'EXPOSURE', value: k.exposure == null ? null : fmtUsdCompact(k.exposure), chf: chf(k.exposure), sub: k.expoPct != null ? `Σ mark · ${Math.round(k.expoPct)} % NLV` : 'Σ valeur mark', bar: k.expoPct != null ? { pct: k.expoPct, mark: 70 } : null },
     { label: 'NOTIONNEL', value: k.notional == null ? null : fmtUsdCompact(k.notional), chf: chf(k.notional) },
     { label: 'POSITIONS', value: k.positionsCount == null ? null : `${k.positionsCount}`, sub: 'ouvertes' },
     // É3 §4.2.6 — expirée = « EXP » honnête, jamais « 0 j » ambigu.

@@ -73,12 +73,14 @@ export default function CapitalZone({ capital, rate }) {
       <div className="db-grid3">
         {/* É3 §4.2.7 — « EXPOSITION » : la vérité du calcul
             (totalExposure = Σ |valeur mark| des positions ouvertes),
-            dite aussi en méta. Le calcul n'est PAS modifié. */}
+            dite aussi en méta. Le % NLV vit dans la jauge EXPOSITION
+            juste au-dessus (pas de redite → méta courte, zéro
+            troncature). Le calcul n'est PAS modifié. */}
         <Cell
           label="EXPOSITION"
           value={c.deployed == null ? '—' : fmtUsd(c.deployed)}
           chf={chf(c.deployed)}
-          sub={c.deployedPct != null ? `Σ valeur mark · ${Math.round(c.deployedPct)} % NLV` : 'Σ valeur mark'}
+          sub="Σ valeur mark"
         />
         <Cell
           label={

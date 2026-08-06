@@ -1905,12 +1905,8 @@
   height: 100%;
 }
 
-.live-pos__ivr-fill--profit {
-  background: var(--qc-profit);
-}
-.live-pos__ivr-fill--loss {
-  background: var(--qc-loss);
-}
+/* É3 panel — variantes profit/loss MORTES (un IV Rank n'est pas de
+   l'argent) : la barre IVR est neutre, une seule encre. */
 .live-pos__ivr-fill--mute {
   background: var(--qc-text-tertiary);
 }
@@ -1948,6 +1944,10 @@
   border-radius: 0;
 }
 
+/* É3 panel — pastille ALERT NEUTRE (parité RowAlerts 2.A). Les
+   variantes --warn (ambre durable) et --info (cyan, mort depuis 2.C1)
+   sont MORTES : un signal n'est pas une perte, l'urgence vit dans la
+   colonne GATE. */
 .live-pos__alert-pill {
   display: inline-flex;
   align-items: center;
@@ -1956,20 +1956,9 @@
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
+  color: var(--ink-soft);
   border: 1px solid var(--qc-border-subtle);
   border-radius: 0;
-}
-
-.live-pos__alert-pill--warn {
-  color: var(--qc-warning);
-  border-color: color-mix(in srgb, var(--qc-warning) 30%, transparent);
-  background: color-mix(in srgb, var(--qc-warning) 6%, transparent);
-}
-
-.live-pos__alert-pill--info {
-  color: var(--qc-info);
-  border-color: color-mix(in srgb, var(--qc-info) 30%, transparent);
-  background: color-mix(in srgb, var(--qc-info) 6%, transparent);
 }
 
 /* ─── Sparkline 60×14 inline ────────────────────────────────── */
@@ -4422,15 +4411,14 @@
   color: var(--qc-accent);
 }
 
-/* B5 fix 4 — badges IN PROFIT / IN LOSS (miroir TH WINS/LOSSES). */
-.live-pos__ctx-badge--wins {
-  background: color-mix(in srgb, var(--qc-profit) 8%, transparent);
-  color: var(--qc-profit);
-}
-
+/* É3 panel §4.2.4 — badges IN PROFIT / IN LOSS NEUTRES (des COMPTEURS,
+   pas de l'argent — même motif que les streaks RiskMatrix ; le P&L
+   toné vit dans les cellules Unreal). Miroir TH WINS/LOSSES, neutralisé
+   au même passage. */
+.live-pos__ctx-badge--wins,
 .live-pos__ctx-badge--losses {
-  background: color-mix(in srgb, var(--qc-loss) 8%, transparent);
-  color: var(--qc-loss);
+  background: color-mix(in srgb, var(--ink-pure) 4%, transparent);
+  color: var(--ink-soft);
 }
 
 .live-pos__spark-placeholder {
@@ -4913,14 +4901,12 @@
 
 /* Phase C.2.6.7 — 2 badges séparés Wins/Losses pour clarté
    (remplace l'ancien badge unique "EDGE+ XW · YL"). */
-.trade-history__ctx-badge--wins {
-  background: color-mix(in srgb, var(--qc-profit) 8%, transparent);
-  color: var(--qc-profit);
-}
-
+/* É3 panel §4.2.4 — WINS / LOSSES NEUTRES (des COMPTEURS, pas de
+   l'argent — même passage que IN PROFIT/IN LOSS de LivePositions). */
+.trade-history__ctx-badge--wins,
 .trade-history__ctx-badge--losses {
-  background: color-mix(in srgb, var(--qc-loss) 8%, transparent);
-  color: var(--qc-loss);
+  background: color-mix(in srgb, var(--ink-pure) 4%, transparent);
+  color: var(--ink-soft);
 }
 
 /* ─── Body + table ───────────────────────────────────────────── */

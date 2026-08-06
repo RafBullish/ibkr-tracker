@@ -235,6 +235,10 @@
   --qc-warning:        var(--accent);
   --accent-amber:      var(--accent);
   --accent-hover:      var(--accent);
+  /* É3 §4.3 — texte SUR fond accent : l'encre void (parité badge
+     CRITICAL). L'héritage blanc datait de l'ère cyan ; blanc sur
+     amber ne tenait pas le contraste (~1.9:1), void tient ~10:1. */
+  --text-on-accent:    var(--depth-void);
 
   /* Cascades automatiques :
      --accent-border / --accent-text / --accent-dim / --accent-light / --accent-subtle

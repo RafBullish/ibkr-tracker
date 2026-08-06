@@ -93,7 +93,9 @@ export default function CommandPalette({ open, onClose }) {
         ticker: pos.tk,
         desc,
         pnl: `${pctChg >= 0 ? '+' : ''}${pctChg.toFixed(1)}%`,
-        positive: pctChg >= 0,
+        // É3 panel — convention toneFromSign : zéro n'est ni gain ni
+        // perte → encre neutre (l'ex `>= 0` peignait 0.0 % en vert).
+        tone: pctChg > 0 ? 'profit' : pctChg < 0 ? 'loss' : 'mute',
         type: isOpt ? pos.ty : 'STK',
       };
     });
@@ -233,10 +235,9 @@ export default function CommandPalette({ open, onClose }) {
                     <span className="cmdk__type">{item.type}</span>
                     <span className="cmdk__ticker">{item.ticker}</span>
                     <span className="cmdk__desc">{item.desc}</span>
-                    {/* P&L latent = argent réel → toné (loi de couleur). */}
-                    <span className={`cmdk__pnl cmdk__pnl--${item.positive ? 'profit' : 'loss'}`}>
-                      {item.pnl}
-                    </span>
+                    {/* P&L latent = argent réel → toné (loi de couleur ;
+                        zéro = neutre). */}
+                    <span className={`cmdk__pnl cmdk__pnl--${item.tone}`}>{item.pnl}</span>
                   </div>
                 );
               }

@@ -1165,13 +1165,8 @@
   overflow-y: auto;
   box-shadow: var(--shadow-modal);
 }
-.modal-drag-bar {
-  width: 40px;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.18);
-  margin: 12px auto 8px;
-}
+/* É3 §4.3 — .modal-drag-bar legacy MORTE (0 consommateur ; la jumelle
+   .modal-v3__drag-bar est morte au même passage). */
 
 /* ─────────────────────────────────────
    TEXT UTILITIES

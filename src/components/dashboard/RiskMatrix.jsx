@@ -1237,17 +1237,20 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             <span className="risk-matrix__cell--right">Count</span>
             <span className="risk-matrix__cell--right">$ Avg</span>
           </div>
+          {/* É3 panel §4.2.4 — COMPTEURS Wins/Losses NEUTRES (même
+              motif que les streaks juste au-dessus) ; le $ Avg reste
+              toné : argent réel. */}
           <Row3
             label="Wins"
             value={`${m.winCount ?? 0}`}
-            valueTone={m.winCount > 0 ? 'profit' : 'mute'}
+            valueTone="mute"
             sub={fmtUsdSigned(m.averageWin)}
             subTone="profit"
           />
           <Row3
             label="Losses"
             value={`${m.lossCount ?? 0}`}
-            valueTone={m.lossCount > 0 ? 'loss' : 'mute'}
+            valueTone="mute"
             sub={
               m.averageLoss != null && Number.isFinite(m.averageLoss)
                 ? fmtUsdSigned(-Math.abs(m.averageLoss))

@@ -93,26 +93,18 @@ const toneFromSign = (v) => {
   return v > 0 ? 'profit' : 'loss';
 };
 
-const ALERT_TONE = {
-  DTE: 'warn',
-  EARN: 'info',
-  IV: 'warn',
-  PRICE: 'warn',
-  TIME: 'warn',
-};
-
 function IvrCell({ ivr }) {
   if (ivr == null || !Number.isFinite(ivr)) return <span className="live-pos__mute">—</span>;
   const pct = Math.max(0, Math.min(100, ivr));
-  // High-IV bar color = profit (premium-rich for short premium strategies),
-  // low-IV bar color = mute, mid = neutral.
-  const tone = pct > 70 ? 'profit' : pct < 20 ? 'loss' : 'mute';
+  // É3 panel — barre IVR NEUTRE (loi de couleur : un IV Rank n'est pas
+  // de l'argent ; l'ex-vert >70 / rouge <20 était une fuite, et son
+  // commentaire « short premium » contredisait la doctrine long premium).
   return (
     <span className="live-pos__ivr">
       <span className="live-pos__ivr-num">{Math.round(pct)}</span>
       <span className="live-pos__ivr-bar">
         <span
-          className={`live-pos__ivr-fill live-pos__ivr-fill--${tone}`}
+          className="live-pos__ivr-fill live-pos__ivr-fill--mute"
           style={{ width: `${pct}%` }}
         />
       </span>
@@ -179,10 +171,12 @@ function GateBadge({ line }) {
   );
 }
 
+// É3 panel — pastille ALERT NEUTRE (parité RowAlerts 2.A : un signal
+// n'est pas une perte ; l'ambre durable et le cyan --info sont morts,
+// l'urgence vit dans la colonne GATE du classifieur unique).
 function AlertPill({ alert }) {
   if (!alert) return <span className="live-pos__mute">—</span>;
-  const tone = ALERT_TONE[alert] || 'warn';
-  return <span className={`live-pos__alert-pill live-pos__alert-pill--${tone}`}>{alert}</span>;
+  return <span className="live-pos__alert-pill">{alert}</span>;
 }
 
 function PositionRow({ pos, gateLine, onTag }) {
@@ -348,7 +342,7 @@ export default function LivePositions({ data, area = 'positions' }) {
 
       if (Number.isFinite(p.dte)) {
         if (!closestDte || p.dte < closestDte.dte) {
-          closestDte = { ticker: p.ticker, dte: p.dte };
+          closestDte = { ticker: p.ticker, dte: p.dte, expired: !!p.expired };
         }
       }
     }
@@ -379,15 +373,6 @@ export default function LivePositions({ data, area = 'positions' }) {
       inLossCount,
     };
   }, [positions]);
-
-  // CLOSEST DTE color logic : ≤14j = loss (urgent expiry),
-  // ≤45j = profit (sweet spot Sniper OTM v1), >45 = neutre.
-  const closestDteClass =
-    stats.closestDte && stats.closestDte.dte <= 14
-      ? 'live-pos__footer-value--loss'
-      : stats.closestDte && stats.closestDte.dte <= 45
-        ? 'live-pos__footer-value--profit'
-        : '';
 
   const headerHint = isEmpty
     ? 'Σ Notional $0 · Σ Max Risk $0'
@@ -545,8 +530,10 @@ export default function LivePositions({ data, area = 'positions' }) {
             </span>
           </div>
           <div className="live-pos__footer-cell">
+            {/* É3 panel — montant HYPOTHÉTIQUE → NEUTRE (amendement
+                15.07, déjà soldé côté /trading/positions en 2.A). */}
             <span className="live-pos__footer-label">Σ MAX RISK</span>
-            <span className="live-pos__footer-value live-pos__footer-value--loss">
+            <span className="live-pos__footer-value live-pos__footer-value--mute">
               {fmtUsdSigned(totalMaxRisk, 0)}
             </span>
           </div>
@@ -563,10 +550,12 @@ export default function LivePositions({ data, area = 'positions' }) {
             </span>
           </div>
           <div className="live-pos__footer-cell">
+            {/* É3 panel — DTE NEUTRE (le temps n'est pas de l'argent,
+                décision 2.A) + « EXP » honnête si l'option est expirée. */}
             <span className="live-pos__footer-label">CLOSEST DTE</span>
-            <span className={`live-pos__footer-value ${closestDteClass}`}>
+            <span className="live-pos__footer-value">
               {stats.closestDte
-                ? `${stats.closestDte.ticker} ${stats.closestDte.dte}j`
+                ? `${stats.closestDte.ticker} ${stats.closestDte.expired ? 'EXP' : `${stats.closestDte.dte}j`}`
                 : '—'}
             </span>
           </div>

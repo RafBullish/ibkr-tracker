@@ -83,8 +83,9 @@ import './styles/v1-dashboard.css';
 // consommation des tokens canoniques. Calendar a été désintoxiquée de la
 // palette JS divergente (`T from '../../theme/tokens'`) — l'import T est
 // retiré, les 99 références T.* converties en var(--*) canoniques ou classes
-// scopées. theme/tokens.js reste intact (ErrorBoundary, CommandPalette,
-// WinRateDonut, ThemeSwitcher en dépendent) — purge dans CANONICAL-PURGE.
+// scopées. theme/tokens.js reste intact (ErrorBoundary, ThemeSwitcher,
+// useLiveTheme en dépendent ; CommandPalette libérée en É3) — purge dans
+// CANONICAL-PURGE.
 import './styles/pages-calendar.css';
 // pages-journal.css — page-vitrine /insights/journal recomposée au langage
 // cockpit (brique 2.C2). Ses styles vivaient dans v3-components.css (tokens

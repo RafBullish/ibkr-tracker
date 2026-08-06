@@ -12,7 +12,7 @@
 //    8. Rangée de clôture « veille » : Watchlist | CalendarMini
 //
 //  RiskMatrix reçoit un objet metrics fusionné :
-//    { ...usePortfolioMetrics(), ...useRiskMatrix(), equityHistory, greeks }
+//    { ...usePortfolioMetrics(), ...useRiskMatrix(), equityHistory }
 //  afin d'accéder à toutes les métriques (sharpe, sortino, sqn, cagr,
 //  rMultiples, currentStreak…) sans dupliquer les hook-calls.
 //  DecisionBand reçoit metrics + greeks par le même pattern.

@@ -22,7 +22,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import useMarketQuotes from '../hooks/useMarketQuotes';
 import useSniperGates from '../hooks/useSniperGates';
-import useDailyKillSwitch from '../hooks/useDailyKillSwitch';
 import { useFx } from '../hooks/useFx';
 import useCalendarFeeds from '../hooks/useCalendarFeeds';
 // É3 §4.2.1 — classifieur de gates PARTAGÉ (même hook que Positions
@@ -269,7 +268,6 @@ export default function PreMarketBriefing() {
 
   const { quotes } = useMarketQuotes(QUOTE_SYMBOLS);
   const sniperGates = useSniperGates();
-  const kill = useDailyKillSwitch();
   const { rate: fxRate, formatRate: formatFxRate } = useFx();
   const openPositions = useOpenPositions();
 
