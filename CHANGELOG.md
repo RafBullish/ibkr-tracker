@@ -6,6 +6,68 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.1.0] — 2026-08-10
+
+**La courbe suit le CSV.** Défaut de conception soldé : la courbe EQUITY/NLV
+du Héros 1 ne lisait AUCUNE donnée du CSV importé — elle empilait des
+relevés que l'app s'écrivait à elle-même dans un magasin unique, non lié au
+dataset (des points à ~24'000 $ pris avec un CSV de test cohabitaient avec
+des points à ~13 $ du compte réel → falaises absurdes). Exigence produit
+gravée : **la courbe suit le NLV du compte du CSV importé, quel que soit le
+CSV.**
+
+### Isolation par dataset (V1)
+- `datasetId` stable calculé à l'import : `ClientAccountID:période:hash`
+  (FNV-1a 8 hex du contenu ; le compte de test partage le ClientAccountID
+  du compte réel — la période + le hash discriminent). Persisté `dsid`.
+- TOUTES les clés d'historique NLV préfixées : `qc:nlvCsv:{id}` (série du
+  CSV), `qc:nlvDaily:{id}` (snapshots app, ex-`settings.ds`),
+  `qc:nlvIntraday:{id}`. Changer de CSV = changer d'historique, dans les
+  deux sens. Seau sentinelle `local` avant tout import.
+- Migration one-shot SANS destruction : l'historique global pollué est
+  archivé (`qc:nlvDaily:legacy`, `qc:nlvIntraday:legacy`), l'app repart
+  propre. `UPDATE_DAILY_SNAPSHOT` MORT (writer → `appendDailySnapshot`,
+  même sémantique, testée dans nlvHistory.test.js).
+
+### La courbe vient du CSV (V2)
+- Parseur : section **NAV auto-détectée** (ReportDate + Total/EndingValue,
+  testée avant la signature vorace cashTransactions) = source EXACTE ;
+  sinon **reconstruction** (`navSeries.js`) : grands livres par devise
+  semés du StartingCash, Cash Transactions granulaires (Other Fees
+  inclus — nouveau canal ledger, les cashFlows persistés sont inchangés),
+  forex DEUX jambes (USD.CHF **et** CHF.USD, ex-skippé), NetCash des
+  exécutions, positions au COÛT (NAV plat à l'achat, mouvement au
+  réalisé), taux DATÉS portés par le CSV lui-même. Réconciliation vs
+  EndingCash du Cash Report. Mention honnête « série CSV reconstruite ·
+  approx. » près du sélecteur de période (l'unrealized quotidien n'est
+  pas reconstituable sans section NAV).
+- Fusion par date, priorité NAV > reconstruction > snapshot app pour le
+  passé, live pour aujourd'hui. Chaque point porte sa provenance (`src`),
+  servie au tooltip (NAV IBKR / approx / relevé app / live).
+- Devises : série stockée en devise de base, convertie à l'affichage par
+  le pipeline existant (÷ liveRate) — zéro nouveau chemin de conversion.
+
+### Cohérence du bloc (V3)
+- La série fusionnée alimente le graphe ET les deux bandes de stats.
+  « ALL » couvre toute l'étendue du dataset (12 mois du relevé réel).
+- Graphe : **marches** sur le quotidien (un NLV est un relevé, pas une
+  pente), **plancher d'échelle Y** (≥ 6 % / 10 $ — une série plate ne
+  zoome plus le bruit), **dots sur les points réels** (≤ 120 pts),
+  **retraits annotés** (flèche neutre, comme les apports), chip « jour »
+  relogée dans l'en-tête de la zone graphe, % de période honnête (« — »
+  quand le capital de départ de la fenêtre est nul).
+- Moteur P&L des annotations unifié sur `tradePnlUsd` (même cascade que
+  Héros 2 / WTD / YTD) ; mutation in-place du store par buildNlvSeries
+  SUPPRIMÉE ; RESET_ALL documenté dans l'inventaire de la ZONE DANGEREUSE
+  (association au dataset détruite, historiques par dataset archivés).
+
+Vérifié Playwright isolé @1591 : CSV réel (U23437309, 20250808→20260807,
+15 clôtures, 12 mouvements, cash final 10.01 CHF) → courbe portail
+reproduite (plat → pics ~1'500 CHF mars–juin → retour 10 CHF), bascule
+intégrale réel↔test sans mélange, 0 erreur JS nouvelle, 327 tests.
+
+---
+
 ## [1.0.0] — 2026-08-06
 
 **Étape 4 — Recette v1.0. LE TAG.** La passe finale : on vérifie, on purge,

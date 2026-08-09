@@ -166,11 +166,20 @@ mobile <768 : SubNav + BottomNav.
 - **Persistance localStorage** (jamais touchée hors session Playwright
   isolée) : `ibkr_u_o` (positions) · `ibkr_u_c` (clôturés) · `ibkr_u_f`
   (cash flows) · `ibkr_u_j` (journal) · `ibkr_u_s` (settings : liveRate,
-  cashReport, ibkrLiveData, gwAutoConnect, dailySnapshots, ibkrSummary
+  cashReport, ibkrLiveData, gwAutoConnect, dsid [dataset actif], ibkrSummary
   [écrit par le bridge, AUCUN lecteur UI — documenté], …) · `ibkr_u_w`
   (watchlist). Sidecars : `qc:sniperMeta:*`, `qc:ivHistory` (collecte Chain,
-  aucun affichage), `qc:nlvIntraday` (writer RTH ~5 min), `ibkr_spot_cache_v1`,
+  aucun affichage), `ibkr_spot_cache_v1`,
   `chain_history`, `qc:sidenav:collapsed`, `ibkr_flex_queryid` (non secret).
+- **Historique NLV ISOLÉ PAR DATASET (1.1.0)** : datasetId =
+  `ClientAccountID:période:hash8` calculé à l'import (utils/ibkr/datasetId).
+  `qc:nlvCsv:{id}` (série NAV dérivée du CSV — section NAV exacte sinon
+  reconstruction « approx. », utils/ibkr/navSeries) · `qc:nlvDaily:{id}`
+  (snapshots quotidiens app, ex-`settings.ds` — utils/nlvHistory) ·
+  `qc:nlvIntraday:{id}` (writer RTH ~5 min). Seau `local` avant tout
+  import ; anciens magasins globaux pollués archivés `qc:nlvDaily:legacy` /
+  `qc:nlvIntraday:legacy` (aucune destruction). La courbe Héros 1 fusionne
+  par date : NAV/recon (période du CSV) > snapshots du dataset > live.
 - **Token Flex** : **sessionStorage UNIQUEMENT** (`ibkr_flex_token`), masqué à
   la saisie, `clearFlexCredentials` purge le magasin réel + résidu legacy.
   RE-PROUVÉ en É4 (isolé, valeur factice) : après config, AUCUN token en

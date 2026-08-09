@@ -283,6 +283,17 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
   5. **Docs finales** : ETAT-DU-SITE-V1 rafraîchi v1.0.0 (référence),
      CLAUDE.md/CHANGELOG/ROADMAP à jour.
 
+## Maintenance post-1.0 livrée
+
+- **1.1.0 — La courbe suit le CSV** *(10.08.2026, branche feat/nlv-dataset)* :
+  défaut de conception NLV soldé — isolation par datasetId
+  (compte:période:hash, clés qc:nlvCsv/qc:nlvDaily/qc:nlvIntraday
+  préfixées, historique global pollué archivé en :legacy), série NLV
+  dérivée du CSV (section NAV auto-détectée sinon reconstruction
+  grands-livres par devise marquée « approx. »), fusion NAV > recon >
+  snapshot > live, marches + plancher Y + dots + retraits annotés +
+  chip « jour » dans l'en-tête. Détail : CHANGELOG 1.1.0.
+
 ## Backlog post-1.0 (explicite)
 
 1. RiskMatrix — passe couleur dédiée (EDGE+/−, jauges ratios, Kelly

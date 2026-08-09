@@ -300,8 +300,9 @@ export function deriveWindowStats(series) {
   const first = series[0];
   const last = series[series.length - 1];
   const pnl = last.flowNeutral - first.flowNeutral;
-  const startCapital = first.nlv || 1;
-  const pnlPct = startCapital > 0 ? (pnl / startCapital) * 100 : null;
+  // % honnête : rapporté au capital de départ de la fenêtre — un départ à
+  // zéro (compte vide au FromDate du CSV) affiche « — », pas un % absurde.
+  const pnlPct = first.nlv > 0 ? (pnl / first.nlv) * 100 : null;
   const nlvs = series.map((p) => p.nlv);
   const high = Math.max(...nlvs);
   const low = Math.min(...nlvs);

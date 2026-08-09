@@ -946,6 +946,7 @@ export default function SettingsGeneral() {
             </li>
             <li>Capital de référence, dernière synchro, snapshots bridge</li>
             <li>Identifiants Flex, historique de recherche Chain, préférence Vue History</li>
+            <li>Association au dataset actif (la courbe NLV repart à vide)</li>
           </ul>
           <p className="settings-danger__survives-title">Ce qui SURVIT (préférences, pas des données comptables) :</p>
           <ul className="settings-danger__survives-list">
@@ -953,6 +954,7 @@ export default function SettingsGeneral() {
             <li>Taux USD/CHF et préférences FX</li>
             <li>Tier Sniper actif</li>
             <li>Seuil du kill switch, nom de profil, mode daltonien</li>
+            <li>Historiques NLV par dataset (archives — réactivés au ré-import du même CSV)</li>
           </ul>
           <label className="settings-danger__type-label">
             <span>
