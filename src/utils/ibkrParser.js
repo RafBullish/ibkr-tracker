@@ -17,8 +17,10 @@ import {
   mapPositionRow,
   mapTradeRow,
   mapCashTxnRow,
+  mapCashLedgerRow,
   mapCashReportRow,
   mapFxRateRow,
+  mapNavRow,
 } from './ibkr/sections';
 import { buildClosedTrades, enrichPositionsWithTrades } from './ibkr/closedTrades';
 
@@ -40,6 +42,13 @@ export function parseIbkrCsv(csvText) {
     cashFlows: [],
     fxRates: {},
     cashReport: null,
+    // Canaux de la reconstruction NAV (navSeries) — en mémoire d'import
+    // uniquement, jamais persistés tels quels :
+    navRows: [],        // section NAV du Flex si présente (source exacte)
+    ledgerRows: [],     // TOUTES les Cash Transactions datées (fees incluses)
+    fxExecutions: [],   // exécutions forex, les deux jambes
+    // Identité du dataset (ClientAccountID + période du relevé).
+    meta: { accountId: '', fromDate: '', toDate: '' },
     errors: [],
     stats: {
       totalLines: rows.length,
@@ -77,6 +86,13 @@ export function parseIbkrCsv(csvText) {
     }
     if (!currentSection) continue;
 
+    // Identité : ClientAccountID est porté par chaque row de données de
+    // chaque section — première valeur non vide capturée.
+    if (!result.meta.accountId && headerMap.ClientAccountID !== undefined) {
+      const acct = fields[headerMap.ClientAccountID];
+      if (acct) result.meta.accountId = acct;
+    }
+
     try {
       if (currentSection === 'openPositions') {
         const pos = mapPositionRow(fields, headerMap, result.stats.positionsSkipped);
@@ -97,6 +113,7 @@ export function parseIbkrCsv(csvText) {
               chf: Math.abs(mapped.chfAmount),
             });
           }
+          if (mapped.date) result.fxExecutions.push(mapped);
           result.stats.tradesSkipped++;
         } else {
           result.stats.tradesSkipped++;
@@ -104,6 +121,11 @@ export function parseIbkrCsv(csvText) {
       } else if (currentSection === 'cashTransactions') {
         const cf = mapCashTxnRow(fields, headerMap);
         if (cf) result.cashFlows.push(cf);
+        const ledger = mapCashLedgerRow(fields, headerMap);
+        if (ledger) result.ledgerRows.push(ledger);
+      } else if (currentSection === 'nav') {
+        const nav = mapNavRow(fields, headerMap);
+        if (nav) result.navRows.push(nav);
       } else if (currentSection === 'fxRates') {
         const fx = mapFxRateRow(fields, headerMap);
         if (fx) result.fxRates[fx.date] = fx.rate;
@@ -159,6 +181,23 @@ export function parseIbkrCsv(csvText) {
   enrichPositionsWithTrades(result.positions, result.trades);
   result.closedTrades = buildClosedTrades(result.trades);
   result.stats.closedTradesBuilt = result.closedTrades.length;
+
+  // Période du dataset : le Cash Report la porte explicitement
+  // (FromDate/ToDate) ; à défaut, min/max des dates observées.
+  if (result.cashReport?.fromDate) result.meta.fromDate = result.cashReport.fromDate;
+  if (result.cashReport?.toDate) result.meta.toDate = result.cashReport.toDate;
+  if (!result.meta.fromDate || !result.meta.toDate) {
+    const dates = [
+      ...result.navRows.map((r) => r.date),
+      ...result.ledgerRows.map((r) => r.date),
+      ...result.fxExecutions.map((r) => r.date),
+      ...result.trades.map((t) => t.di),
+    ].filter(Boolean).sort();
+    if (dates.length > 0) {
+      if (!result.meta.fromDate) result.meta.fromDate = dates[0];
+      if (!result.meta.toDate) result.meta.toDate = dates[dates.length - 1];
+    }
+  }
 
   return result;
 }

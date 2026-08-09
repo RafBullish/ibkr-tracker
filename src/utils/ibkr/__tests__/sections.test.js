@@ -7,7 +7,14 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { describe, it, expect } from 'vitest';
-import { mapCashTxnRow, mapCashReportRow } from '../sections';
+import {
+  identifySection,
+  mapCashTxnRow,
+  mapCashLedgerRow,
+  mapCashReportRow,
+  mapNavRow,
+  mapTradeRow,
+} from '../sections';
 
 // Helper : turn { col: value } into (fields, headerMap) the way the
 // real parser passes them.
@@ -217,5 +224,157 @@ describe('mapCashReportRow — base currency + per-currency deposits (A2.2)', ()
       deposits: 9000,
       withdrawals: -200,
     });
+  });
+
+  it('capture la période du relevé (FromDate/ToDate) — identité du dataset', () => {
+    const { fields, headerMap } = row({
+      LevelOfDetail: 'BaseCurrency',
+      CurrencyPrimary: 'BASE_SUMMARY',
+      FromDate: '20250808',
+      ToDate: '20260807',
+      StartingCash: '0',
+      EndingCash: '10.01',
+    });
+    const report = {};
+    mapCashReportRow(fields, headerMap, report);
+    expect(report.fromDate).toBe('2025-08-08');
+    expect(report.toDate).toBe('2026-08-07');
+  });
+});
+
+describe('identifySection — section NAV (chantier NLV)', () => {
+  it('ReportDate + Total → nav, testée AVANT la signature vorace cashTransactions', () => {
+    expect(identifySection(['ClientAccountID', 'CurrencyPrimary', 'ReportDate', 'Cash', 'Options', 'Total', 'TWR'])).toBe('nav');
+    expect(identifySection(['ClientAccountID', 'FromDate', 'ToDate', 'StartingValue', 'EndingValue', 'ReportDate'])).toBe('nav');
+  });
+
+  it('les sections existantes qui portent ReportDate ne matchent PAS nav', () => {
+    // Trades (TradeID), Open Positions (MarkPrice), Cash Transactions (Amount).
+    expect(identifySection(['ReportDate', 'TradeID', 'TradePrice', 'Total'])).toBe('trades');
+    expect(identifySection(['ReportDate', 'MarkPrice', 'PositionValue'])).toBe('openPositions');
+    expect(identifySection(['ReportDate', 'Amount', 'Type', 'Date/Time'])).toBe('cashTransactions');
+  });
+});
+
+describe('mapNavRow', () => {
+  it('ReportDate + Total → point daté en devise de base', () => {
+    const { fields, headerMap } = row({ ReportDate: '20260101', Total: '1234.56', CurrencyPrimary: 'CHF' });
+    expect(mapNavRow(fields, headerMap)).toEqual({ date: '2026-01-01', total: 1234.56, currency: 'CHF' });
+  });
+
+  it('fallback EndingValue ; row sans date ou sans valeur → null', () => {
+    const ok = row({ ReportDate: '20260101', EndingValue: '99' });
+    expect(mapNavRow(ok.fields, ok.headerMap).total).toBe(99);
+    const noDate = row({ ReportDate: '', Total: '5' });
+    expect(mapNavRow(noDate.fields, noDate.headerMap)).toBeNull();
+    const noVal = row({ ReportDate: '20260101', Total: '' });
+    expect(mapNavRow(noVal.fields, noVal.headerMap)).toBeNull();
+  });
+});
+
+describe('mapCashLedgerRow — canal reconstruction (fees INCLUS)', () => {
+  it('capture tout mouvement DETAIL daté, signé, avec devise et taux', () => {
+    const { fields, headerMap } = row({
+      LevelOfDetail: 'DETAIL',
+      Type: 'Other Fees',
+      CurrencyPrimary: 'CHF',
+      FXRateToBase: '1',
+      Amount: '-11',
+      'Date/Time': '20260312;103102',
+    });
+    expect(mapCashLedgerRow(fields, headerMap)).toEqual({
+      date: '2026-03-12',
+      currency: 'CHF',
+      amount: -11,
+      type: 'Other Fees',
+      fxToBase: 1,
+    });
+  });
+
+  it('non-DETAIL ou montant nul → null', () => {
+    const sum = row({ LevelOfDetail: 'SUMMARY', Type: 'Other Fees', CurrencyPrimary: 'CHF', Amount: '-11', 'Date/Time': '20260312;103102' });
+    expect(mapCashLedgerRow(sum.fields, sum.headerMap)).toBeNull();
+    const zero = row({ LevelOfDetail: 'DETAIL', Type: 'Deposits', CurrencyPrimary: 'CHF', Amount: '0', 'Date/Time': '20260312;103102' });
+    expect(mapCashLedgerRow(zero.fields, zero.headerMap)).toBeNull();
+  });
+});
+
+describe('mapTradeRow — forex généralisé (les deux sens de paire)', () => {
+  const fxRow = (over = {}) => row({
+    LevelOfDetail: 'ORDER',
+    AssetClass: 'CASH',
+    Symbol: 'USD.CHF',
+    CurrencyPrimary: 'CHF',
+    FXRateToBase: '1',
+    DateTime: '20251219;100241',
+    Quantity: '0.95',
+    TradePrice: '0.79588',
+    TradeMoney: '0.756086',
+    Proceeds: '-0.756086',
+    IBCommission: '0',
+    ...over,
+  });
+
+  it('USD.CHF : jambes quote (Proceeds) et base (Quantity), taux direct + legacy', () => {
+    const { fields, headerMap } = fxRow();
+    const fx = mapTradeRow(fields, headerMap);
+    expect(fx.kind).toBe('fx');
+    expect(fx.pairBase).toBe('USD');
+    expect(fx.quoteCurrency).toBe('CHF');
+    expect(fx.qty).toBe(0.95);
+    expect(fx.proceeds).toBe(-0.756086);
+    expect(fx.rate).toBe(0.79588);
+    expect(fx.usdQty).toBe(0.95); // legacy fx_buy_usd préservé
+    expect(fx.chfAmount).toBe(0.756086);
+  });
+
+  it('CHF.USD : taux USD→CHF inversé, PAS de flux legacy', () => {
+    const { fields, headerMap } = fxRow({
+      Symbol: 'CHF.USD',
+      CurrencyPrimary: 'USD',
+      Quantity: '-90',
+      TradePrice: '1.2578',
+      Proceeds: '113.202',
+      IBCommission: '-1.5882',
+    });
+    const fx = mapTradeRow(fields, headerMap);
+    expect(fx.kind).toBe('fx');
+    expect(fx.pairBase).toBe('CHF');
+    expect(fx.quoteCurrency).toBe('USD');
+    expect(fx.qty).toBe(-90);
+    expect(fx.rate).toBeCloseTo(1 / 1.2578, 6);
+    expect(fx.usdQty).toBe(0); // le flux legacy reste USD.CHF only
+  });
+
+  it('OPT : NetCash et devise capturés (transients reconstruction)', () => {
+    const { fields, headerMap } = row({
+      LevelOfDetail: 'ORDER',
+      AssetClass: 'OPT',
+      'Put/Call': 'C',
+      'Buy/Sell': 'BUY',
+      'Open/CloseIndicator': 'O',
+      Symbol: 'BAC 260618C00055000',
+      UnderlyingSymbol: 'BAC',
+      CurrencyPrimary: 'USD',
+      FXRateToBase: '0.77731',
+      DateTime: '20260309;151251',
+      Quantity: '7',
+      Multiplier: '100',
+      Strike: '55',
+      Expiry: '20260618',
+      TradePrice: '0.65',
+      IBCommission: '-4.88565',
+      NetCash: '-459.88565',
+      CostBasis: '459.88565',
+      Proceeds: '-455',
+      FifoPnlRealized: '0',
+      TradeID: 'T1',
+      TransactionID: 'X1',
+      ClosePrice: '0.7',
+    });
+    const mapped = mapTradeRow(fields, headerMap);
+    expect(mapped.kind).toBe('trade');
+    expect(mapped.trade._ibkrNetCash).toBe(-459.88565);
+    expect(mapped.trade._ibkrCurrency).toBe('USD');
   });
 });
