@@ -41,6 +41,9 @@ import {
 } from '../../store/useStore';
 import { useToast } from '../../components/layout/Toast';
 import { parseIbkrCsv, mergeIbkrData } from '../../utils/ibkrParser';
+import { hashCsvContent, buildDatasetId } from '../../utils/ibkr/datasetId';
+import { buildCsvNavSeries } from '../../utils/ibkr/navSeries';
+import { writeCsvSeries } from '../../utils/nlvHistory';
 import {
   configureFlex,
   getFlexConfig,
@@ -50,6 +53,24 @@ import {
 import InfoTooltip from '../../components/ui/InfoTooltip';
 import { TickValue } from '../../components/dashboard/decision/parts';
 import { RISE_CONTAINER_VARIANTS, RISE_TILE_VARIANTS } from '../../theme/animationVariants';
+
+// Isolation NLV par dataset : identité stable du relevé (ClientAccountID
+// + période + hash du contenu), série NAV dérivée du CSV matérialisée
+// dans qc:nlvCsv:{datasetId} (les exécutions brutes ne survivent pas au
+// merge — la série DOIT être dérivée ici, tant qu'elles sont en mémoire),
+// puis bascule du dataset actif. Changer de CSV = changer d'historique,
+// dans les deux sens, sans mélange possible.
+function activateDataset(csvText, parsed, dispatch) {
+  const hash = hashCsvContent(csvText);
+  const datasetId = buildDatasetId({ ...parsed.meta, hash });
+  const series = buildCsvNavSeries(parsed);
+  writeCsvSeries(datasetId, {
+    ...series,
+    meta: { ...parsed.meta, hash, importedAt: new Date().toISOString() },
+  });
+  dispatch({ type: 'SET_ACTIVE_DATASET', payload: datasetId });
+  return { datasetId, navSource: series.source };
+}
 
 function formatLastSync(lastSync) {
   if (!lastSync) return null;
@@ -109,6 +130,7 @@ function FlexSection({ onResult }) {
       const parsed = parseIbkrCsv(csvText);
       const result = mergeIbkrData(parsed, state);
       dispatch({ type: 'IMPORT_DATA', payload: result.mergedData });
+      const dataset = activateDataset(csvText, parsed, dispatch);
       const s = result.stats || {};
       const syncInfo = {
         date: new Date().toISOString(),
@@ -125,6 +147,8 @@ function FlexSection({ onResult }) {
         positions: s.positionsAdded || 0,
         trades: s.closedTradesAdded || 0,
         cashFlows: s.cashFlowsAdded || 0,
+        datasetId: dataset.datasetId,
+        navSource: dataset.navSource,
         at: new Date().toISOString(),
       });
       showToast.success('Synchronisation Flex terminée', {
@@ -257,12 +281,15 @@ function CsvUploadSection({ onResult }) {
       const parsed = parseIbkrCsv(text);
       const result = mergeIbkrData(parsed, state);
       dispatch({ type: 'IMPORT_DATA', payload: result.mergedData });
+      const dataset = activateDataset(text, parsed, dispatch);
       const s = result.stats || {};
       onResult({
         source: `CSV · ${file.name}`,
         positions: s.positionsAdded || 0,
         trades: s.closedTradesAdded || 0,
         cashFlows: s.cashFlowsAdded || 0,
+        datasetId: dataset.datasetId,
+        navSource: dataset.navSource,
         at: new Date().toISOString(),
       });
       showToast.success('CSV importé', {
@@ -368,6 +395,12 @@ function ResultStage({ lastResult }) {
               <span className="import-result__k">mouvements</span>
             </div>
           </div>
+          {lastResult.datasetId ? (
+            <div className="import-result__dataset mono">
+              dataset actif · {lastResult.datasetId}
+              {lastResult.navSource === 'recon' ? ' · série NLV reconstruite (approx.)' : ' · série NAV exacte'}
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="import-empty">

@@ -51,27 +51,38 @@ export function MiniSpark({ points, w = 110, h = 34 }) {
 }
 
 // ── HÉROS NLV — le plus gros et le plus soigné du bloc ──────────
-export function NlvHero({ nlv, rate, dayPnl, dayPct, spark, size = 'md' }) {
-  const tone = dayPnl == null || dayPnl === 0 ? 'mute' : dayPnl > 0 ? 'profit' : 'loss';
+// La pill « jour » est RELOGÉE dans l'en-tête de la zone graphe
+// (DayChip ci-dessous) — l'overlay ne porte plus que le chiffre.
+export function NlvHero({ nlv, rate, spark, size = 'md' }) {
   const chf = fmtChf(nlv, rate);
-  const pill =
-    dayPnl == null
-      ? null
-      : `${dayPnl >= 0 ? '+' : '−'}$${Math.abs(Math.round(dayPnl)).toLocaleString('de-CH')}${dayPct != null ? ` · ${dayPct >= 0 ? '+' : '−'}${Math.abs(dayPct).toFixed(2)}%` : ''}`;
   return (
     <div className={`lh-hero lh-hero--${size}`}>
       <div className="lh-hero__head">
         <span className="lh-hero__label">NET LIQUIDATION</span>
         <span className="lh-hero__live"><span className="lh-hero__live-dot" aria-hidden="true" />LIVE</span>
       </div>
-      {/* Montant + sparkline COLLÉE + pill à proximité (une ligne). */}
+      {/* Montant + sparkline COLLÉE (une ligne). */}
       <div className="lh-hero__row">
         <span className="lh-hero__usd">{nlv == null ? '—' : fmtUsd(nlv)}</span>
         <MiniSpark points={spark} w={132} h={38} />
-        {pill ? <span className={`lh-hero__pill lh-hero__pill--${tone}`}>{pill}<span className="lh-hero__pill-cap"> jour</span></span> : null}
       </div>
       {chf ? <span className="lh-hero__chf">{chf}</span> : null}
     </div>
+  );
+}
+
+// ── Chip « jour » (en-tête de la zone graphe) ───────────────────
+// P&L du jour = argent réel → tonalité profit/loss autorisée (loi de
+// couleur). Réutilise le registre visuel de l'ex-pill du NlvHero.
+export function DayChip({ dayPnl, dayPct }) {
+  if (dayPnl == null) return null;
+  const tone = dayPnl === 0 ? 'mute' : dayPnl > 0 ? 'profit' : 'loss';
+  const txt = `${dayPnl >= 0 ? '+' : '−'}$${Math.abs(Math.round(dayPnl)).toLocaleString('de-CH')}${dayPct != null ? ` · ${dayPct >= 0 ? '+' : '−'}${Math.abs(dayPct).toFixed(2)}%` : ''}`;
+  return (
+    <span className={`lh-hero__pill lh-hero__pill--${tone} lh-daychip`}>
+      {txt}
+      <span className="lh-hero__pill-cap"> jour</span>
+    </span>
   );
 }
 

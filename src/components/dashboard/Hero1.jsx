@@ -20,7 +20,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo, useState, lazy, Suspense } from 'react';
-import { Frontier, ZoneSep, RangeSelector, ViewToggle, ChartFooter, NlvHero } from './hero1/parts';
+import { Frontier, ZoneSep, RangeSelector, ViewToggle, ChartFooter, NlvHero, DayChip } from './hero1/parts';
 import PortfolioDeck from './hero1/PortfolioDeck';
 import PerfBand from './hero1/PerfBand';
 // Le graphe terminal (lightweight-charts, ~canvas) est code-split : la
@@ -29,6 +29,8 @@ const TvChart = lazy(() => import('./hero1/TvChart'));
 import { deriveKpisReal } from './hero1/model';
 import { buildNlvSeries, buildIntradaySeries, resampleSeries, deriveSeriesStats, deriveWindowStats, TIMEFRAMES_HERO1 } from '../../utils/nlvSeries';
 import { useIntradayNlvDays } from '../../hooks/useIntradayNlv';
+import { useCsvNavSeries, useNlvDailySnapshots } from '../../hooks/useNlvHistory';
+import { DATASET_LOCAL } from '../../utils/nlvHistory';
 import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
 import { useTradingMetrics } from '../../hooks/useTradingMetrics';
 import useDailyPnL from '../../hooks/useDailyPnL';
@@ -81,17 +83,26 @@ export default function Hero1({ area = 'hero1' }) {
     [settings?.ibkrLiveData, metrics?.liveRate]
   );
 
+  // Isolation par dataset (chantier NLV) : LA COURBE SUIT LE NLV DU
+  // COMPTE DU CSV IMPORTÉ. Série CSV (qc:nlvCsv:*) autoritaire sur la
+  // période du relevé + snapshots app du dataset (qc:nlvDaily:*) au-delà
+  // + point live aujourd'hui — fusion par date dans buildNlvSeries.
+  const datasetId = settings?.activeDatasetId || DATASET_LOCAL;
+  const csvSeries = useCsvNavSeries(datasetId);
+  const snapshots = useNlvDailySnapshots(datasetId);
+
   const dailyFull = useMemo(
     () =>
       buildNlvSeries({
-        snapshots: settings?.dailySnapshots || [],
+        snapshots,
+        csvSeries,
         cashFlows,
         closedTrades,
         liveNlv: metrics?.netLiquidationValueUsd ?? null,
         liveRate: metrics?.liveRate || 1,
         today,
       }),
-    [settings?.dailySnapshots, cashFlows, closedTrades, metrics, today]
+    [snapshots, csvSeries, cashFlows, closedTrades, metrics, today]
   );
 
   const series = useMemo(() => resampleSeries(dailyFull, range), [dailyFull, range]);
@@ -102,7 +113,7 @@ export default function Hero1({ area = 'hero1' }) {
   // Bandes perf/stats restent calculées sur la série QUOTIDIENNE fenêtrée
   // (sémantique « par jour » préservée). Fallback honnête : sans buffer,
   // 1D/5D montrent les points quotidiens comme avant.
-  const intradayDays = useIntradayNlvDays();
+  const intradayDays = useIntradayNlvDays(datasetId);
   const intradaySeries = useMemo(() => {
     if (range !== '1D' && range !== '5D') return null;
     if (range === '5D' && intradayDays.length < 2) return null;
@@ -149,7 +160,14 @@ export default function Hero1({ area = 'hero1' }) {
       <div className="lh-graphzone">
         <div className="lh-graphzone__bar">
           <span className="lh-chart__title">EQUITY / NLV</span>
+          {/* Chip « jour » relogée ici (ex-pill de l'overlay NlvHero). */}
+          <DayChip dayPnl={kpi.dayPnl} dayPct={kpi.dayPct} />
           <div className="lh-chart__controls">
+            {/* Honnêteté de la source : sans section NAV dans le Flex, la
+                série CSV est RECONSTRUITE (cash + coût des positions). */}
+            {csvSeries?.source === 'recon' ? (
+              <span className="lh-approx">série CSV reconstruite · approx.</span>
+            ) : null}
             <ViewToggle view={view} setView={setView} />
             <RangeSelector range={range} setRange={setRange} options={TIMEFRAMES_HERO1} />
           </div>
@@ -164,7 +182,7 @@ export default function Hero1({ area = 'hero1' }) {
         )}
         <div className="lh-fuse__stage">
           <div className="lh-fuse__overlay">
-            <NlvHero nlv={kpi.nlv} rate={rate} dayPnl={kpi.dayPnl} dayPct={kpi.dayPct} spark={kpi.nlvSpark} size="lg" />
+            <NlvHero nlv={kpi.nlv} rate={rate} spark={kpi.nlvSpark} size="lg" />
           </div>
           <div className="lh-fuse__chart">
             <Suspense fallback={<div className="lh-canvas lh-canvas--empty">Chargement…</div>}>

@@ -62,6 +62,86 @@ describe('buildNlvSeries — drawdown flow-neutral (verrou anti-régression)', (
   });
 });
 
+describe('buildNlvSeries — fusion dataset (LA COURBE SUIT LE CSV)', () => {
+  const csvSeries = {
+    source: 'recon',
+    baseCurrency: 'CHF',
+    days: [
+      { d: D1, base: 800 },
+      { d: D2, base: 880 },
+    ],
+  };
+
+  it('série CSV en devise de base convertie via le pipeline existant (÷ liveRate)', () => {
+    const series = buildNlvSeries({
+      snapshots: [],
+      csvSeries,
+      cashFlows: [],
+      closedTrades: [],
+      liveNlv: null,
+      liveRate: 0.8,
+      today: D4,
+    });
+    expect(series.map((p) => [p.date, p.nlv, p.src])).toEqual([
+      [D1, 1_000, 'recon'],
+      [D2, 1_100, 'recon'],
+    ]);
+  });
+
+  it('priorité par date : CSV > snapshot sur la période ; snapshot au-delà ; live aujourd’hui', () => {
+    const series = buildNlvSeries({
+      snapshots: [
+        { date: D2, nlv: 24_000 }, // relevé app pollué le même jour → PERD contre le CSV
+        { date: D3, nlv: 1_150 }, // après la période CSV → gardé
+      ],
+      csvSeries,
+      cashFlows: [],
+      closedTrades: [],
+      liveNlv: 1_180,
+      liveRate: 0.8,
+      today: D4,
+    });
+    expect(series.map((p) => [p.date, p.nlv, p.src])).toEqual([
+      [D1, 1_000, 'recon'],
+      [D2, 1_100, 'recon'],
+      [D3, 1_150, 'snap'],
+      [D4, 1_180, 'live'],
+    ]);
+    expect(series[3].live).toBe(true);
+  });
+
+  it('un NAV CSV à 0 est un point légitime (compte vide en début de période)', () => {
+    const series = buildNlvSeries({
+      snapshots: [],
+      csvSeries: { source: 'nav', baseCurrency: 'CHF', days: [{ d: D1, base: 0 }, { d: D2, base: 80 }] },
+      cashFlows: [],
+      closedTrades: [],
+      liveNlv: null,
+      liveRate: 0.8,
+      today: D4,
+    });
+    expect(series[0]).toMatchObject({ date: D1, nlv: 0, src: 'nav' });
+  });
+
+  it('retraits annotés (flux de financement négatifs), au même titre que les apports', () => {
+    const series = buildNlvSeries({
+      snapshots: [
+        { date: D1, nlv: 10_000 },
+        { date: D2, nlv: 9_500 },
+      ],
+      cashFlows: [{ da: D2, ty: 'wit_usd', a1: 500 }],
+      closedTrades: [],
+      liveNlv: null,
+      liveRate: 1,
+      today: D2,
+    });
+    expect(series[1].withdrawal).toBe(true);
+    expect(series[1].withdrawalAmount).toBe(500);
+    // Flow-neutral : un retrait ne crée pas de drawdown.
+    expect(series[1].drawdownUsd).toBe(0);
+  });
+});
+
 describe('ranges', () => {
   it('1D est réservé au Héros 1 (TIMEFRAMES partagés inchangés pour Héros 2)', () => {
     expect(TIMEFRAMES).not.toContain('1D');

@@ -312,6 +312,12 @@
   font-variant-numeric: tabular-nums slashed-zero;
   line-height: 1.1;
 }
+/* Identité du dataset activé par l'import (isolation NLV). */
+.import-result__dataset {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ink-mute);
+}
 .import-result__k {
   font-size: var(--type-caption);
   color: var(--ink-mute);

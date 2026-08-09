@@ -1,59 +1,104 @@
 // ═══════════════════════════════════════════════════════════════
 //  NLV SERIES — série NLV dense du Héros 1 (brique 1.D). PUR, sans React.
 //
-//  « Donnée d'abord » : le héros trace une SÉRIE NLV DENSE (1 point/jour,
-//  la NLV existe tous les jours même à zéro clôture), pas le P&L cumulé
-//  par trade. Source = settings.dailySnapshots[].nlv + point live du jour.
+//  LA COURBE SUIT LE NLV DU COMPTE DU CSV IMPORTÉ (chantier dataset) :
+//  la série fusionne, par date, avec déduplication stricte :
+//    1. la série NAV dérivée du CSV du dataset actif (qc:nlvCsv:*,
+//       source exacte `nav` ou reconstruction `recon`) — AUTORITAIRE
+//       sur la période du relevé ;
+//    2. les snapshots quotidiens écrits par l'app pour CE dataset
+//       (qc:nlvDaily:*) — au-delà du ToDate du CSV ;
+//    3. le point live du jour — aujourd'hui gagne toujours.
+//  Chaque point porte `src` ('nav'|'recon'|'snap'|'live') — vérité de
+//  provenance servie au tooltip du graphe.
 //
 //  GOTCHA APPORT (honnête) : un dépôt fait sauter la NLV → un drawdown
 //  serait « guéri » par un simple virement. On neutralise les flux : le
 //  drawdown/underwater est calculé sur `flowNeutral = nlv − dépôts
 //  cumulés` (magnitude $, toujours honnête), le % rapporté au high-water
-//  mark AJUSTÉ DES FLUX. Les dépôts sont marqués sur la courbe.
+//  mark AJUSTÉ DES FLUX. Apports ET retraits sont marqués sur la courbe
+//  (Cash Transactions du dataset, via les cashFlows importés).
 // ═══════════════════════════════════════════════════════════════
 
 import { extractFundingFlows } from './metrics/equityTimeline';
+import { tradePnlUsd } from './calculations';
 
 const DAY_MS = 86_400_000;
 
 /**
- * Dérive la série NLV dense annotée à partir des inputs bruts (store).
- * @param {{snapshots:Array, cashFlows:Array, closedTrades:Array,
- *          liveNlv:number|null, liveRate:number, today:string}} args
+ * Convertit la série NAV du CSV (devise de base) en points USD via le
+ * pipeline de conversion existant (liveRate = CHF par USD — aucun
+ * nouveau chemin de conversion). Base USD → directe ; base CHF → ÷ rate.
+ */
+function csvDaysToUsd(csvSeries, liveRate) {
+  if (!csvSeries || !Array.isArray(csvSeries.days)) return [];
+  const base = csvSeries.baseCurrency || 'CHF';
+  const src = csvSeries.source === 'nav' ? 'nav' : 'recon';
+  const rate = Number.isFinite(liveRate) && liveRate > 0 ? liveRate : null;
+  const out = [];
+  for (const day of csvSeries.days) {
+    if (!day || typeof day.d !== 'string' || !Number.isFinite(day.base)) continue;
+    let usd;
+    if (base === 'USD') usd = day.base;
+    else if (rate) usd = day.base / rate;
+    else continue;
+    out.push({ date: day.d, nlv: usd, src });
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/**
+ * Dérive la série NLV dense annotée à partir des inputs bruts.
+ * @param {{snapshots:Array, csvSeries:Object|null, cashFlows:Array,
+ *          closedTrades:Array, liveNlv:number|null, liveRate:number,
+ *          today:string}} args
  * @returns {Array<Object>} points date-ordered, annotés
  */
-export function buildNlvSeries({ snapshots, cashFlows, closedTrades, liveNlv, liveRate = 1, today }) {
-  const clean = (Array.isArray(snapshots) ? snapshots : [])
-    .filter((s) => s && typeof s.date === 'string' && Number.isFinite(s.nlv) && s.nlv > 0)
-    .slice()
-    .sort((a, b) => a.date.localeCompare(b.date));
-
+export function buildNlvSeries({ snapshots, csvSeries = null, cashFlows, closedTrades, liveNlv, liveRate = 1, today }) {
   const byDate = new Map();
-  for (const s of clean) byDate.set(s.date, s);
-  const days = Array.from(byDate.values());
 
-  if (Number.isFinite(liveNlv) && liveNlv > 0 && today) {
-    const existing = byDate.get(today);
-    if (existing) existing.nlv = liveNlv;
-    else {
-      days.push({ date: today, nlv: liveNlv, live: true });
-      days.sort((a, b) => a.date.localeCompare(b.date));
-    }
+  // 1. Snapshots app du dataset — copies (jamais les objets du store).
+  for (const s of Array.isArray(snapshots) ? snapshots : []) {
+    if (!s || typeof s.date !== 'string' || !Number.isFinite(s.nlv) || s.nlv <= 0) continue;
+    byDate.set(s.date, {
+      date: s.date,
+      nlv: s.nlv,
+      unrealized: s.unrealized,
+      exposure: s.exposure,
+      src: 'snap',
+    });
   }
+
+  // 2. Série CSV : autoritaire sur sa période (nav/recon > snapshot).
+  //    Un NAV à 0 est légitime (compte vide en début de période).
+  for (const p of csvDaysToUsd(csvSeries, liveRate)) {
+    if (p.nlv < 0) continue;
+    byDate.set(p.date, p);
+  }
+
+  // 3. Point live : aujourd'hui gagne toujours.
+  if (Number.isFinite(liveNlv) && liveNlv > 0 && today) {
+    byDate.set(today, { date: today, nlv: liveNlv, live: true, src: 'live' });
+  }
+
+  const days = Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
   if (days.length === 0) return [];
 
   const flows = extractFundingFlows(cashFlows, liveRate);
-  const depositDates = new Set(flows.filter((f) => f.netUsd > 0).map((f) => f.date));
   const depositAmountByDate = new Map();
+  const withdrawalAmountByDate = new Map();
   for (const f of flows) {
     if (f.netUsd > 0) depositAmountByDate.set(f.date, (depositAmountByDate.get(f.date) || 0) + f.netUsd);
+    else if (f.netUsd < 0) withdrawalAmountByDate.set(f.date, (withdrawalAmountByDate.get(f.date) || 0) - f.netUsd);
   }
 
+  // Moteur P&L UNIQUE (É3 esprit) : tradePnlUsd — même cascade que
+  // Héros 2 / WTD / YTD (pnl IBKR stocké prioritaire, sinon recalcul).
   const closesByDate = new Map();
   for (const t of closedTrades || []) {
     const d = t?.do;
     if (!d) continue;
-    const pnl = Number(t.pnl);
+    const pnl = tradePnlUsd(t, liveRate);
     const cur = closesByDate.get(d) || { pnl: 0, count: 0 };
     cur.pnl += Number.isFinite(pnl) ? pnl : 0;
     cur.count += 1;
@@ -83,6 +128,8 @@ export function buildNlvSeries({ snapshots, cashFlows, closedTrades, liveNlv, li
     const underwater = -Math.round(drawdownUsd);
     const drawdownPct = hwmNlv > 0 ? -(drawdownUsd / hwmNlv) * 100 : 0;
     const close = closesByDate.get(dayKey) || null;
+    const depositAmount = idx > 0 ? depositAmountByDate.get(dayKey) || 0 : 0;
+    const withdrawalAmount = idx > 0 ? withdrawalAmountByDate.get(dayKey) || 0 : 0;
     return {
       date: d.date,
       nlv: Math.round(d.nlv),
@@ -91,11 +138,14 @@ export function buildNlvSeries({ snapshots, cashFlows, closedTrades, liveNlv, li
       drawdownUsd: Math.round(drawdownUsd),
       drawdownPct: Number(drawdownPct.toFixed(2)),
       chg,
-      deposit: idx > 0 && depositDates.has(dayKey),
-      depositAmount: idx > 0 ? depositAmountByDate.get(dayKey) || 0 : 0,
+      deposit: depositAmount > 0,
+      depositAmount,
+      withdrawal: withdrawalAmount > 0,
+      withdrawalAmount,
       dayPnl: close ? Math.round(close.pnl) : null,
       tradeCount: close ? close.count : 0,
       live: Boolean(d.live),
+      src: d.src || (d.live ? 'live' : 'snap'),
       unrealized: Number.isFinite(d.unrealized) ? d.unrealized : null,
       exposure: Number.isFinite(d.exposure) ? d.exposure : null,
     };
@@ -148,6 +198,9 @@ export function resampleSeries(series, range) {
     else {
       const merged = { ...p };
       merged.deposit = cur.deposit || p.deposit;
+      merged.depositAmount = (cur.depositAmount || 0) + (p.depositAmount || 0);
+      merged.withdrawal = cur.withdrawal || p.withdrawal;
+      merged.withdrawalAmount = (cur.withdrawalAmount || 0) + (p.withdrawalAmount || 0);
       merged.tradeCount = (cur.tradeCount || 0) + (p.tradeCount || 0);
       merged.dayPnl = (cur.dayPnl || 0) + (p.dayPnl || 0) || (cur.dayPnl == null && p.dayPnl == null ? null : 0);
       buckets.set(k, merged);

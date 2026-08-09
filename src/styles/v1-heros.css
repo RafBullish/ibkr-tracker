@@ -94,6 +94,10 @@
 .lh-graphzone__bar { display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 22px; border-bottom: 1px solid var(--hairline-rest); }
 .lh-chart__title { font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-pure); white-space: nowrap; }
 .lh-chart__controls { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+/* Chip « jour » relogée dans la barre (ex-pill de l'overlay NlvHero). */
+.lh-daychip { font-size: 13px; padding: 2px 8px; margin-bottom: 0; }
+/* Mention discrète de la source « série CSV reconstruite » (honnêteté). */
+.lh-approx { font-family: var(--qc-font-mono, monospace); font-size: 10.5px; letter-spacing: 0.06em; color: var(--ink-mute); white-space: nowrap; }
 
 /* Bande perf (par période) */
 .lh-perf { display: flex; align-items: stretch; gap: 0; padding: 0 6px; border-bottom: 1px solid var(--hairline-rest); background: color-mix(in srgb, var(--depth-base) 30%, transparent); flex-wrap: wrap; }
