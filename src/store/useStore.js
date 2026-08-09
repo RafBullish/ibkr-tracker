@@ -13,6 +13,7 @@ import {
 import { applyAction } from './reducer';
 import { DEBOUNCE } from '../constants/timing';
 import { sanitizeTier, DEFAULT_TIER } from '../utils/sniperMeta';
+import { archiveLegacyDailySnapshots } from '../utils/nlvHistory';
 
 // ─── Storage Keys ────────────────────────────────────────────
 
@@ -53,7 +54,6 @@ function loadInitialState() {
     fxMode: 'manual',
     fxLastUpdated: null,
     fxSource: null,
-    dailySnapshots: [],
   };
   const s = safeParse(STORAGE_KEYS.settings, null);
   if (s) {
@@ -67,9 +67,13 @@ function loadInitialState() {
     if (s.ibkrSummary) settings.ibkrSummary = s.ibkrSummary;
     if (s.ibkrLedger) settings.ibkrLedger = s.ibkrLedger;
     if (s.gwAutoConnect !== undefined) settings.gwAutoConnect = s.gwAutoConnect;
-    // Daily snapshots (4K refonte Phase B). Persisté sous le key court `ds`
-    // pour économiser quelques octets sur le payload settings global.
-    if (Array.isArray(s.ds)) settings.dailySnapshots = s.ds;
+    // Historique NLV par dataset : l'ex-clé courte `ds` (snapshots
+    // quotidiens GLOBAUX, pollués test/réel) est ARCHIVÉE une fois sous
+    // qc:nlvDaily:legacy puis abandonnée — les snapshots vivent désormais
+    // dans qc:nlvDaily:{datasetId} (utils/nlvHistory), hors du store.
+    if (Array.isArray(s.ds) && s.ds.length > 0) archiveLegacyDailySnapshots(s.ds);
+    // Dataset actif (clé courte `dsid`) — identité du CSV importé.
+    if (typeof s.dsid === 'string' && s.dsid) settings.activeDatasetId = s.dsid;
     // B4 — capital de référence manuel saisi en CHF. Stocké brut (la
     // conversion CHF→USD se fait au moment du calcul avec liveRate
     // courant, pour rester fidèle si le taux bouge).
@@ -155,8 +159,10 @@ function persistSettings(settings) {
     if (settings.ibkrSummary) toSave.ibkrSummary = settings.ibkrSummary;
     if (settings.ibkrLedger) toSave.ibkrLedger = settings.ibkrLedger;
     if (settings.gwAutoConnect !== undefined) toSave.gwAutoConnect = settings.gwAutoConnect;
-    if (Array.isArray(settings.dailySnapshots) && settings.dailySnapshots.length > 0) {
-      toSave.ds = settings.dailySnapshots;
+    // Dataset actif (clé courte `dsid`). L'ex-clé `ds` n'est plus écrite :
+    // archivée au boot (qc:nlvDaily:legacy), snapshots par dataset désormais.
+    if (typeof settings.activeDatasetId === 'string' && settings.activeDatasetId) {
+      toSave.dsid = settings.activeDatasetId;
     }
     // B4 — capital manuel en CHF (clé courte `ic`).
     if (

@@ -35,15 +35,21 @@ import useLivePositions from '../hooks/useLivePositions';
 import useWatchlist from '../hooks/useWatchlist';
 import useAvailableCapital from '../hooks/useAvailableCapital';
 import { usePortfolioMetrics, useKPIs } from '../hooks/usePortfolioMetrics';
-import { useOpenPositions, useDispatch, useClosedTrades } from '../store/useStore';
+import { useOpenPositions, useClosedTrades, useSettings } from '../store/useStore';
+import { appendDailySnapshot, DATASET_LOCAL } from '../utils/nlvHistory';
 
-// 4K refonte Phase B — daily snapshot writer (inchangé).
+// 4K refonte Phase B — daily snapshot writer. Isolation par dataset :
+// écrit dans qc:nlvDaily:{datasetId actif} via utils/nlvHistory (append
+// idempotent par date — aucune écriture si rien ne change), plus jamais
+// dans le magasin global (ex-UPDATE_DAILY_SNAPSHOT, mort — l'historique
+// global pollué est archivé sous qc:nlvDaily:legacy au boot).
 function useDailySnapshotWriter() {
-  const dispatch = useDispatch();
   const metrics = usePortfolioMetrics();
   const kpis = useKPIs();
   const { availableUsd } = useAvailableCapital();
   const openPositions = useOpenPositions();
+  const settings = useSettings();
+  const datasetId = settings?.activeDatasetId || DATASET_LOCAL;
 
   const nlv = metrics?.netLiquidationValueUsd;
   const unrealized = metrics?.unrealizedPnlUsd;
@@ -58,27 +64,24 @@ function useDailySnapshotWriter() {
     const today = new Date().toISOString().slice(0, 10);
     const round = (v) =>
       typeof v === 'number' && Number.isFinite(v) ? Math.round(v * 100) / 100 : null;
-    dispatch({
-      type: 'UPDATE_DAILY_SNAPSHOT',
-      payload: {
-        date: today,
-        nlv: round(nlv),
-        availCapital: round(availableUsd),
-        unrealized: round(unrealized),
-        exposure: round(exposure),
-        openPositionsCount: positionsCount,
-        realized: round(realized),
-        winRate: round(winRate),
-        profitFactor:
-          profitFactor === Infinity
-            ? null
-            : typeof profitFactor === 'number' && Number.isFinite(profitFactor)
-              ? round(profitFactor)
-              : null,
-      },
+    appendDailySnapshot(datasetId, {
+      date: today,
+      nlv: round(nlv),
+      availCapital: round(availableUsd),
+      unrealized: round(unrealized),
+      exposure: round(exposure),
+      openPositionsCount: positionsCount,
+      realized: round(realized),
+      winRate: round(winRate),
+      profitFactor:
+        profitFactor === Infinity
+          ? null
+          : typeof profitFactor === 'number' && Number.isFinite(profitFactor)
+            ? round(profitFactor)
+            : null,
     });
   }, [
-    dispatch,
+    datasetId,
     nlv,
     availableUsd,
     unrealized,

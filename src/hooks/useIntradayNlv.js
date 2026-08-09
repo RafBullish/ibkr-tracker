@@ -22,8 +22,10 @@ import {
   appendIntradaySample,
   readIntradayDays,
   NLV_INTRADAY_EVENT,
-  NLV_INTRADAY_KEY,
+  NLV_INTRADAY_KEY_PREFIX,
 } from '../utils/nlvIntraday';
+import { DATASET_LOCAL } from '../utils/nlvHistory';
+import { useSettings } from '../store/useStore';
 import { TIME } from '../constants/timing';
 
 export function useIntradayNlvWriter() {
@@ -33,22 +35,27 @@ export function useIntradayNlvWriter() {
   // (courbe dense y compris sur NLV plate).
   const session = useMarketSession({ tickMs: TIME.ONE_MINUTE_MS });
   const metrics = usePortfolioMetrics();
+  const settings = useSettings();
   const nlv = metrics?.netLiquidationValueUsd;
+  // Isolation par dataset : les échantillons vont dans le buffer du
+  // dataset ACTIF (seau `local` avant tout import).
+  const datasetId = settings?.activeDatasetId || DATASET_LOCAL;
 
   useEffect(() => {
     if (!session.isOpen) return; // RTH NY uniquement — jamais hors séance
     if (typeof nlv !== 'number' || !Number.isFinite(nlv) || nlv <= 0) return;
-    appendIntradaySample(nlv);
-  }, [session, nlv]);
+    appendIntradaySample(datasetId, nlv);
+  }, [session, nlv, datasetId]);
 }
 
-export function useIntradayNlvDays() {
-  const [days, setDays] = useState(readIntradayDays);
+export function useIntradayNlvDays(datasetId) {
+  const [days, setDays] = useState(() => readIntradayDays(datasetId));
 
   useEffect(() => {
-    const refresh = () => setDays(readIntradayDays());
+    const refresh = () => setDays(readIntradayDays(datasetId));
+    refresh(); // resync au changement de dataset
     const onStorage = (e) => {
-      if (!e || !e.key || e.key === NLV_INTRADAY_KEY) refresh();
+      if (!e || !e.key || e.key.startsWith(NLV_INTRADAY_KEY_PREFIX)) refresh();
     };
     window.addEventListener(NLV_INTRADAY_EVENT, refresh);
     window.addEventListener('storage', onStorage);
@@ -56,7 +63,7 @@ export function useIntradayNlvDays() {
       window.removeEventListener(NLV_INTRADAY_EVENT, refresh);
       window.removeEventListener('storage', onStorage);
     };
-  }, []);
+  }, [datasetId]);
 
   return days;
 }

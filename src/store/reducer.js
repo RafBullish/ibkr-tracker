@@ -9,11 +9,6 @@ import { sanitizeTier } from '../utils/sniperMeta';
 
 const normalizeStrike = (s) => String(parseFloat(s) || 0);
 
-// Rétention des snapshots NLV quotidiens (FF-données). Exportée pour les
-// tests. ~10 ans : le localStorage reste borné (≈ 0.5 Mo au pire) et la
-// série 1Y/ALL du Héros 1 ne perd plus d'historique.
-export const DAILY_SNAPSHOT_MAX_DAYS = 3650;
-
 export function applyAction(state, action) {
   switch (action.type) {
     case 'SET_LIVE_RATE':
@@ -72,40 +67,18 @@ export function applyAction(state, action) {
       return { ...state, settings: next };
     }
 
-    case 'UPDATE_DAILY_SNAPSHOT': {
-      // Idempotent par date — un appel répété le même jour avec les mêmes
-      // valeurs renvoie la même référence d'état (pas de re-render storm,
-      // pas de write localStorage inutile).
-      //
-      // FF-données : rétention LONGUE (3650 j ≈ 10 ans). L'ancien cap 60
-      // effaçait l'historique NLV du Héros 1 au-delà de 3 mois — la série
-      // 1Y/ALL lit désormais tout l'historique. Un snapshot ≈ 150 octets
-      // JSON → 3650 points ≈ 0.5 Mo au pire, borné bien sous le quota
-      // localStorage ; le graphe rééchantillonne à 190 pts (resampleSeries).
-      // Au-delà du cap : drop du plus ancien après tri par date (FIFO).
-      // Aucune migration nécessaire : lever un cap préserve l'existant.
-      const snap = action.payload;
-      if (!snap || !snap.date) return state;
-      const list = Array.isArray(state.settings.dailySnapshots)
-        ? state.settings.dailySnapshots
-        : [];
-      const idx = list.findIndex((s) => s.date === snap.date);
-      if (idx !== -1) {
-        const existing = list[idx];
-        const same = Object.keys(snap).every((k) => existing[k] === snap[k]);
-        if (same) return state;
-        const merged = list.slice();
-        merged[idx] = { ...existing, ...snap };
-        return { ...state, settings: { ...state.settings, dailySnapshots: merged } };
-      }
-      let appended = [...list, snap];
-      if (appended.length > DAILY_SNAPSHOT_MAX_DAYS) {
-        appended = appended
-          .slice()
-          .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
-          .slice(appended.length - DAILY_SNAPSHOT_MAX_DAYS);
-      }
-      return { ...state, settings: { ...state.settings, dailySnapshots: appended } };
+    case 'SET_ACTIVE_DATASET': {
+      // Isolation NLV par dataset : identité du CSV importé
+      // (ClientAccountID + période + hash, cf. utils/ibkr/datasetId).
+      // Posée par /settings/import ; toutes les clés d'historique NLV
+      // (qc:nlvCsv:/qc:nlvDaily:/qc:nlvIntraday:) en dérivent. Persistée
+      // par persistSettings (clé courte `dsid`). Payload falsy → null
+      // (retour au seau sentinelle `local`).
+      // NB : l'ex-UPDATE_DAILY_SNAPSHOT est MORT — le writer quotidien
+      // écrit désormais dans qc:nlvDaily:{datasetId} (utils/nlvHistory).
+      const id = typeof action.payload === 'string' && action.payload ? action.payload : null;
+      if (state.settings.activeDatasetId === id) return state;
+      return { ...state, settings: { ...state.settings, activeDatasetId: id } };
     }
 
     case 'ADD_POSITION': {
@@ -361,6 +334,9 @@ export function applyAction(state, action) {
         // Watchlist = liste de suivi (préférence), pas de la donnée
         // comptable → préservée comme les prefs FX / le tier Sniper.
         watchlist: state.watchlist,
+        // activeDatasetId MEURT avec les données (la courbe repart du
+        // seau `local`, honnête) ; les clés qc:nlv*:{datasetId} ne sont
+        // PAS détruites — elles se réactivent au ré-import du même CSV.
         settings: {
           liveRate: state.settings.liveRate,
           fxMode: state.settings.fxMode,

@@ -21,8 +21,36 @@
 //  dispatché après chaque écriture réussie pour re-render les lecteurs.
 // ═══════════════════════════════════════════════════════════════
 
-export const NLV_INTRADAY_KEY = 'qc:nlvIntraday';
+import { DATASET_LOCAL } from './nlvHistory';
+
+// Isolation par dataset (défaut de conception soldé) : une clé PAR
+// dataset — changer de CSV = changer de buffer, aucun mélange possible.
+export const NLV_INTRADAY_KEY_PREFIX = 'qc:nlvIntraday:';
 export const NLV_INTRADAY_EVENT = 'qc:nlvIntraday:change';
+
+// Ancien buffer GLOBAL (pré-dataset, pollué test/réel) : archivé une
+// fois sous :legacy au chargement du module (aucune destruction), sur le
+// modèle migrateTokenStores de flexApi.
+const NLV_INTRADAY_GLOBAL_LEGACY_SOURCE = 'qc:nlvIntraday';
+const NLV_INTRADAY_LEGACY_KEY = 'qc:nlvIntraday:legacy';
+
+function intradayKey(datasetId) {
+  return NLV_INTRADAY_KEY_PREFIX + (datasetId || DATASET_LOCAL);
+}
+
+(function archiveLegacyIntradayOnce() {
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = window.localStorage.getItem(NLV_INTRADAY_GLOBAL_LEGACY_SOURCE);
+    if (raw == null) return;
+    if (window.localStorage.getItem(NLV_INTRADAY_LEGACY_KEY) == null) {
+      window.localStorage.setItem(NLV_INTRADAY_LEGACY_KEY, raw);
+    }
+    window.localStorage.removeItem(NLV_INTRADAY_GLOBAL_LEGACY_SOURCE);
+  } catch {
+    /* storage indisponible — l'archive retentera au prochain boot */
+  }
+})();
 
 // ~5 jours de séance de rétention ; garde 4.5 min entre échantillons
 // (tolère la gigue du tick minute → cadence effective ~5 min).
@@ -37,15 +65,16 @@ function dayIso(nowMs) {
 }
 
 /**
- * Lit le buffer intraday. Toujours sûr : [] si absent, illisible,
- * corrompu ou hors navigateur.
+ * Lit le buffer intraday du dataset. Toujours sûr : [] si absent,
+ * illisible, corrompu ou hors navigateur.
  *
+ * @param {string} datasetId  dataset actif (défaut : seau `local`)
  * @returns {Array<{d: string, pts: Array<[number, number]>}>} jours asc
  */
-export function readIntradayDays() {
+export function readIntradayDays(datasetId) {
   if (typeof window === 'undefined') return [];
   try {
-    const raw = window.localStorage.getItem(NLV_INTRADAY_KEY);
+    const raw = window.localStorage.getItem(intradayKey(datasetId));
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!parsed || parsed.v !== 1 || !Array.isArray(parsed.days)) return [];
@@ -78,13 +107,14 @@ export function readIntradayDays() {
  * soit le rythme d'appel). Rétention : MAX_SESSION_DAYS jours les plus
  * récents. Écriture localStorage sûre ; événement dispatché si écrit.
  *
+ * @param {string} datasetId  dataset actif (défaut : seau `local`)
  * @param {number} nlv    NLV USD (> 0)
  * @param {number} [now]  horloge injectable (tests déterministes)
  * @returns {Array<{d: string, pts: Array<[number, number]>}>} buffer après appel
  */
-export function appendIntradaySample(nlv, now = Date.now()) {
+export function appendIntradaySample(datasetId, nlv, now = Date.now()) {
   if (typeof window === 'undefined') return [];
-  const days = readIntradayDays();
+  const days = readIntradayDays(datasetId);
   if (!Number.isFinite(nlv) || nlv <= 0) return days;
 
   const d = dayIso(now);
@@ -107,7 +137,7 @@ export function appendIntradaySample(nlv, now = Date.now()) {
 
   try {
     window.localStorage.setItem(
-      NLV_INTRADAY_KEY,
+      intradayKey(datasetId),
       JSON.stringify({ v: 1, days: trimmed })
     );
     if (typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') {
