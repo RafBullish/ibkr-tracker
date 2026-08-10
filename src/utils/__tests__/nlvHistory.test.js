@@ -14,9 +14,13 @@ import {
   readCsvSeries,
   writeCsvSeries,
   archiveLegacyDailySnapshots,
+  pruneDatasetHistory,
   NLV_DAILY_MAX_DAYS,
   NLV_DAILY_LEGACY_KEY,
   NLV_HISTORY_EVENT,
+  NLV_CSV_KEY_PREFIX,
+  NLV_DAILY_KEY_PREFIX,
+  NLV_INTRADAY_KEY_PREFIX,
 } from '../nlvHistory';
 
 const DS = 'U1:20250101-20251231:abcd1234';
@@ -64,6 +68,10 @@ describe('wrappers storage (isolation par dataset)', () => {
       getItem: (k) => (m.has(k) ? m.get(k) : null),
       setItem: (k, v) => m.set(k, String(v)),
       removeItem: (k) => m.delete(k),
+      key: (i) => Array.from(m.keys())[i] ?? null,
+      get length() {
+        return m.size;
+      },
       _map: m,
     };
   }
@@ -114,6 +122,37 @@ describe('wrappers storage (isolation par dataset)', () => {
     expect(readCsvSeries('vierge')).toBeNull();
     window.localStorage.setItem('qc:nlvCsv:corrompu', '{oops');
     expect(readCsvSeries('corrompu')).toBeNull();
+  });
+
+  it('pruneDatasetHistory : garde l’actif + les plus récents du compte, épargne legacy/local/autres comptes', () => {
+    const mk = (id, importedAt) =>
+      writeCsvSeries(id, { source: 'recon', days: [], meta: { importedAt } });
+    // 4 datasets du même compte U1 (actif = d4), 1 autre compte, legacy, local.
+    mk('U1:p1:aaaa0001', '2026-01-01T00:00:00Z');
+    mk('U1:p2:aaaa0002', '2026-02-01T00:00:00Z');
+    mk('U1:p3:aaaa0003', '2026-03-01T00:00:00Z');
+    mk('U1:p4:aaaa0004', '2026-04-01T00:00:00Z');
+    mk('U2:p1:bbbb0001', '2020-01-01T00:00:00Z');
+    appendDailySnapshot('U1:p1:aaaa0001', snap(1));
+    appendDailySnapshot('local', snap(1));
+    window.localStorage.setItem(NLV_INTRADAY_KEY_PREFIX + 'U1:p1:aaaa0001', '{"v":1,"days":[]}');
+    window.localStorage.setItem(NLV_INTRADAY_KEY_PREFIX + 'legacy', '{"v":1,"days":[]}');
+
+    const dropped = pruneDatasetHistory('U1:p4:aaaa0004'); // keep = 3 → actif + 2 récents
+    expect(dropped).toEqual(['U1:p1:aaaa0001']); // le plus ancien purgé, triplet complet
+    const keys = Array.from(window.localStorage._map.keys());
+    expect(keys).not.toContain(NLV_CSV_KEY_PREFIX + 'U1:p1:aaaa0001');
+    expect(keys).not.toContain(NLV_DAILY_KEY_PREFIX + 'U1:p1:aaaa0001');
+    expect(keys).not.toContain(NLV_INTRADAY_KEY_PREFIX + 'U1:p1:aaaa0001');
+    // Survivants : actif, 2 récents, autre compte, seau local, archive legacy.
+    expect(keys).toContain(NLV_CSV_KEY_PREFIX + 'U1:p4:aaaa0004');
+    expect(keys).toContain(NLV_CSV_KEY_PREFIX + 'U1:p3:aaaa0003');
+    expect(keys).toContain(NLV_CSV_KEY_PREFIX + 'U1:p2:aaaa0002');
+    expect(keys).toContain(NLV_CSV_KEY_PREFIX + 'U2:p1:bbbb0001');
+    expect(keys).toContain(NLV_DAILY_KEY_PREFIX + 'local');
+    expect(keys).toContain(NLV_INTRADAY_KEY_PREFIX + 'legacy');
+    // Sous la rétention : no-op.
+    expect(pruneDatasetHistory('U1:p4:aaaa0004')).toEqual([]);
   });
 
   it('archiveLegacyDailySnapshots : one-shot, jamais écrasé, rien si vide', () => {

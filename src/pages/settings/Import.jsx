@@ -43,7 +43,7 @@ import { useToast } from '../../components/layout/Toast';
 import { parseIbkrCsv, mergeIbkrData } from '../../utils/ibkrParser';
 import { hashCsvContent, buildDatasetId } from '../../utils/ibkr/datasetId';
 import { buildCsvNavSeries } from '../../utils/ibkr/navSeries';
-import { writeCsvSeries } from '../../utils/nlvHistory';
+import { writeCsvSeries, pruneDatasetHistory } from '../../utils/nlvHistory';
 import {
   configureFlex,
   getFlexConfig,
@@ -64,12 +64,16 @@ function activateDataset(csvText, parsed, dispatch) {
   const hash = hashCsvContent(csvText);
   const datasetId = buildDatasetId({ ...parsed.meta, hash });
   const series = buildCsvNavSeries(parsed);
-  writeCsvSeries(datasetId, {
+  const stored = writeCsvSeries(datasetId, {
     ...series,
     meta: { ...parsed.meta, hash, importedAt: new Date().toISOString() },
   });
   dispatch({ type: 'SET_ACTIVE_DATASET', payload: datasetId });
-  return { datasetId, navSource: series.source };
+  // Rétention : chaque sync Flex = nouveau contenu = nouveau dataset —
+  // on purge les triplets du même compte au-delà des N plus récents
+  // (un dataset purgé se re-matérialise au ré-import de son CSV).
+  pruneDatasetHistory(datasetId);
+  return { datasetId, navSource: series.source, stored };
 }
 
 function formatLastSync(lastSync) {
@@ -131,6 +135,12 @@ function FlexSection({ onResult }) {
       const result = mergeIbkrData(parsed, state);
       dispatch({ type: 'IMPORT_DATA', payload: result.mergedData });
       const dataset = activateDataset(csvText, parsed, dispatch);
+      if (!dataset.stored) {
+        showToast.error('Historique NLV non enregistré', {
+          detail: 'Stockage local plein — la courbe ne montrera que le live. Libère de l’espace puis ré-importe.',
+          duration: 6000,
+        });
+      }
       const s = result.stats || {};
       const syncInfo = {
         date: new Date().toISOString(),
@@ -282,6 +292,12 @@ function CsvUploadSection({ onResult }) {
       const result = mergeIbkrData(parsed, state);
       dispatch({ type: 'IMPORT_DATA', payload: result.mergedData });
       const dataset = activateDataset(text, parsed, dispatch);
+      if (!dataset.stored) {
+        showToast.error('Historique NLV non enregistré', {
+          detail: 'Stockage local plein — la courbe ne montrera que le live. Libère de l’espace puis ré-importe.',
+          duration: 6000,
+        });
+      }
       const s = result.stats || {};
       onResult({
         source: `CSV · ${file.name}`,

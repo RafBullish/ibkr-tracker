@@ -21,11 +21,13 @@
 //  dispatché après chaque écriture réussie pour re-render les lecteurs.
 // ═══════════════════════════════════════════════════════════════
 
-import { DATASET_LOCAL } from './nlvHistory';
+import { DATASET_LOCAL, NLV_INTRADAY_KEY_PREFIX } from './nlvHistory';
 
 // Isolation par dataset (défaut de conception soldé) : une clé PAR
 // dataset — changer de CSV = changer de buffer, aucun mélange possible.
-export const NLV_INTRADAY_KEY_PREFIX = 'qc:nlvIntraday:';
+// Le préfixe vit dans nlvHistory (le pruneur balaie les trois familles) ;
+// ré-exporté ici pour les consommateurs du buffer.
+export { NLV_INTRADAY_KEY_PREFIX };
 export const NLV_INTRADAY_EVENT = 'qc:nlvIntraday:change';
 
 // Ancien buffer GLOBAL (pré-dataset, pollué test/réel) : archivé une

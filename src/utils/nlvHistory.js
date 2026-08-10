@@ -28,12 +28,23 @@ export const DATASET_LOCAL = 'local';
 
 export const NLV_CSV_KEY_PREFIX = 'qc:nlvCsv:';
 export const NLV_DAILY_KEY_PREFIX = 'qc:nlvDaily:';
+// Préfixe intraday défini ICI (nlvIntraday l'importe — sens unique, pas de
+// cycle) : le pruneur doit balayer les trois familles de clés.
+export const NLV_INTRADAY_KEY_PREFIX = 'qc:nlvIntraday:';
 export const NLV_DAILY_LEGACY_KEY = 'qc:nlvDaily:legacy';
 export const NLV_HISTORY_EVENT = 'qc:nlvHistory:change';
 
 // Rétention des snapshots quotidiens (~10 ans) — sémantique reprise de
 // l'ex-UPDATE_DAILY_SNAPSHOT du reducer (FF-données), désormais par dataset.
 export const NLV_DAILY_MAX_DAYS = 3650;
+
+// Rétention des datasets PAR COMPTE (revue adversariale 1.1.0) : chaque
+// sync Flex produit un contenu différent d'un octet → nouveau datasetId →
+// nouveau triplet de clés. Sans borne, le quota localStorage finirait par
+// menacer les écritures des VRAIES clés portefeuille (ibkr_u_*). On garde
+// l'actif + les plus récents ; un dataset purgé se re-matérialise
+// intégralement au ré-import de son CSV (la série est dérivée du fichier).
+export const NLV_DATASET_KEEP_PER_ACCOUNT = 3;
 
 const csvKey = (datasetId) => NLV_CSV_KEY_PREFIX + (datasetId || DATASET_LOCAL);
 const dailyKey = (datasetId) => NLV_DAILY_KEY_PREFIX + (datasetId || DATASET_LOCAL);
@@ -137,6 +148,49 @@ export function appendDailySnapshot(datasetId, snap) {
   if (next === days) return days;
   safeWrite(dailyKey(datasetId), { v: 1, days: next });
   return next;
+}
+
+// ─── Rétention des datasets (GC à l'activation) ─────────────────
+
+const accountOf = (datasetId) => String(datasetId || '').split(':')[0];
+
+/**
+ * Purge les triplets de clés (csv/daily/intraday) des datasets du MÊME
+ * compte au-delà de la rétention : l'actif + les (keep − 1) imports les
+ * plus récents survivent (tri par meta.importedAt du qc:nlvCsv). Ne
+ * touche JAMAIS aux archives :legacy, au seau `local`, ni aux datasets
+ * d'autres comptes. Retourne les ids purgés.
+ */
+export function pruneDatasetHistory(activeDatasetId, keep = NLV_DATASET_KEEP_PER_ACCOUNT) {
+  if (typeof window === 'undefined') return [];
+  const account = accountOf(activeDatasetId);
+  if (!account || activeDatasetId === DATASET_LOCAL) return [];
+  const prefixes = [NLV_CSV_KEY_PREFIX, NLV_DAILY_KEY_PREFIX, NLV_INTRADAY_KEY_PREFIX];
+  try {
+    const ls = window.localStorage;
+    const ids = new Set();
+    for (let i = 0; i < ls.length; i++) {
+      const key = ls.key(i);
+      if (!key) continue;
+      for (const prefix of prefixes) {
+        if (!key.startsWith(prefix)) continue;
+        const id = key.slice(prefix.length);
+        if (id === 'legacy' || id === DATASET_LOCAL || id === activeDatasetId) continue;
+        if (accountOf(id) === account) ids.add(id);
+      }
+    }
+    if (ids.size <= keep - 1) return [];
+    const ranked = Array.from(ids)
+      .map((id) => ({ id, at: safeRead(NLV_CSV_KEY_PREFIX + id)?.meta?.importedAt || '' }))
+      .sort((a, b) => b.at.localeCompare(a.at));
+    const dropped = ranked.slice(keep - 1).map((r) => r.id);
+    for (const id of dropped) {
+      for (const prefix of prefixes) ls.removeItem(prefix + id);
+    }
+    return dropped;
+  } catch {
+    return [];
+  }
 }
 
 // ─── Archivage legacy (migration one-shot, aucune destruction) ──

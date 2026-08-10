@@ -954,7 +954,7 @@ export default function SettingsGeneral() {
             <li>Taux USD/CHF et préférences FX</li>
             <li>Tier Sniper actif</li>
             <li>Seuil du kill switch, nom de profil, mode daltonien</li>
-            <li>Historiques NLV par dataset (archives — réactivés au ré-import du même CSV)</li>
+            <li>Historiques NLV par dataset (les 3 plus récents par compte — re-matérialisés au ré-import du CSV)</li>
           </ul>
           <label className="settings-danger__type-label">
             <span>
