@@ -53,8 +53,9 @@ const PAGES = [
 const TOLERATED = [
   /finnhub.*(500|502)/i,
   /(500|502).*finnhub/i,
+  /FINNHUB_KEY non configur/i, // repli dev sans clé — bannière durable côté app
   /Failed to load resource.*(500|502|429)/i,
-  /429/,
+  /429|Too many requests/i, // quota du proxy quotes
   /width\(-?\d+\).*height\(-?\d+\)|width.*-1.*height.*-1/i,
   /AbortError/i,
 ];
@@ -121,6 +122,13 @@ async function runCaptures(prefix) {
   const clickView = (lbl) => hero.locator(`.lh-toggle__btn:text-is("${lbl}")`).click().catch(() => {});
 
   await shot('all'); // range par défaut = ALL, vue NLV
+  // Pied de stats (ChartFooter) — la StatusBar fixe recouvre le bas du
+  // bloc dans la capture d'élément : shot dédié, scrollé au préalable.
+  const foot = hero.locator('.lh-cfoot');
+  await foot.scrollIntoViewIfNeeded().catch(() => {});
+  await page.waitForTimeout(400);
+  await foot.screenshot({ path: path.join(OUT, `${prefix}-footer.png`) }).catch(() => {});
+  console.log(`  ✓ ${prefix}-footer.png`);
   await clickRange('3M');
   await shot('3m');
   await clickRange('5D');
