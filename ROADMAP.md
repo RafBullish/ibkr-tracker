@@ -7,6 +7,20 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
 
 ---
 
+## v1.0.1 — Maintenance (ouvert le 12.08.2026)
+
+- **FIX-NLV ✅ (1.0.1-rc.1)** — « L'histoire reconstituée » : le Héros 1
+  reconstitue À LA LECTURE l'historique NLV antérieur au premier snapshot
+  réel (`utils/nlvBackfill.js` : C0 implicite + cumFlux + cumRéalisé,
+  zéro écriture, un point réel PRIME toujours, points `synth`) ; note
+  d'honnêteté ink-mute « historique reconstitué · réalisé + apports » ;
+  D6 intraday constaté déjà satisfait à v1.0.0 (verrous de tests
+  ajoutés) ; profil d'audit `AUDIT_SEED=nlv-pathologie` + harnais
+  `fix-nlv-proof.mjs` ; preuves `docs/captures/fix-nlv/`.
+- **Prochaine brique : au prompt architecte.**
+
+---
+
 ## Étape 1 — Dashboard (page reine)
 
 - **1.A ✅ (1.0.0-rc.1)** — Fondation Obsidienne + Ligne de commandement v1 :

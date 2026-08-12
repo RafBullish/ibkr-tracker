@@ -90,11 +90,16 @@ export default function Hero1({ area = 'hero1' }) {
         liveNlv: metrics?.netLiquidationValueUsd ?? null,
         liveRate: metrics?.liveRate || 1,
         today,
+        // FIX-NLV : ancre du C0 implicite de la reconstitution.
+        unrealizedLive: metrics?.unrealizedPnlUsd ?? null,
       }),
     [settings?.dailySnapshots, cashFlows, closedTrades, metrics, today]
   );
 
   const series = useMemo(() => resampleSeries(dailyFull, range), [dailyFull, range]);
+  // Note d'honnêteté (D5) : la fenêtre affichée contient-elle des points
+  // reconstitués ? (ink-mute dans la bande perf — note, pas alerte.)
+  const windowSynth = useMemo(() => series.some((p) => p.synth), [series]);
 
   // FF-données — 1D/5D denses : le buffer intraday (échantillons ~5 min
   // en séance, qc:nlvIntraday) remplace la série quotidienne SUR LE GRAPHE
@@ -160,7 +165,7 @@ export default function Hero1({ area = 'hero1' }) {
             <span className="lh-perf__none">vue underwater — perf de fenêtre masquée</span>
           </div>
         ) : (
-          <PerfBand w={windowStats} range={range} rate={rate} />
+          <PerfBand w={windowStats} range={range} rate={rate} synth={windowSynth} />
         )}
         <div className="lh-fuse__stage">
           <div className="lh-fuse__overlay">

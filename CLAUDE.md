@@ -257,7 +257,13 @@ remis à la vérité) ; sécurité token re-prouvée (sessionStorage seul) ;
 `docs/ETAT-DU-SITE-V1.md` rafraîchi = cartographie de référence
 v1.0.0 ; captures `docs/captures/final-v1/`.
 **QuantumCall v1.0.0 est LIVRÉ** — maintenance sur demande explicite,
-backlog post-1.0 dans ROADMAP/ETAT-DU-SITE §9.
+backlog post-1.0 dans ROADMAP/ETAT-DU-SITE §9. **Chantier v1.0.1
+OUVERT** : brique 1 **FIX-NLV mergée (1.0.1-rc.1)** — le Héros 1
+reconstitue à la lecture l'historique NLV antérieur au premier snapshot
+réel (`utils/nlvBackfill.js` : C0 implicite + cumFlux + cumRéalisé, un
+point réel PRIME, points `synth`, note d'honnêteté ink-mute) ; D6
+intraday constaté déjà satisfait à v1.0.0 (verrous de tests ajoutés).
+Prochaine brique : au prompt architecte.
 
 Repères S2 toujours en vigueur : KPI 44, cellules `.v3-table` 20 (rowHeight 47),
 plancher caption 17, strip 21/16/18, ticks charts plafonnés 14, héros 56/64
