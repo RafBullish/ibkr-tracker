@@ -21,9 +21,21 @@ import { chromium } from 'playwright';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildSeed, buildSeedNlvPathologie } from './audit-seeds.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
+
+// FIX-NLV : profil de seed OPTIONNEL. Sans AUDIT_SEED → dataset par
+// défaut, comportement et dossier de sortie STRICTEMENT inchangés.
+//   AUDIT_SEED=nlv-pathologie → cas Rafael 12.08 (cf. audit-seeds.mjs),
+//   captures vers audit-AAAAMMJJ-nlv-pathologie/.
+const SEED_PROFILES = { 'nlv-pathologie': buildSeedNlvPathologie };
+const SEED_PROFILE = process.env.AUDIT_SEED || null;
+if (SEED_PROFILE && !SEED_PROFILES[SEED_PROFILE]) {
+  console.error(`✗ AUDIT_SEED inconnu : "${SEED_PROFILE}" (profils : ${Object.keys(SEED_PROFILES).join(', ')})`);
+  process.exit(2);
+}
 // Port-tolérant : AUDIT_BASE_URL force une URL ; sinon on sonde 5173 puis 5174
 // (Vite bascule sur 5174 quand 5173 est occupé) et on garde le premier joignable.
 const BASE_CANDIDATES = process.env.AUDIT_BASE_URL
@@ -35,62 +47,15 @@ const stamp = (() => {
   const p = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}`;
 })();
-const OUT = path.join(ROOT, 'docs', 'captures', `audit-${stamp}`);
+const OUT = path.join(
+  ROOT,
+  'docs',
+  'captures',
+  `audit-${stamp}${SEED_PROFILE ? `-${SEED_PROFILE}` : ''}`
+);
 
-// ── Dataset de test à dates relatives (populated seed) ─────────────────────────
-function buildSeed() {
-  const dayMs = 86400000;
-  const now = Date.now();
-  const iso = (off) => new Date(now + off * dayMs).toISOString().slice(0, 10);
-
-  const positions = [
-    { id: 'g1', as: 'Option', dir: 'Long', tk: 'AAPL', ty: 'CALL', st: '240', ex: iso(45), ct: '2', mu: '100', pi: '4.20', pc: '4.50', ivRank: 35 },
-    { id: 'g2', as: 'Option', dir: 'Long', tk: 'MSFT', ty: 'CALL', st: '450', ex: iso(30), ct: '3', mu: '100', pi: '5.80', pc: '6.00', ivRank: 52 },
-    { id: 'g3', as: 'Option', dir: 'Long', tk: 'NVDA', ty: 'CALL', st: '150', ex: iso(60), ct: '4', mu: '100', pi: '5.20', pc: '5.50', ivRank: 75 },
-    { id: 'g4', as: 'Option', dir: 'Long', tk: 'CVX', ty: 'CALL', st: '165', ex: iso(45), ct: '1', mu: '100', pi: '3.30', pc: '3.50', ivRank: 22 },
-    { id: 'g5', as: 'Option', dir: 'Long', tk: 'XOM', ty: 'CALL', st: '120', ex: iso(90), ct: '3', mu: '100', pi: '2.60', pc: '2.80', ivRank: 44 },
-  ];
-  const spots = { AAPL: 232, MSFT: 438, NVDA: 143, CVX: 160, XOM: 118 };
-  const spotCache = {};
-  for (const [tk, spot] of Object.entries(spots)) spotCache[tk] = { spot, timestamp: now };
-
-  // Trades clôturés étalés (this-month pour Calendar/Analytics + historique).
-  const closed = [
-    { id: 'c1', tk: 'AAPL', as: 'Option', ty: 'CALL', dir: 'Long', pnl: 420, do: iso(-1), di: iso(-11), tag: 'Sniper OTM' },
-    { id: 'c2', tk: 'MSFT', as: 'Option', ty: 'PUT', dir: 'Long', pnl: -180, do: iso(-1), di: iso(-9), tag: 'FOMO' },
-    { id: 'c3', tk: 'NVDA', as: 'Option', ty: 'CALL', dir: 'Long', pnl: 650, do: iso(-2), di: iso(-13), tag: 'Sniper OTM' },
-    { id: 'c4', tk: 'XOM', as: 'Option', ty: 'CALL', dir: 'Long', pnl: -310, do: iso(-3), di: iso(-8), tag: 'Event' },
-    { id: 'c5', tk: 'CVX', as: 'Option', ty: 'PUT', dir: 'Short', pnl: 210, do: iso(-6), di: iso(-20), tag: 'Sniper OTM' },
-    { id: 'c6', tk: 'TSLA', as: 'Stock', ty: null, dir: 'Long', pnl: -95, do: iso(-16), di: iso(-30), tag: 'Swing' },
-    { id: 'c7', tk: 'AMD', as: 'Option', ty: 'CALL', dir: 'Long', pnl: 310, do: iso(-42), di: iso(-57), tag: 'Sniper OTM' },
-    { id: 'c8', tk: 'GOOG', as: 'Option', ty: 'PUT', dir: 'Short', pnl: 540, do: iso(-82), di: iso(-96), tag: 'Swing' },
-    { id: 'c9', tk: 'META', as: 'Option', ty: 'CALL', dir: 'Long', pnl: -220, do: iso(-115), di: iso(-130), tag: 'Event' },
-    { id: 'c10', tk: 'SPY', as: 'Option', ty: 'PUT', dir: 'Long', pnl: 130, do: iso(-150), di: iso(-160), tag: 'Sniper OTM' },
-  ];
-  const journal = [
-    { id: 'j1', date: iso(-1), ticker: 'AAPL', mood: 'confident', mistake: 'none', tag: 'Sniper OTM', note: 'Setup propre, patience sur l\'entree et respect du plan.', rating: 5 },
-    { id: 'j2', date: iso(-1), ticker: 'MSFT', mood: 'frustrated', mistake: 'timing', tag: 'FOMO', note: 'Entre trop tot sur le pullback, mauvais timing.', rating: 2 },
-    { id: 'j3', date: iso(-2), ticker: 'NVDA', mood: 'calm', mistake: 'none', tag: 'Suivi plan', note: 'Respect du plan, TP atteint sans stress.', rating: 4 },
-    { id: 'j4', date: iso(-3), ticker: 'XOM', mood: 'revenge', mistake: 'revenge', tag: 'Revenge', note: 'Revenge trade apres la perte NVDA. Erreur de discipline.', rating: 1 },
-    { id: 'j5', date: iso(-6), ticker: 'CVX', mood: 'focus', mistake: 'none', tag: 'Sniper OTM', note: 'Bon short premium, IV rank favorable.', rating: 4 },
-  ];
-  const cashFlows = [
-    { id: 'f1', da: iso(-60), ty: 'dep_chf', a1: '5000', a2: '0' },
-    { id: 'f2', da: iso(-20), ty: 'dep_chf', a1: '2000', a2: '0' },
-  ];
-
-  return {
-    ibkr_u_o: JSON.stringify(positions),
-    ibkr_u_c: JSON.stringify(closed),
-    ibkr_u_j: JSON.stringify(journal),
-    ibkr_u_f: JSON.stringify(cashFlows),
-    ibkr_u_s: JSON.stringify({ r: 0.88, ic: 8000 }),
-    ibkr_spot_cache_v1: JSON.stringify(spotCache),
-    ibkr_schema_v: '7',
-    ibkr_theme: 'midnight',
-    chain_history: JSON.stringify(['AAPL']),
-  };
-}
+// Le dataset de test (dates relatives) vit dans audit-seeds.mjs —
+// buildSeed() par défaut, profils optionnels via AUDIT_SEED.
 
 // ── Les 12 pages ───────────────────────────────────────────────────────────────
 const PAGES = [
@@ -141,7 +106,7 @@ async function main() {
     deviceScaleFactor: 1.35,
     colorScheme: 'dark',
   });
-  const seed = buildSeed();
+  const seed = SEED_PROFILE ? SEED_PROFILES[SEED_PROFILE]() : buildSeed();
   // Injecté AVANT tout script d'app, à chaque navigation same-origin.
   await context.addInitScript((entries) => {
     try {
