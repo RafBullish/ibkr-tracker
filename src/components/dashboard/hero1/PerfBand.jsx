@@ -25,12 +25,17 @@ function Cell({ label, value, sub, tone }) {
   );
 }
 
-export default function PerfBand({ w, range, rate, showDays = false }) {
+// FIX-NLV (D5) : `synth` = la fenêtre affichée contient des points
+// reconstitués → la ligne de statut de période porte la note
+// d'honnêteté, en ink-mute (.lh-perf__none — note, pas alerte).
+const SYNTH_NOTE = 'historique reconstitué · réalisé + apports';
+
+export default function PerfBand({ w, range, rate, showDays = false, synth = false }) {
   if (!w || w.empty) {
     return (
       <div className="lh-perf">
         <span className="lh-perf__head">SUR CETTE PÉRIODE · {range}</span>
-        <span className="lh-perf__none">fenêtre trop courte</span>
+        <span className="lh-perf__none">{synth ? SYNTH_NOTE : 'fenêtre trop courte'}</span>
       </div>
     );
   }
@@ -38,6 +43,7 @@ export default function PerfBand({ w, range, rate, showDays = false }) {
   return (
     <div className="lh-perf">
       <span className="lh-perf__head">SUR CETTE PÉRIODE · {range}</span>
+      {synth ? <span className="lh-perf__none">{SYNTH_NOTE}</span> : null}
       <Cell label="P&L PÉRIODE" value={signUsd(w.pnl)} sub={`${signPct(w.pnlPct)}${chf ? ` · ${chf}` : ''}`} tone={tone3(w.pnl)} />
       <Cell label="PLUS HAUT" value={fmtUsd(w.high)} />
       <Cell label="PLUS BAS" value={fmtUsd(w.low)} />

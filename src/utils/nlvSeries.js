@@ -13,16 +13,21 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { extractFundingFlows } from './metrics/equityTimeline';
+import { buildBackfillDays } from './nlvBackfill';
 
 const DAY_MS = 86_400_000;
 
 /**
  * Dérive la série NLV dense annotée à partir des inputs bruts (store).
+ * FIX-NLV (v1.0.1) : les jours ANTÉRIEURS au premier point réel sont
+ * reconstitués à la lecture depuis clôtures + flux (cf. nlvBackfill) —
+ * points marqués synth:true, un point réel PRIME toujours.
  * @param {{snapshots:Array, cashFlows:Array, closedTrades:Array,
- *          liveNlv:number|null, liveRate:number, today:string}} args
+ *          liveNlv:number|null, liveRate:number, today:string,
+ *          unrealizedLive:number|null}} args
  * @returns {Array<Object>} points date-ordered, annotés
  */
-export function buildNlvSeries({ snapshots, cashFlows, closedTrades, liveNlv, liveRate = 1, today }) {
+export function buildNlvSeries({ snapshots, cashFlows, closedTrades, liveNlv, liveRate = 1, today, unrealizedLive = null }) {
   const clean = (Array.isArray(snapshots) ? snapshots : [])
     .filter((s) => s && typeof s.date === 'string' && Number.isFinite(s.nlv) && s.nlv > 0)
     .slice()
@@ -41,6 +46,21 @@ export function buildNlvSeries({ snapshots, cashFlows, closedTrades, liveNlv, li
     }
   }
   if (days.length === 0) return [];
+
+  // L'histoire reconstituée : uniquement AVANT le premier point réel
+  // (la veille au plus tard). Si le journal des snapshots couvre déjà
+  // l'historique, backfill est vide et rien ne change.
+  const { days: backfill } = buildBackfillDays({
+    cashFlows,
+    closedTrades,
+    liveNlv,
+    liveRate,
+    unrealizedLive,
+    firstRealDate: days[0].date,
+  });
+  const full = backfill.length
+    ? [...backfill.filter((b) => b.date < days[0].date), ...days]
+    : days;
 
   const flows = extractFundingFlows(cashFlows, liveRate);
   const depositDates = new Set(flows.filter((f) => f.netUsd > 0).map((f) => f.date));
@@ -72,7 +92,7 @@ export function buildNlvSeries({ snapshots, cashFlows, closedTrades, liveNlv, li
   let peakFN = -Infinity;
   let hwmNlv = 0;
   let prevFN = null;
-  return days.map((d, idx) => {
+  return full.map((d, idx) => {
     const dep = cumDepositsAt(d.date);
     const flowNeutral = d.nlv - dep;
     const chg = prevFN == null ? 0 : Math.round(flowNeutral - prevFN);
@@ -96,6 +116,7 @@ export function buildNlvSeries({ snapshots, cashFlows, closedTrades, liveNlv, li
       dayPnl: close ? Math.round(close.pnl) : null,
       tradeCount: close ? close.count : 0,
       live: Boolean(d.live),
+      synth: Boolean(d.synth),
       unrealized: Number.isFinite(d.unrealized) ? d.unrealized : null,
       exposure: Number.isFinite(d.exposure) ? d.exposure : null,
     };
@@ -148,6 +169,7 @@ export function resampleSeries(series, range) {
     else {
       const merged = { ...p };
       merged.deposit = cur.deposit || p.deposit;
+      merged.synth = Boolean(cur.synth || p.synth);
       merged.tradeCount = (cur.tradeCount || 0) + (p.tradeCount || 0);
       merged.dayPnl = (cur.dayPnl || 0) + (p.dayPnl || 0) || (cur.dayPnl == null && p.dayPnl == null ? null : 0);
       buckets.set(k, merged);

@@ -116,6 +116,23 @@ describe('readIntradayDays', () => {
     expect(readIntradayDays()).toEqual([{ d: '2026-07-29', pts: [[2, 9_000]] }]);
   });
 
+  it('FIX-NLV : un buffer POLLUÉ de points nlv=0 est assaini à la lecture', () => {
+    // Le cas pathologique du 12.08 : zéros écrits store vide (avant import).
+    window.localStorage.setItem(
+      NLV_INTRADAY_KEY,
+      JSON.stringify({
+        v: 1,
+        days: [
+          { d: '2026-07-28', pts: [[10, 0], [20, 0]] }, // 100 % zéros
+          { d: '2026-07-29', pts: [[30, 0], [40, 9_000]] }, // mixte
+        ],
+      })
+    );
+    // Le jour tout-zéros DISPARAÎT, le point valide survit seul :
+    // aucune falaise à zéro ne peut atteindre le graphe.
+    expect(readIntradayDays()).toEqual([{ d: '2026-07-29', pts: [[40, 9_000]] }]);
+  });
+
   it('trie les jours par date et les points par timestamp', () => {
     window.localStorage.setItem(
       NLV_INTRADAY_KEY,

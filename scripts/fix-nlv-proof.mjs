@@ -109,14 +109,16 @@ async function runCaptures(prefix) {
   await page.goto(`${BASE}/dashboard`, { waitUntil: 'networkidle', timeout: 30000 }).catch(() => {});
   await page.waitForTimeout(1600);
 
-  const hero = page.locator('section.lh-final');
+  // `.lh-final` est partagé (Héros 1 · Héros 2 · bande décision) — le
+  // Héros 1 est le PREMIER de la grille ; tout est scopé à lui.
+  const hero = page.locator('section.lh-final').first();
   const shot = async (name) => {
     await page.waitForTimeout(750); // laisse le canvas se redessiner
     await hero.screenshot({ path: path.join(OUT, `${prefix}-${name}.png`) });
     console.log(`  ✓ ${prefix}-${name}.png`);
   };
-  const clickRange = (tf) => page.click(`.lh-range__btn:text-is("${tf}")`).catch(() => {});
-  const clickView = (lbl) => page.click(`.lh-toggle__btn:text-is("${lbl}")`).catch(() => {});
+  const clickRange = (tf) => hero.locator(`.lh-range__btn:text-is("${tf}")`).click().catch(() => {});
+  const clickView = (lbl) => hero.locator(`.lh-toggle__btn:text-is("${lbl}")`).click().catch(() => {});
 
   await shot('all'); // range par défaut = ALL, vue NLV
   await clickRange('3M');
@@ -130,7 +132,7 @@ async function runCaptures(prefix) {
   await shot('drawdown-all');
   await clickView('NLV');
   // Crosshair : survol au centre du canvas.
-  const box = await page.locator('.lh-tv__canvas').boundingBox();
+  const box = await hero.locator('.lh-tv__canvas').boundingBox();
   if (box) await page.mouse.move(box.x + box.width * 0.55, box.y + box.height * 0.45);
   await shot('crosshair');
   await page.screenshot({ path: path.join(OUT, `${prefix}-dashboard-full.png`), fullPage: true });
