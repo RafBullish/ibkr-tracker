@@ -6,6 +6,58 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.1-rc.1] — 2026-08-12
+
+**FIX-NLV — « L'histoire reconstituée » (chantier v1.0.1, brique 1).**
+Constat prod du 12.08 (données réelles) : Héros 1 cassé — ALL/3M plats
+« fenêtre trop courte », pied « 1 pts · 0 j », drawdown plat à $0. Cause
+racine : le graphe se nourrissait EXCLUSIVEMENT de `settings.dailySnapshots`,
+un journal qui n'accumule qu'un point par jour de VISITE du Dashboard
+(par navigateur), jamais reconstruit par l'import — alors que les données
+du compte (clôtures, flux) sont intactes dans le store.
+
+### Reconstitution à la lecture (`utils/nlvBackfill.js` — nouveau, pur)
+- Zéro migration, zéro écriture : **C0 implicite** = NLV_live −
+  unrealized_live − Σ réalisés − Σ flux nets (clamp 0 signalé) ;
+  **reconstruit(d) = C0 + cumFlux(d) + cumRéalisé(d)**, jour par jour, du
+  premier événement (flux OU clôture) à la **veille** du premier point
+  réel. Un point réel PRIME toujours ; le live du jour reste la tête.
+- Sources = chemins existants réutilisés : `extractFundingFlows`
+  (marqueurs apport, flow-neutral) · `tradePnlUsd` groupé sur `t.do`
+  (même logique que useDailyPnL). Cohérence d'unités garantie.
+- Points `synth:true`, flag propagé aux buckets de `resampleSeries` ;
+  **pipeline aval intact** (cap 190, drawdown flow-neutral seedé de tout
+  l'historique — reconstitué compris —, PerfBand, marqueurs, ChartFooter).
+
+### Honnêteté visuelle (D5)
+- Fenêtre contenant du reconstitué → la ligne de statut de période
+  affiche « **historique reconstitué · réalisé + apports** » en ink-mute
+  (`.lh-perf__none` existante — note, pas alerte ; zéro CSS ajouté).
+
+### Intraday (D6 — constat d'audit)
+- Les gardes prescrites existaient **déjà à v1.0.0** (nées avec rc.8,
+  `83601e5`) : writer refuse nlv ≤ 0, lecture filtre les points ≤ 0.
+  **Verrous de tests ajoutés** : buffer pollué de zéros assaini à la
+  lecture (jour 100 % zéros disparaît), `buildIntradaySeries` ignore ≤ 0.
+
+### Outillage & preuve
+- `scripts/audit-seeds.mjs` : buildSeed déplacé VERBATIM (défaut
+  byte-identique) + profil `AUDIT_SEED=nlv-pathologie` (1 snapshot du
+  jour, ~100 clôtures sur ~7 mois, flux datés, buffer pollué de zéros).
+- `scripts/fix-nlv-proof.mjs` : captures AVANT/APRÈS du Héros 1 + checks
+  12 pages @1591/@1920 (overflow + console), contexte isolé.
+- `docs/captures/fix-nlv/` : AVANT (graphe vide, DD plat à $0 démarrant
+  mi-cadre) vs APRÈS (ALL/3M/5D/1D pleins depuis le bord gauche, DD réel,
+  pied 32 pts · 213 j, crosshair OK, zéro falaise à $0). Écart de
+  jonction reconstruit/réel : 0,83 % (= unrealized, par construction).
+
+### Gates
+Build vert (index +0,6 kB gzip) · check:color-law 0 · **307/307 tests**
+(290 existants INTACTS) · 12 pages peuplées, **0 overflow @1591 ET @1920** ·
+console = bruit toléré seul · clés `ibkr_u_*` réelles jamais approchées.
+
+---
+
 ## [1.0.0] — 2026-08-06
 
 **Étape 4 — Recette v1.0. LE TAG.** La passe finale : on vérifie, on purge,
