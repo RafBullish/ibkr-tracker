@@ -263,7 +263,13 @@ reconstitue à la lecture l'historique NLV antérieur au premier snapshot
 réel (`utils/nlvBackfill.js` : C0 implicite + cumFlux + cumRéalisé, un
 point réel PRIME, points `synth`, note d'honnêteté ink-mute) ; D6
 intraday constaté déjà satisfait à v1.0.0 (verrous de tests ajoutés).
-Prochaine brique : au prompt architecte.
+Brique 2 **POLISH-1 mergée (1.0.1-rc.2)** — sept échardes : bannières
+FX ambre (fraîcheur ≠ perte), warning esbuild v4-shell mort, garde
+`isWritableNlv` du writer quotidien, pureté du store (buildNlvSeries),
+cheatsheet mono-scroller, .gitignore .vscode/, référence morte purgée ;
+E8 (libellés CLÔTURES/TRADES) non appliquée — compteurs = points
+affichés, tranché par HERO-FOOTER. Prochaine brique : au prompt
+architecte.
 
 Repères S2 toujours en vigueur : KPI 44, cellules `.v3-table` 20 (rowHeight 47),
 plancher caption 17, strip 21/16/18, ticks charts plafonnés 14, héros 56/64

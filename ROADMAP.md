@@ -17,6 +17,14 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
   D6 intraday constaté déjà satisfait à v1.0.0 (verrous de tests
   ajoutés) ; profil d'audit `AUDIT_SEED=nlv-pathologie` + harnais
   `fix-nlv-proof.mjs` ; preuves `docs/captures/fix-nlv/`.
+- **POLISH-1 ✅ (1.0.1-rc.2)** — « La chasse aux échardes » : bannières
+  FX rouge → AMBRE (fraîcheur de données = attention, pas une perte) ;
+  warning esbuild `v4-shell.css` mort ; référence BACKLOG.md supprimée ;
+  `.vscode/` ignoré entier ; garde `isWritableNlv` du writer quotidien ;
+  buildNlvSeries ne mute plus le store ; cheatsheet ⌘/ mono-scroller.
+  E8 (libellés CLÔTURES/TRADES) NON appliquée : la sonde prouve des
+  points affichés (buckets au-delà de 190 pts), pas des jours → tranché
+  par HERO-FOOTER.
 - **Prochaine brique : au prompt architecte.**
 
 ---
