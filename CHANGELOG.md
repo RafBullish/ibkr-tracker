@@ -6,6 +6,55 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.1-rc.2] — 2026-08-13
+
+**POLISH-1 — « La chasse aux échardes » (chantier v1.0.1, brique 2).**
+Huit échardes indépendantes, chirurgicales — sept soldées, une (E8)
+volontairement NON appliquée sur constat de sonde.
+
+- **E1 · Bannières FX → AMBRE** : un taux FX périmé n'est pas de
+  l'argent perdu — stale/critical (et FxInvalidBanner via `--critical`)
+  abandonnent les tokens loss/warning legacy : fond ambre faible alpha
+  (8 % / `--accent-soft` 18 %), hairline ambrée (38 % / 85 %), texte
+  ink-pure, icône + action « Actualiser » ambre. Zéro rouge, zéro vert.
+  Hors périmètre du scan color-law (Greeks seuls) → preuve par captures
+  (route `/api/fx/**` coupée au harnais : rendu déterministe).
+- **E2 · Warning esbuild mort** : le commentaire de `v4-shell.css:7`
+  (« .cmdbar*/.nav-pill* ») fermait le commentaire prématurément (`*/`)
+  — reformulé sans étoiles ; build désormais SANS ce warning (présent
+  depuis v1.0.0).
+- **E3 · Référence morte** : FxStaleBanner ne pointe plus vers un
+  BACKLOG.md inexistant (deux références supprimées, explication
+  technique conservée en place).
+- **E4 · .gitignore** : `.vscode/` entier — l'exception
+  `!.vscode/extensions.json`, jamais commitée, laissait le dossier en
+  untracked depuis le 12.08.
+- **E5 · Garde du writer quotidien** : `isWritableNlv` (nombre fini
+  strictement > 0) exporté de nlvSeries, consommé par
+  useDailySnapshotWriter — plus jamais de snapshot à nlv ≤ 0, aligné
+  sur la garde intraday ; reducer intouché. + tests.
+- **E6 · Pureté du store** : buildNlvSeries copie les snapshots
+  (`{ ...s }`) avant le merge du point live — l'objet du store n'est
+  plus jamais muté. + test.
+- **E7 · Cheatsheet mono-scroller** : `.cheatsheet` perd
+  `max-height:70vh` + overflow interne — le scroll appartient au SEUL
+  `.modal-v3__body` (cap 85vh) ; double scrollbar impossible par
+  construction (non reproduite @900 px ; mesures avant 712>630 interne
+  / 662=662 body, après 744>712 body seul).
+- **E8 · Libellés CLÔTURES/TRADES — NON APPLIQUÉE** : la sonde prouve
+  qu'ils comptent les POINTS AFFICHÉS (jours si fenêtre ≤ 190 pts,
+  buckets hebdo/mensuels au-delà — le « 25 » réel = des semaines) ;
+  renommer « J. CLÔTURE / J. TRADÉS » aurait menti. Arbitrage
+  architecte — tranché par la brique HERO-FOOTER (vérité pré-resample).
+
+### Gates
+Build vert SANS le warning E2 · check:color-law 0 · **310/310 tests**
+(+3, attentes existantes intactes) · 12 pages peuplées · 0 overflow
+@1591 ET @1920 · console = bruit toléré seul · captures
+`docs/captures/polish-1/` (avant/après bannière · cheatsheet · pied).
+
+---
+
 ## [1.0.1-rc.1] — 2026-08-12
 
 **FIX-NLV — « L'histoire reconstituée » (chantier v1.0.1, brique 1).**

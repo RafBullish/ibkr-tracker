@@ -2129,15 +2129,24 @@
   font-size: var(--fs-sm);
   font-weight: var(--fw-medium);
 }
+/* LOI DE COULEUR (POLISH-1 E1) : un taux FX périmé n'est PAS de
+   l'argent perdu — c'est un signal d'ATTENTION → famille AMBRE
+   (usage sanctionné n°2 de la DA). Le rouge reste aux pertes réelles.
+   Texte ink-pure ; icône et action en ambre ; la variante critique =
+   même famille, fond et hairline renforcés. Zéro rouge, zéro vert. */
 .fx-stale-banner--stale {
-  background: var(--qc-warning-bg);
-  border-bottom-color: var(--warning-border);
-  color: var(--warning-text);
+  background: color-mix(in srgb, var(--accent-amber) 8%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--accent-amber) 38%, transparent);
+  color: var(--ink-pure);
 }
 .fx-stale-banner--critical {
-  background: var(--qc-loss-bg);
-  border-bottom-color: var(--loss-border);
-  color: var(--loss-text);
+  background: var(--accent-soft);
+  border-bottom-color: color-mix(in srgb, var(--accent-amber) 85%, transparent);
+  color: var(--ink-pure);
+}
+.fx-stale-banner > svg {
+  color: var(--accent-amber);
+  flex-shrink: 0;
 }
 .fx-stale-banner__text {
   flex: 1;
@@ -2154,6 +2163,9 @@
   border-radius: var(--qc-radius-sm);
   font-size: var(--fs-xs);
   cursor: pointer;
+}
+.fx-stale-banner__action {
+  color: var(--accent-amber); /* E1 : l'action porte l'ambre (bordure via currentColor) */
 }
 .fx-stale-banner__dismiss {
   padding: 4px;

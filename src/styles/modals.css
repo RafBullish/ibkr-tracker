@@ -252,6 +252,10 @@
 
 /* ── CHEATSHEET (⌘/) — aide-mémoire des raccourcis ──────────────── */
 
+/* UN SEUL conteneur scrollant (POLISH-1 E7) : le scroll appartient à
+   .modal-v3__body (cap 85vh via __content) — plus de max-height ni
+   d'overflow interne, la double scrollbar est impossible par
+   construction, quelle que soit la hauteur du viewport. */
 .cheatsheet {
   display: flex;
   flex-direction: column;
@@ -259,8 +263,6 @@
   font-family: var(--qc-font-mono);
   font-size: 11px;
   color: var(--ink-soft);
-  max-height: 70vh;
-  overflow-y: auto;
 }
 
 .cheatsheet__section {

@@ -36,6 +36,7 @@ import useWatchlist from '../hooks/useWatchlist';
 import useAvailableCapital from '../hooks/useAvailableCapital';
 import { usePortfolioMetrics, useKPIs } from '../hooks/usePortfolioMetrics';
 import { useOpenPositions, useDispatch, useClosedTrades } from '../store/useStore';
+import { isWritableNlv } from '../utils/nlvSeries';
 
 // 4K refonte Phase B — daily snapshot writer (inchangé).
 function useDailySnapshotWriter() {
@@ -54,7 +55,9 @@ function useDailySnapshotWriter() {
   const profitFactor = kpis?.profitFactor;
 
   useEffect(() => {
-    if (typeof nlv !== 'number' || !Number.isFinite(nlv)) return;
+    // POLISH-1 (E5) : jamais de snapshot à nlv ≤ 0 (store vide, boot
+    // partiel) — même garde que le writer intraday.
+    if (!isWritableNlv(nlv)) return;
     const today = new Date().toISOString().slice(0, 10);
     const round = (v) =>
       typeof v === 'number' && Number.isFinite(v) ? Math.round(v * 100) / 100 : null;

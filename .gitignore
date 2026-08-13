@@ -16,9 +16,9 @@ build
 .next
 .cache
 
-# Editor
-.vscode/*
-!.vscode/extensions.json
+# Editor — .vscode entier (POLISH-1 E4 : l'exception extensions.json
+# n'a jamais été commitée et laissait le dossier en « untracked »)
+.vscode/
 .idea
 .DS_Store
 Thumbs.db

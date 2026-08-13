@@ -4,7 +4,7 @@
    Token-driven, tied to tokens.css.
 
    v1.0 · 1.B — la CommandBar est MORTE (remplacée par la SideNav,
-   cf. v1-shell.css) : tous ses blocs .cmdbar*/.nav-pill* ont été
+   cf. v1-shell.css) : tous ses blocs .cmdbar / .nav-pill ont été
    retirés de ce fichier, ainsi que --shell-cmdbar-h.
 
    Loaded after v3-components.css in main.jsx so its rules win when
