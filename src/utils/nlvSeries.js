@@ -17,6 +17,13 @@ import { buildBackfillDays } from './nlvBackfill';
 
 const DAY_MS = 86_400_000;
 
+// POLISH-1 (E5) — garde d'écriture des writers de snapshots NLV :
+// n'écrire que du NLV réel (nombre fini strictement > 0). Alignée sur
+// la garde intraday (nlvIntraday.appendIntradaySample) ; consommée par
+// useDailySnapshotWriter (Dashboard).
+export const isWritableNlv = (nlv) =>
+  typeof nlv === 'number' && Number.isFinite(nlv) && nlv > 0;
+
 /**
  * Dérive la série NLV dense annotée à partir des inputs bruts (store).
  * FIX-NLV (v1.0.1) : les jours ANTÉRIEURS au premier point réel sont
@@ -34,7 +41,9 @@ export function buildNlvSeries({ snapshots, cashFlows, closedTrades, liveNlv, li
     .sort((a, b) => a.date.localeCompare(b.date));
 
   const byDate = new Map();
-  for (const s of clean) byDate.set(s.date, s);
+  // Copies superficielles (POLISH-1 E6) : le merge du point live du
+  // jour écrase `nlv` sur SA copie — jamais sur l'objet du store.
+  for (const s of clean) byDate.set(s.date, { ...s });
   const days = Array.from(byDate.values());
 
   if (Number.isFinite(liveNlv) && liveNlv > 0 && today) {

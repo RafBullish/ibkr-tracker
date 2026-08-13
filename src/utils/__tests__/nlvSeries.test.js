@@ -13,6 +13,7 @@ import {
   buildNlvSeries,
   buildIntradaySeries,
   resampleSeries,
+  isWritableNlv,
   TIMEFRAMES,
   TIMEFRAMES_HERO1,
 } from '../nlvSeries';
@@ -190,6 +191,36 @@ describe('buildIntradaySeries (FF-données)', () => {
       sessionDays: 1,
     });
     expect(s.map((p) => p.nlv)).toEqual([11_000]);
+  });
+});
+
+// ═══ POLISH-1 (v1.0.1) — gardes & pureté ═════════════════════════
+describe('isWritableNlv — garde des writers de snapshots (E5)', () => {
+  it('accepte uniquement un nombre fini strictement positif', () => {
+    expect(isWritableNlv(10_000.5)).toBe(true);
+    expect(isWritableNlv(0.01)).toBe(true);
+  });
+
+  it('refuse 0, négatif, NaN, ±Infinity, null, undefined, string', () => {
+    for (const bad of [0, -5, NaN, Infinity, -Infinity, null, undefined, '10000']) {
+      expect(isWritableNlv(bad)).toBe(false);
+    }
+  });
+});
+
+describe('buildNlvSeries — pureté vis-à-vis du store (E6)', () => {
+  it('le merge du point live ne MUTE pas l’objet snapshot du store', () => {
+    const snapDuJour = { date: D2, nlv: 10_000 };
+    const series = buildNlvSeries({
+      snapshots: [snapDuJour],
+      cashFlows: [],
+      closedTrades: [],
+      liveNlv: 10_400,
+      liveRate: 1,
+      today: D2,
+    });
+    expect(series[0].nlv).toBe(10_400); // le live écrase… à l'affichage
+    expect(snapDuJour.nlv).toBe(10_000); // …jamais l'objet du store
   });
 });
 
