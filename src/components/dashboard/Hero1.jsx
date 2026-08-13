@@ -27,7 +27,8 @@ import PerfBand from './hero1/PerfBand';
 // dépendance ne pèse QUE sur son propre chunk, hors bundle index.
 const TvChart = lazy(() => import('./hero1/TvChart'));
 import { deriveKpisReal } from './hero1/model';
-import { buildNlvSeries, buildIntradaySeries, resampleSeries, deriveSeriesStats, deriveWindowStats, TIMEFRAMES_HERO1 } from '../../utils/nlvSeries';
+import { buildNlvSeries, buildIntradaySeries, resampleSeries, TIMEFRAMES_HERO1 } from '../../utils/nlvSeries';
+import { deriveHeroWindowStats } from '../../utils/heroStats';
 import { useIntradayNlvDays } from '../../hooks/useIntradayNlv';
 import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
 import { useTradingMetrics } from '../../hooks/useTradingMetrics';
@@ -120,8 +121,13 @@ export default function Hero1({ area = 'hero1' }) {
     return s.length >= 2 ? s : null;
   }, [range, intradayDays, dailyFull, metrics]);
 
-  const stats = useMemo(() => deriveSeriesStats(series), [series]);
-  const windowStats = useMemo(() => deriveWindowStats(series), [series]);
+  // HERO-FOOTER (D1/D2) : UNE maison de stats — calculée sur la fenêtre
+  // QUOTIDIENNE pré-resample + les clôtures de la fenêtre. Le tracé
+  // (resampleSeries, cap 190) reste un détail d'affichage.
+  const stats = useMemo(
+    () => deriveHeroWindowStats({ dailyFull, range, closedTrades }),
+    [dailyFull, range, closedTrades]
+  );
   const kpi = useMemo(
     () =>
       deriveKpisReal({
@@ -165,7 +171,7 @@ export default function Hero1({ area = 'hero1' }) {
             <span className="lh-perf__none">vue underwater — perf de fenêtre masquée</span>
           </div>
         ) : (
-          <PerfBand w={windowStats} range={range} rate={rate} synth={windowSynth} />
+          <PerfBand w={stats} range={range} rate={rate} synth={windowSynth} />
         )}
         <div className="lh-fuse__stage">
           <div className="lh-fuse__overlay">

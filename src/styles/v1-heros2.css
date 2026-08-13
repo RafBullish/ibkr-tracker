@@ -8,12 +8,12 @@
    ════════════════════════════════════════════════════════════════ */
 
 /* ── Teinte du RÉALISÉ (argent réel → loi de couleur OK) — deck hero,
-      géant du graphe, valeurs footer jour. Courbe cumulée = neutre. ── */
+      géant du graphe. Courbe cumulée = neutre. Le footer utilise les
+      modificateurs partagés .lh-cfoot__value--profit/loss depuis
+      HERO-FOOTER (h2-cfoot--* MORTES). ── */
 .h2-giant--profit { color: var(--pnl-up); }
 .h2-giant--loss { color: var(--pnl-down); }
 .h2-giant--mute { color: var(--ink-pure); }
-.h2-cfoot--profit { color: var(--pnl-up); }
-.h2-cfoot--loss { color: var(--pnl-down); }
 
 /* ── DECK RÉALISÉ — 4 panneaux, MATRICE (col 2) la plus large. ────── */
 .h2-deck { display: grid; grid-template-columns: 1.1fr 1.5fr 1fr 0.9fr; border-bottom: 1px solid var(--hairline-rest); }

@@ -25,6 +25,15 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
   E8 (libellés CLÔTURES/TRADES) NON appliquée : la sonde prouve des
   points affichés (buckets au-delà de 190 pts), pas des jours → tranché
   par HERO-FOOTER.
+- **HERO-FOOTER ✅ (1.0.1-rc.3)** — « Le pied au niveau du héros » :
+  une seule maison de stats par héros (le pied), vérité pré-resample
+  (`utils/heroStats.js`, fini les buckets déguisés — J. CLÔTURE +
+  TRADES vrais, arbitrage E8 soldé), garde du % de DD aberrant (« — »),
+  pied 5×2 à l'échelle héros (valeurs 27 px Plex 700, bande de verre,
+  hairlines continues), PerfBand maigrie en ligne de période, Héros 2
+  jumeau (HeroFootCell partagée, 6×1) ; morts : deriveWindowStats/
+  deriveSeriesStats, GAIN/PERTE MOY.+EXPECTANCY du pied (maison =
+  deck PERFORMANCE), h2-cfoot--*, lh-cfoot--dense.
 - **Prochaine brique : au prompt architecte.**
 
 ---

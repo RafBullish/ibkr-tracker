@@ -1,36 +1,25 @@
 // ═══════════════════════════════════════════════════════════════
-//  HÉROS 1 — PerfBand PROD (citoyen depuis 1.D, ex-lab) : bande
-//  AU-DESSUS du graphe qui se RECALCULE par période. « Sur cette
-//  période, voilà. »
+//  HÉROS 1 — LIGNE DE PÉRIODE (ex-PerfBand, maigrie en HERO-FOOTER).
 //
-//  Présentation PROPRE et UNIFORME : période en tête de bande, chaque
-//  cellule = libellé court + valeur (± sous-ligne). Métriques concrètes
-//  liées à la fenêtre. P&L période COLORÉ (perf réelle → loi de couleur) ;
-//  extrêmes / DD / trades = neutres.
+//  D1 « une seule maison de stats par héros : le pied » — cette ligne
+//  ne porte plus QUE : la période, le P&L de la fenêtre ($ / % / CHF,
+//  toné — argent réel) et la note d'honnêteté « historique
+//  reconstitué » quand la fenêtre contient des points synth. Les
+//  extrêmes / DD / jours / compteurs vivent au pied (ChartFooter),
+//  calculés pré-resample (heroStats).
 // ═══════════════════════════════════════════════════════════════
 
-import { fmtUsd, fmtChf } from './kit';
+import { fmtChf } from './kit';
 
 const signPct = (v, d = 1) => (v == null || !Number.isFinite(v) ? '—' : `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(d)}%`);
 const signUsd = (v) => (v == null || !Number.isFinite(v) ? '—' : `${v >= 0 ? '+' : '−'}$${Math.abs(Math.round(v)).toLocaleString('de-CH')}`);
 const tone3 = (v) => (v == null || v === 0 ? undefined : v > 0 ? 'profit' : 'loss');
 
-function Cell({ label, value, sub, tone }) {
-  return (
-    <div className="lh-perf__cell">
-      <span className="lh-perf__label">{label}</span>
-      <span className={`lh-perf__value${tone ? ` lh-perf__value--${tone}` : ''}`}>{value}</span>
-      {sub != null ? <span className="lh-perf__sub">{sub}</span> : <span className="lh-perf__sub lh-perf__sub--empty" />}
-    </div>
-  );
-}
-
-// FIX-NLV (D5) : `synth` = la fenêtre affichée contient des points
-// reconstitués → la ligne de statut de période porte la note
-// d'honnêteté, en ink-mute (.lh-perf__none — note, pas alerte).
+// Note d'honnêteté (FIX-NLV D5) : fenêtre contenant des points
+// reconstitués → ink-mute, note, pas alerte.
 const SYNTH_NOTE = 'historique reconstitué · réalisé + apports';
 
-export default function PerfBand({ w, range, rate, showDays = false, synth = false }) {
+export default function PerfBand({ w, range, rate, synth = false }) {
   if (!w || w.empty) {
     return (
       <div className="lh-perf">
@@ -40,18 +29,13 @@ export default function PerfBand({ w, range, rate, showDays = false, synth = fal
     );
   }
   const chf = fmtChf(w.pnl, rate, true);
+  const tone = tone3(w.pnl);
   return (
-    <div className="lh-perf">
+    <div className="lh-perf lh-perf--slim">
       <span className="lh-perf__head">SUR CETTE PÉRIODE · {range}</span>
-      {synth ? <span className="lh-perf__none">{SYNTH_NOTE}</span> : null}
-      <Cell label="P&L PÉRIODE" value={signUsd(w.pnl)} sub={`${signPct(w.pnlPct)}${chf ? ` · ${chf}` : ''}`} tone={tone3(w.pnl)} />
-      <Cell label="PLUS HAUT" value={fmtUsd(w.high)} />
-      <Cell label="PLUS BAS" value={fmtUsd(w.low)} />
-      <Cell label="MEILLEUR J." value={signUsd(w.bestDay)} />
-      <Cell label="PIRE J." value={signUsd(w.worstDay)} />
-      <Cell label="MAX DD" value={fmtUsd(-w.maxDDUsd)} sub={signPct(w.maxDDPct)} />
-      <Cell label="TRADES" value={`${w.closeCount}`} sub={w.winRate != null ? `${w.winRate.toFixed(0)}% win` : `${w.up}↑ ${w.down}↓`} />
-      {showDays ? <Cell label="SÉANCES" value={`${w.up}↑ · ${w.down}↓`} sub="hauts / bas" /> : null}
+      <span className={`lh-perf__value${tone ? ` lh-perf__value--${tone}` : ''}`}>{signUsd(w.pnl)}</span>
+      <span className="lh-perf__sub--inline">{`${signPct(w.pnlPct)}${chf ? ` · ${chf}` : ''}`}</span>
+      {synth ? <span className="lh-perf__none lh-perf__none--end">{SYNTH_NOTE}</span> : null}
     </div>
   );
 }
