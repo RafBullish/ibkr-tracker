@@ -134,9 +134,13 @@ export function ChartFooter({ stats, rate }) {
   if (stats.empty) return <div className="lh-cfoot--empty">Série NLV vide</div>;
   const sf = (v) => (v == null ? '—' : `${v >= 0 ? '+' : '−'}$${Math.abs(Math.round(v)).toLocaleString('de-CH')}`);
   const pct = (v) => (v == null ? '—' : fmtPct(v));
+  const dayShort = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '—');
   // [label, value, sub, usdForChf, tone]
+  // COULEUR (C3) — PEAK ≡ HAUT (doublon constaté brique 3) : PEAK meurt,
+  // DEPUIS PIC dit depuis combien de jours aucun nouveau sommet
+  // flow-neutral (le MÊME pic qui fonde MAX DD / DD COURANT). Neutre.
   const cells = [
-    ['PEAK', fmtUsd(stats.peak), null, stats.peak, null],
+    ['DEPUIS PIC', stats.daysSincePeak == null ? '—' : `${stats.daysSincePeak} j`, `pic ${dayShort(stats.peakDate)}`, null, null],
     ['HAUT / BAS', fmtUsd(stats.high), `bas ${fmtUsd(stats.low)}`, stats.high, null],
     ['MAX DD', fmtUsd(-stats.maxDDUsd), pct(stats.maxDDPct), -stats.maxDDUsd, null],
     ['DD COURANT', fmtUsd(-stats.currentDDUsd), pct(stats.currentDDPct), -stats.currentDDUsd, null],

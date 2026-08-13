@@ -179,9 +179,12 @@
   color: var(--qc-loss);
 }
 
-/* ── Marqueur de mode (1.S) — près du bloc IBKR·FNHB. Registre
-   STRICTEMENT NEUTRE : un mode n'est ni gain ni perte, jamais une
-   couleur du registre P&L. Chip discret bordé, encre secondaire. ── */
+/* ── Marqueur de mode (1.S) — près du bloc IBKR·FNHB. Jamais une
+   couleur du registre P&L. Chip discret bordé, encre secondaire
+   (LIVE/PAPER). COULEUR (v1.0.1/4, C2 — arbitrage architecte) :
+   REAL = badge d'ATTENTION « argent réel » → AMBRE, recette famille
+   ARMED (fond accent faible, texte/hairline ambre), anatomie
+   inchangée. ── */
 .statusbar__mode-tag {
   font-size: 11px;
   font-weight: 600;
@@ -192,6 +195,12 @@
   border-radius: 3px;
   padding: 2px 6px;
   line-height: 1;
+}
+
+.statusbar__mode[data-mode="real"] .statusbar__mode-tag {
+  background: var(--accent-soft);
+  color: var(--accent-amber);
+  border-color: color-mix(in srgb, var(--accent-amber) 55%, transparent);
 }
 
 /* ── Horloges fuseaux ─────────────────────────────────────────── */

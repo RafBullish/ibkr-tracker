@@ -912,6 +912,9 @@
   font-weight: 500;
 }
 
+/* COULEUR (v1.0.1/4, D1c) — badge EDGE : variante NEUTRE unique.
+   PF & win rate sont des ratios : l'info (libellé) survit, le
+   jugement vert/ambre/rouge est mort. */
 .risk-matrix__edge-badge {
   display: inline-flex;
   align-items: center;
@@ -921,21 +924,9 @@
   font-size: 12px;
   letter-spacing: 0.1em;
   font-weight: 500;
-}
-
-.risk-matrix__edge-badge[data-tone="profit"] {
-  background: color-mix(in srgb, var(--qc-profit) 8%, transparent);
-  color: var(--qc-profit);
-}
-
-.risk-matrix__edge-badge[data-tone="amber"] {
-  background: color-mix(in srgb, var(--accent-amber) 8%, transparent);
-  color: var(--accent-amber);
-}
-
-.risk-matrix__edge-badge[data-tone="loss"] {
-  background: color-mix(in srgb, var(--qc-loss) 8%, transparent);
-  color: var(--qc-loss);
+  background: color-mix(in srgb, var(--qc-text-primary) 4%, transparent);
+  border: 1px solid var(--qc-border-subtle);
+  color: var(--qc-text-secondary);
 }
 
 .risk-matrix__edge-dot {
@@ -985,21 +976,20 @@
   text-transform: none;
 }
 
-.risk-matrix__section-head--accent {
-  background: color-mix(in srgb, var(--qc-accent) 4%, transparent);
-  color: var(--qc-accent);
-  border-bottom: 1px solid color-mix(in srgb, var(--qc-accent) 12%, transparent);
-}
-
+/* COULEUR (D1 / barre « zéro ambre décoratif ») — les titres de section
+   n'ont droit à AUCUNE sémantique de ton : ni ambre d'ambiance
+   (--accent), ni rouge d'ambiance (--loss, le titre Drawdown n'est pas
+   une perte chiffrée). Encre secondaire + hairline, pour les deux. */
+.risk-matrix__section-head--accent,
 .risk-matrix__section-head--loss {
-  background: color-mix(in srgb, var(--qc-loss) 4%, transparent);
-  color: var(--qc-loss);
-  border-bottom: 1px solid color-mix(in srgb, var(--qc-loss) 12%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 3%, transparent);
+  color: var(--qc-text-secondary);
+  border-bottom: 1px solid var(--qc-border-subtle);
 }
 
 .risk-matrix__section-head--pushdown {
   margin-top: auto;
-  border-top: 1px solid color-mix(in srgb, var(--qc-accent) 12%, transparent);
+  border-top: 1px solid var(--qc-border-subtle);
 }
 
 .risk-matrix__row {
@@ -1107,24 +1097,19 @@
   min-height: 1px;
 }
 
-.risk-matrix__histogram-bar--loss {
-  background: var(--qc-loss);
-  opacity: 0.85;
+/* COULEUR (barre : « zéro vert/rouge sur des ratios ») — le R-multiple
+   est un RATIO (P&L / risque) : la distribution devient acier neutre,
+   le bucket dominant seul est renforcé. L'axe −3R/+3R dit le signe. */
+.risk-matrix__histogram-bar--loss,
+.risk-matrix__histogram-bar--profit {
+  background: color-mix(in srgb, var(--qc-text-primary) 30%, transparent);
 }
-.risk-matrix__histogram-bar--loss-strong {
-  background: var(--qc-loss);
-  opacity: 1;
+.risk-matrix__histogram-bar--loss-strong,
+.risk-matrix__histogram-bar--profit-strong {
+  background: color-mix(in srgb, var(--qc-text-primary) 55%, transparent);
 }
 .risk-matrix__histogram-bar--zero {
-  background: var(--qc-text-tertiary);
-}
-.risk-matrix__histogram-bar--profit {
-  background: var(--qc-profit);
-  opacity: 0.85;
-}
-.risk-matrix__histogram-bar--profit-strong {
-  background: var(--qc-profit);
-  opacity: 1;
+  background: color-mix(in srgb, var(--qc-text-primary) 14%, transparent);
 }
 
 .risk-matrix__histogram-axis {
@@ -1148,20 +1133,14 @@
   margin-left: 12px;
 }
 
+/* COULEUR (D1b) — jauges de RATIOS : remplissage NEUTRE ink-soft sur
+   piste hairline, graduation (repère bench) conservée en encre. Le
+   repère AMBRE 70 % reste exclusif aux jauges de capital/exposition. */
 .risk-matrix__gauge-fill {
   height: 100%;
   border-radius: 1px;
   transition: width 240ms ease;
-}
-
-.risk-matrix__gauge-fill[data-tone="profit"] {
-  background: var(--qc-profit);
-}
-.risk-matrix__gauge-fill[data-tone="loss"] {
-  background: var(--qc-loss);
-}
-.risk-matrix__gauge-fill[data-tone="amber"] {
-  background: var(--accent-amber);
+  background: color-mix(in srgb, var(--qc-text-primary) 32%, transparent);
 }
 
 .risk-matrix__gauge-marker {
@@ -1169,7 +1148,7 @@
   top: -2.5px;
   width: 1.5px;
   height: 11px;
-  background: color-mix(in srgb, var(--qc-accent) 50%, transparent);
+  background: color-mix(in srgb, var(--qc-text-primary) 30%, transparent);
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -1299,12 +1278,15 @@
   height: 72px;
 }
 
+/* COULEUR (D1a) — le win rate est un RATIO : donut ACIER neutre
+   (précédent WinRateDonut OBS de History/Analytics), piste hairline.
+   Les MONTANTS $ des rangées voisines restent tonés (argent réel). */
 .risk-matrix__winrate-donut-bg {
-  stroke: color-mix(in srgb, var(--qc-loss) 22%, transparent);
+  stroke: color-mix(in srgb, var(--qc-text-primary) 8%, transparent);
 }
 
 .risk-matrix__winrate-donut-fg {
-  stroke: var(--qc-profit);
+  stroke: color-mix(in srgb, var(--qc-text-primary) 55%, transparent);
 }
 
 .risk-matrix__winrate-donut-label {
@@ -1355,12 +1337,14 @@
   overflow: hidden;
 }
 
+/* COULEUR (É3 « compteurs neutres ») — proportions de COMPTES wins/
+   losses : deux intensités neutres, pas de sémantique P&L. */
 .risk-matrix__winrate-ratio-win {
-  background: var(--qc-profit);
+  background: color-mix(in srgb, var(--qc-text-primary) 45%, transparent);
 }
 
 .risk-matrix__winrate-ratio-loss {
-  background: var(--qc-loss);
+  background: color-mix(in srgb, var(--qc-text-primary) 14%, transparent);
 }
 
 .risk-matrix__winrate-pf {
@@ -1371,7 +1355,7 @@
 }
 
 .risk-matrix__winrate-pf-val {
-  color: var(--qc-accent);
+  color: var(--qc-text-primary); /* COULEUR : PF = ratio, ambre mort */
   font-weight: 500;
 }
 
@@ -1481,7 +1465,9 @@
 }
 
 .risk-matrix__footer-cmd {
-  color: var(--qc-accent);
+  /* COULEUR : pastiche <GO> non fonctionnel = ambre décoratif → mort
+     (ni vivant, ni décision réelle, ni donnée reine). */
+  color: var(--qc-text-secondary);
   letter-spacing: 0.1em;
   font-weight: 500;
 }

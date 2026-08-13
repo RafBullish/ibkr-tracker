@@ -19,7 +19,10 @@ import { forwardRef } from 'react';
 
 const DEFAULTS = {
   live: { label: 'LIVE', tone: 'profit', dot: true },
-  paper: { label: 'PAPER', tone: 'warning', dot: false },
+  // COULEUR (v1.0.1/4, C2) : PAPER = mode neutre (ex-warning ambré —
+  // un mode démo n'est pas un avertissement). REAL reste accent
+  // (ambre = attention argent réel, arbitrage architecte).
+  paper: { label: 'PAPER', tone: 'neutral', dot: false },
   real: { label: 'REAL', tone: 'accent', dot: false },
   offline: { label: 'OFFLINE', tone: 'neutral', dot: false },
   stale: { label: 'DIFFÉRÉ', tone: 'warning', dot: false },

@@ -91,13 +91,34 @@ export function deriveHeroWindowStats({ dailyFull, range = 'ALL', closedTrades =
 
   const recoveryFactor = maxDDUsd > 0 ? pnl / maxDDUsd : null;
 
+  // COULEUR (v1.0.1/4, C3) — le pic de référence du drawdown : le MÊME
+  // pic flow-neutral (seedé de TOUT l'historique, FIX-NLV) qui fonde
+  // MAX DD / DD COURANT — aucune nouvelle définition. On rejoue la
+  // marche de buildNlvSeries (strictement supérieur) jusqu'au dernier
+  // point de la fenêtre pour DATER ce pic → « DEPUIS PIC · N j ».
+  let peakFN = -Infinity;
+  let peakDate = null;
+  for (const p of Array.isArray(dailyFull) ? dailyFull : []) {
+    const d = dayKey(p.date);
+    if (d == null || d > lastDay) break;
+    if (p.flowNeutral > peakFN) {
+      peakFN = p.flowNeutral;
+      peakDate = d;
+    }
+  }
+  const daysSincePeak =
+    peakDate != null
+      ? Math.max(0, Math.round((Date.parse(lastDay) - Date.parse(peakDate)) / 86_400_000))
+      : null;
+
   return {
     empty: false,
     pnl,
     pnlPct,
-    peak: high,
     high,
     low,
+    peakDate,
+    daysSincePeak,
     maxDDUsd,
     maxDDPct: sanePct(maxDDPctRaw),
     currentDDUsd: last.drawdownUsd,

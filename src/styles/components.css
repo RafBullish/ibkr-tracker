@@ -361,41 +361,9 @@
   gap: var(--qc-space-2);
   flex-shrink: 0;
 }
-.app-header__mode-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border-radius: var(--qc-radius-sm);
-  font-family: var(--qc-font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  border: 1px solid transparent;
-}
-.app-header__mode-badge[data-mode="live"] {
-  background: var(--qc-profit-bg);
-  border-color: color-mix(in srgb, var(--qc-profit) 22%, transparent);
-  color: var(--qc-profit);
-}
-.app-header__mode-badge[data-mode="paper"] {
-  background: var(--qc-warning-bg);
-  border-color: color-mix(in srgb, var(--qc-warning) 22%, transparent);
-  color: var(--qc-warning);
-}
-.app-header__mode-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--qc-profit);
-  box-shadow: 0 0 6px var(--qc-profit-bg);
-  animation: pulse 2s ease-in-out infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .app-header__mode-dot {
-    animation: none;
-  }
-}
+/* COULEUR (v1.0.1/4) — .app-header__mode-badge* MORTES : le header
+   global est mort en 1.B, ces variantes LIVE verte / PAPER warning
+   n'avaient plus AUCUN consommateur JSX (sonde C2). */
 
 .app-header__cmd {
   display: inline-flex;
