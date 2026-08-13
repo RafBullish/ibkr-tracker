@@ -97,7 +97,10 @@ async function main() {
     await shotEl(hero1.locator('.lh-cfoot'), `${prefix}-h1-footer${tag}.png`);
     if (width === 1591) {
       await shotEl(hero2.locator('.lh-cfoot'), `${prefix}-h2-footer.png`);
-      await shotEl(hero1, `${prefix}-h1-full.png`);
+      // Vue d'ensemble : pleine page (l'élément seul se fait recouvrir
+      // par la tape/StatusBar sticky au stitching).
+      await page.screenshot({ path: path.join(OUT, `${prefix}-h1-full.png`), fullPage: true });
+      console.log(`  ✓ ${prefix}-h1-full.png`);
     }
     await context.close();
   }

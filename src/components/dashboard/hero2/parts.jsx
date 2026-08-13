@@ -5,10 +5,10 @@
 //  Réutilise les classes .lh-* de Héros 1 pour l'identité de jumeau.
 // ═══════════════════════════════════════════════════════════════
 
-import { fmtUsd, fmtUsdSigned, fmtChf, fmtPct } from '../hero1/kit';
+import { fmtUsd, fmtUsdSigned, fmtChf } from '../hero1/kit';
+import { HeroFootCell } from '../hero1/parts';
 
 const toneOf = (v) => (v == null || v === 0 ? 'mute' : v > 0 ? 'profit' : 'loss');
-const isSigned = (s) => typeof s === 'string' && (s[0] === '+' || s[0] === '−' || s[0] === '-');
 
 // Frontière — jumeau de Héros 1, contexte réalisé.
 export function RealizedFrontier() {
@@ -57,34 +57,28 @@ export function RealizedGiant({ total, rate, count, span }) {
 
 // FOOTER référence — DÉDUPLIQUÉ : le deck porte matrice/extrêmes/rythme
 // (niveau trade). Le footer porte le DÉTAIL JOUR + DISTRIBUTION (niveau
-// jour) : aucune métrique répétée. Blanc, agrandi, double devise.
+// jour) : aucune métrique répétée. HERO-FOOTER (D7) : même habit que le
+// pied du Héros 1 (HeroFootCell, échelle héros, hairlines continues) —
+// mêmes organes qu'avant (données déjà VRAIES : deriveRealized fenêtre
+// pré-resample), grille 6×1. Tons conservés (jour réalisé = argent réel).
 export function RealizedFooter({ m, rate }) {
   const d = m.dayStats;
   const dist = m.dist;
-  const chf = (usd, signed) => (Number.isFinite(usd) && Number.isFinite(rate) && rate > 0 ? fmtChf(usd, rate, signed) : null);
-  if (m.empty) return <div className="lh-cfoot lh-cfoot--empty">Aucune clôture sur la fenêtre</div>;
+  if (m.empty) return <div className="lh-cfoot--empty">Aucune clôture sur la fenêtre</div>;
 
   const cells = [
-    ['MEILLEUR JOUR', fmtUsdSigned(d.bestDay), 'journée', d.bestDay, toneOf(d.bestDay)],
-    ['PIRE JOUR', fmtUsdSigned(d.worstDay), 'journée', d.worstDay, toneOf(d.worstDay)],
+    ['MEILLEUR JOUR', fmtUsdSigned(d.bestDay), 'journée', d.bestDay, toneOf(d.bestDay) === 'mute' ? null : toneOf(d.bestDay)],
+    ['PIRE JOUR', fmtUsdSigned(d.worstDay), 'journée', d.worstDay, toneOf(d.worstDay) === 'mute' ? null : toneOf(d.worstDay)],
     ['% JOURS GAGN.', d.pctWinDays == null ? '—' : `${d.pctWinDays.toFixed(0)}%`, `${d.longWin}↑ / ${d.longLoss}↓ max`, null, null],
     ['MODE', dist.maxCount ? `${dist.maxCount}` : '—', 'trades / bucket', null, null],
     ['PAS BUCKET', dist.step ? fmtUsd(dist.step) : '—', 'largeur distrib.', null, null],
     ['FENÊTRE', `${m.spanDays} j`, `${m.matrix.n} clôt. · ${d.activeDays} jours`, null, null],
   ];
   return (
-    <div className="lh-cfoot lh-cfoot--dense">
-      {cells.map(([label, value, sub, usd, tone]) => {
-        const c = Number.isFinite(usd) && Number.isFinite(rate) && rate > 0 ? fmtChf(usd, rate, isSigned(value)) : null;
-        return (
-          <div className="lh-cfoot__cell" key={label}>
-            <span className="lh-cfoot__label">{label}</span>
-            <span className={`lh-cfoot__value${tone && tone !== 'mute' ? ` h2-cfoot--${tone}` : ''}`}>{value}</span>
-            {c ? <span className="lh-cfoot__chf">{c}</span> : null}
-            {sub != null ? <span className="lh-cfoot__sub">{sub}</span> : <span className="lh-cfoot__sub lh-cfoot__sub--empty" />}
-          </div>
-        );
-      })}
+    <div className="lh-cfoot lh-cfoot--six">
+      {cells.map(([label, value, sub, usd, tone]) => (
+        <HeroFootCell key={label} label={label} value={value} sub={sub} usd={usd} tone={tone} rate={rate} />
+      ))}
     </div>
   );
 }

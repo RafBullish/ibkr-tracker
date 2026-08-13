@@ -103,40 +103,55 @@ export function ViewToggle({ view, setView }) {
   );
 }
 
-// ── Bande stats du bas (extrêmes · drawdown · référence) — AGRANDIE,
-//    blanche, double devise sur les $, densifiée. Indépendante de la
-//    bande perf du haut. `dense` → grille resserrée (modèle C). ──
-export function ChartFooter({ stats, rate, dense = false }) {
-  if (stats.empty) return <div className="lh-cfoot lh-cfoot--empty">Série NLV vide</div>;
+// ── PIED DE HÉROS (HERO-FOOTER, v1.0.1/3) — LA maison des stats du
+//    Héros 1. 10 cellules, grille 5×2 au cordeau, anatomie MONDE à
+//    l'échelle héros (valeur 27 px Plex 700). Stats VRAIES : heroStats,
+//    calculées pré-resample (D2) — fini les buckets déguisés.
+//    GAIN/PERTE MOY. et EXPECTANCY vivent au deck PERFORMANCE
+//    (trade-exactes) ; la sous-ligne « N pts · N j » (détail de rendu)
+//    est morte. Tons : MEILLEUR/PIRE J. tonés (argent réel — même
+//    langage que le pied du Héros 2) ; tout le reste neutre. ──
+const tone3 = (v) => (v == null || v === 0 ? undefined : v > 0 ? 'profit' : 'loss');
+
+export function HeroFootCell({ label, value, sub, usd, tone, rate }) {
+  const chf =
+    Number.isFinite(usd) && Number.isFinite(rate) && rate > 0
+      ? fmtChf(usd, rate, isSigned(value))
+      : null;
+  return (
+    <div className="lh-cfoot__cell">
+      <span className="lh-cfoot__label">{label}</span>
+      <span className={`lh-cfoot__value${tone ? ` lh-cfoot__value--${tone}` : ''}`}>{value}</span>
+      <span className="lh-cfoot__meta">
+        {chf ? <span className="lh-cfoot__chf">{chf}</span> : null}
+        {sub != null ? <span className="lh-cfoot__sub">{sub}</span> : null}
+      </span>
+    </div>
+  );
+}
+
+export function ChartFooter({ stats, rate }) {
+  if (stats.empty) return <div className="lh-cfoot--empty">Série NLV vide</div>;
   const sf = (v) => (v == null ? '—' : `${v >= 0 ? '+' : '−'}$${Math.abs(Math.round(v)).toLocaleString('de-CH')}`);
-  // [label, value, sub, usdForChf]
+  const pct = (v) => (v == null ? '—' : fmtPct(v));
+  // [label, value, sub, usdForChf, tone]
   const cells = [
-    ['PEAK', fmtUsd(stats.peak), null, stats.peak],
-    ['HAUT / BAS', fmtUsd(stats.high), `bas ${fmtUsd(stats.low)}`, stats.high],
-    ['MAX DD', fmtUsd(-stats.maxDDUsd), fmtPct(stats.maxDDPct), -stats.maxDDUsd],
-    ['DD COURANT', fmtUsd(-stats.currentDDUsd), fmtPct(stats.currentDDPct), -stats.currentDDUsd],
-    ['RECOVERY', stats.recoveryFactor == null ? '—' : `${stats.recoveryFactor.toFixed(2)}×`, 'profit / DD', null],
-    ['MEILLEUR J.', sf(stats.best), null, stats.best],
-    ['PIRE J.', sf(stats.worst), null, stats.worst],
-    ['GAIN MOY.', sf(stats.avgWin), 'par gain', stats.avgWin],
-    ['PERTE MOY.', sf(stats.avgLoss), 'par perte', stats.avgLoss],
-    ['EXPECTANCY', sf(stats.expectancy), 'par clôture', stats.expectancy],
-    ['% J. GAGN.', stats.pctWinDays == null ? '—' : `${stats.pctWinDays.toFixed(0)}%`, `${stats.longWin}↑ / ${stats.longLoss}↓ max`, null],
-    ['CLÔTURES', `${stats.closeCount}`, `${stats.points} pts · ${stats.spanDays} j`, null],
+    ['PEAK', fmtUsd(stats.peak), null, stats.peak, null],
+    ['HAUT / BAS', fmtUsd(stats.high), `bas ${fmtUsd(stats.low)}`, stats.high, null],
+    ['MAX DD', fmtUsd(-stats.maxDDUsd), pct(stats.maxDDPct), -stats.maxDDUsd, null],
+    ['DD COURANT', fmtUsd(-stats.currentDDUsd), pct(stats.currentDDPct), -stats.currentDDUsd, null],
+    ['RECOVERY', stats.recoveryFactor == null ? '—' : `${stats.recoveryFactor.toFixed(2)}×`, 'profit / DD', null, null],
+    ['MEILLEUR J.', sf(stats.bestDay), null, stats.bestDay, tone3(stats.bestDay)],
+    ['PIRE J.', sf(stats.worstDay), null, stats.worstDay, tone3(stats.worstDay)],
+    ['% J. GAGN.', stats.pctWinDays == null ? '—' : `${stats.pctWinDays.toFixed(0)}%`, `${stats.up}↑ / ${stats.down}↓`, null, null],
+    ['J. CLÔTURE', `${stats.closeDays}`, 'jours avec clôture', null, null],
+    ['TRADES', `${stats.tradeCount}`, 'clôtures · fenêtre', null, null],
   ];
   return (
-    <div className={`lh-cfoot${dense ? ' lh-cfoot--dense' : ''}`}>
-      {cells.map(([label, value, sub, usd]) => {
-        const chf = Number.isFinite(usd) && Number.isFinite(rate) && rate > 0 ? fmtChf(usd, rate, isSigned(value)) : null;
-        return (
-          <div className="lh-cfoot__cell" key={label}>
-            <span className="lh-cfoot__label">{label}</span>
-            <span className="lh-cfoot__value">{value}</span>
-            {chf ? <span className="lh-cfoot__chf">{chf}</span> : null}
-            {sub != null ? <span className="lh-cfoot__sub">{sub}</span> : <span className="lh-cfoot__sub lh-cfoot__sub--empty" />}
-          </div>
-        );
-      })}
+    <div className="lh-cfoot">
+      {cells.map(([label, value, sub, usd, tone]) => (
+        <HeroFootCell key={label} label={label} value={value} sub={sub} usd={usd} tone={tone} rate={rate} />
+      ))}
     </div>
   );
 }

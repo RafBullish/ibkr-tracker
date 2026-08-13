@@ -106,6 +106,13 @@
 .lh-perf__sub { font-size: 10px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; min-height: 12px; }
 .lh-perf__sub--empty { min-height: 12px; }
 .lh-perf__none { align-self: center; font-size: 11px; color: var(--ink-mute); letter-spacing: 0.03em; padding-left: 6px; }
+/* HERO-FOOTER (D1) — ligne de période maigrie : UNE ligne de base
+   (head · P&L · % · CHF), la note d'honnêteté en FIN DE ZONE (le
+   surplus va en fin de zone, jamais en trou central). */
+.lh-perf--slim { align-items: baseline; padding: 9px 6px; }
+.lh-perf--slim .lh-perf__value { font-size: 20px; padding-left: 8px; }
+.lh-perf__sub--inline { font-size: 11.5px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 10px; }
+.lh-perf__none--end { margin-left: auto; padding-right: 12px; }
 
 /* Étage graphe : overlay héros + canvas */
 .lh-fuse__stage { position: relative; height: 460px; padding: 6px 6px 4px; }
@@ -150,15 +157,55 @@
 .lh-canvas { width: 100%; height: 100%; cursor: crosshair; }
 .lh-canvas--empty { display: flex; align-items: center; justify-content: center; color: var(--ink-mute); font-size: 12px; letter-spacing: 0.04em; }
 
-/* ── 5 · BANDE STATS enrichie (indépendante) ────────────────────── */
-.lh-cfoot { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); border-top: 1px solid var(--hairline-rest); background: color-mix(in srgb, var(--depth-base) 45%, transparent); }
-.lh-cfoot--dense { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
-.lh-cfoot--empty { padding: 12px 22px; color: var(--ink-mute); font-size: 12px; }
-.lh-cfoot__cell { display: flex; flex-direction: column; gap: 2px; padding: 10px 16px; border-right: 1px solid var(--hairline-rest); border-top: 1px solid var(--hairline-rest); min-width: 0; }
-.lh-cfoot__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-mute); white-space: nowrap; }
-.lh-cfoot__value { font-family: var(--qc-font-num); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); white-space: nowrap; }
-.lh-cfoot__chf { font-family: var(--qc-font-num); font-size: 11px; font-weight: 500; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.lh-cfoot__sub { font-size: 10px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; min-height: 12px; }
-.lh-cfoot__sub--empty { min-height: 12px; }
+/* ── 5 · PIED DE HÉROS (HERO-FOOTER v1.0.1/3) — LA maison des stats ──
+   Bande de verre noir continue (recette cadre cockpit : depth-raised,
+   hairline-rest, radius 7, inset) ; hairlines verticales ET
+   horizontale CONTINUES façon MarketDeck — pas des cellules éparses.
+   Cellule = anatomie MONDE à l'échelle héros : label caps ink-mute ·
+   valeur 27 px Plex 700 tabulaire · meta CHF/contexte 12 px collée à
+   gauche. Grilles FIXES au cordeau (5×2 Héros 1, 6×1 Héros 2) — zéro
+   auto-fill, zéro rangée orpheline, quel que soit le viewport. */
+.lh-cfoot {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  margin: 10px 22px 16px;
+  background: var(--depth-raised);
+  border: 1px solid var(--hairline-rest);
+  border-radius: 7px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink-pure) 3%, transparent);
+  overflow: hidden;
+}
+.lh-cfoot--six { grid-template-columns: repeat(6, 1fr); }
+.lh-cfoot--empty {
+  margin: 10px 22px 16px;
+  padding: 14px 18px;
+  color: var(--ink-mute);
+  font-size: 12px;
+  background: var(--depth-raised);
+  border: 1px solid var(--hairline-rest);
+  border-radius: 7px;
+}
+.lh-cfoot__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 18px 14px;
+  border-right: 1px solid var(--hairline-rest);
+  min-width: 0;
+}
+/* Hairlines CONTINUES : pas de bord droit en fin de rangée ; la
+   2ᵉ rangée (Héros 1, cellules 6..10) porte l'horizontale continue. */
+.lh-cfoot__cell:nth-child(5n) { border-right: none; }
+.lh-cfoot__cell:nth-child(n + 6) { border-top: 1px solid var(--hairline-rest); }
+.lh-cfoot--six .lh-cfoot__cell:nth-child(5n) { border-right: 1px solid var(--hairline-rest); }
+.lh-cfoot--six .lh-cfoot__cell:nth-child(6n) { border-right: none; }
+.lh-cfoot--six .lh-cfoot__cell:nth-child(n + 6) { border-top: none; }
+.lh-cfoot__label { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-mute); white-space: nowrap; }
+.lh-cfoot__value { font-family: var(--qc-font-num); font-size: 27px; line-height: 1.05; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); white-space: nowrap; }
+.lh-cfoot__value--profit { color: var(--pnl-up); }
+.lh-cfoot__value--loss { color: var(--pnl-down); }
+.lh-cfoot__meta { display: flex; align-items: baseline; gap: 8px; min-height: 15px; }
+.lh-cfoot__chf { font-family: var(--qc-font-num); font-size: 12px; font-weight: 500; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lh-cfoot__sub { font-size: 11px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .lh-spark { display: block; }
