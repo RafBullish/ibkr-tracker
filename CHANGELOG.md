@@ -6,6 +6,62 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.1-rc.3] — 2026-08-13
+
+**HERO-FOOTER — « Le pied au niveau du héros » (chantier v1.0.1,
+brique 3).** Verdict Rafael (13.08, prod réelle) : « le pied des héros
+est encore trop petit » — requalifié par l'architecte : taille =
+symptôme ; les maladies réelles étaient l'échelle cellule-MONDE sur un
+organe de héros, le wrap en rangée orpheline, des stats calculées sur
+la série RÉÉCHANTILLONNÉE (buckets déguisés) et deux maisons
+divergentes pour les mêmes vérités.
+
+### Vérité avant rendu (D2)
+- **`utils/heroStats.js`** (nouveau, pur, testé) : toutes les stats du
+  pied et de la ligne de période se calculent sur la fenêtre
+  QUOTIDIENNE **avant** resampleSeries (+ les clôtures de la fenêtre).
+  Le cap 190 redevient un détail d'affichage du tracé. Fenêtrage
+  extrait en `sliceSeriesWindow` (source unique) ; `deriveWindowStats`
+  et `deriveSeriesStats` MORTES (post-resample : le « 25 · 76 % win »
+  réel comptait des SEMAINES).
+- **Garde D6** : % de drawdown à base flow-neutral dénuée de sens
+  (|%| > 100, tête de série reconstituée) → « — » honnête, le $ reste
+  (le « −169.2 % » du seed est mort). « bas −$90 » élucidé : le seed
+  place son 1ᵉʳ trade avant son 1ᵉʳ flux → C0 clampé → reconstruit
+  négatif — propriété du dataset de test, formule non clampée
+  (décision FIX-NLV maintenue).
+
+### Une seule maison de stats par héros (D1/D3)
+- **Pied Héros 1 = LA maison** : 10 cellules, grille FIXE 5×2 au
+  cordeau (PEAK · HAUT/BAS · MAX DD · DD COURANT · RECOVERY ·
+  MEILLEUR J. · PIRE J. · % J. GAGN. · **J. CLÔTURE** · **TRADES**).
+  GAIN/PERTE MOY. et EXPECTANCY sortent (maison trade-exacte = deck
+  PERFORMANCE) ; la sous-ligne « N pts · N j » meurt.
+- **PerfBand maigrie en ligne de période** : une seule ligne de base —
+  SUR CETTE PÉRIODE · range + P&L fenêtre ($ / % / CHF, toné) + note
+  « historique reconstitué » en fin de zone. Rien d'autre n'y survit.
+
+### Anatomie & jumeaux (D4/D7)
+- Cellule = anatomie MONDE à l'échelle héros : label caps ink-mute ·
+  **valeur 27 px Plex 700 tabulaire** · meta CHF/contexte 12 px collée
+  à gauche. Bande de verre continue (depth-raised, hairline, radius 7,
+  inset), hairlines verticales ET horizontale CONTINUES façon
+  MarketDeck. Zéro auto-fill → zéro rangée orpheline @1591 ET @1920.
+- **Héros 2 jumeau** : RealizedFooter reprend la même cellule partagée
+  (grille 6×1) — mêmes organes qu'avant (ses données étaient déjà
+  vraies : `deriveRealized` fenêtre pré-resample, sonde P1), tons
+  conservés. Morts : `h2-cfoot--*`, `lh-cfoot--dense`.
+- Tons reconduits (D5) : P&L de période toné ; MEILLEUR/PIRE J. tonés
+  (langage du pied Héros 2 — argent réel) ; tout le reste neutre.
+
+### Gates
+Build vert · check:color-law 0 · **318/318 tests** (+8 heroStats,
+existants intacts) · 12 pages peuplées · 0 overflow @1591 ET @1920 ·
+console = bruit toléré seul · 2 passes d'autocritique documentées ·
+captures `docs/captures/hero-footer/` (avant/après, 2 seeds, 2 largeurs).
+
+---
+
 ## [1.0.1-rc.2] — 2026-08-13
 
 **POLISH-1 — « La chasse aux échardes » (chantier v1.0.1, brique 2).**

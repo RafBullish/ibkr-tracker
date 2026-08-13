@@ -268,8 +268,13 @@ FX ambre (fraîcheur ≠ perte), warning esbuild v4-shell mort, garde
 `isWritableNlv` du writer quotidien, pureté du store (buildNlvSeries),
 cheatsheet mono-scroller, .gitignore .vscode/, référence morte purgée ;
 E8 (libellés CLÔTURES/TRADES) non appliquée — compteurs = points
-affichés, tranché par HERO-FOOTER. Prochaine brique : au prompt
-architecte.
+affichés, tranché par HERO-FOOTER. Brique 3 **HERO-FOOTER mergée
+(1.0.1-rc.3)** — pieds des héros à l'échelle héros : UNE maison de
+stats par héros (le pied), vérité pré-resample (`utils/heroStats.js`,
+J. CLÔTURE + TRADES vrais), garde du % DD aberrant, grille fixe 5×2
+(valeurs 27 px Plex 700, bande de verre, hairlines continues),
+PerfBand maigrie en ligne de période, Héros 2 jumeau (HeroFootCell,
+6×1). Prochaine brique : au prompt architecte.
 
 Repères S2 toujours en vigueur : KPI 44, cellules `.v3-table` 20 (rowHeight 47),
 plancher caption 17, strip 21/16/18, ticks charts plafonnés 14, héros 56/64
