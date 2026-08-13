@@ -8,7 +8,7 @@
 //  because those are useMemo([lastUpdated]) and a setInterval-
 //  driven re-render would not invalidate them. The local useMemo
 //  here depends on [lastUpdated, tick] so a 60s tick refreshes the
-//  age computation. Tracked in BACKLOG.md (post-V1 hook refactor).
+//  age computation. Hook-side fix = post-v1 refactor, non planifié.
 //
 //  Severity escalation: a user who dismissed at 'stale' sees the
 //  banner re-appear if the rate ages into 'critical' (7d+). The
@@ -54,7 +54,7 @@ export default function FxStaleBanner() {
   // Local staleness — pure derivation from `now` (state) and
   // `lastUpdated` (props from useFx). Bypasses useFx().isStale
   // which is memoized on [lastUpdated] alone and wouldn't react
-  // to the periodic tick. See BACKLOG.md for the hook-side fix.
+  // to the periodic tick (hook-side fix = post-v1 refactor).
   let severity = 'fresh';
   let ageMs = null;
   if (!lastUpdated) {
