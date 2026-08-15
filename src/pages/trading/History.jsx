@@ -539,21 +539,9 @@ export default function History() {
       render: (v) =>
         typeof v === 'number' ? `${v}j` : <span className="history-page__cell-empty">—</span>,
     },
-    {
-      key: 'ivRankAtEntry',
-      label: 'IV rank',
-      align: 'right',
-      sort: true,
-      mono: true,
-      render: (v) =>
-        v == null ? (
-          <span className="history-page__cell-empty" title="Donnée non disponible pour ce trade">
-            —
-          </span>
-        ) : (
-          `${Math.round(v)}%`
-        ),
-    },
+    // É3.2 — colonne « IV rank » MORTE (jumeau du slot IVR fantôme :
+    // le parser d'import écrit toujours ivRankAtEntry: null, aucune
+    // valeur réelle servie — renaîtra avec une vraie source en Q1-Q6).
     {
       key: 'exitReason',
       label: 'Motif sortie',

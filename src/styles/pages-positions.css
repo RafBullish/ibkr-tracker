@@ -146,34 +146,9 @@
   align-items: center;
   gap: 8px;
 }
-/* IVR — valeur + microbar NEUTRE (un rang d'IV n'est pas un P&L). */
-.pos-ivr-cell {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.pos-ivr-bar {
-  position: relative;
-  width: 30px;
-  height: 4px;
-  border-radius: 2px;
-  background: color-mix(in srgb, var(--ink-pure) 9%, transparent);
-  overflow: hidden;
-}
-.pos-ivr-bar__fill {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  background: color-mix(in srgb, var(--ink-soft) 50%, transparent);
-}
-/* Chip TIER (E·C) — registre db-chip, cadré cellule de table. */
-.pos-tier-chip {
-  margin: 0;
-  align-self: center;
-  padding: 1px 6px;
-  font-size: 12px;
-}
+/* É3.2 — .pos-ivr-* (microbar IVR) et .pos-tier-chip MORTES avec
+   leurs colonnes fantômes (IVR jamais servi par l'import réel ;
+   Edge/Capital = paliers de compte, tagging au tiroir détail). */
 /* Marquage IV estimée (~) — remplace les styles inline historiques. */
 .pos-iv-est {
   opacity: 0.65;

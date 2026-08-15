@@ -50,7 +50,6 @@ import EmptyState from '../../components/ui/EmptyState';
 import DataTable from '../../components/ui/DataTable';
 import Modal from '../../components/ui/Modal';
 import SniperMetaEditor from '../../components/dashboard/SniperMetaEditor';
-import PositionSparkline from '../../components/dashboard/PositionSparkline';
 import { POLLING } from '../../constants/timing';
 import { RISE_CONTAINER_VARIANTS, RISE_TILE_VARIANTS } from '../../theme/animationVariants';
 
@@ -544,10 +543,12 @@ function PositionDetailBody({ row, greeks, posAlerts, navigate, onEdit, onCloseM
       {/* 2.A — méta Sniper : AFFICHAGE dans la table, ÉDITION ici. */}
       <div className="position-detail__section">
         <span className="position-detail__section-title">Méta Sniper</span>
+        {/* É3.2 — l'item « IV Rank » est MORT (champ jamais servi par
+            l'import réel) ; Edge/Capital restent : sidecar vivant par
+            l'UI de tagging ci-dessous. */}
         <div className="position-detail__grid">
           <DetailItem label="Edge tier">{row.edgeTier || '—'}</DetailItem>
           <DetailItem label="Capital tier">{row.capitalTier || '—'}</DetailItem>
-          <DetailItem label="IV Rank">{row.ivr != null ? `${Math.round(row.ivr)}%` : '—'}</DetailItem>
         </div>
         <button type="button" className="pg-mock-btn position-detail__tag-btn" onClick={onTagMeta}>
           Tagger la méta (E0-E4 · C1-C5 · β)
@@ -950,11 +951,12 @@ export default function Positions() {
           delta: lrow.delta ?? null,
           theta: lrow.theta ?? null,
           ivEstimated: !!lrow.ivEstimated,
-          ivr: lrow.ivr ?? null,
+          // É3.2 — ivr et spark7d MORTS (slots fantômes, aucun producteur
+          // réel). edgeTier/capitalTier restent : le tiroir détail les
+          // affiche et les édite (sidecar SniperMetaEditor).
           edgeTier: lrow.edgeTier ?? null,
           capitalTier: lrow.capitalTier ?? null,
           daysIn: Number.isFinite(lrow.daysHeld) ? lrow.daysHeld : null,
-          spark7d: lrow.spark7d ?? null,
         };
       }),
     [openPositions, lr, nlvUsd, liveById]
@@ -1191,14 +1193,9 @@ export default function Positions() {
           <span className="v3-table__tf-value">{fmtUsd(summary.totalMarkValue)}</span>
         </span>
       ),
-      render: (v, row) => (
-        <span className="pos-mark-cell">
-          <span>${v.toFixed(2)}</span>
-          {Array.isArray(row.spark7d) && row.spark7d.length >= 2 && (
-            <PositionSparkline prices={row.spark7d} dir={row.pos.dir} />
-          )}
-        </span>
-      ),
+      // É3.2 — l'ex-sparkline inline (spark7d) est MORTE : aucun
+      // producteur de marks datés par position.
+      render: (v) => <span className="pos-mark-cell">${v.toFixed(2)}</span>,
     },
     {
       key: 'pnlUsd',
@@ -1290,40 +1287,9 @@ export default function Positions() {
         return s;
       },
     },
-    {
-      key: 'ivr',
-      label: 'IVR',
-      align: 'right',
-      sort: true,
-      mono: true,
-      // Microbar NEUTRE (un rang d'IV n'est pas un P&L).
-      render: (v, row) => {
-        if (!row.isOpt || v == null) return '—';
-        const pct = Math.max(0, Math.min(100, v));
-        return (
-          <span className="pos-ivr-cell">
-            <span>{Math.round(v)}</span>
-            <span className="pos-ivr-bar" aria-hidden="true">
-              <span className="pos-ivr-bar__fill" style={{ width: `${pct}%` }} />
-            </span>
-          </span>
-        );
-      },
-    },
-    {
-      key: 'edgeTier',
-      label: 'Tier',
-      align: 'center',
-      mono: true,
-      // Méta Sniper — AFFICHAGE seul (édition dans le modal détail).
-      render: (_v, row) => {
-        if (!row.isOpt) return '—';
-        const e = row.edgeTier || '—';
-        const c = row.capitalTier || '—';
-        if (e === '—' && c === '—') return <span className="text-tertiary mono">—</span>;
-        return <span className="db-chip pos-tier-chip">{`${e}·${c}`}</span>;
-      },
-    },
+    // É3.2 — colonnes IVR et Tier MORTES (slots fantômes : IVR jamais
+    // servi par l'import réel ; Edge/Capital = paliers de compte, le
+    // tagging sidecar vit dans le tiroir détail ci-dessous).
     {
       key: 'gate',
       label: 'Gate',

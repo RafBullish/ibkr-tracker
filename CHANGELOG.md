@@ -6,6 +6,66 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.1-rc.5] — 2026-08-15
+
+**É3.2 — ZÉRO FANTÔME · un slot est servi ou n'existe pas (chantier
+v1.0.1, brique 6).** Principe gravé (1.F) : câblé si donnée prouvée
+servie, sinon slot MORT. Audit d'abord (slot → source → verdict), puis
+suppressions COMPLÈTES — jamais de display:none, jamais de placeholder.
+
+### Colonnes positions (Dashboard + jumeaux, mission B/C)
+- **IVR MORTE** — preuve : le pipeline d'import réel écrit toujours
+  `ivRankAtEntry: null` (`ibkr/sections.js:95`, `ibkr/closedTrades.js:
+  198`, `migrations.js:211` « IBKR Flex n'expose pas ce champ ») ;
+  seules les fixtures portaient des valeurs. Morte sur LivePositions,
+  /trading/positions (colonne + item « IV Rank » du tiroir détail) et
+  /trading/history (« IV rank » — jumeau, extension loggée). La
+  colonne renaîtra avec une vraie source (Check-10/Q1-Q6) ; aucun
+  champ de saisie créé ici. `ivrSnapshot` reste un interne du hook
+  (il alimente detectAlert — machinerie ALERT intouchée).
+- **EDGE et C-TIER MORTES d'office** — paliers de COMPTE (le chip
+  TIER du cockpit porte l'info), pas de position. Le tagging sidecar
+  vit toujours au tiroir détail de /trading/positions
+  (SniperMetaEditor + `qc:sniperMeta` INTOUCHÉS — machinerie Sniper
+  préservée) ; l'instance modale de LivePositions meurt avec ses pills.
+- **SPARK 7D MORTE** — aucun producteur de marks datés par position
+  (l'import n'écrit pas `spark7d`, les snapshots quotidiens sont
+  portefeuille-niveau). `PositionSparkline.jsx` SUPPRIMÉ
+  (0 consommateur restant), `sparkTrend` morte.
+- Suppressions complètes : colgroup/th/td (19 → 15 colonnes, widths
+  recalibrées à 100 %), IvrCell/EdgePill/CTierPill, champs de rows du
+  hook (ivr/betaSPY/spark7d), CSS (`.live-pos__ivr*`, pills + variantes
+  clickable, `.live-pos__tag-btn`, `.position-sparkline*`, `.pos-ivr-*`,
+  `.pos-tier-chip`, listes c3-hires). −441 lignes.
+
+### Ligne de synchro du cockpit (mission B)
+- L'ex « Updated *horloge de rendu* CET · IBKR Flex Sync · QueryID —— »
+  est MORT (l'horodatage était `new Date()` au render — une fraîcheur
+  déguisée ; la mention Flex était un littéral même pour un import
+  fichier). **`utils/syncProvenance.deriveSyncLabel`** (pur, 9 tests)
+  pilote la ligne par `settings.lastSync` (rc.4) : source=csv →
+  « IMPORT CSV · fichier · date » ; source=flex → « IBKR FLEX · Query
+  ****xxxx » (masqué, jamais l'ID en clair) ; bridge (string) →
+  « IBKR BRIDGE · date » ; rien → **ligne morte**. Cohérente avec le
+  badge de mode rc.4.
+
+### FUT · O/N (mission B)
+- Source **réellement branchée et servie même le week-end** — prouvé :
+  `/api/quote/ES=F` → 200 (yahoo, clôture de vendredi) un samedi. Les
+  tirets du constat n'étaient PAS une session fermée : premier train
+  de quotes pas encore arrivé (cache froid / 429 transitoires). Verdict
+  CÂBLÉ ; tant que rien n'a servi, UN état explicite « — en attente du
+  flux quotes » (pattern « — aucun événement » de l'AGENDA) remplace
+  les trois rangées de tirets nus.
+
+### Tests
+- `syncProvenance.test.js` : 9 tests (csv sans mention Flex, flex
+  masqué, bridge, ligne morte, dates invalides). Vérif exercée @1591 :
+  15 en-têtes exacts, zéro littéral « Tag », ligne « IMPORT CSV ·
+  Tracker_TEST-2.csv · … », FUT avec valeurs réelles un samedi, tiroir
+  détail intact (Edge/Capital + bouton Tag, IV Rank mort), 0 overflow.
+  Suite 347 ✓, build ✓, check:color-law 0 violation.
+
 ## [1.0.1-rc.4] — 2026-08-15
 
 **É3.1 — VÉRITÉ DES CHIFFRES · source unique des métriques globales

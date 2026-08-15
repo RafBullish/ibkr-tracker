@@ -1,15 +1,20 @@
 // ═══════════════════════════════════════════════════════════════
-//  LIVE POSITIONS v4 brick 6 + v5 Sprint 1.3 — data grid 19 colonnes
+//  LIVE POSITIONS v4 brick 6 + v5 Sprint 1.3 — data grid 15 colonnes
 //
 //  Module bento col 1-12 row 2 (160 px). Plein-écran dashboard,
 //  table dense Excel-style. Header 22 + h-22 thead + N × h-15
 //  rows. Au-delà de ~7 rows : scroll Y interne, jamais sur le
 //  module.
 //
-//  19 colonnes ordre exact spec v5 :
+//  15 colonnes (É3.2 « zéro fantôme » — un slot est servi ou n'existe
+//  pas) :
 //    TICKER · TYPE · STR · EXP · DTE · QTY · ENTRY · MARK ·
-//    UNREAL$ · UNREAL% · Δ · Θ · IVR · EDGE · C-TIER · GATE ·
-//    DAYS-IN · SPARK 7D · ALERT
+//    UNREAL$ · UNREAL% · Δ · Θ · GATE · DAYS-IN · ALERT
+//  MORTES (É3.2) : IVR (le pipeline d'import écrit toujours
+//  ivRankAtEntry: null — aucune valeur réelle servie), EDGE et C-TIER
+//  (paliers de COMPTE : le chip TIER du cockpit porte l'info ; le
+//  tagging sidecar vit dans le tiroir détail de /trading/positions),
+//  SPARK 7D (aucun producteur de marks datés par position).
 //
 //  É3 §4.2.1 — colonne GATE au classifieur UNIQUE deriveAttention
 //  (useAttentionMap) : badges ARMED/CRITICAL, anatomie IDENTIQUE à la
@@ -21,17 +26,15 @@
 //  Phase C.2.10-V3 — harmonisation design sur TradeHistory :
 //    + Sub-header riche (Σ Δ · Σ Θ · Σ Unreal · Best · Worst + OPEN N).
 //    + Footer agrégé 6 cells (Σ UNREAL · Σ NOTIONAL · Σ MAX RISK ·
-//      Σ Δ $ · Σ Θ $/J · CLOSEST DTE).
+//      Δ · ÉQ. ACTIONS · Σ Θ $/J · CLOSEST DTE).
 //    + Style table aligné sur TradeHistory (thead blur sticky,
-//      hover row, gridlines, paddings). Les 19 colonnes intactes.
+//      hover row, gridlines, paddings).
 //
 //  Props-driven : <LivePositions data={...} />.
 //  data = output de useLivePositions / buildLivePositions.
 // ═══════════════════════════════════════════════════════════════
 
-import { useMemo, useState } from 'react';
-import PositionSparkline from './PositionSparkline';
-import SniperMetaEditor from './SniperMetaEditor';
+import { useMemo } from 'react';
 import useAttentionMap from '../../hooks/useAttentionMap';
 
 const FR_MONTHS = [
@@ -93,68 +96,10 @@ const toneFromSign = (v) => {
   return v > 0 ? 'profit' : 'loss';
 };
 
-function IvrCell({ ivr }) {
-  if (ivr == null || !Number.isFinite(ivr)) return <span className="live-pos__mute">—</span>;
-  const pct = Math.max(0, Math.min(100, ivr));
-  // É3 panel — barre IVR NEUTRE (loi de couleur : un IV Rank n'est pas
-  // de l'argent ; l'ex-vert >70 / rouge <20 était une fuite, et son
-  // commentaire « short premium » contredisait la doctrine long premium).
-  return (
-    <span className="live-pos__ivr">
-      <span className="live-pos__ivr-num">{Math.round(pct)}</span>
-      <span className="live-pos__ivr-bar">
-        <span
-          className="live-pos__ivr-fill live-pos__ivr-fill--mute"
-          style={{ width: `${pct}%` }}
-        />
-      </span>
-    </span>
-  );
-}
-
-// v5 Sprint 2.2 : pills clickable when empty → opens SniperMetaEditor.
-// When tagged, the pill renders as a span (no click) — re-tagging is
-// done via the row-level "Tag" affordance (Sprint 2.3+ adds an
-// explicit edit button ; for now click on cell still works to retag).
-function EdgePill({ edge, onTag }) {
-  if (!edge) {
-    return (
-      <button type="button" className="live-pos__tag-btn" onClick={onTag} title="Tag Edge Tier">
-        Tag
-      </button>
-    );
-  }
-  return (
-    <button
-      type="button"
-      className="live-pos__edge-pill live-pos__edge-pill--clickable"
-      onClick={onTag}
-      title="Modifier Edge Tier"
-    >
-      {edge}
-    </button>
-  );
-}
-
-function CTierPill({ cap, onTag }) {
-  if (!cap) {
-    return (
-      <button type="button" className="live-pos__tag-btn" onClick={onTag} title="Tag Capital Tier">
-        Tag
-      </button>
-    );
-  }
-  return (
-    <button
-      type="button"
-      className="live-pos__ctier-pill live-pos__ctier-pill--clickable"
-      onClick={onTag}
-      title="Modifier Capital Tier"
-    >
-      {cap}
-    </button>
-  );
-}
+// É3.2 — IvrCell, EdgePill et CTierPill sont MORTES avec leurs
+// colonnes (slots fantômes : IVR jamais servi par l'import réel,
+// EDGE/C-TIER = paliers de compte, tagging au tiroir détail de
+// /trading/positions — SniperMetaEditor y vit toujours).
 
 // É3 §4.2.1 — badge GATE au classifieur unique (deriveAttention) :
 // MÊME anatomie que la colonne Gate de la page Positions (db-badge,
@@ -179,7 +124,7 @@ function AlertPill({ alert }) {
   return <span className="live-pos__alert-pill">{alert}</span>;
 }
 
-function PositionRow({ pos, gateLine, onTag }) {
+function PositionRow({ pos, gateLine }) {
   const isStock = pos.type === 'STK';
   // B5 fix 3 — rail tone-coloré gauche selon P&L non-réalisé.
   const rowTone = toneFromSign(pos.unrealDollar);
@@ -230,23 +175,11 @@ function PositionRow({ pos, gateLine, onTag }) {
         {isStock || pos.theta == null ? '—' : fmtNumberSigned(pos.theta, 2)}
       </td>
       <td>
-        <IvrCell ivr={isStock ? null : pos.ivr} />
-      </td>
-      <td>
-        <EdgePill edge={pos.edgeTier} onTag={() => onTag(pos)} />
-      </td>
-      <td>
-        <CTierPill cap={pos.capitalTier} onTag={() => onTag(pos)} />
-      </td>
-      <td>
         {isStock ? <span className="live-pos__mute">—</span> : <GateBadge line={gateLine} />}
       </td>
       <td>
         {pos.daysHeld}
         <span className="live-pos__sub">d</span>
-      </td>
-      <td>
-        <PositionSparkline prices={pos.spark7d} dir={pos.dir} />
       </td>
       <td>
         <AlertPill alert={pos.alert} />
@@ -267,10 +200,8 @@ export default function LivePositions({ data, greeks = null, area = 'positions' 
   const positions = data?.positions ?? [];
   const isEmpty = count === 0;
 
-  // v5 Sprint 2.2 : modal state for per-position Sniper meta tagging.
-  // Opens when the user clicks the EDGE / C-TIER pill or its 'Tag'
-  // placeholder in a row.
-  const [editorPos, setEditorPos] = useState(null);
+  // É3.2 — l'état modal SniperMetaEditor est MORT ici avec les pills
+  // EDGE/C-TIER (le tagging vit au tiroir détail de /trading/positions).
 
   // É3 §4.2.1 — verdict de gate par position (classifieur unique).
   const attentionMap = useAttentionMap();
@@ -462,12 +393,8 @@ export default function LivePositions({ data, greeks = null, area = 'positions' 
               <col className="live-pos__col-unrealpct" />
               <col className="live-pos__col-delta" />
               <col className="live-pos__col-theta" />
-              <col className="live-pos__col-ivr" />
-              <col className="live-pos__col-edge" />
-              <col className="live-pos__col-ctier" />
               <col className="live-pos__col-gate" />
               <col className="live-pos__col-daysin" />
-              <col className="live-pos__col-spark" />
               <col className="live-pos__col-alert" />
             </colgroup>
             <thead>
@@ -484,12 +411,8 @@ export default function LivePositions({ data, greeks = null, area = 'positions' 
                 <th>Unreal %</th>
                 <th>Δ</th>
                 <th>Θ</th>
-                <th>IVR</th>
-                <th>Edge</th>
-                <th>C-Tier</th>
                 <th>Gate</th>
                 <th>Days In</th>
-                <th>Spark 7D</th>
                 <th>Alert</th>
               </tr>
             </thead>
@@ -506,7 +429,6 @@ export default function LivePositions({ data, greeks = null, area = 'positions' 
                   }
                   pos={pos}
                   gateLine={attentionMap.get(pos.id)}
-                  onTag={setEditorPos}
                 />
               ))}
             </tbody>
@@ -571,11 +493,6 @@ export default function LivePositions({ data, greeks = null, area = 'positions' 
         </footer>
       )}
 
-      <SniperMetaEditor
-        position={editorPos}
-        open={!!editorPos}
-        onClose={() => setEditorPos(null)}
-      />
     </section>
   );
 }

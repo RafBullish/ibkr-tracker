@@ -52,6 +52,19 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
   formule en `title=`. « /tr » des fees = commissions clôturées / N.
   Badge de mode honnête : import CSV → badge **CSV** (provenance
   `lastSync.source`), REAL réservé au Flex/bridge.
+- **É3.2 ✅ (1.0.1-rc.5)** — « Zéro fantôme » : un slot est servi ou
+  n'existe pas. Colonnes IVR / EDGE / C-TIER / SPARK 7D MORTES
+  (LivePositions 19→15 col + jumeaux /trading/positions et History
+  « IV rank ») — preuve : l'import réel écrit toujours
+  `ivRankAtEntry: null`, aucun producteur de `spark7d` ; paliers
+  Edge/Capital = compte (chip TIER cockpit), tagging sidecar préservé
+  au tiroir détail (SniperMetaEditor intouché). PositionSparkline
+  supprimé. Ligne de synchro du cockpit VÉRIDIQUE
+  (`syncProvenance.deriveSyncLabel`, 9 tests : IMPORT CSV / IBKR FLEX
+  · Query masqué / IBKR BRIDGE, ou ligne morte — l'ex « Updated
+  <horloge> · IBKR Flex Sync · QueryID —— » est mort). FUT · O/N :
+  feed prouvé servi même le week-end (ES=F 200 un samedi) — état
+  explicite « en attente du flux » au lieu des tirets nus.
 - **Prochaine brique : au prompt architecte.**
 
 ---
