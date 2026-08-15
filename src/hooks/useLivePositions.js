@@ -1,5 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
-//  useLivePositions v4 brick 6 + v5 Sprint 1.3 — store → 19-col rows
+//  useLivePositions v4 brick 6 + v5 Sprint 1.3 — store → rows enrichies
+//  (É3.2 : slots fantômes ivr/betaSPY/spark7d retirés des rows)
 //
 //  Transforme openPositions du store en rows enrichies pour
 //  <LivePositions />. Trois sources d'enrichissement :
@@ -67,11 +68,14 @@ function buildRow(pos, context) {
   // pas du taux (pi × mul × qty ± fi en USD pur).
   const { costBasisUsd } = calculateOpenPositionPnl(pos, 1);
 
-  // Sidecar lookup. Sprint 1.3 ne livre PAS le tagging UI : la
-  // sidecar reste vide pour les positions du vrai compte. La
-  // fixture Sniper d'origine continue à porter edgeTier/capitalTier
-  // sur le shape (rétro-compat fixture). Priorité de résolution :
+  // Sidecar lookup. Priorité de résolution :
   //   sidecar override > pos.<field> (fixture) > deriveEdgeTier(ivr)
+  // É3.2 — ivrSnapshot reste un INTERNE (il alimente detectAlert et la
+  // dérivation d'edgeTier) mais n'est plus exposé en row : la colonne
+  // IVR est morte (le pipeline d'import réel écrit toujours
+  // ivRankAtEntry: null — aucune valeur réelle servie). edgeTier /
+  // capitalTier restent exposés : le tiroir détail de /trading/positions
+  // les affiche et les édite (SniperMetaEditor, sidecar vivant par l'UI).
   const sidecar = readSniperMeta(pos.id);
   const ivrSnapshot = Number.isFinite(pos.ivr)
     ? pos.ivr
@@ -80,7 +84,6 @@ function buildRow(pos, context) {
       : null;
   const edgeTier = sidecar?.edgeTier ?? pos.edgeTier ?? deriveEdgeTier(ivrSnapshot) ?? null;
   const capitalTier = sidecar?.capitalTier ?? pos.capitalTier ?? null;
-  const betaSPY = sidecar?.betaSPY ?? null;
 
   const alert = detectAlert(pos, {
     now: context.now,
@@ -127,12 +130,12 @@ function buildRow(pos, context) {
     theta,
     ivEstimated,
     greeksSource,
-    ivr: ivrSnapshot,
     edgeTier,
     capitalTier,
-    betaSPY,
     daysHeld: days,
-    spark7d: Array.isArray(pos.spark7d) ? pos.spark7d : null,
+    // É3.2 — ivr, betaSPY et spark7d ne sont plus exposés : slots morts
+    // (aucun producteur réel ; betaSPY vit dans le sidecar, lu par
+    // SniperMetaEditor directement).
     alert,
   };
 }

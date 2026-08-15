@@ -124,7 +124,6 @@
   .trading-chart__footer-label,
   .trading-chart__sub,
   .trading-chart__empty,
-  .live-pos__tag-btn,
   .live-pos__type-pill,
   .live-pos__ctx-badge,
   .risk-matrix__cell--right,
@@ -147,7 +146,6 @@
   .module-header__hint,
   .module-empty__title,
   .module-empty__sub,
-  .position-sparkline__empty,
   .watchlist__add-btn {
     font-size: var(--type-caption);
   }
@@ -208,9 +206,9 @@
      · Bandeau .pos-command : labels/meta au plancher caption ; le
        marqueur de fraîcheur (pf-real) reste micro par design (8.5px,
        registre marqueur — pas du texte de lecture).
-     · Cellules riches : méta 12→13 au palier ; badges/chips (db-badge,
-       pos-tier-chip) restent au registre badge (9-12px, anatomie
-       unique — exempts du plancher comme les marqueurs IBKR/est.).
+     · Cellules riches : méta 12→13 au palier ; badges/chips (db-badge)
+       restent au registre badge (9-12px, anatomie unique — exempts du
+       plancher comme les marqueurs IBKR/est.).
      · nowrap sur la cellule Alerts : empêche un wrap multi-badges de
        rendre les lignes inégales (rowHeight 47 inline). */
   .v3-table__th-sort {

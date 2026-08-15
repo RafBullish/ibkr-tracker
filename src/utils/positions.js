@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  POSITIONS UTILS v4 brick 6 + v5 Sprint 1.3 — purs, sans React
 //
-//  Helpers pour le module Live Positions (19 colonnes data grid v5).
+//  Helpers pour le module Live Positions (data grid v5, 15 col É3.2).
 //  Toutes les fonctions sont pures, acceptent des inputs vides /
 //  invalides sans throw, et sont sign-aware (Long vs Short).
 //
@@ -10,7 +10,6 @@
 //    - dteFromExp         : jours calendaires entre ref et exp
 //    - daysHeld           : jours calendaires entre di et ref
 //    - detectAlert        : alerte la plus pressante {DTE | EARN | IV | …}
-//    - sparkTrend         : direction sémantique d'une mini-série price
 //                           (sign-aware via dir : ↑ price short = loss)
 //    - deriveEdgeTier     : E0..E4 from ivRank (v5 Sprint 1.3)
 //
@@ -128,24 +127,8 @@ export function detectAlert(pos, context = {}) {
   return null;
 }
 
-/**
- * Direction sémantique d'une série de prix de longueur ≥ 2.
- * Sign-aware : pour une position Short, mark ↑ = loss.
- *
- * @param {Array<number>} prices   chronological mark prices
- * @param {string}        [dir]    'Long' (default) | 'Short'
- * @returns {'profit' | 'loss' | 'mute'}
- */
-export function sparkTrend(prices, dir) {
-  if (!Array.isArray(prices) || prices.length < 2) return 'mute';
-  const first = prices[0];
-  const last = prices[prices.length - 1];
-  if (!Number.isFinite(first) || !Number.isFinite(last)) return 'mute';
-  const delta = last - first;
-  if (Math.abs(delta) < 1e-9) return 'mute';
-  const dirSign = dir === 'Short' ? -1 : 1;
-  return delta * dirSign > 0 ? 'profit' : 'loss';
-}
+// É3.2 — sparkTrend MORTE avec PositionSparkline (colonne SPARK 7D
+// fantôme : aucun producteur de marks datés par position).
 
 // ═══════════════════════════════════════════════════════════════
 //  v5 Sprint 1.3 — Edge Tier derivation

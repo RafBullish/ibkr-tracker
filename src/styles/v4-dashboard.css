@@ -1555,30 +1555,27 @@
   font-variant-numeric: tabular-nums slashed-zero;
 }
 
-/* B5.5 — widths colgroup 19 cols (somme = 100%). Pattern miroir
+/* B5.5 — widths colgroup 15 cols (somme = 100%, É3.2 : ivr/edge/
+   ctier/spark MORTES, +22 % redistribués). Pattern miroir
    TradeHistory : sans ces widths explicites, table-layout: fixed
    tombait sur l'auto-calc via thead, ce qui combiné au border-left
    3px des tbody trs (rail tone B5) cassait le rendu et masquait
    5/6 lignes. */
-.live-pos__col-ticker { width: 6%; }
-.live-pos__col-type { width: 5%; }
-.live-pos__col-str { width: 5%; }
-.live-pos__col-exp { width: 6%; }
-.live-pos__col-dte { width: 4%; }
-.live-pos__col-qty { width: 4%; }
-.live-pos__col-entry { width: 6%; }
-.live-pos__col-mark { width: 6%; }
-.live-pos__col-unrealdol { width: 6%; }
-.live-pos__col-unrealpct { width: 6%; }
-.live-pos__col-delta { width: 4%; }
-.live-pos__col-theta { width: 4%; }
-.live-pos__col-ivr { width: 7%; }
-.live-pos__col-edge { width: 4%; }
-.live-pos__col-ctier { width: 5%; }
-.live-pos__col-gate { width: 8%; }
-.live-pos__col-daysin { width: 4%; }
-.live-pos__col-spark { width: 6%; }
-.live-pos__col-alert { width: 4%; }
+.live-pos__col-ticker { width: 8%; }
+.live-pos__col-type { width: 6%; }
+.live-pos__col-str { width: 6%; }
+.live-pos__col-exp { width: 7%; }
+.live-pos__col-dte { width: 5%; }
+.live-pos__col-qty { width: 5%; }
+.live-pos__col-entry { width: 7%; }
+.live-pos__col-mark { width: 7%; }
+.live-pos__col-unrealdol { width: 8%; }
+.live-pos__col-unrealpct { width: 7%; }
+.live-pos__col-delta { width: 6%; }
+.live-pos__col-theta { width: 6%; }
+.live-pos__col-gate { width: 10%; }
+.live-pos__col-daysin { width: 6%; }
+.live-pos__col-alert { width: 6%; }
 
 /* C.3 dédup — l'ancien doublon thead/th de cette zone (h30, padding 0 10px,
    letter-spacing 0.04em, bg --bg-elev-1, + sélecteur mort .live-pos__th) a
@@ -1712,74 +1709,12 @@
   color: var(--qc-text-tertiary);
 }
 
-/* ─── IVR cell : number + microbar ──────────────────────────── */
-.live-pos__ivr {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-variant-numeric: tabular-nums;
-}
+/* É3.2 — .live-pos__ivr* (cellule IVR), .live-pos__edge-pill et
+   .live-pos__ctier-pill MORTES avec leurs colonnes fantômes (aucune
+   donnée réelle servie ; paliers Edge/Capital = compte, pas position).
 
-.live-pos__ivr-num {
-  color: var(--qc-text-primary);
-  font-size: 12px;
-  min-width: 16px;
-  text-align: right;
-}
-
-.live-pos__ivr-bar {
-  position: relative;
-  display: inline-block;
-  width: 30px;
-  height: 4px;
-  background: var(--qc-border-subtle);
-}
-
-.live-pos__ivr-fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-}
-
-/* É3 panel — variantes profit/loss MORTES (un IV Rank n'est pas de
-   l'argent) : la barre IVR est neutre, une seule encre. */
-.live-pos__ivr-fill--mute {
-  background: var(--qc-text-tertiary);
-}
-
-/* ─── Edge / Gate / Alert pills ────────────────────────────── */
-.live-pos__edge-pill {
-  display: inline-flex;
-  align-items: center;
-  height: 11px;
-  padding: 0 4px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--qc-text-primary);
-  background: color-mix(in srgb, var(--qc-accent) 8%, transparent);
-  border: 1px solid var(--qc-border-strong);
-  border-radius: 0;
-}
-
-/* É3 §4.2.1 — .live-pos__gate-pill* MORTES (la colonne GATE rend le
+   É3 §4.2.1 — .live-pos__gate-pill* MORTES (la colonne GATE rend le
    badge partagé .db-badge--critique/--arme de v1-decision.css). */
-
-/* v5 Sprint 1.3 — C-TIER pill (separate from EDGE) */
-.live-pos__ctier-pill {
-  display: inline-flex;
-  align-items: center;
-  height: 11px;
-  padding: 0 4px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--qc-text-primary);
-  background: color-mix(in srgb, var(--accent-amber, #ffa028) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent-amber, #ffa028) 30%, transparent);
-  border-radius: 0;
-}
 
 /* É3 panel — pastille ALERT NEUTRE (parité RowAlerts 2.A). Les
    variantes --warn (ambre durable) et --info (cyan, mort depuis 2.C1)
@@ -1798,35 +1733,15 @@
   border-radius: 0;
 }
 
-/* ─── Sparkline 60×14 inline ────────────────────────────────── */
-.position-sparkline {
-  display: inline-block;
-  vertical-align: middle;
-}
-
-.position-sparkline__line--profit {
-  stroke: var(--qc-profit);
-}
-
-.position-sparkline__line--loss {
-  stroke: var(--qc-loss);
-}
-
-.position-sparkline__line--mute {
-  stroke: var(--qc-text-tertiary);
-}
-
-.position-sparkline__empty {
-  color: var(--qc-text-tertiary);
-  font-size: 12px;
-}
+/* É3.2 — .position-sparkline* MORTES avec la colonne SPARK 7D
+   (composant supprimé, aucun producteur de marks datés par position). */
 
 /* ════════════════════════════════════════════════════════════════
    ROW 3 — brick 7
    Watchlist · Earnings · Sector Heatmap · IV Rank Movers
-   Tous : 200 px haut. Réutilisent .live-pos__type-pill, .live-pos__
-   ivr*, .live-pos__cell--{profit,loss,mute}, .live-pos__mute,
-   .live-pos__sub livrés brick 6 + .position-sparkline livré brick 6.
+   Tous : 200 px haut. Réutilisent .live-pos__type-pill,
+   .live-pos__cell--{profit,loss,mute}, .live-pos__mute,
+   .live-pos__sub livrés brick 6.
    ════════════════════════════════════════════════════════════════ */
 
 /* ─── Watchlist ────────────────────────────────────────────── */
@@ -2508,57 +2423,10 @@
   display: none;
 }
 
-/* ════════════════════════════════════════════════════════════════
-   LIVE POSITIONS — v5 Sprint 2.2 tag affordances
-   "Tag" placeholder when meta empty + clickable pill when meta set
-   ════════════════════════════════════════════════════════════════ */
-
-.live-pos__tag-btn {
-  display: inline-flex;
-  align-items: center;
-  height: 11px;
-  padding: 0 6px;
-  font-family: var(--qc-font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--qc-text-tertiary);
-  background: transparent;
-  border: 1px dashed var(--qc-border-strong);
-  border-radius: 0;
-  cursor: pointer;
-  transition: all 100ms ease-out;
-}
-
-.live-pos__tag-btn:hover {
-  color: var(--accent-amber, #ffa028);
-  border-color: var(--accent-amber, #ffa028);
-  border-style: solid;
-}
-
-.live-pos__tag-btn:focus-visible {
-  outline: 1px solid var(--qc-accent);
-  outline-offset: 1px;
-}
-
-.live-pos__edge-pill--clickable,
-.live-pos__ctier-pill--clickable {
-  font-family: inherit;
-  cursor: pointer;
-  transition: filter 100ms ease-out;
-}
-
-.live-pos__edge-pill--clickable:hover,
-.live-pos__ctier-pill--clickable:hover {
-  filter: brightness(1.2);
-}
-
-.live-pos__edge-pill--clickable:focus-visible,
-.live-pos__ctier-pill--clickable:focus-visible {
-  outline: 1px solid var(--qc-accent);
-  outline-offset: 1px;
-}
+/* É3.2 — les affordances de tag en ligne (.live-pos__tag-btn +
+   variantes --clickable des pills) sont MORTES avec les colonnes
+   EDGE/C-TIER : le tagging vit au tiroir détail de /trading/positions
+   (.position-detail__tag-btn, pages-positions.css). */
 
 /* ════════════════════════════════════════════════════════════════
    SNIPER META EDITOR — v5 Sprint 2.2 modal form
@@ -4346,10 +4214,10 @@
    Wrapper, sticky header blur, hover rows, gridlines, paddings,
    font-size 14 px : tout calé sur le pattern .trade-history pour
    que les 2 modules tables actives soient visuellement jumeaux.
-   Les 19 colonnes du tbody restent intactes (zéro modif JSX).
+   15 colonnes depuis É3.2 (ivr/edge/ctier/spark mortes).
 
    Footer agrégé 6 cells (Σ UNREAL · Σ NOTIONAL · Σ MAX RISK ·
-   Σ Δ $ · Σ Θ $/J · CLOSEST DTE).
+   Δ · ÉQ. ACTIONS · Σ Θ $/J · CLOSEST DTE).
    ════════════════════════════════════════════════════════════════ */
 
 /* Wrapper section — cohérence avec .trade-history. Les rules
