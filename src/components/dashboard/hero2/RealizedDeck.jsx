@@ -104,8 +104,8 @@ export default function RealizedDeck({ m, rate, range }) {
           </div>
         </div>
         <div className="pf-grid h2-grid2">
-          <Cell label="GROSS GAINS" value={mx.wins ? fmtUsd(mx.grossWin) : null} chf={chf(mx.grossWin)} sub={`${mx.wins} gagn.`} tone="profit" />
-          <Cell label="GROSS PERTES" value={mx.losses ? fmtUsd(-mx.grossLoss) : null} chf={chf(-mx.grossLoss)} sub={`${mx.losses} perd.`} tone="loss" />
+          <Cell label="GAINS BRUTS" value={mx.wins ? fmtUsd(mx.grossWin) : null} chf={chf(mx.grossWin)} sub={`${mx.wins} gagn.`} tone="profit" />
+          <Cell label="PERTES BRUTES" value={mx.losses ? fmtUsd(-mx.grossLoss) : null} chf={chf(-mx.grossLoss)} sub={`${mx.losses} perd.`} tone="loss" />
         </div>
       </div>
 

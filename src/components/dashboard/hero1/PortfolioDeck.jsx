@@ -57,22 +57,24 @@ export default function PortfolioDeck({ kpi, rate }) {
   const chf = (usd, signed) => (Number.isFinite(usd) && Number.isFinite(rate) && rate > 0 ? fmtChf(usd, rate, signed) : null);
 
   // Chaque panneau = liste de cellules (les null sont filtrées au rendu).
-  // É3 §4.2.7 — EXPOSURE : la méta dit la vérité du calcul
+  // É3 §4.2.7 — EXPOSITION : la méta dit la vérité du calcul
   // (totalExposure = Σ |valeur mark|, pas le coût des primes engagées).
+  // É3.3 — langue : EXPOSITION (aligné bande CAPITAL) · JOUR · LATENT ·
+  // RÉALISÉ (une seule voix avec les héros).
   const capital = [
-    { label: 'EXPOSURE', value: k.exposure == null ? null : fmtUsdCompact(k.exposure), chf: chf(k.exposure), sub: k.expoPct != null ? `Σ mark · ${Math.round(k.expoPct)} % NLV` : 'Σ valeur mark', bar: k.expoPct != null ? { pct: k.expoPct, mark: 70 } : null },
+    { label: 'EXPOSITION', value: k.exposure == null ? null : fmtUsdCompact(k.exposure), chf: chf(k.exposure), sub: k.expoPct != null ? `Σ mark · ${Math.round(k.expoPct)} % NLV` : 'Σ valeur mark', bar: k.expoPct != null ? { pct: k.expoPct, mark: 70 } : null },
     { label: 'NOTIONNEL', value: k.notional == null ? null : fmtUsdCompact(k.notional), chf: chf(k.notional) },
     { label: 'POSITIONS', value: k.positionsCount == null ? null : `${k.positionsCount}`, sub: 'ouvertes' },
     // É3 §4.2.6 — expirée = « EXP » honnête, jamais « 0 j » ambigu.
     { label: 'DTE PROCHE', value: k.dte == null ? null : k.dteExpired ? 'EXP' : `${k.dte} j`, sub: k.dteTicker || null },
   ];
   const pnl = [
-    { label: 'DAY', value: k.dayPnl == null ? null : fmtUsdSigned(k.dayPnl), chf: chf(k.dayPnl, true), sub: k.dayPct != null ? `${k.dayPct >= 0 ? '+' : '−'}${Math.abs(k.dayPct).toFixed(2)} %` : null, tone: toneSign(k.dayPnl) },
+    { label: 'JOUR', value: k.dayPnl == null ? null : fmtUsdSigned(k.dayPnl), chf: chf(k.dayPnl, true), sub: k.dayPct != null ? `${k.dayPct >= 0 ? '+' : '−'}${Math.abs(k.dayPct).toFixed(2)} %` : null, tone: toneSign(k.dayPnl) },
     { label: 'WTD · SEM.', value: k.wtd == null ? null : fmtUsdSigned(k.wtd), chf: chf(k.wtd, true), tone: toneSign(k.wtd) },
     { label: 'MTD · MOIS', value: k.mtd == null ? null : fmtUsdSigned(k.mtd), chf: chf(k.mtd, true), tone: toneSign(k.mtd) },
     { label: 'YTD · ANNÉE', value: k.ytd == null ? null : fmtUsdSigned(k.ytd), chf: chf(k.ytd, true), tone: toneSign(k.ytd) },
-    { label: 'UNREALIZED', value: k.unrealized == null ? null : fmtUsdSigned(k.unrealized), chf: chf(k.unrealized, true), tone: toneSign(k.unrealized) },
-    { label: 'REALIZED', value: k.realized == null ? null : fmtUsdSigned(k.realized), chf: chf(k.realized, true), tone: toneSign(k.realized) },
+    { label: 'LATENT', value: k.unrealized == null ? null : fmtUsdSigned(k.unrealized), chf: chf(k.unrealized, true), tone: toneSign(k.unrealized) },
+    { label: 'RÉALISÉ', value: k.realized == null ? null : fmtUsdSigned(k.realized), chf: chf(k.realized, true), tone: toneSign(k.realized) },
   ];
   // Ordre : CAP. RISQUE → Δ → Γ → Θ → V (greeks Δ Γ Θ V). Δ$-exposition
   // repliée en meta de Δ NET (pas de cellule séparée).

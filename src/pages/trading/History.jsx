@@ -29,7 +29,7 @@ import { Plus, History as HistoryIcon, Crosshair, Trash2 } from 'lucide-react';
 import { useClosedTrades, useSettings, useDispatch } from '../../store/useStore';
 import { tradePnlUsd } from '../../utils/calculations';
 import { calculateTradingMetrics } from '../../hooks/useTradingMetrics';
-import { formatUsd } from '../../utils/format';
+import { formatUsd, fmtDate, fmtUsd2 } from '../../utils/format';
 import { toFloat, ensurePositive } from '../../utils/math';
 import { holdingDays } from '../../utils/dates';
 import { TickValue } from '../../components/dashboard/decision/parts';
@@ -326,13 +326,14 @@ export default function History() {
   const chf = (usd, signed) =>
     Number.isFinite(usd) && Number.isFinite(lr) && lr > 0 ? fmtChf(usd, lr, signed) : null;
 
+  // É3.3 — date au format central dd.mm.yy (zéro yyyy-mm-dd rendu).
   const dateColumn = {
     key: 'do',
     label: 'Date',
     align: 'left',
     sort: true,
     mono: true,
-    render: (v) => v || '—',
+    render: (v) => (v ? fmtDate(v) : '—'),
   };
   const tickerColumn = {
     key: 'tk',
@@ -347,13 +348,14 @@ export default function History() {
       </div>
     ),
   };
+  // É3.3 — « Hold » → « Durée » (jumeau TradeHistory), unité « j » espacée.
   const holdColumn = {
     key: 'hold',
-    label: 'Hold',
+    label: 'Durée',
     align: 'right',
     sort: true,
     mono: true,
-    render: (v) => (typeof v === 'number' ? `${v}j` : '—'),
+    render: (v) => (typeof v === 'number' ? `${v} j` : '—'),
   };
   const pnlUsdColumn = {
     key: 'pnlUsd',
@@ -413,7 +415,7 @@ export default function History() {
   };
   const feesColumn = {
     key: 'cm',
-    label: 'Fees',
+    label: 'Frais',
     align: 'right',
     sort: true,
     mono: true,
@@ -465,7 +467,7 @@ export default function History() {
     tickerColumn,
     {
       key: 'qty',
-      label: 'Qty',
+      label: 'Qté',
       align: 'right',
       sort: true,
       mono: true,
@@ -473,19 +475,19 @@ export default function History() {
     },
     {
       key: 'pi',
-      label: 'Entry',
+      label: 'Entrée',
       align: 'right',
       sort: true,
       mono: true,
-      render: (v) => `$${toFloat(v).toFixed(2)}`,
+      render: (v) => fmtUsd2(v),
     },
     {
       key: 'po',
-      label: 'Exit',
+      label: 'Sortie',
       align: 'right',
       sort: true,
       mono: true,
-      render: (v) => `$${toFloat(v).toFixed(2)}`,
+      render: (v) => fmtUsd2(v),
     },
     holdColumn,
     pnlUsdColumn,
@@ -500,7 +502,7 @@ export default function History() {
     tickerColumn,
     {
       key: 'deltaAtEntry',
-      label: 'Δ entry',
+      label: 'Δ entrée',
       align: 'right',
       sort: true,
       mono: true,
@@ -532,12 +534,12 @@ export default function History() {
     },
     {
       key: 'dteAtEntry',
-      label: 'DTE entry',
+      label: 'DTE entrée',
       align: 'right',
       sort: true,
       mono: true,
       render: (v) =>
-        typeof v === 'number' ? `${v}j` : <span className="history-page__cell-empty">—</span>,
+        typeof v === 'number' ? `${v} j` : <span className="history-page__cell-empty">—</span>,
     },
     // É3.2 — colonne « IV rank » MORTE (jumeau du slot IVR fantôme :
     // le parser d'import écrit toujours ivRankAtEntry: null, aucune
@@ -703,20 +705,20 @@ export default function History() {
             sub={stats.winRate == null ? `${stats.decisive} décisifs / 10 requis` : `${stats.winCount}↑ / ${stats.lossCount}↓`}
           />
           <CommandCell
-            label="AVG R"
+            label="R MOY."
             title="Gain moyen rapporté à la perte moyenne. > 1.5 = bon risque/récompense."
             value={stats.avgR == null ? '—' : fmtNumber(stats.avgR)}
             sub={stats.avgR == null && stats.total > 0 ? 'aucun perdant dans le scope' : 'gain / perte moy.'}
           />
           <CommandCell
-            label="BEST"
+            label="MEILLEUR"
             title="Meilleur trade du sous-ensemble filtré."
             value={fmtUsdSigned(stats.best)}
             chf={chf(stats.best, true)}
             tone={toneSign(stats.best)}
           />
           <CommandCell
-            label="WORST"
+            label="PIRE"
             title="Pire trade du sous-ensemble filtré."
             value={fmtUsdSigned(stats.worst)}
             chf={chf(stats.worst, true)}

@@ -177,7 +177,7 @@ export default function DataTable({
             aria-label="Exporter les données"
           >
             <Download size={13} aria-hidden="true" />
-            Export CSV
+            Exporter CSV
           </button>
         )}
       </div>
