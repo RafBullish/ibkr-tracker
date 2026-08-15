@@ -66,18 +66,25 @@ export function RealizedFooter({ m, rate }) {
   const dist = m.dist;
   if (m.empty) return <div className="lh-cfoot--empty">Aucune clôture sur la fenêtre</div>;
 
+  // É3.1 — % JOURS GAGN. : LA définition unique (curveStats, = pied
+  // Héros 1). Compteurs affichés = verts/rouges cohérents (l'ex-sub
+  // « ↑/↓ max » montrait des STREAKS sous un label de % — mort).
+  const jg = d.joursGagnants || { verts: 0, rouges: 0, total: 0, pct: null };
   const cells = [
-    ['MEILLEUR JOUR', fmtUsdSigned(d.bestDay), 'journée', d.bestDay, toneOf(d.bestDay) === 'mute' ? null : toneOf(d.bestDay)],
-    ['PIRE JOUR', fmtUsdSigned(d.worstDay), 'journée', d.worstDay, toneOf(d.worstDay) === 'mute' ? null : toneOf(d.worstDay)],
-    ['% JOURS GAGN.', d.pctWinDays == null ? '—' : `${d.pctWinDays.toFixed(0)}%`, `${d.longWin}↑ / ${d.longLoss}↓ max`, null, null],
-    ['MODE', dist.maxCount ? `${dist.maxCount}` : '—', 'trades / bucket', null, null],
-    ['PAS BUCKET', dist.step ? fmtUsd(dist.step) : '—', 'largeur distrib.', null, null],
-    ['FENÊTRE', `${m.spanDays} j`, `${m.matrix.n} clôt. · ${d.activeDays} jours`, null, null],
+    ['MEILLEUR JOUR', fmtUsdSigned(d.bestDay), 'journée', d.bestDay, toneOf(d.bestDay) === 'mute' ? null : toneOf(d.bestDay),
+      'RÉAL — P&L réalisé net du meilleur jour de clôture de la fenêtre'],
+    ['PIRE JOUR', fmtUsdSigned(d.worstDay), 'journée', d.worstDay, toneOf(d.worstDay) === 'mute' ? null : toneOf(d.worstDay),
+      'RÉAL — P&L réalisé net du pire jour de clôture de la fenêtre'],
+    ['% JOURS GAGN.', jg.pct == null ? '—' : `${jg.pct.toFixed(0)}%`, `${jg.verts}↑ / ${jg.rouges}↓`, null, null,
+      `RÉAL — jours avec clôture, signe du P&L net du jour (définition unique, = pied Héros 1) ; ${jg.verts}+${jg.rouges}=${jg.total}`],
+    ['MODE', dist.maxCount ? `${dist.maxCount}` : '—', 'trades / bucket', null, null, null],
+    ['PAS BUCKET', dist.step ? fmtUsd(dist.step) : '—', 'largeur distrib.', null, null, null],
+    ['FENÊTRE', `${m.spanDays} j`, `${m.matrix.n} clôt. · ${d.activeDays} jours`, null, null, null],
   ];
   return (
     <div className="lh-cfoot lh-cfoot--six">
-      {cells.map(([label, value, sub, usd, tone]) => (
-        <HeroFootCell key={label} label={label} value={value} sub={sub} usd={usd} tone={tone} rate={rate} />
+      {cells.map(([label, value, sub, usd, tone, title]) => (
+        <HeroFootCell key={label} label={label} value={value} sub={sub} usd={usd} tone={tone} rate={rate} title={title} />
       ))}
     </div>
   );
