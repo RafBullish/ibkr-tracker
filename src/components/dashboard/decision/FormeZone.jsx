@@ -43,7 +43,7 @@ export default function FormeZone({ forme, rate }) {
               reste aux montants réels et aux pastilles). */}
           <div className="db-grid3">
             <Cell
-              label="STREAK"
+              label="SÉRIE"
               value={f.streak ? `${f.streak.count} ${f.streak.kind}` : '0'}
               sub={
                 f.streak

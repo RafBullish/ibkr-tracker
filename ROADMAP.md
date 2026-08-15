@@ -68,6 +68,18 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
   <horloge> · IBKR Flex Sync · QueryID —— » est mort). FUT · O/N :
   feed prouvé servi même le week-end (ES=F 200 un samedi) — état
   explicite « en attente du flux » au lieu des tirets nus.
+- **É3.3 ✅ (1.0.1-rc.7)** — « Langue & formats » : une seule voix, un
+  seul format — **phase É3 cohérence CLOSE**. Règle de langue des héros
+  généralisée (jargon protégé : instrument, ratios consacrés,
+  acronymes, GATE/TIER/EDGE/SNIPER/WATCHLIST/LIVE + ALERT intouché) :
+  POSITIONS OUVERTES, HISTORIQUE, COCKPIT · PERFORMANCE · RISQUE ·
+  COMPORTEMENT, GAGNANTS/PERDANTS, EN GAIN/EN PERTE, ENTRÉE/SORTIE,
+  DURÉE, QTÉ, LATENT, Σ NOTIONNEL, Σ RISQUE MAX, DTE PROCHE, DEPUIS
+  PIC, RÉCUPÉRATION, EXPORTER CSV, + AJOUTER… Famille fmt centrale
+  (utils/format) : fmtDate dd.mm.yy, fmtExpiry DDMMMYY (18SEP26),
+  fmtStrike sans centimes inutiles, milliers suisses ≥ 1'000, « j »
+  partout. Témoins : langueTemoin.test.js (54 assertions) +
+  format.test.js (11) ; DOM exercé 3 pages, 0 occurrence interdite.
 - **Prochaine brique : au prompt architecte.**
 
 ---

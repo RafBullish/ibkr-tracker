@@ -36,21 +36,9 @@
 
 import { useMemo } from 'react';
 import useAttentionMap from '../../hooks/useAttentionMap';
-
-const FR_MONTHS = [
-  'Jan',
-  'Fév',
-  'Mar',
-  'Avr',
-  'Mai',
-  'Jun',
-  'Jul',
-  'Aoû',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Déc',
-];
+// É3.3 — famille fmt CENTRALE : échéances DDMMMYY (fini « Sep'26 »),
+// strikes sans centimes inutiles, montants à milliers suisses.
+import { fmtExpiry, fmtStrike, fmtUsd2, fmtUsdSigned2, fmtUsdSigned0 } from '../../utils/format';
 
 const fmtUsd = (v, digits = 0) => {
   if (v == null || !Number.isFinite(v)) return '—';
@@ -59,13 +47,6 @@ const fmtUsd = (v, digits = 0) => {
     minimumFractionDigits: digits,
   });
   return (v < 0 ? '-' : '') + '$' + fmt.format(Math.abs(v));
-};
-
-const fmtUsdSigned = (v, digits = 2) => {
-  if (v == null || !Number.isFinite(v)) return '—';
-  if (v === 0) return '$0.00';
-  const sign = v > 0 ? '+' : '−';
-  return `${sign}$${Math.abs(v).toFixed(digits)}`;
 };
 
 const fmtPctSigned = (v, digits = 2) => {
@@ -80,15 +61,6 @@ const fmtNumberSigned = (v, digits = 2) => {
   if (v === 0) return '0.00';
   const sign = v > 0 ? '+' : '−';
   return `${sign}${Math.abs(v).toFixed(digits)}`;
-};
-
-const fmtExp = (iso) => {
-  if (!iso || typeof iso !== 'string') return '—';
-  const parts = iso.split('-');
-  if (parts.length !== 3) return iso;
-  const month = FR_MONTHS[parseInt(parts[1], 10) - 1] || parts[1];
-  const yy = parts[0].slice(-2);
-  return `${month}'${yy}`;
 };
 
 const toneFromSign = (v) => {
@@ -140,28 +112,28 @@ function PositionRow({ pos, gateLine }) {
       <td>
         <span className={`live-pos__type-pill live-pos__type-pill--${pos.type}`}>{pos.type}</span>
       </td>
-      <td>{isStock ? '—' : pos.strike != null ? `$${pos.strike}` : '—'}</td>
-      <td className="live-pos__mute">{isStock ? '—' : fmtExp(pos.exp)}</td>
+      <td>{isStock ? '—' : fmtStrike(pos.strike)}</td>
+      <td className="live-pos__mute">{isStock ? '—' : fmtExpiry(pos.exp)}</td>
       <td>
         {isStock || pos.dte == null ? (
           '—'
         ) : pos.expired ? (
-          // É3 §4.2.6 — libellé honnête : option expirée, pas « 0d ».
+          // É3 §4.2.6 — libellé honnête : option expirée, pas « 0 j ».
           <span className="live-pos__mute" title="Option expirée">
             EXP
           </span>
         ) : (
           <>
             {pos.dte}
-            <span className="live-pos__sub">d</span>
+            <span className="live-pos__sub"> j</span>
           </>
         )}
       </td>
       <td>{pos.qty}</td>
-      <td>${pos.entry.toFixed(2)}</td>
-      <td>${pos.mark.toFixed(2)}</td>
+      <td>{fmtUsd2(pos.entry)}</td>
+      <td>{fmtUsd2(pos.mark)}</td>
       <td className={`live-pos__cell--${toneFromSign(pos.unrealDollar)}`}>
-        {fmtUsdSigned(pos.unrealDollar, 2)}
+        {fmtUsdSigned2(pos.unrealDollar)}
       </td>
       <td className={`live-pos__cell--${toneFromSign(pos.unrealPct)}`}>
         {fmtPctSigned(pos.unrealPct, 2)}
@@ -179,7 +151,7 @@ function PositionRow({ pos, gateLine }) {
       </td>
       <td>
         {pos.daysHeld}
-        <span className="live-pos__sub">d</span>
+        <span className="live-pos__sub"> j</span>
       </td>
       <td>
         <AlertPill alert={pos.alert} />
@@ -307,14 +279,16 @@ export default function LivePositions({ data, greeks = null, area = 'positions' 
   const thetaDay = hasGreeksAgg ? greeks.thetaDaily : null;
 
   const headerHint = isEmpty
-    ? 'Σ Notional $0 · Σ Max Risk $0'
-    : `Σ Notional ${fmtUsd(totalNotional, 0)} · Σ Max Risk ${fmtUsdSigned(totalMaxRisk, 0)}`;
+    ? 'Σ Notionnel $0 · Σ Risque max $0'
+    : `Σ Notionnel ${fmtUsd(totalNotional, 0)} · Σ Risque max ${fmtUsdSigned0(totalMaxRisk)}`;
 
   return (
     <section className="module live-pos" style={{ gridArea: area }}>
       <header className="module-header">
+        {/* É3.3 — langue : une seule voix (fini le mélange EN·FR
+            « Live Positions · 5 ouvertes »). */}
         <span className="module-header__title">
-          Live Positions · {count} {count === 1 ? 'ouverte' : 'ouvertes'}
+          Positions ouvertes · {count}
         </span>
         <span className="module-header__hint">{headerHint}</span>
       </header>
@@ -336,37 +310,37 @@ export default function LivePositions({ data, greeks = null, area = 'positions' 
           </div>
           <div className="live-pos__dot">·</div>
           <div className="live-pos__ctx">
-            Σ Unreal{' '}
+            Σ Latent{' '}
             <span
               className={`live-pos__ctx-val live-pos__ctx-val--${toneFromSign(stats.totalUnreal)}`}
             >
-              {fmtUsdSigned(stats.totalUnreal, 2)}
+              {fmtUsdSigned2(stats.totalUnreal)}
             </span>
           </div>
           <div className="live-pos__dot">·</div>
           <div className="live-pos__ctx">
-            Best{' '}
+            Meilleure{' '}
             <span className="live-pos__ctx-val live-pos__ctx-val--profit">
               {stats.bestUnreal
-                ? `${stats.bestUnreal.ticker} ${fmtUsdSigned(stats.bestUnreal.value, 0)}`
+                ? `${stats.bestUnreal.ticker} ${fmtUsdSigned0(stats.bestUnreal.value)}`
                 : '—'}
             </span>
           </div>
           <div className="live-pos__dot">·</div>
           <div className="live-pos__ctx">
-            Worst{' '}
+            Pire{' '}
             <span className="live-pos__ctx-val live-pos__ctx-val--loss">
               {stats.worstUnreal
-                ? `${stats.worstUnreal.ticker} ${fmtUsdSigned(stats.worstUnreal.value, 0)}`
+                ? `${stats.worstUnreal.ticker} ${fmtUsdSigned0(stats.worstUnreal.value)}`
                 : '—'}
             </span>
           </div>
           <div className="live-pos__ctx-spacer" />
           <div className="live-pos__ctx-badge live-pos__ctx-badge--wins">
-            IN PROFIT {stats.inProfitCount}
+            EN GAIN {stats.inProfitCount}
           </div>
           <div className="live-pos__ctx-badge live-pos__ctx-badge--losses">
-            IN LOSS {stats.inLossCount}
+            EN PERTE {stats.inLossCount}
           </div>
         </div>
       )}
@@ -404,15 +378,15 @@ export default function LivePositions({ data, greeks = null, area = 'positions' 
                 <th>Str</th>
                 <th>Exp</th>
                 <th>DTE</th>
-                <th>Qty</th>
-                <th>Entry</th>
+                <th>Qté</th>
+                <th>Entrée</th>
                 <th>Mark</th>
-                <th>Unreal $</th>
-                <th>Unreal %</th>
+                <th>Latent $</th>
+                <th>Latent %</th>
                 <th>Δ</th>
                 <th>Θ</th>
                 <th>Gate</th>
-                <th>Days In</th>
+                <th>Jours</th>
                 <th>Alert</th>
               </tr>
             </thead>
@@ -439,15 +413,15 @@ export default function LivePositions({ data, greeks = null, area = 'positions' 
       {!isEmpty && (
         <footer className="live-pos__footer">
           <div className="live-pos__footer-cell">
-            <span className="live-pos__footer-label">Σ UNREAL $</span>
+            <span className="live-pos__footer-label">Σ LATENT $</span>
             <span
               className={`live-pos__footer-value live-pos__footer-value--${toneFromSign(stats.totalUnreal)}`}
             >
-              {fmtUsdSigned(stats.totalUnreal, 2)}
+              {fmtUsdSigned2(stats.totalUnreal)}
             </span>
           </div>
           <div className="live-pos__footer-cell">
-            <span className="live-pos__footer-label">Σ NOTIONAL</span>
+            <span className="live-pos__footer-label">Σ NOTIONNEL</span>
             <span className="live-pos__footer-value">
               {fmtUsd(totalNotional, 0)}
             </span>
@@ -455,14 +429,14 @@ export default function LivePositions({ data, greeks = null, area = 'positions' 
           <div className="live-pos__footer-cell">
             {/* É3 panel — montant HYPOTHÉTIQUE → NEUTRE (amendement
                 15.07, déjà soldé côté /trading/positions en 2.A). */}
-            <span className="live-pos__footer-label">Σ MAX RISK</span>
+            <span className="live-pos__footer-label">Σ RISQUE MAX</span>
             <span className="live-pos__footer-value live-pos__footer-value--mute">
-              {fmtUsdSigned(totalMaxRisk, 0)}
+              {fmtUsdSigned0(totalMaxRisk)}
             </span>
           </div>
           <div
             className="live-pos__footer-cell"
-            title={`Σ Δ×qty×100 — équivalent-actions, même source que le deck (aggregateGreeks)${deltaExposure != null ? ` · exposition ${fmtUsdSigned(deltaExposure, 0)} (Δ × spot)` : ''}. L'ex « Σ Δ $ » (Δ×qty×100×prime) est mort.`}
+            title={`Σ Δ×qty×100 — équivalent-actions, même source que le deck (aggregateGreeks)${deltaExposure != null ? ` · exposition ${fmtUsdSigned0(deltaExposure)} (Δ × spot)` : ''}. L'ex « Σ Δ $ » (Δ×qty×100×prime) est mort.`}
           >
             {/* É3.1 — l'ex « Σ Δ $ » (×prime de l'option) est MORT :
                 même chiffre que le Δ NET du deck, en équivalent-actions. */}
@@ -477,13 +451,13 @@ export default function LivePositions({ data, greeks = null, area = 'positions' 
           >
             <span className="live-pos__footer-label">Σ Θ $ / J</span>
             <span className="live-pos__footer-value live-pos__footer-value--mute">
-              {thetaDay != null ? fmtUsdSigned(thetaDay, 0) : '—'}
+              {thetaDay != null ? fmtUsdSigned0(thetaDay) : '—'}
             </span>
           </div>
           <div className="live-pos__footer-cell">
             {/* É3 panel — DTE NEUTRE (le temps n'est pas de l'argent,
                 décision 2.A) + « EXP » honnête si l'option est expirée. */}
-            <span className="live-pos__footer-label">CLOSEST DTE</span>
+            <span className="live-pos__footer-label">DTE PROCHE</span>
             <span className="live-pos__footer-value">
               {stats.closestDte
                 ? `${stats.closestDte.ticker} ${stats.closestDte.expired ? 'EXP' : `${stats.closestDte.dte} j`}`

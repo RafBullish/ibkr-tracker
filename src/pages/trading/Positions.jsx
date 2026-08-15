@@ -36,7 +36,7 @@ import { calculateOpenPositionPnl, tradePnlUsd } from '../../utils/calculations'
 // aggregateGreeks (sign-aware via pos.dir + correct units : theta/day,
 // vega/1%-IV).
 import { aggregateGreeks } from '../../utils/greeks';
-import { formatUsd, formatPnlUsd } from '../../utils/format';
+import { formatUsd, formatPnlUsd, fmtExpiry, fmtStrike, fmtUsd2 } from '../../utils/format';
 import { holdingDays, todayDateString } from '../../utils/dates';
 import { toFloat, ensurePositive, generateId } from '../../utils/math';
 import { getGreeksForAllPositions } from '../../utils/greeksApi';
@@ -144,14 +144,8 @@ function formatRelativeAge(ms) {
   return `${h} h`;
 }
 
-// ── Expiration compacte « Mar'26 » (même format que LivePositions) ──
-const MONTHS_FR = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
-function fmtExp(ex) {
-  if (!ex) return null;
-  const d = new Date(`${String(ex).slice(0, 10)}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return String(ex);
-  return `${MONTHS_FR[d.getMonth()]}'${String(d.getFullYear()).slice(2)}`;
-}
+// É3.3 — l'ex-format « Mar'26 » est MORT : échéances en notation IBKR
+// DDMMMYY (fmtExpiry central, même voix que LivePositions).
 
 // ── Type badge (CALL / PUT / STK) ───────────────────────────
 function TypeBadge({ as, ty }) {
@@ -1123,7 +1117,7 @@ export default function Positions() {
       mono: true,
       render: (_v, row) =>
         row.isOpt ? (
-          <Cell2 value={`$${toFloat(row.pos.st).toFixed(0)}`} meta={fmtExp(row.exp)} />
+          <Cell2 value={fmtStrike(toFloat(row.pos.st))} meta={fmtExpiry(row.exp)} />
         ) : (
           '—'
         ),
@@ -1161,7 +1155,7 @@ export default function Positions() {
     },
     {
       key: 'qty',
-      label: 'Qty',
+      label: 'Qté',
       align: 'right',
       sort: true,
       mono: true,
@@ -1169,7 +1163,7 @@ export default function Positions() {
     },
     {
       key: 'entry',
-      label: 'Entry',
+      label: 'Entrée',
       align: 'right',
       sort: true,
       mono: true,
@@ -1179,7 +1173,7 @@ export default function Positions() {
           <span className="v3-table__tf-value">{fmtUsd(summary.totalMaxLoss)}</span>
         </span>
       ),
-      render: (v) => `$${v.toFixed(2)}`,
+      render: (v) => fmtUsd2(v),
     },
     {
       key: 'mark',
@@ -1195,7 +1189,7 @@ export default function Positions() {
       ),
       // É3.2 — l'ex-sparkline inline (spark7d) est MORTE : aucun
       // producteur de marks datés par position.
-      render: (v) => <span className="pos-mark-cell">${v.toFixed(2)}</span>,
+      render: (v) => <span className="pos-mark-cell">{fmtUsd2(v)}</span>,
     },
     {
       key: 'pnlUsd',
@@ -1208,7 +1202,7 @@ export default function Positions() {
           summary.totalUnreal > 0 ? 'profit' : summary.totalUnreal < 0 ? 'loss' : undefined;
         return (
           <span>
-            <span className="v3-table__tf-label">Σ Unreal</span>
+            <span className="v3-table__tf-label">Σ Latent</span>
             <span className={`v3-table__tf-value${t ? ` v3-table__tf-value--${t}` : ''}`}>
               {fmtUsdSigned(summary.totalUnreal)}
             </span>

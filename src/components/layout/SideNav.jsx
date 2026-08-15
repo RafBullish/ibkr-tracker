@@ -51,7 +51,8 @@ import { computeMarketPhase } from '../../utils/marketPhase';
 // Greeks (⌘4) = citoyen PERMANENT depuis 2.B (flag GREEK_CENTER retiré).
 const GROUPS = [
   {
-    title: 'OVERVIEW',
+    // É3.3 — langue : descriptif FR (TRADING reste : jargon d'instrument).
+    title: 'APERÇU',
     items: [
       { label: 'Tableau de bord', path: '/dashboard', shortcut: '⌘1', icon: LayoutDashboard },
       { label: 'Pré-marché', path: '/premarket', shortcut: '⌘0', icon: Sunrise, witness: 'premarket' },
@@ -68,7 +69,7 @@ const GROUPS = [
     ],
   },
   {
-    title: 'INSIGHTS',
+    title: 'ANALYSES',
     items: [
       { label: 'Analytics', path: '/insights/analytics', shortcut: '⌘6', icon: BarChart3 },
       { label: 'Journal', path: '/insights/journal', shortcut: '⌘8', icon: BookOpen },

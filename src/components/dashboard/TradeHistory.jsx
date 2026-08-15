@@ -55,6 +55,9 @@
 
 import { useMemo, useState } from 'react';
 import { tradePnlUsd } from '../../utils/calculations';
+// É3.3 — famille fmt CENTRALE (langue & formats) : dates dd.mm.yy,
+// montants à milliers suisses, plus aucun toFixed local.
+import { fmtDate, fmtStrike, fmtUsd2, fmtUsdSigned2, fmtUsdSigned0 } from '../../utils/format';
 
 const RANGE_OPTIONS = [
   { value: 15, label: '15' },
@@ -63,14 +66,7 @@ const RANGE_OPTIONS = [
   { value: 'all', label: 'ALL' },
 ];
 
-// ─── Formatters ─────────────────────────────────────────────────
-
-const fmtDate = (iso) => {
-  if (!iso || typeof iso !== 'string') return '—';
-  const parts = iso.split('-');
-  if (parts.length !== 3) return iso;
-  return `${parts[2]}/${parts[1]}`;
-};
+// ─── Formatters (fins wrappers sur utils/format — É3.3) ─────────
 
 const fmtHold = (di, doExit) => {
   if (!di || !doExit) return '—';
@@ -78,13 +74,7 @@ const fmtHold = (di, doExit) => {
   const d2 = new Date(doExit);
   if (!Number.isFinite(d1.getTime()) || !Number.isFinite(d2.getTime())) return '—';
   const days = Math.round((d2 - d1) / 86_400_000);
-  return `${days}j`;
-};
-
-const fmtPrice = (val) => {
-  const n = parseFloat(val);
-  if (!Number.isFinite(n)) return '—';
-  return `$${n.toFixed(2)}`;
+  return `${days} j`;
 };
 
 // IBKR stocke asset class en `'Action'` / `'Option'` (sections.js:74)
@@ -92,37 +82,18 @@ const fmtPrice = (val) => {
 // Garde aussi les sigles courts au cas où legacy data.
 const isStockAsset = (asset) => asset === 'Action' || asset === 'STK';
 
-const fmtStrike = (val, asset) => {
-  if (isStockAsset(asset)) return '—';
-  const n = parseFloat(val);
-  if (!Number.isFinite(n)) return '—';
-  return `$${n.toFixed(2)}`;
-};
+const fmtStrikeCell = (val, asset) => (isStockAsset(asset) ? '—' : fmtStrike(val));
 
 const fmtCommission = (val) => {
   const n = parseFloat(val);
   if (!Number.isFinite(n)) return '—';
-  return `−$${Math.abs(n).toFixed(2)}`;
-};
-
-const fmtPnlSigned = (val) => {
-  if (val == null || !Number.isFinite(val)) return '—';
-  const sign = val >= 0 ? '+' : '−';
-  return `${sign}$${Math.abs(val).toFixed(2)}`;
+  return `−${fmtUsd2(Math.abs(n))}`;
 };
 
 const fmtPctSigned = (val) => {
   if (val == null || !Number.isFinite(val)) return '—';
   const sign = val >= 0 ? '+' : '−';
   return `${sign}${Math.abs(val).toFixed(1)}%`;
-};
-
-// USD compact sans décimales pour les sub-header contexts.
-const fmtUsdCompact = (val) => {
-  if (val == null || !Number.isFinite(val)) return '—';
-  const sign = val > 0 ? '+' : val < 0 ? '−' : '';
-  const abs = Math.abs(val);
-  return `${sign}$${abs.toFixed(0)}`;
 };
 
 // IBKR stocke `ty` en `'CALL'` / `'PUT'` (sections.js:77/144) — pas en
@@ -313,7 +284,8 @@ export default function TradeHistory({ data, liveRate, area = 'history' }) {
     <section className="trade-history" style={{ gridArea: area }}>
       <header className="trade-history__header">
         <div className="trade-history__title-wrap">
-          <span className="trade-history__title">Trade History</span>
+          {/* É3.3 — langue : une seule voix (règle des héros scellés). */}
+          <span className="trade-history__title">Historique</span>
           <span className="trade-history__sub">
             {visibleCount} / {totalCount} trades
           </span>
@@ -336,35 +308,35 @@ export default function TradeHistory({ data, liveRate, area = 'history' }) {
 
       <div className="trade-history__subheader">
         <div className="trade-history__ctx">
-          Σ Hold{' '}
+          Σ Durée{' '}
           <span className="trade-history__ctx-val">{avgHoldDays.toFixed(1)} j</span>
         </div>
         <div className="trade-history__dot">·</div>
         <div className="trade-history__ctx">
-          Best Ticker{' '}
+          Meilleur ticker{' '}
           <span className="trade-history__ctx-val trade-history__ctx-val--profit">
             {bestTicker}
           </span>
         </div>
         <div className="trade-history__dot">·</div>
         <div className="trade-history__ctx">
-          Worst Ticker{' '}
+          Pire ticker{' '}
           <span className="trade-history__ctx-val trade-history__ctx-val--loss">
             {worstTicker}
           </span>
         </div>
         <div className="trade-history__dot">·</div>
         <div className="trade-history__ctx">
-          Σ Window{' '}
+          Σ Fenêtre{' '}
           <span
             className={`trade-history__ctx-val trade-history__ctx-val--${windowSumTone}`}
           >
-            {fmtUsdCompact(windowPnl.sum)}
+            {fmtUsdSigned0(windowPnl.sum)}
           </span>
         </div>
         <div className="trade-history__dot">·</div>
         <div className="trade-history__ctx">
-          PF Window{' '}
+          PF Fenêtre{' '}
           <span
             className={`trade-history__ctx-val trade-history__ctx-val--${windowPfTone}`}
           >
@@ -373,10 +345,10 @@ export default function TradeHistory({ data, liveRate, area = 'history' }) {
         </div>
         <div className="trade-history__ctx-spacer" />
         <div className="trade-history__ctx-badge trade-history__ctx-badge--wins">
-          WINS {aggStats.wins}
+          GAGNANTS {aggStats.wins}
         </div>
         <div className="trade-history__ctx-badge trade-history__ctx-badge--losses">
-          LOSSES {aggStats.losses}
+          PERDANTS {aggStats.losses}
         </div>
       </div>
 
@@ -403,12 +375,12 @@ export default function TradeHistory({ data, liveRate, area = 'history' }) {
                 <th className="trade-history__th trade-history__th--left">Ticker</th>
                 <th className="trade-history__th trade-history__th--center">Type</th>
                 <th className="trade-history__th trade-history__th--right">Strike</th>
-                <th className="trade-history__th trade-history__th--right">DTE Entry</th>
-                <th className="trade-history__th trade-history__th--left">Entry</th>
-                <th className="trade-history__th trade-history__th--left">Exit</th>
-                <th className="trade-history__th trade-history__th--right">Hold</th>
-                <th className="trade-history__th trade-history__th--right">Entry $</th>
-                <th className="trade-history__th trade-history__th--right">Exit $</th>
+                <th className="trade-history__th trade-history__th--right">DTE entrée</th>
+                <th className="trade-history__th trade-history__th--left">Entrée</th>
+                <th className="trade-history__th trade-history__th--left">Sortie</th>
+                <th className="trade-history__th trade-history__th--right">Durée</th>
+                <th className="trade-history__th trade-history__th--right">Entrée $</th>
+                <th className="trade-history__th trade-history__th--right">Sortie $</th>
                 <th className="trade-history__th trade-history__th--right">Comm</th>
                 <th className="trade-history__th trade-history__th--right trade-history__th--divider">
                   P&amp;L Net
@@ -445,10 +417,10 @@ export default function TradeHistory({ data, liveRate, area = 'history' }) {
                       {renderType(t.ty, t.as)}
                     </td>
                     <td className="trade-history__td trade-history__td--right">
-                      {fmtStrike(t.st, t.as)}
+                      {fmtStrikeCell(t.st, t.as)}
                     </td>
                     <td className="trade-history__td trade-history__td--right">
-                      {Number.isFinite(t.dteAtEntry) ? `${t.dteAtEntry}d` : '—'}
+                      {Number.isFinite(t.dteAtEntry) ? `${t.dteAtEntry} j` : '—'}
                     </td>
                     <td className="trade-history__td trade-history__td--left">{fmtDate(t.di)}</td>
                     <td className="trade-history__td trade-history__td--left">{fmtDate(t.do)}</td>
@@ -456,10 +428,10 @@ export default function TradeHistory({ data, liveRate, area = 'history' }) {
                       {fmtHold(t.di, t.do)}
                     </td>
                     <td className="trade-history__td trade-history__td--right">
-                      {fmtPrice(t.pi)}
+                      {fmtUsd2(t.pi)}
                     </td>
                     <td className="trade-history__td trade-history__td--right">
-                      {fmtPrice(t.po)}
+                      {fmtUsd2(t.po)}
                     </td>
                     <td className="trade-history__td trade-history__td--right trade-history__td--mute">
                       {fmtCommission(t.cm)}
@@ -467,7 +439,7 @@ export default function TradeHistory({ data, liveRate, area = 'history' }) {
                     <td
                       className={`trade-history__td trade-history__td--right trade-history__td--divider trade-history__td--${t._tone}`}
                     >
-                      {fmtPnlSigned(t._pnl)}
+                      {fmtUsdSigned2(t._pnl)}
                     </td>
                     <td
                       className={`trade-history__td trade-history__td--right trade-history__td--${t._tone}`}
@@ -501,7 +473,7 @@ export default function TradeHistory({ data, liveRate, area = 'history' }) {
           <span
             className={`trade-history__footer-value trade-history__footer-value--${aggStats.sumTone}`}
           >
-            {fmtPnlSigned(aggStats.sum)}
+            {fmtUsdSigned2(aggStats.sum)}
           </span>
         </div>
         <div className="trade-history__footer-cell">
@@ -511,15 +483,15 @@ export default function TradeHistory({ data, liveRate, area = 'history' }) {
           </span>
         </div>
         <div className="trade-history__footer-cell">
-          <span className="trade-history__footer-label">Avg Win</span>
+          <span className="trade-history__footer-label">Gain moy.</span>
           <span className="trade-history__footer-value trade-history__footer-value--profit">
-            {fmtPnlSigned(aggStats.avgWin)}
+            {fmtUsdSigned2(aggStats.avgWin)}
           </span>
         </div>
         <div className="trade-history__footer-cell">
-          <span className="trade-history__footer-label">Avg Loss</span>
+          <span className="trade-history__footer-label">Perte moy.</span>
           <span className="trade-history__footer-value trade-history__footer-value--loss">
-            {fmtPnlSigned(-aggStats.avgLoss)}
+            {fmtUsdSigned2(-aggStats.avgLoss)}
           </span>
         </div>
         <div className="trade-history__footer-cell">
@@ -535,9 +507,9 @@ export default function TradeHistory({ data, liveRate, area = 'history' }) {
           className="trade-history__footer-cell"
           title={`RÉAL · fenêtre affichée (${range === 'all' ? 'tous les trades' : `${range} derniers trades`}) — Σ P&L par date de sortie, puis max${bestDay ? ` · ${bestDay.day}` : ''}`}
         >
-          <span className="trade-history__footer-label">Best Day</span>
+          <span className="trade-history__footer-label">Meilleur jour</span>
           <span className="trade-history__footer-value trade-history__footer-value--profit">
-            {bestDay ? fmtPnlSigned(bestDay.pnl) : '—'}
+            {bestDay ? fmtUsdSigned2(bestDay.pnl) : '—'}
           </span>
         </div>
       </footer>

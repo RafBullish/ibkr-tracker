@@ -67,8 +67,9 @@ export default function Watchlist({ data, area = 'watch' }) {
             aria-label="Ajouter un ticker à la watchlist"
             maxLength={8}
           />
+          {/* É3.3 — langue : « + Add » → « + Ajouter ». */}
           <button type="submit" className="watchlist__add-btn" title="Ajouter un ticker">
-            + Add
+            + Ajouter
           </button>
         </form>
       </header>
@@ -84,9 +85,10 @@ export default function Watchlist({ data, area = 'watch' }) {
           <table className="watchlist__table" aria-label="Watchlist">
             <thead>
               <tr>
+                {/* É3.3 — « Last » → « Dernier », « Chg % » → « Var % ». */}
                 <th>Ticker</th>
-                <th>Last</th>
-                <th>Chg %</th>
+                <th>Dernier</th>
+                <th>Var %</th>
                 <th aria-label="Retirer" />
               </tr>
             </thead>

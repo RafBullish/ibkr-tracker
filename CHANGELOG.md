@@ -6,6 +6,63 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.1-rc.7] — 2026-08-15
+
+**É3.3 — LANGUE & FORMATS · une seule voix, un seul format (chantier
+v1.0.1, brique 7 — dernière brique de la phase É3 cohérence).**
+Pré-condition satisfaite : v1/couleur tranchée (GO) et mergée en rc.6.
+Périmètre : Dashboard + chrome partagé + jumeaux directs (les autres
+pages restent pour la recette É4).
+
+### Langue (règle des héros scellés)
+- Protégés : vocabulaire d'instrument (CALL/PUT/STRIKE/MARK/DTE),
+  ratios consacrés (WIN RATE, PROFIT FACTOR, PAYOFF, EXPECTANCY,
+  RECOVERY, Sharpe/Sortino/Calmar, TWR, SQN), acronymes (P&L, DD, NLV,
+  IVR, Δ/Θ/Γ), GATE/TIER/EDGE/SNIPER/WATCHLIST/LIVE — et les libellés
+  ALERT/GATE/« pending » (interdit Q1-Q6, casse comprise).
+- Traductions imposées appliquées : POSITIONS OUVERTES · N ·
+  HISTORIQUE · COCKPIT · PERFORMANCE · RISQUE · COMPORTEMENT ·
+  MÉTRIQUES DE PERFORMANCE · DRAWDOWN · SÉRIES (+ SÉRIE au bloc
+  FORME) · STATS GAINS / PERTES · EN GAIN/EN PERTE · GAGNANTS/
+  PERDANTS · ENTRÉE/SORTIE (+ $) · DTE ENTRÉE · DURÉE · QTÉ · JOURS ·
+  LATENT $/% · Σ NOTIONNEL · Σ RISQUE MAX · DTE PROCHE · MEILLEUR
+  JOUR · GAIN/PERTE MOY. · Σ DURÉE · MEILLEUR/PIRE TICKER ·
+  Σ FENÊTRE/PF FENÊTRE · DEPUIS PIC (cockpit aligné pied H1) ·
+  RÉCUPÉRATION · EXPORTER CSV (bouton DataTable partagé compris) ·
+  + AJOUTER · EDGE+/EDGE−.
+- Reliquats traduits par la même règle (listés au rapport pour
+  arbitrage) : EXPOSITION · JOUR · LATENT · RÉALISÉ (PortfolioDeck),
+  GAINS/PERTES BRUTS (H2), COURBE DD · MOTIF SÉRIES · JAUGE WIN RATE ·
+  P&L MENSUEL · Série en cours/gagn. max/perd. max · DD courant ·
+  Frais totaux · Impact FX · R moy. · Cap. initial · FX live · YTD
+  actif · Nb/$ moy. · Métrique/Valeur/Plage · « N gagnants/perdants »
+  (jauge), Dernier/Var % (Watchlist), R MOY./MEILLEUR/PIRE + Frais
+  (History), export CSV cockpit re-libellé. Groupes sidebar : titres
+  jamais rendus (« groupes silencieux » 1.S) — clés internes
+  renommées APERÇU/ANALYSES par honnêteté, zéro rendu.
+
+### Formats (famille fmt centrale — utils/format, 11 tests)
+- `fmtDate` dd.mm.yy : Date (History), pic (RiskMatrix + pied H1),
+  bornes des séries max — zéro yyyy-mm-dd, zéro dd/mm rendu.
+- `fmtExpiry` DDMMMYY notation IBKR (18SEP26) : LivePositions +
+  /trading/positions — « Sep'26 / Aoû'26 / Mar'26 » morts.
+- `fmtStrike` : $630, $1'100 — plus de centimes inutiles.
+- `fmtUsd2`/`fmtUsdSigned2`/`fmtUsdSigned0` : milliers suisses sur
+  tout montant ≥ 1'000 (les « +$2676.11 » de TradeHistory sont morts) ;
+  formatters locaux de TradeHistory/LivePositions/Positions/History
+  remplacés ou réduits à des wrappers sur les utils.
+- Unité de durée « j » partout (34 j) — le suffixe « d » est mort.
+  Exception assumée : ticks d'axes de graphes courts (règle du prompt)
+  et dates dd.mm du rail AGENDA (fenêtre 14 j, listé pour arbitrage).
+
+### Tests
+- `format.test.js` (11) + `langueTemoin.test.js` (54 assertions :
+  libellés condamnés absents des sources du périmètre, traductions
+  imposées présentes). Vérif DOM @1591 exercée sur /dashboard,
+  /trading/positions, /trading/history : greps témoins = 0 occurrence
+  interdite, 0 date ISO, 0 « Nd », 0 montant ≥ 1'000 sans apostrophe,
+  échéances DDMMMYY, 0 overflow. Suite 415 ✓, build ✓, color-law ✓.
+
 ## [1.0.1-rc.6] — 2026-08-15
 
 **COULEUR — « La loi remise en place » (chantier v1.0.1, brique 4 —

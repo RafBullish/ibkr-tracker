@@ -44,6 +44,8 @@ import { currentDrawdownOf, daysSincePeakOf, maxDrawdownOf } from '../../utils/m
 // É3.2 — la ligne de synchro du footer dit la vérité de lastSync
 // (source csv/flex/bridge, QueryID masqué) ou n'existe pas.
 import { deriveSyncLabel } from '../../utils/syncProvenance';
+// É3.3 — dates calendaires au format central dd.mm.yy.
+import { fmtDate } from '../../utils/format';
 
 // ─── Formatters ─────────────────────────────────────────────────
 
@@ -349,7 +351,7 @@ function WinRateGauge({
       </svg>
       <div className="risk-matrix__winrate-stats">
         <div className="risk-matrix__winrate-row">
-          <span className="risk-matrix__winrate-label">{winCount ?? 0} wins</span>
+          <span className="risk-matrix__winrate-label">{winCount ?? 0} gagnants</span>
           <span className="risk-matrix__cell--profit risk-matrix__winrate-amount">
             {fmtUsdSigned(totalWinAmount)}
           </span>
@@ -363,7 +365,7 @@ function WinRateGauge({
           <span className="risk-matrix__winrate-ratio-loss" style={{ width: `${lossRatio}%` }} />
         </div>
         <div className="risk-matrix__winrate-row">
-          <span className="risk-matrix__winrate-label">{lossCount ?? 0} losses</span>
+          <span className="risk-matrix__winrate-label">{lossCount ?? 0} perdants</span>
           <span className="risk-matrix__cell--loss risk-matrix__winrate-amount">
             {fmtUsdSigned(-Math.abs(totalLossAmount || 0))}
           </span>
@@ -387,7 +389,7 @@ function MonthlyBars6({ months, ytdAmount }) {
   return (
     <div className="risk-matrix__monthly-zone">
       <div className="risk-matrix__subzone-head">
-        <span>MONTHLY P&amp;L · 6M</span>
+        <span>P&amp;L MENSUEL · 6M</span>
         <span className={`risk-matrix__cell--${ytdTone}`}>{ytdLabel} ytd</span>
       </div>
       <div className="risk-matrix__monthly-bars">
@@ -627,16 +629,12 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
       // selon convention trading classique).
     }
 
-    const fmtDate = (iso) => {
-      if (!iso || typeof iso !== 'string') return null;
-      const parts = iso.split('-');
-      if (parts.length !== 3) return null;
-      return `${parts[2]}/${parts[1]}`;
-    };
+    // É3.3 — dates au format central dd.mm.yy (l'ex « 30/03 » est mort).
+    const day = (iso) => (fmtDate(iso) === '—' ? null : fmtDate(iso));
     const fmtRange = (run) => {
       if (!run.start) return null;
-      const s = fmtDate(run.start);
-      const e = fmtDate(run.end);
+      const s = day(run.start);
+      const e = day(run.end);
       if (!s) return null;
       if (run.start === run.end || !e) return s;
       return `${s} → ${e}`;
@@ -767,21 +765,21 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
   // Mentions edge+/edge− : l'info textuelle survit, le ton meurt (D1a).
   const pfEdge =
     m.profitFactor === Infinity
-      ? { text: 'edge+', tone: 'mute' }
+      ? { text: 'EDGE+', tone: 'mute' }
       : m.profitFactor == null || !Number.isFinite(m.profitFactor)
         ? { text: '—', tone: 'mute' }
         : m.profitFactor > 1.5
-          ? { text: 'edge+', tone: 'mute' }
+          ? { text: 'EDGE+', tone: 'mute' }
           : m.profitFactor < 1
-            ? { text: 'edge−', tone: 'mute' }
+            ? { text: 'EDGE−', tone: 'mute' }
             : { text: '—', tone: 'mute' };
 
   const rAvgEdge =
     m.rAverage == null || !Number.isFinite(m.rAverage)
       ? { text: '—', tone: 'mute' }
       : m.rAverage > 0
-        ? { text: 'edge+', tone: 'mute' }
-        : { text: 'edge−', tone: 'mute' };
+        ? { text: 'EDGE+', tone: 'mute' }
+        : { text: 'EDGE−', tone: 'mute' };
 
   // U3 — Export CSV : sérialise les métriques affichées du cockpit
   // (mêmes champs m.* et mêmes formatters que le rendu). Désactivé
@@ -789,7 +787,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
   const handleExport = () => {
     const rows = [
       ['Contexte', 'Capital initial', fmtUsd(initialCapital), ''],
-      ['Contexte', 'Live FX USD/CHF', fmtNum(liveRate, 4), ''],
+      ['Contexte', 'FX live USD/CHF', fmtNum(liveRate, 4), ''],
       ['Contexte', 'Trades (N)', String(tradeCount), ''],
       ['Contexte', 'YTD actif (jours)', ytdDaysActive != null ? String(ytdDaysActive) : '—', ''],
       ['Contexte', 'Tier Sniper', tierLabel, ''],
@@ -810,17 +808,17 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
         'bench 3.0×',
       ],
       ['Performance', 'Expectancy', fmtUsdSigned(m.expectancy), ''],
-      ['Performance', 'Kelly Optimal', fmtPct(m.kellyPercent), ''],
+      ['Performance', 'Kelly optimal', fmtPct(m.kellyPercent), ''],
       [
         'Performance',
-        'R Avg',
+        'R moy.',
         m.rAverage == null ? '—' : `${m.rAverage >= 0 ? '+' : ''}${fmtNum(m.rAverage)}`,
         `σ ${fmtNum(m.rStdDev)}`,
       ],
 
       [
         'Drawdown',
-        'Current DD · RÉAL',
+        'DD courant · RÉAL',
         ddInfo.ddUsd != null && ddInfo.ddUsd > 0 ? `−${fmtUsd(ddInfo.ddUsd).replace(/^-/, '')}` : '—',
         fmtPctSigned(m.currentDDPct, 2),
       ],
@@ -840,13 +838,13 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
       ],
       [
         'Drawdown',
-        'Days Since Peak · RÉAL',
+        'Depuis pic · RÉAL',
         ddInfo.daysSincePeak != null ? `${ddInfo.daysSincePeak} j` : '—',
-        ddInfo.peakDate || '—',
+        ddInfo.peakDate ? `pic ${fmtDate(ddInfo.peakDate)}` : '—',
       ],
       [
         'Drawdown',
-        'Recovery to Peak',
+        'Récupération',
         m.recoveryPctValue != null && Number.isFinite(m.recoveryPctValue)
           ? fmtPct(m.recoveryPctValue)
           : '—',
@@ -854,8 +852,8 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
       ],
 
       [
-        'Streak',
-        'Streak Current',
+        'Séries',
+        'Série en cours',
         m.currentStreak > 0
           ? `${m.currentStreak}W`
           : m.currentStreak < 0
@@ -863,22 +861,22 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             : '—',
         streakPnlSum != null ? fmtUsdSigned(streakPnlSum) : '—',
       ],
-      ['Streak', 'Max Win Streak', `${m.maxWinStreak ?? 0}W`, ''],
-      ['Streak', 'Max Loss Streak', `${m.maxLossStreak ?? 0}L`, ''],
+      ['Séries', 'Série gagn. max', `${m.maxWinStreak ?? 0}W`, ''],
+      ['Séries', 'Série perd. max', `${m.maxLossStreak ?? 0}L`, ''],
 
-      ['Win/Loss', 'Wins', `${m.winCount ?? 0}`, fmtUsdSigned(m.averageWin)],
+      ['Gains/Pertes', 'Gagnants', `${m.winCount ?? 0}`, fmtUsdSigned(m.averageWin)],
       [
-        'Win/Loss',
-        'Losses',
+        'Gains/Pertes',
+        'Perdants',
         `${m.lossCount ?? 0}`,
         m.averageLoss != null && Number.isFinite(m.averageLoss)
           ? fmtUsdSigned(-Math.abs(m.averageLoss))
           : '—',
       ],
-      ['Win/Loss', 'Break-Even', `${m.breakEvenCount ?? 0}`, ''],
-      ['Win/Loss', 'Win Rate', fmtPct(m.winRate), ''],
+      ['Gains/Pertes', 'Break-Even', `${m.breakEvenCount ?? 0}`, ''],
+      ['Gains/Pertes', 'Win Rate', fmtPct(m.winRate), ''],
       [
-        'Win/Loss',
+        'Gains/Pertes',
         'Profit Factor',
         m.profitFactor === Infinity
           ? '∞'
@@ -887,16 +885,16 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             : '—',
         '',
       ],
-      ['Win/Loss', 'Total Fees', fmtUsd(m.totalAllFees), ''],
+      ['Gains/Pertes', 'Frais totaux', fmtUsd(m.totalAllFees), ''],
       [
-        'Win/Loss',
-        'FX Impact',
+        'Gains/Pertes',
+        'Impact FX',
         m.totalFxImpact != null && Number.isFinite(m.totalFxImpact)
           ? `CHF ${m.totalFxImpact >= 0 ? '+' : ''}${Math.round(m.totalFxImpact)}`
           : '—',
         '',
       ],
-      ['Win/Loss', 'YTD P&L', fmtUsdSigned(ytdAmount), ''],
+      ['Gains/Pertes', 'P&L YTD', fmtUsdSigned(ytdAmount), ''],
     ];
     downloadRiskMatrixCsv(rows);
   };
@@ -913,22 +911,23 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
           disabled={tradeCount === 0}
           title="Exporter la matrice de risque (CSV)"
         >
-          Export CSV
+          Exporter CSV
         </button>
-        <span className="risk-matrix__title">Performance · Risk · Behavior Cockpit</span>
+        {/* É3.3 — langue : une seule voix. */}
+        <span className="risk-matrix__title">Cockpit · Performance · Risque · Comportement</span>
       </header>
 
       <div className="risk-matrix__subheader">
         <div className="risk-matrix__context">
           <span>
-            Init Cap{' '}
+            Cap. initial{' '}
             <span className="risk-matrix__ctx-val">
               {initialCapital > 0 ? fmtUsd(initialCapital) : '—'}
             </span>
           </span>
           <span className="risk-matrix__dot">·</span>
           <span>
-            Live FX <span className="risk-matrix__ctx-val">{fmtNum(liveRate, 4)}</span>
+            FX live <span className="risk-matrix__ctx-val">{fmtNum(liveRate, 4)}</span>
           </span>
           <span className="risk-matrix__dot">·</span>
           <span>
@@ -936,7 +935,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
           </span>
           <span className="risk-matrix__dot">·</span>
           <span>
-            YTD Active{' '}
+            YTD actif{' '}
             <span className="risk-matrix__ctx-val">
               {ytdDaysActive != null ? `${ytdDaysActive} j` : '—'}
             </span>
@@ -955,7 +954,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
         {/* ─────────────── COL 1 : Performance + R-Distribution ─────────── */}
         <div className="risk-matrix__col risk-matrix__col--left">
           <div className="risk-matrix__section-head risk-matrix__section-head--accent">
-            <span>▼ Performance Metrics</span>
+            <span>▼ Métriques de performance</span>
             {m.preliminaryRatios && (
               <span
                 className="risk-matrix__preliminary"
@@ -966,11 +965,11 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             )}
           </div>
           <div className="risk-matrix__row risk-matrix__row--cols-perf risk-matrix__row--th">
-            <span>Metric</span>
-            <span className="risk-matrix__cell--right">Value</span>
+            <span>Métrique</span>
+            <span className="risk-matrix__cell--right">Valeur</span>
             <span className="risk-matrix__cell--right">Bench</span>
             <span className="risk-matrix__cell--right">Δ</span>
-            <span className="risk-matrix__cell--right">Range</span>
+            <span className="risk-matrix__cell--right">Plage</span>
           </div>
           <RowPerf
             label="Sharpe (YTD)"
@@ -1073,7 +1072,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             gauge={<MetricGauge value={m.expectancy} bench={null} mode="info" />}
           />
           <RowPerf
-            label="Kelly Optimal"
+            label="Kelly optimal"
             value={fmtPct(m.kellyPercent)}
             valueTone="value"
             bench="—"
@@ -1082,7 +1081,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             gauge={<MetricGauge value={m.kellyPercent} bench={null} mode="info" />}
           />
           <RowPerf
-            label="R Avg / σ"
+            label="R moy. / σ"
             value={m.rAverage == null ? '—' : `${m.rAverage >= 0 ? '+' : ''}${fmtNum(m.rAverage)}`}
             valueTone="value"
             bench={`σ ${fmtNum(m.rStdDev)}`}
@@ -1125,7 +1124,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
         {/* ─────────────── COL 2 : Drawdown · Streak ─────────────────────── */}
         <div className="risk-matrix__col risk-matrix__col--mid">
           <div className="risk-matrix__section-head risk-matrix__section-head--loss">
-            <span>▼ Drawdown · Streak</span>
+            <span>▼ Drawdown · Séries</span>
           </div>
           <div className="risk-matrix__row risk-matrix__row--cols-3 risk-matrix__row--th">
             <span>Metric</span>
@@ -1133,7 +1132,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             <span className="risk-matrix__cell--right">%</span>
           </div>
           <Row3
-            label="⚠ Current DD · RÉAL"
+            label="⚠ DD courant · RÉAL"
             value={ddInfo.ddUsd != null && ddInfo.ddUsd > 0 ? `−${fmtUsd(ddInfo.ddUsd).replace(/^-/, '')}` : '—'}
             valueTone={ddInfo.ddUsd && ddInfo.ddUsd > 0 ? 'loss-bold' : 'mute'}
             sub={fmtPctSigned(m.currentDDPct, 2)}
@@ -1162,17 +1161,17 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             title="RÉAL · ALL — pic→creux du cumul réalisé, granularité PAR TRADE (buildEquitySeries) ; % sur l'equity réelle au pic. ≠ MAX DD · NLV du Héros 1 (flow-neutral, latent inclus)."
           />
           <Row3
-            label="Days Since Peak · RÉAL"
+            label="Depuis pic · RÉAL"
             value={ddInfo.daysSincePeak != null ? `${ddInfo.daysSincePeak} j` : '—'}
             valueTone="value"
-            sub={ddInfo.peakDate || '—'}
+            sub={ddInfo.peakDate ? `pic ${fmtDate(ddInfo.peakDate)}` : '—'}
             subTone="mute"
             title="RÉAL — jours CALENDAIRES entre le pic du cumul réalisé et aujourd'hui (plus jamais pic→dernier trade)."
           />
           {/* COULEUR D1 — montant à recouvrer = hypothétique (amendement
               15.07) et % = ratio : l'ambre ambiant est mort, neutres. */}
           <Row3
-            label="Recovery to Peak"
+            label="Récupération"
             value={
               m.recoveryPctValue != null && Number.isFinite(m.recoveryPctValue)
                 ? fmtPct(m.recoveryPctValue)
@@ -1191,7 +1190,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             title="RÉAL · 60 derniers jours de clôture — underwater % vs pic de la fenêtre ((equity − pic) / pic)."
           >
             <div className="risk-matrix__subzone-head">
-              <span>DD CURVE · RÉAL · 60 J CLÔT.</span>
+              <span>COURBE DD · RÉAL · 60 J CLÔT.</span>
               <span className="risk-matrix__cell--loss">
                 Peak {ddCurvePeakPct != null ? `${ddCurvePeakPct.toFixed(2)}%` : '—'}
               </span>
@@ -1203,7 +1202,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
               1.F : un compteur n'est pas de l'argent). Le P&L $ cumulé de
               la streak courante (sub) reste toné : argent réel. */}
           <Row3
-            label="Streak Current"
+            label="Série en cours"
             value={
               m.currentStreak > 0
                 ? `▲ ${m.currentStreak}W`
@@ -1218,14 +1217,14 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             }
           />
           <Row3
-            label="Max Win Streak"
+            label="Série gagn. max"
             value={`${m.maxWinStreak ?? 0}W`}
             valueTone="mute"
             sub={streakDates.winRange || '—'}
             subTone="mute"
           />
           <Row3
-            label="Max Loss Streak"
+            label="Série perd. max"
             value={`${m.maxLossStreak ?? 0}L`}
             valueTone="mute"
             sub={streakDates.lossRange || '—'}
@@ -1234,7 +1233,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
 
           <div className="risk-matrix__subzone risk-matrix__subzone--push">
             <div className="risk-matrix__subzone-head">
-              <span>STREAK PATTERN · 13 LAST</span>
+              <span>MOTIF SÉRIES · 13 DERNIERS</span>
               <span className="risk-matrix__cell--mute">{streak13.length}/13</span>
             </div>
             <StreakPattern
@@ -1248,25 +1247,25 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
         {/* ─────────────── COL 3 : Win/Loss + Donut + Monthly ───────────── */}
         <div className="risk-matrix__col risk-matrix__col--right">
           <div className="risk-matrix__section-head risk-matrix__section-head--accent">
-            <span>▼ Win / Loss Stats</span>
+            <span>▼ Stats gains / pertes</span>
           </div>
           <div className="risk-matrix__row risk-matrix__row--cols-3 risk-matrix__row--th">
             <span>Stat</span>
-            <span className="risk-matrix__cell--right">Count</span>
-            <span className="risk-matrix__cell--right">$ Avg</span>
+            <span className="risk-matrix__cell--right">Nb</span>
+            <span className="risk-matrix__cell--right">$ moy.</span>
           </div>
-          {/* É3 panel §4.2.4 — COMPTEURS Wins/Losses NEUTRES (même
-              motif que les streaks juste au-dessus) ; le $ Avg reste
+          {/* É3 panel §4.2.4 — COMPTEURS gagnants/perdants NEUTRES (même
+              motif que les séries juste au-dessus) ; le $ moy. reste
               toné : argent réel. */}
           <Row3
-            label="Wins"
+            label="Gagnants"
             value={`${m.winCount ?? 0}`}
             valueTone="mute"
             sub={fmtUsdSigned(m.averageWin)}
             subTone="profit"
           />
           <Row3
-            label="Losses"
+            label="Perdants"
             value={`${m.lossCount ?? 0}`}
             valueTone="mute"
             sub={
@@ -1308,7 +1307,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             subTone={pfEdge.tone}
           />
           <Row3
-            label="Total Fees"
+            label="Frais totaux"
             value={fmtUsd(m.totalAllFees)}
             valueTone="mute"
             sub={
@@ -1320,7 +1319,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             title="Total = commissions clôturées + frais des positions ouvertes + frais cash. « /tr » = commissions des CLÔTURES seules ÷ N trades (l'ex-moyenne divisait le total gonflé par les seuls trades clôturés)."
           />
           <Row3
-            label="FX Impact"
+            label="Impact FX"
             value={
               m.totalFxImpact != null && Number.isFinite(m.totalFxImpact)
                 ? `CHF ${m.totalFxImpact >= 0 ? '+' : ''}${Math.round(m.totalFxImpact).toLocaleString('de-CH')}`
@@ -1353,7 +1352,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
 
           <div className="risk-matrix__subzone">
             <div className="risk-matrix__subzone-head">
-              <span>WIN RATE GAUGE</span>
+              <span>JAUGE WIN RATE</span>
               {/* COULEUR D1 — PF est un ratio : ambre mort, encre pleine. */}
               <span className="risk-matrix__cell--value">
                 PF{' '}
