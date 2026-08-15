@@ -528,7 +528,13 @@ export default function TradeHistory({ data, liveRate, area = 'history' }) {
             {fmtCommission(aggStats.commission)}
           </span>
         </div>
-        <div className="trade-history__footer-cell">
+        {/* É3.1 (contrôle D) — audit : PAS de fuite de scope, le calcul
+            consomme bien visibleTrades (fenêtre). Le title dit le scope
+            et la date pour lever l'ambiguïté du constat 15.08. */}
+        <div
+          className="trade-history__footer-cell"
+          title={`RÉAL · fenêtre affichée (${range === 'all' ? 'tous les trades' : `${range} derniers trades`}) — Σ P&L par date de sortie, puis max${bestDay ? ` · ${bestDay.day}` : ''}`}
+        >
           <span className="trade-history__footer-label">Best Day</span>
           <span className="trade-history__footer-value trade-history__footer-value--profit">
             {bestDay ? fmtPnlSigned(bestDay.pnl) : '—'}

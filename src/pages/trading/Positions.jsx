@@ -985,7 +985,6 @@ export default function Positions() {
     let totalMaxLoss = 0;
     let totalUnreal = 0;
     let totalMarkValue = 0;
-    let deltaDollar = 0;
     let thetaDollar = 0;
     let closest = null;
     let nOpt = 0;
@@ -1001,9 +1000,9 @@ export default function Positions() {
       else nStk++;
       const mul = row.isOpt ? ensurePositive(row.pos.mu) : 1;
       const dirSign = row.pos.dir === 'Short' ? -1 : 1;
-      if (Number.isFinite(row.delta)) {
-        deltaDollar += dirSign * row.delta * row.qty * mul * row.mark;
-      }
+      // É3.1 — l'ex `deltaDollar` (Δ×qty×mul×MARK = ×prime de l'option)
+      // est MORT : le footer Δ lit l'agrégat canonique `greeks.sumDelta`
+      // (équivalent-actions), même chiffre que le bandeau et le Dashboard.
       if (Number.isFinite(row.theta)) {
         thetaDollar += dirSign * row.theta * row.qty * mul;
       }
@@ -1020,7 +1019,6 @@ export default function Positions() {
       totalMaxLoss,
       totalUnreal,
       totalMarkValue,
-      deltaDollar,
       thetaDollar,
       closest,
     };
@@ -1243,9 +1241,13 @@ export default function Positions() {
       sort: true,
       mono: true,
       footer: () => (
-        <span>
-          <span className="v3-table__tf-label">Σ Δ $</span>
-          <span className="v3-table__tf-value">{fmtUsdSigned(summary.deltaDollar)}</span>
+        <span title="Σ Δ×qty×100 — équivalent-actions, agrégat canonique (aggregateGreeks), même chiffre que le bandeau Δ NET. L'ex « Σ Δ $ » (Δ×qty×100×prime) est mort.">
+          <span className="v3-table__tf-label">Δ · ÉQ. ACTIONS</span>
+          <span className="v3-table__tf-value">
+            {Number.isFinite(greeks?.sumDelta) && greeks.optionsCount + summary.nStk > 0
+              ? `${greeks.sumDelta >= 0 ? '+' : '−'}${Math.abs(Math.round(greeks.sumDelta)).toLocaleString('de-CH')}`
+              : '—'}
+          </span>
         </span>
       ),
       render: (v, row) => {

@@ -108,6 +108,22 @@ describe('deriveHeroWindowStats — vérité pré-resample', () => {
     expect(s.currentDDPct).toBe(-69.2); // un % sain passe
   });
 
+  it('É3.1 — % J. GAGN. : jours avec clôture (signe du P&L net), verts+rouges = total = J. CLÔTURE', () => {
+    const { dailyFull, closedTrades } = longFixture();
+    const s = deriveHeroWindowStats({ dailyFull, range: 'ALL', closedTrades });
+    const jg = s.joursGagnants;
+    // Cohérence constitutionnelle du constat 15.08 : plus jamais
+    // « 46↑/19↓ = 65 » à côté d'un « J. CLÔTURE 63 ».
+    expect(jg.verts + jg.rouges).toBe(jg.total);
+    expect(s.closeDays).toBe(jg.total);
+    // Vérité recomptée depuis la fixture (net par jour, clé do||di).
+    const byDay = new Map();
+    for (const t of closedTrades) byDay.set(t.do, (byDay.get(t.do) || 0) + t.pnl);
+    const verts = [...byDay.values()].filter((v) => v > 0).length;
+    expect(jg.verts).toBe(verts);
+    expect(jg.pct).toBeCloseTo((verts / byDay.size) * 100, 6);
+  });
+
   it('fenêtre < 2 points → { empty: true }', () => {
     expect(deriveHeroWindowStats({ dailyFull: [], range: 'ALL' }).empty).toBe(true);
     const one = [{ date: iso(0), nlv: 100, flowNeutral: 100, drawdownUsd: 0, drawdownPct: 0 }];

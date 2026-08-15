@@ -16,6 +16,12 @@
 //    l'historique par buildNlvSeries), max sur la fenêtre + courant ;
 //  · meilleur/pire JOUR = delta flow-neutral quotidien.
 //
+//  É3.1 « vérité des chiffres » : % JOURS GAGNANTS = LA définition
+//  unique de curveStats (jours avec clôture, signe du P&L net du jour,
+//  verts+rouges=total) — identique au pied du Héros 2. L'ex-comptage
+//  up/down des deltas NLV est MORT (46↑/19↓ ≠ J. CLÔTURE 63).
+//  recovery = recoveryOf (module), J. CLÔTURE = joursGagnants.total.
+//
 //  D6(a) — garde du % de drawdown : si la base flow-neutral rend le %
 //  dénué de sens (tête de série reconstituée à base quasi nulle →
 //  |%| > 100, le « −169.2 % » du seed), on rend null → « — » honnête,
@@ -23,6 +29,8 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { sliceSeriesWindow } from './nlvSeries';
+import { joursGagnants, recoveryOf } from './metrics/curveStats';
+import { tradePnlUsd } from './calculations';
 
 const dayKey = (v) => (typeof v === 'string' && v.length >= 10 ? v.slice(0, 10) : null);
 
@@ -36,9 +44,10 @@ const sanePct = (pct) => (Number.isFinite(pct) && Math.abs(pct) <= 100 ? pct : n
  * @param {Array}  args.dailyFull     série quotidienne COMPLÈTE (buildNlvSeries)
  * @param {string} args.range         '1D'|'5D'|'1M'|'3M'|'YTD'|'1Y'|'ALL'
  * @param {Array}  args.closedTrades  state.closedTrades (compteurs de fenêtre)
+ * @param {number} [args.rate]        USD/CHF live (fallback tradePnlUsd)
  * @returns {Object} stats — { empty } si < 2 points dans la fenêtre
  */
-export function deriveHeroWindowStats({ dailyFull, range = 'ALL', closedTrades = [] }) {
+export function deriveHeroWindowStats({ dailyFull, range = 'ALL', closedTrades = [], rate = 1 }) {
   const win = sliceSeriesWindow(dailyFull, range);
   if (!Array.isArray(win) || win.length < 2) return { empty: true };
 
@@ -66,30 +75,35 @@ export function deriveHeroWindowStats({ dailyFull, range = 'ALL', closedTrades =
 
   let bestDay = null;
   let worstDay = null;
-  let up = 0;
-  let down = 0;
   for (let i = 1; i < win.length; i++) {
     const d = win[i].flowNeutral - win[i - 1].flowNeutral;
     if (bestDay == null || d > bestDay) bestDay = d;
     if (worstDay == null || d < worstDay) worstDay = d;
-    if (d > 0) up++;
-    else if (d < 0) down++;
   }
-  const pctWinDays = up + down ? (up / (up + down)) * 100 : null;
 
-  // Compteurs VRAIS sur les clôtures de la fenêtre.
+  // Compteurs VRAIS sur les clôtures de la fenêtre. Clé jour = do || di
+  // (même convention que useDailyPnL — une seule vérité de regroupement).
   const firstDay = dayKey(first.date);
   const lastDay = dayKey(last.date);
   let tradeCount = 0;
-  const closeDaySet = new Set();
+  const pnlByDay = new Map();
   for (const t of Array.isArray(closedTrades) ? closedTrades : []) {
-    const d = dayKey(t?.do);
+    const d = dayKey(t?.do || t?.di);
     if (!d || d < firstDay || d > lastDay) continue;
     tradeCount++;
-    closeDaySet.add(d);
+    const pnl = tradePnlUsd(t, rate);
+    pnlByDay.set(d, (pnlByDay.get(d) || 0) + (Number.isFinite(pnl) ? pnl : 0));
   }
 
-  const recoveryFactor = maxDDUsd > 0 ? pnl / maxDDUsd : null;
+  // É3.1 — % JOURS GAGNANTS : LA définition unique (curveStats), la même
+  // que le pied du Héros 2 : jours avec clôture, signe du P&L net du
+  // jour. L'ancien comptage up/down des deltas NLV (71 % · 46↑/19↓,
+  // incohérent avec J. CLÔTURE) est MORT.
+  const jg = joursGagnants(
+    Array.from(pnlByDay, ([date, dayPnl]) => ({ date, pnl: dayPnl }))
+  );
+
+  const recoveryFactor = recoveryOf(pnl, maxDDUsd > 0 ? maxDDUsd : null);
 
   return {
     empty: false,
@@ -104,10 +118,8 @@ export function deriveHeroWindowStats({ dailyFull, range = 'ALL', closedTrades =
     currentDDPct: sanePct(last.drawdownPct),
     bestDay,
     worstDay,
-    up,
-    down,
-    pctWinDays,
-    closeDays: closeDaySet.size,
+    joursGagnants: jg,
+    closeDays: jg.total,
     tradeCount,
     recoveryFactor,
     firstDate: first.date,

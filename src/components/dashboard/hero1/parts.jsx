@@ -113,13 +113,13 @@ export function ViewToggle({ view, setView }) {
 //    langage que le pied du Héros 2) ; tout le reste neutre. ──
 const tone3 = (v) => (v == null || v === 0 ? undefined : v > 0 ? 'profit' : 'loss');
 
-export function HeroFootCell({ label, value, sub, usd, tone, rate }) {
+export function HeroFootCell({ label, value, sub, usd, tone, rate, title }) {
   const chf =
     Number.isFinite(usd) && Number.isFinite(rate) && rate > 0
       ? fmtChf(usd, rate, isSigned(value))
       : null;
   return (
-    <div className="lh-cfoot__cell">
+    <div className="lh-cfoot__cell" title={title || undefined}>
       <span className="lh-cfoot__label">{label}</span>
       <span className={`lh-cfoot__value${tone ? ` lh-cfoot__value--${tone}` : ''}`}>{value}</span>
       <span className="lh-cfoot__meta">
@@ -130,27 +130,42 @@ export function HeroFootCell({ label, value, sub, usd, tone, rate }) {
   );
 }
 
-export function ChartFooter({ stats, rate }) {
+// É3.1 « vérité des chiffres » — chaque métrique DD/pic/recovery porte
+// sa BASE ([NLV] + fenêtre) en label, et sa formule en title=. Le % de
+// jours gagnants consomme LA définition unique (stats.joursGagnants,
+// curveStats) — mêmes compteurs que J. CLÔTURE et que le pied Héros 2.
+export function ChartFooter({ stats, rate, range = 'ALL' }) {
   if (stats.empty) return <div className="lh-cfoot--empty">Série NLV vide</div>;
   const sf = (v) => (v == null ? '—' : `${v >= 0 ? '+' : '−'}$${Math.abs(Math.round(v)).toLocaleString('de-CH')}`);
   const pct = (v) => (v == null ? '—' : fmtPct(v));
-  // [label, value, sub, usdForChf, tone]
+  const jg = stats.joursGagnants || { verts: 0, rouges: 0, total: 0, pct: null };
+  // [label, value, sub, usdForChf, tone, title]
   const cells = [
-    ['PEAK', fmtUsd(stats.peak), null, stats.peak, null],
-    ['HAUT / BAS', fmtUsd(stats.high), `bas ${fmtUsd(stats.low)}`, stats.high, null],
-    ['MAX DD', fmtUsd(-stats.maxDDUsd), pct(stats.maxDDPct), -stats.maxDDUsd, null],
-    ['DD COURANT', fmtUsd(-stats.currentDDUsd), pct(stats.currentDDPct), -stats.currentDDUsd, null],
-    ['RECOVERY', stats.recoveryFactor == null ? '—' : `${stats.recoveryFactor.toFixed(2)}×`, 'profit / DD', null, null],
-    ['MEILLEUR J.', sf(stats.bestDay), null, stats.bestDay, tone3(stats.bestDay)],
-    ['PIRE J.', sf(stats.worstDay), null, stats.worstDay, tone3(stats.worstDay)],
-    ['% J. GAGN.', stats.pctWinDays == null ? '—' : `${stats.pctWinDays.toFixed(0)}%`, `${stats.up}↑ / ${stats.down}↓`, null, null],
-    ['J. CLÔTURE', `${stats.closeDays}`, 'jours avec clôture', null, null],
-    ['TRADES', `${stats.tradeCount}`, 'clôtures · fenêtre', null, null],
+    ['PEAK', fmtUsd(stats.peak), null, stats.peak, null,
+      `NLV · ${range} — plus haute NLV de la fenêtre`],
+    ['HAUT / BAS', fmtUsd(stats.high), `bas ${fmtUsd(stats.low)}`, stats.high, null,
+      `NLV · ${range} — extrêmes quotidiens de la fenêtre`],
+    [`MAX DD · NLV`, fmtUsd(-stats.maxDDUsd), pct(stats.maxDDPct), -stats.maxDDUsd, null,
+      `NLV · ${range} — pic→creux flow-neutral (pic ancré sur tout l'historique) ; % sur la NLV au pic`],
+    [`DD COURANT · NLV`, fmtUsd(-stats.currentDDUsd), pct(stats.currentDDPct), -stats.currentDDUsd, null,
+      `NLV · ${range} — pic flow-neutral − point courant ; % sur la NLV au pic`],
+    ['RECOVERY', stats.recoveryFactor == null ? '—' : `${stats.recoveryFactor.toFixed(2)}×`, 'P&L / DD · NLV', null, null,
+      `NLV · ${range} — P&L flow-neutral de la fenêtre ÷ max DD NLV de la fenêtre (≠ RECOVERY · RÉAL du bloc Réalisé)`],
+    ['MEILLEUR J.', sf(stats.bestDay), null, stats.bestDay, tone3(stats.bestDay),
+      `NLV · ${range} — meilleur delta flow-neutral quotidien (latent inclus)`],
+    ['PIRE J.', sf(stats.worstDay), null, stats.worstDay, tone3(stats.worstDay),
+      `NLV · ${range} — pire delta flow-neutral quotidien (latent inclus)`],
+    ['% J. GAGN.', jg.pct == null ? '—' : `${jg.pct.toFixed(0)}%`, `${jg.verts}↑ / ${jg.rouges}↓`, null, null,
+      `RÉAL · ${range} — jours avec clôture, signe du P&L net du jour (définition unique, = pied Réalisé) ; ${jg.verts}+${jg.rouges}=${jg.total}`],
+    ['J. CLÔTURE', `${stats.closeDays}`, 'jours avec clôture', null, null,
+      `RÉAL · ${range} — jours distincts avec ≥ 1 clôture (= total du % J. GAGN.)`],
+    ['TRADES', `${stats.tradeCount}`, 'clôtures · fenêtre', null, null,
+      `RÉAL · ${range} — clôtures de la fenêtre`],
   ];
   return (
     <div className="lh-cfoot">
-      {cells.map(([label, value, sub, usd, tone]) => (
-        <HeroFootCell key={label} label={label} value={value} sub={sub} usd={usd} tone={tone} rate={rate} />
+      {cells.map(([label, value, sub, usd, tone, title]) => (
+        <HeroFootCell key={label} label={label} value={value} sub={sub} usd={usd} tone={tone} rate={rate} title={title} />
       ))}
     </div>
   );

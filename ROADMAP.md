@@ -34,6 +34,24 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
   jumeau (HeroFootCell partagée, 6×1) ; morts : deriveWindowStats/
   deriveSeriesStats, GAIN/PERTE MOY.+EXPECTANCY du pied (maison =
   deck PERFORMANCE), h2-cfoot--*, lh-cfoot--dense.
+- **COULEUR ⏳ (branche `v1/couleur`, ATTENTE GO)** — « La loi remise en
+  place » : RiskMatrix instrument (14 neutralisations, argent réel
+  gardé), badge REAL ambre, DEPUIS PIC au pied H1. Préparée, poussée
+  (preview Vercel), en attente du GO visuel de Rafael.
+- **É3.1 ✅ (1.0.1-rc.4)** — « Vérité des chiffres » : source unique des
+  métriques globales du Dashboard. `utils/metrics/curveStats.js` (pur,
+  19 tests) : peak / DD courant / max DD / jours-depuis-pic CALENDAIRES
+  / recovery / joursGagnants PAR COURBE (RÉAL | NLV) + greeksTotals
+  (projection aggregateGreeks). Morts : « Σ Δ $ » des footers
+  (Δ×qty×100×prime — remplacé par « Δ · ÉQ. ACTIONS » = sumDelta, même
+  chiffre que le deck), comptage % jours gagnants sur deltas NLV
+  (une seule définition : jours avec clôture, signe du P&L net,
+  verts+rouges=total), « Days Since Peak » pic→dernier trade (110 j
+  calendaires + date), « Recovery to Peak » qui répétait le Current DD.
+  Chaque DD/pic/recovery/cumulé porte sa base [RÉAL|NLV]·[fenêtre] +
+  formule en `title=`. « /tr » des fees = commissions clôturées / N.
+  Badge de mode honnête : import CSV → badge **CSV** (provenance
+  `lastSync.source`), REAL réservé au Flex/bridge.
 - **Prochaine brique : au prompt architecte.**
 
 ---

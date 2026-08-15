@@ -30,10 +30,15 @@ import { FRESHNESS } from '../../constants/timing';
 // un mode n'est ni gain ni perte, JAMAIS une couleur du registre P&L.
 // RÉACTIF : recalculé à chaque tick `now` (dette de réactivité №7
 // soldée — plus aucun Date.now() figé au render).
-const MODE_LABELS = { live: 'LIVE', real: 'REAL', paper: 'PAPER' };
+// É3.1 — le marqueur dit la VÉRITÉ de la source : un dataset chargé
+// depuis un fichier CSV local (settings.lastSync.source === 'csv',
+// écrit par l'import) n'est PAS « REAL » — aucun lien IBKR ne le
+// garantit. REAL reste réservé au Flex/bridge.
+const MODE_LABELS = { live: 'LIVE', real: 'REAL', csv: 'CSV', paper: 'PAPER' };
 const MODE_TITLES = {
   live: 'Données IBKR temps réel actives',
   real: 'Positions réelles · données stockées localement',
+  csv: 'Données importées d’un fichier CSV local — source non vérifiée (aucun lien IBKR)',
   paper: 'Mode paper — aucune position réelle',
 };
 
@@ -156,7 +161,9 @@ export default function StatusBar() {
       ibkrLive?.timestamp &&
       now.getTime() - new Date(ibkrLive.timestamp).getTime() < FRESHNESS.LIVE_DATA_MAX_AGE_MS;
     if (fresh) return 'live';
-    return positionsCount > 0 ? 'real' : 'paper';
+    if (positionsCount === 0) return 'paper';
+    // É3.1 — dernier import = fichier CSV local → marqueur honnête CSV.
+    return settings?.lastSync?.source === 'csv' ? 'csv' : 'real';
   })();
   const pnlTone =
     realizedUsd == null || !Number.isFinite(realizedUsd) || realizedUsd === 0
