@@ -36,6 +36,9 @@ import { useMemo } from 'react';
 import { useClosedTrades, useSettings } from '../../store/useStore';
 import { tradePnlUsd } from '../../utils/calculations';
 import { tierParams } from '../../utils/sniperMeta';
+// É3.1 — métriques de courbe via la maison unique (curveStats) : DD
+// courant, jours-depuis-pic CALENDAIRES, max DD YTD. Courbe RÉAL.
+import { currentDrawdownOf, daysSincePeakOf, maxDrawdownOf } from '../../utils/metrics/curveStats';
 
 // ─── Formatters ─────────────────────────────────────────────────
 
@@ -409,10 +412,11 @@ function MonthlyBars6({ months, ytdAmount }) {
   );
 }
 
-// Row helpers (DRY).
-function RowPerf({ label, value, valueTone, bench, delta, deltaTone, gauge }) {
+// Row helpers (DRY). `title` (É3.1) = formule/base en une ligne,
+// tooltip natif — zéro impact layout.
+function RowPerf({ label, value, valueTone, bench, delta, deltaTone, gauge, title }) {
   return (
-    <div className="risk-matrix__row risk-matrix__row--cols-perf">
+    <div className="risk-matrix__row risk-matrix__row--cols-perf" title={title || undefined}>
       <span>{label}</span>
       <span
         className={`risk-matrix__cell--right${valueTone ? ` risk-matrix__cell--${valueTone}` : ''}`}
@@ -430,10 +434,11 @@ function RowPerf({ label, value, valueTone, bench, delta, deltaTone, gauge }) {
   );
 }
 
-function Row3({ label, value, valueTone, sub, subTone, alert }) {
+function Row3({ label, value, valueTone, sub, subTone, alert, title }) {
   return (
     <div
       className={`risk-matrix__row risk-matrix__row--cols-3${alert ? ' risk-matrix__row--alert-loss' : ''}`}
+      title={title || undefined}
     >
       <span>{label}</span>
       <span
@@ -500,32 +505,34 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
     return s;
   }, [closedTrades, liveRate]);
 
-  // Drawdown derivatives.
+  // Drawdown derivatives — É3.1 : via curveStats sur la courbe RÉAL
+  // realEquityPoints (init + cumPnL par jour de clôture, même base que
+  // m.currentDDPct/m.maxDDYtdPct — fini le $ par-trade face à un % par-
+  // jour dans la même ligne), fallback equityHistory. Jours-depuis-pic
+  // en jours CALENDAIRES vers AUJOURD'HUI : la courbe réalisée est figée
+  // après la dernière clôture, mesurer pic→dernier trade mentait
+  // (« 11 » affiché pour un pic vieux de 110 jours — constat 15.08).
+  const realCurvePoints = useMemo(() => {
+    const source =
+      Array.isArray(m.realEquityPoints) && m.realEquityPoints.length > 0
+        ? m.realEquityPoints
+        : equityHistory;
+    return source.map((p) => ({ date: p.date, value: p.equity }));
+  }, [m.realEquityPoints, equityHistory]);
+
   const ddInfo = useMemo(() => {
-    if (equityHistory.length === 0) {
-      return { ddUsd: null, daysSincePeak: null, peakDate: null, recoveryPct: null, peakVal: null };
+    if (realCurvePoints.length === 0) {
+      return { ddUsd: null, daysSincePeak: null, peakDate: null };
     }
-    let peakIdx = 0;
-    let peakVal = -Infinity;
-    for (let i = 0; i < equityHistory.length; i++) {
-      if (equityHistory[i].equity > peakVal) {
-        peakVal = equityHistory[i].equity;
-        peakIdx = i;
-      }
-    }
-    const lastIdx = equityHistory.length - 1;
-    const last = equityHistory[lastIdx];
-    const ddUsd = Math.max(0, peakVal - last.equity);
-    const peakDate = equityHistory[peakIdx].date;
-    let daysSincePeak = 0;
-    if (peakIdx !== lastIdx && peakDate && last.date) {
-      const ms = new Date(last.date).getTime() - new Date(peakDate).getTime();
-      if (Number.isFinite(ms) && ms > 0) daysSincePeak = Math.round(ms / 86_400_000);
-    }
-    const peakBase = initialCapital + peakVal;
-    const recoveryPct = peakBase > 0 ? (ddUsd / peakBase) * 100 : null;
-    return { ddUsd, daysSincePeak, peakDate, recoveryPct, peakVal };
-  }, [equityHistory, initialCapital]);
+    const cur = currentDrawdownOf(realCurvePoints);
+    const today = new Date().toISOString().slice(0, 10);
+    const dsp = daysSincePeakOf(realCurvePoints, today);
+    return {
+      ddUsd: cur ? cur.usd : null,
+      daysSincePeak: dsp ? dsp.days : null,
+      peakDate: dsp ? dsp.date : null,
+    };
+  }, [realCurvePoints]);
 
   // A1 refactor : CAGR is read from the canonical single-source value
   // emitted by `calculatePortfolioMetrics` (m.cagr) instead of being
@@ -565,23 +572,17 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
 
   // ─── Phase C.1.8 TODO résolution ─────────────────────────────
 
-  // (A) Max DD YTD USD — dérivé inline depuis equityHistory filtré YTD.
-  // Algorithme : running peak sur les points YTD, suit le pire trough
-  // post-peak. Si moins de 2 points YTD → null (cohérent avec "—").
+  // (A) Max DD YTD USD — É3.1 : curveStats.maxDrawdownOf sur la MÊME
+  // courbe RÉAL que le % voisin (m.maxDDYtdPct, realEquityPoints) —
+  // fini le $ par-trade face à un % par-jour. < 2 points YTD → null.
   const maxDDYtdUsd = useMemo(() => {
-    if (equityHistory.length < 2) return null;
+    if (realCurvePoints.length < 2) return null;
     const year = new Date().getFullYear().toString();
-    const ytdPoints = equityHistory.filter((p) => p.date?.startsWith(year));
+    const ytdPoints = realCurvePoints.filter((p) => p.date?.startsWith(year));
     if (ytdPoints.length < 2) return null;
-    let peak = ytdPoints[0].equity;
-    let maxDD = 0;
-    for (const p of ytdPoints) {
-      if (p.equity > peak) peak = p.equity;
-      const dd = peak - p.equity;
-      if (dd > maxDD) maxDD = dd;
-    }
-    return maxDD > 0 ? maxDD : null;
-  }, [equityHistory]);
+    const dd = maxDrawdownOf(ytdPoints);
+    return dd && dd.usd > 0 ? dd.usd : null;
+  }, [realCurvePoints]);
 
   // (B) Dates Max Win / Loss Streak — scan séquentiel sur closedTrades
   // triés par date. À chaque trade : si même signe que la streak en
@@ -792,12 +793,12 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
       ['Performance', 'Sortino', fmtNum(m.sortinoRatio), 'bench 1.50'],
       ['Performance', 'Calmar', fmtNum(m.calmarRatio), 'bench 3.00'],
       ['Performance', 'SQN', fmtNum(m.sqn), 'bench 1.60'],
-      ['Performance', m.twrMode === 'cumulative' ? 'TWR Cumulé' : 'TWR (ann.)', fmtPct(m.twr), 'bench 15.0%'],
-      ['Performance', m.cagrMode === 'cumulative' ? 'Cumulé' : 'CAGR', fmtPct(cagr), 'bench 15.0%'],
+      ['Performance', m.twrMode === 'cumulative' ? 'TWR Cumulé · RÉAL' : 'TWR (ann.) · RÉAL', fmtPct(m.twr), 'bench 15.0%'],
+      ['Performance', m.cagrMode === 'cumulative' ? 'Cumulé · RÉAL' : 'CAGR · RÉAL', fmtPct(cagr), 'bench 15.0%'],
       ['Performance', 'Vol (ann.)', fmtPct(m.volAnnPct), 'bench 20.0%'],
       [
         'Performance',
-        'Recovery Factor',
+        'Recovery Factor · RÉAL',
         m.recoveryFactor == null || !Number.isFinite(m.recoveryFactor)
           ? '—'
           : `${fmtNum(m.recoveryFactor)}×`,
@@ -814,19 +815,19 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
 
       [
         'Drawdown',
-        'Current DD',
+        'Current DD · RÉAL',
         ddInfo.ddUsd != null && ddInfo.ddUsd > 0 ? `−${fmtUsd(ddInfo.ddUsd).replace(/^-/, '')}` : '—',
         fmtPctSigned(m.currentDDPct, 2),
       ],
       [
         'Drawdown',
-        'Max DD YTD',
+        'Max DD · RÉAL · YTD',
         maxDDYtdUsd != null ? `−${fmtUsd(maxDDYtdUsd)}` : '—',
         m.maxDDYtdPct > 0 ? `−${fmtPct(m.maxDDYtdPct, 2)}` : '—',
       ],
       [
         'Drawdown',
-        'Max DD All-Time',
+        'Max DD · RÉAL · ALL',
         m.maxDrawdown != null && Number.isFinite(m.maxDrawdown) && m.maxDrawdown > 0
           ? `−${fmtUsd(m.maxDrawdown)}`
           : '—',
@@ -834,11 +835,18 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
       ],
       [
         'Drawdown',
-        'Days Since Peak',
-        ddInfo.daysSincePeak != null ? String(ddInfo.daysSincePeak) : '—',
+        'Days Since Peak · RÉAL',
+        ddInfo.daysSincePeak != null ? `${ddInfo.daysSincePeak} j` : '—',
         ddInfo.peakDate || '—',
       ],
-      ['Drawdown', 'Recovery to Peak', fmtPct(ddInfo.recoveryPct), ''],
+      [
+        'Drawdown',
+        'Recovery to Peak',
+        m.recoveryPctValue != null && Number.isFinite(m.recoveryPctValue)
+          ? fmtPct(m.recoveryPctValue)
+          : '—',
+        'du creux récupéré',
+      ],
 
       [
         'Streak',
@@ -1000,13 +1008,14 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
               Label switches "TWR (ann.)" / "TWR Cumulé" by m.twrMode.
               Bench 15 % aligns with the CAGR target — same scale. */}
           <RowPerf
-            label={m.twrMode === 'cumulative' ? 'TWR Cumulé' : 'TWR (ann.)'}
+            label={m.twrMode === 'cumulative' ? 'TWR Cumulé · RÉAL' : 'TWR (ann.) · RÉAL'}
             value={fmtPct(m.twr)}
             valueTone="value"
             bench="15.0%"
             delta={twrDelta.text}
             deltaTone={twrDelta.tone}
             gauge={<MetricGauge value={m.twr} bench={15} mode="higher-is-better" />}
+            title="RÉAL · ALL — rendement pondéré temps : produit des sous-périodes entre flux ((MV fin / MV début) − 1), le timing des dépôts est NEUTRALISÉ. ≠ Cumulé (capital initial)."
           />
           {/* A2.2 — label switches to "Cumulé" when years < 1 (no
               annualisation applied). Bench stays at 15 % to give a
@@ -1014,13 +1023,14 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
               SIMPLE return on initial capital (mechanically rewards
               big later deposits) — TWR is the timing-neutral truth. */}
           <RowPerf
-            label={m.cagrMode === 'cumulative' ? 'Cumulé' : 'CAGR'}
+            label={m.cagrMode === 'cumulative' ? 'Cumulé · RÉAL' : 'CAGR · RÉAL'}
             value={fmtPct(cagr)}
             valueTone="value"
             bench="15.0%"
             delta={cagrDelta.text}
             deltaTone={cagrDelta.tone}
             gauge={<MetricGauge value={cagr} bench={15} mode="higher-is-better" />}
+            title="RÉAL · ALL — (capital initial + Σ réalisé) ÷ capital initial − 1 : rendement simple sur capital initial, les dépôts tardifs NE sont PAS neutralisés (≠ TWR). ≠ « SUR CETTE PÉRIODE · NLV » du Héros 1."
           />
           <RowPerf
             label="Vol (ann.)"
@@ -1030,9 +1040,10 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             delta={volDelta.text}
             deltaTone={volDelta.tone}
             gauge={<MetricGauge value={m.volAnnPct} bench={20} mode="lower-is-better" />}
+            title="RÉAL · ALL — écart-type des rendements par trade (base equity réelle), annualisé ; gaté sous 30 obs. / 0.25 an."
           />
           <RowPerf
-            label="Recovery Factor"
+            label="Recovery Factor · RÉAL"
             value={
               m.recoveryFactor == null || !Number.isFinite(m.recoveryFactor)
                 ? '—'
@@ -1043,6 +1054,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             delta={recoveryDelta.text}
             deltaTone={recoveryDelta.tone}
             gauge={<MetricGauge value={m.recoveryFactor} bench={3.0} mode="higher-is-better" />}
+            title="RÉAL · ALL — Σ réalisé ÷ Max DD · RÉAL · ALL (par trade). ≠ RECOVERY · NLV du Héros 1 (P&L flow-neutral / DD NLV) et ≠ RECOVERY · RÉAL fenêtré du Héros 2."
           />
           {/* COULEUR D1a — Expectancy/Kelly/R Avg : ratios & moyennes
               statistiques → neutres (le Kelly ambre est mort). */}
@@ -1116,22 +1128,24 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             <span className="risk-matrix__cell--right">%</span>
           </div>
           <Row3
-            label="⚠ Current DD"
+            label="⚠ Current DD · RÉAL"
             value={ddInfo.ddUsd != null && ddInfo.ddUsd > 0 ? `−${fmtUsd(ddInfo.ddUsd).replace(/^-/, '')}` : '—'}
             valueTone={ddInfo.ddUsd && ddInfo.ddUsd > 0 ? 'loss-bold' : 'mute'}
             sub={fmtPctSigned(m.currentDDPct, 2)}
             subTone={m.currentDDPct != null && m.currentDDPct < 0 ? 'loss' : 'mute'}
             alert={ddInfo.ddUsd != null && ddInfo.ddUsd > 0}
+            title="RÉAL · ALL — pic du cumul réalisé − cumul réalisé courant (courbe par jour de clôture, latent exclu) ; % sur l'equity au pic. ≠ DD COURANT · NLV du Héros 1."
           />
           <Row3
-            label="Max DD YTD"
+            label="Max DD · RÉAL · YTD"
             value={maxDDYtdUsd != null ? `−${fmtUsd(maxDDYtdUsd)}` : '—'}
             valueTone={maxDDYtdUsd != null ? 'loss-bold' : 'mute'}
             sub={m.maxDDYtdPct > 0 ? `−${fmtPct(m.maxDDYtdPct, 2)}` : '—'}
             subTone={m.maxDDYtdPct > 0 ? 'loss' : 'mute'}
+            title="RÉAL · YTD — pic→creux du cumul réalisé sur l'année en cours (courbe par jour de clôture) ; % sur l'equity au pic."
           />
           <Row3
-            label="Max DD All-Time"
+            label="Max DD · RÉAL · ALL"
             value={
               m.maxDrawdown != null && Number.isFinite(m.maxDrawdown) && m.maxDrawdown > 0
                 ? `−${fmtUsd(m.maxDrawdown)}`
@@ -1140,27 +1154,39 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             valueTone={m.maxDrawdown > 0 ? 'loss-bold' : 'mute'}
             sub={m.maxDrawdownPct > 0 ? `−${fmtPct(m.maxDrawdownPct, 2)}` : '—'}
             subTone={m.maxDrawdownPct > 0 ? 'loss' : 'mute'}
+            title="RÉAL · ALL — pic→creux du cumul réalisé, granularité PAR TRADE (buildEquitySeries) ; % sur l'equity réelle au pic. ≠ MAX DD · NLV du Héros 1 (flow-neutral, latent inclus)."
           />
           <Row3
-            label="Days Since Peak"
-            value={ddInfo.daysSincePeak != null ? `${ddInfo.daysSincePeak}` : '—'}
+            label="Days Since Peak · RÉAL"
+            value={ddInfo.daysSincePeak != null ? `${ddInfo.daysSincePeak} j` : '—'}
             valueTone="value"
             sub={ddInfo.peakDate || '—'}
             subTone="mute"
+            title="RÉAL — jours CALENDAIRES entre le pic du cumul réalisé et aujourd'hui (plus jamais pic→dernier trade)."
           />
           {/* COULEUR D1 — montant à recouvrer = hypothétique (amendement
               15.07) et % = ratio : l'ambre ambiant est mort, neutres. */}
           <Row3
             label="Recovery to Peak"
-            value={ddInfo.ddUsd != null && ddInfo.ddUsd > 0 ? fmtUsd(ddInfo.ddUsd) : '—'}
+            value={
+              m.recoveryPctValue != null && Number.isFinite(m.recoveryPctValue)
+                ? fmtPct(m.recoveryPctValue)
+                : '—'
+            }
             valueTone="value"
-            sub={fmtPct(ddInfo.recoveryPct)}
+            sub="du creux récupéré"
             subTone="mute"
+            title="RÉAL · ALL — (meilleur point post-creux − creux) ÷ (pic − creux) : 100 % = pic retrouvé. L'ex-ligne répétait le Current DD $ sous un label de récupération."
           />
 
-          <div className="risk-matrix__subzone">
+          {/* É3.1 — vérité du libellé : la fenêtre = 60 derniers POINTS de
+              la courbe réalisée (jours de clôture), pas 60 jours calendaires. */}
+          <div
+            className="risk-matrix__subzone"
+            title="RÉAL · 60 derniers jours de clôture — underwater % vs pic de la fenêtre ((equity − pic) / pic)."
+          >
             <div className="risk-matrix__subzone-head">
-              <span>DD CURVE · 60 J</span>
+              <span>DD CURVE · RÉAL · 60 J CLÔT.</span>
               <span className="risk-matrix__cell--loss">
                 Peak {ddCurvePeakPct != null ? `${ddCurvePeakPct.toFixed(2)}%` : '—'}
               </span>
@@ -1281,11 +1307,12 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             value={fmtUsd(m.totalAllFees)}
             valueTone="mute"
             sub={
-              m.totalAllFees != null && tradeCount > 0
-                ? `${(m.totalAllFees / tradeCount).toFixed(2)} / tr`
+              m.totalClosedFees != null && tradeCount > 0
+                ? `${(m.totalClosedFees / tradeCount).toFixed(2)} / tr`
                 : '—'
             }
             subTone="mute"
+            title="Total = commissions clôturées + frais des positions ouvertes + frais cash. « /tr » = commissions des CLÔTURES seules ÷ N trades (l'ex-moyenne divisait le total gonflé par les seuls trades clôturés)."
           />
           <Row3
             label="FX Impact"

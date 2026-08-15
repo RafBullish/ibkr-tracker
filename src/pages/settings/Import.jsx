@@ -112,6 +112,9 @@ function FlexSection({ onResult }) {
       const s = result.stats || {};
       const syncInfo = {
         date: new Date().toISOString(),
+        // É3.1 — provenance persistée : le marqueur de mode (StatusBar)
+        // distingue un vrai Flex IBKR d'un fichier CSV local.
+        source: 'flex',
         positions: result.mergedData.openPositions?.length || 0,
         trades: result.mergedData.closedTrades?.length || 0,
         mouvements: s.cashFlowsAdded || 0,
@@ -258,6 +261,24 @@ function CsvUploadSection({ onResult }) {
       const result = mergeIbkrData(parsed, state);
       dispatch({ type: 'IMPORT_DATA', payload: result.mergedData });
       const s = result.stats || {};
+      // É3.1 — provenance persistée (l'import CSV n'écrivait RIEN dans
+      // lastSync) : le marqueur de mode StatusBar affiche CSV, pas REAL.
+      dispatch({
+        type: 'IMPORT_DATA',
+        payload: {
+          settings: {
+            lastSync: {
+              date: new Date().toISOString(),
+              source: 'csv',
+              file: file.name,
+              positions: result.mergedData.openPositions?.length || 0,
+              trades: result.mergedData.closedTrades?.length || 0,
+              mouvements: s.cashFlowsAdded || 0,
+              stats: s,
+            },
+          },
+        },
+      });
       onResult({
         source: `CSV · ${file.name}`,
         positions: s.positionsAdded || 0,
@@ -517,10 +538,21 @@ export default function SettingsImport() {
       {/* 1. BANDEAU — signes vitaux servis. */}
       <motion.section variants={RISE_TILE_VARIANTS} className="lh-final import-command">
         <div className="import-command__grid">
+          {/* É3.1 — la méta dit la VRAIE source du dernier import (le CSV
+              écrit désormais lastSync.source, plus jamais « Flex IBKR »
+              par défaut). Bridge (lastSync = string) → « bridge IBKR ». */}
           <Cell
             label="Dernière synchro"
             value={lastSyncLabel || '——'}
-            meta={lastSyncLabel ? 'Flex IBKR' : 'aucune encore'}
+            meta={
+              !lastSyncLabel
+                ? 'aucune encore'
+                : settings?.lastSync?.source === 'csv'
+                  ? `CSV local${settings.lastSync.file ? ` · ${settings.lastSync.file}` : ''}`
+                  : typeof settings?.lastSync === 'string'
+                    ? 'bridge IBKR'
+                    : 'Flex IBKR'
+            }
           />
           <Cell
             label="Trades en base"

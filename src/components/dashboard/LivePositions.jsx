@@ -255,7 +255,12 @@ function PositionRow({ pos, gateLine, onTag }) {
   );
 }
 
-export default function LivePositions({ data, area = 'positions' }) {
+// É3.1 — `greeks` = agrégat canonique useGreeksAggregate (hissé par le
+// Dashboard) : le footer consomme sumDelta (éq. actions) et thetaDaily,
+// MÊMES chiffres que le deck Héros 1 et la bande CAPITAL. La formule
+// locale « Δ × qty × 100 × prime de l'option » est MORTE (elle affichait
+// +$2'989 quand le deck disait +1'083).
+export default function LivePositions({ data, greeks = null, area = 'positions' }) {
   const count = data?.count ?? 0;
   const totalNotional = data?.totalNotional ?? 0;
   const totalMaxRisk = data?.totalMaxRisk ?? 0;
@@ -273,8 +278,9 @@ export default function LivePositions({ data, area = 'positions' }) {
   // Phase C.2.10-V3 — stats agrégés pour sub-header + footer.
   // Une seule passe sur positions calcule toutes les dérivations
   // (Σ Δ qty-pondéré, Σ Θ qty-pondéré, Σ Unreal $, best/worst
-  // unreal, deltaDollar agrégé, thetaDollar agrégé, closestDte).
-  // Le brief autorise explicitement la fusion subheader+footer.
+  // unreal, closestDte). É3.1 : les ex-agrégats deltaDollar (faux :
+  // ×mark = ×prime) et thetaDollar (doublon) sont MORTS — le footer
+  // lit l'agrégat canonique `greeks` (prop).
   const stats = useMemo(() => {
     if (!positions.length) {
       return {
@@ -284,8 +290,6 @@ export default function LivePositions({ data, area = 'positions' }) {
         bestUnreal: null,
         worstUnreal: null,
         openCount: 0,
-        deltaDollar: 0,
-        thetaDollar: 0,
         closestDte: null,
         inProfitCount: 0,
         inLossCount: 0,
@@ -297,17 +301,12 @@ export default function LivePositions({ data, area = 'positions' }) {
     let totalUnreal = 0;
     let bestUnreal = null;
     let worstUnreal = null;
-    let deltaDollar = 0;
-    let thetaDollar = 0;
     let closestDte = null;
     let inProfitCount = 0;
     let inLossCount = 0;
 
     for (const p of positions) {
       const qty = Number.isFinite(p.qty) ? p.qty : 0;
-      const mark = Number.isFinite(p.mark) ? p.mark : 0;
-      const isOption = p.type === 'CALL' || p.type === 'PUT';
-      const mu = isOption ? 100 : 1;
       // A3c — sign-aware aggregation. `p.delta` / `p.theta` are stored as
       // per-share BSM values (positive for calls held long). A short
       // call inverts the exposure : dir='Short' ⇒ Δ negative, Θ positive.
@@ -318,14 +317,9 @@ export default function LivePositions({ data, area = 'positions' }) {
 
       if (Number.isFinite(p.delta)) {
         totalDelta += dirSign * p.delta * qty;
-        // delta dollar = delta × qty × mu × prix sous-jacent. Sans
-        // spot price API on approxime via mark — ordre de grandeur
-        // correct pour exposition directionnelle agrégée.
-        deltaDollar += dirSign * p.delta * qty * mu * mark;
       }
       if (Number.isFinite(p.theta)) {
         totalTheta += dirSign * p.theta * qty;
-        thetaDollar += dirSign * p.theta * qty * mu;
       }
 
       if (Number.isFinite(p.unrealDollar)) {
@@ -366,13 +360,20 @@ export default function LivePositions({ data, area = 'positions' }) {
       bestUnreal: bestUnreal && bestUnreal.value > 0 ? bestUnreal : null,
       worstUnreal: worstUnreal && worstUnreal.value < 0 ? worstUnreal : null,
       openCount: positions.length,
-      deltaDollar,
-      thetaDollar,
       closestDte,
       inProfitCount,
       inLossCount,
     };
   }, [positions]);
+
+  // É3.1 — agrégats « argent » du footer : la maison canonique (même
+  // source que le deck Héros 1 / bande CAPITAL). '—' honnête tant que
+  // l'agrégat n'a résolu aucune option (greeksMap pas encore là).
+  const hasGreeksAgg =
+    greeks != null && (greeks.optionsCount > 0 || Number.isFinite(greeks.sumDelta) && greeks.sumDelta !== 0);
+  const deltaShares = hasGreeksAgg ? greeks.sumDelta : null;
+  const deltaExposure = hasGreeksAgg && Number.isFinite(greeks.notionalDelta) ? greeks.notionalDelta : null;
+  const thetaDay = hasGreeksAgg ? greeks.thetaDaily : null;
 
   const headerHint = isEmpty
     ? 'Σ Notional $0 · Σ Max Risk $0'
@@ -537,16 +538,24 @@ export default function LivePositions({ data, area = 'positions' }) {
               {fmtUsdSigned(totalMaxRisk, 0)}
             </span>
           </div>
-          <div className="live-pos__footer-cell">
-            <span className="live-pos__footer-label">Σ Δ $</span>
+          <div
+            className="live-pos__footer-cell"
+            title={`Σ Δ×qty×100 — équivalent-actions, même source que le deck (aggregateGreeks)${deltaExposure != null ? ` · exposition ${fmtUsdSigned(deltaExposure, 0)} (Δ × spot)` : ''}. L'ex « Σ Δ $ » (Δ×qty×100×prime) est mort.`}
+          >
+            {/* É3.1 — l'ex « Σ Δ $ » (×prime de l'option) est MORT :
+                même chiffre que le Δ NET du deck, en équivalent-actions. */}
+            <span className="live-pos__footer-label">Δ · ÉQ. ACTIONS</span>
             <span className="live-pos__footer-value live-pos__footer-value--mute">
-              {fmtUsdSigned(stats.deltaDollar, 0)}
+              {deltaShares != null ? fmtNumberSigned(deltaShares, 0) : '—'}
             </span>
           </div>
-          <div className="live-pos__footer-cell">
+          <div
+            className="live-pos__footer-cell"
+            title="Σ (θ/365)×qty×100 — $/jour, même source que le deck (aggregateGreeks)."
+          >
             <span className="live-pos__footer-label">Σ Θ $ / J</span>
             <span className="live-pos__footer-value live-pos__footer-value--mute">
-              {fmtUsdSigned(stats.thetaDollar, 0)}
+              {thetaDay != null ? fmtUsdSigned(thetaDay, 0) : '—'}
             </span>
           </div>
           <div className="live-pos__footer-cell">
@@ -555,7 +564,7 @@ export default function LivePositions({ data, area = 'positions' }) {
             <span className="live-pos__footer-label">CLOSEST DTE</span>
             <span className="live-pos__footer-value">
               {stats.closestDte
-                ? `${stats.closestDte.ticker} ${stats.closestDte.expired ? 'EXP' : `${stats.closestDte.dte}j`}`
+                ? `${stats.closestDte.ticker} ${stats.closestDte.expired ? 'EXP' : `${stats.closestDte.dte} j`}`
                 : '—'}
             </span>
           </div>

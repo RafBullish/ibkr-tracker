@@ -19,3 +19,15 @@ export { computeVolatility } from './computeVolatility';
 // A3b additions — equity timeline + TWR
 export { buildEquityTimeline, extractFundingFlows } from './equityTimeline';
 export { computeTWR } from './computeTWR';
+// É3.1 « vérité des chiffres » — stats de courbe unifiées (RÉAL | NLV)
+export {
+  peakOf,
+  currentDrawdownOf,
+  maxDrawdownOf,
+  daysSincePeakOf,
+  recoveryOf,
+  joursGagnants,
+  realCurve,
+  nlvCurve,
+  greeksTotals,
+} from './curveStats';

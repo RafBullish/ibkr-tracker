@@ -125,8 +125,8 @@ export default function Hero1({ area = 'hero1' }) {
   // QUOTIDIENNE pré-resample + les clôtures de la fenêtre. Le tracé
   // (resampleSeries, cap 190) reste un détail d'affichage.
   const stats = useMemo(
-    () => deriveHeroWindowStats({ dailyFull, range, closedTrades }),
-    [dailyFull, range, closedTrades]
+    () => deriveHeroWindowStats({ dailyFull, range, closedTrades, rate: metrics?.liveRate || 1 }),
+    [dailyFull, range, closedTrades, metrics?.liveRate]
   );
   const kpi = useMemo(
     () =>
@@ -184,7 +184,7 @@ export default function Hero1({ area = 'hero1' }) {
           </div>
         </div>
       </div>
-      <ChartFooter stats={stats} rate={rate} />
+      <ChartFooter stats={stats} rate={rate} range={range} />
     </section>
   );
 }

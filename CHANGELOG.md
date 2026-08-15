@@ -6,6 +6,86 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.1-rc.4] — 2026-08-15
+
+**É3.1 — VÉRITÉ DES CHIFFRES · source unique des métriques globales
+(chantier v1.0.1, brique 5).** Constat architecte (captures 15.08) :
+les agrégats locaux étaient exacts au centime, toutes les erreurs
+venaient de métriques globales calculées en double avec des formules
+divergentes. Audit d'abord (chaque doublon localisé fichier + formule),
+puis centralisation, puis correction de l'affichage.
+
+### Module central (mission B)
+- **`utils/metrics/curveStats.js`** (nouveau, pur, 19 tests) — maison
+  UNIQUE des métriques de courbe, PAR COURBE (RÉAL = cumul réalisé ·
+  NLV = equity flow-neutral) : `peakOf`, `currentDrawdownOf`,
+  `maxDrawdownOf`, `daysSincePeakOf` (jours **calendaires** + date),
+  `recoveryOf`, `joursGagnants` {verts, rouges, total, pct},
+  `realCurve`/`nlvCurve`, et `greeksTotals` (projection de la maison
+  canonique `aggregateGreeks` : deltaNet éq.-actions, deltaExposure
+  ×spot, thetaDollarJour). Zéro valeur en dur.
+- Consommé par : heroStats (pied H1), hero2/model (matrice + pied H2),
+  RiskMatrix (ddInfo + Max DD YTD). Plus aucune boucle locale.
+
+### Corrections d'affichage (mission C)
+- **Footer LIVE POSITIONS** : l'ex « Σ Δ $ » = Σ(Δ×qty×100×**prime de
+  l'option**) — formule FAUSSE (+$2'989) — est MORT. La cellule
+  « **Δ · ÉQ. ACTIONS** » lit `greeks.sumDelta`, MÊME chiffre que le
+  Δ NET du deck (+1'083 sur le jeu du constat) ; exposition $ (Δ×spot)
+  en tooltip. Σ Θ $/J au même agrégat canonique. Même correctif sur le
+  footer jumeau de **/trading/positions** (même formule fausse).
+- **% jours gagnants** : UNE définition — jours avec clôture, signe du
+  P&L net du jour — propagée aux DEUX pieds de héros. L'ex-comptage des
+  deltas NLV (« 71 % · 46↑/19↓ » incohérent avec « J. CLÔTURE 63 »)
+  est mort ; compteurs cohérents (verts+rouges = total = J. CLÔTURE).
+  Le sub « ↑/↓ max » (streaks déguisées sous un label de %) meurt aussi.
+- **Bases affichées + formules en tooltip** : chaque DD/pic/recovery/
+  cumulé porte sa base — « MAX DD · NLV », « DD COURANT · NLV »,
+  « MAX DD · RÉAL » (H2), « Current DD · RÉAL », « Max DD · RÉAL ·
+  YTD/ALL », « TWR (ann.) · RÉAL », « Cumulé · RÉAL », « Recovery
+  Factor · RÉAL », « CUMULÉ · RÉAL · range », « SUR CETTE PÉRIODE ·
+  range · NLV », « DD CURVE · RÉAL · 60 J CLÔT. » — chacun avec sa
+  formule en une ligne (`title=`). Les deux RECOVERY jumeaux sont
+  distingués (« P&L / DD · NLV » vs « réalisé / DD · RÉAL »).
+- **Days Since Peak** : jours **calendaires** pic → aujourd'hui
+  (« 110 j » + date du pic, plus jamais « 11 » = pic→dernier trade),
+  via `daysSincePeakOf`.
+- **RiskMatrix — cohérence $/%** : Current DD et Max DD YTD calculés
+  sur la MÊME courbe que leurs % voisins (realEquityPoints) — fini le
+  $ par-trade face à un % par-jour dans la même ligne. « Recovery to
+  Peak » montre la vraie récupération (recoveryPct : creux→pic, 100 %
+  = pic retrouvé) au lieu de répéter le Current DD $ sous un label de
+  récupération. Export CSV aligné sur les nouveaux libellés.
+
+### Contrôles annexes (mission D)
+- **Total Fees « /tr »** : moyenne = commissions des CLÔTURES seules ÷
+  N trades (`totalClosedFees` exposé par calculations) — l'ex-formule
+  divisait le total gonflé (frais des positions ouvertes + frais cash)
+  par les seuls trades clôturés.
+- **Badge de mode HONNÊTE** : l'import CSV écrit désormais
+  `lastSync.source='csv'` (le Flex écrit `'flex'`) → la StatusBar
+  affiche **CSV** (« source non vérifiée, aucun lien IBKR ») au lieu de
+  REAL ; REAL reste réservé au Flex/bridge. La carte « Dernière
+  synchro » d'Import dit la vraie source (plus jamais « Flex IBKR »
+  par défaut). NB : provenance enregistrée à partir de cette version —
+  un dataset déjà en place doit être ré-importé pour être marqué.
+- **BEST DAY (fenêtre historique)** : audit = PAS de fuite de scope
+  (le calcul consomme bien `visibleTrades`) ; tooltip de scope ajouté
+  (fenêtre + date du jour retenu). Non modifié, conformément au
+  « corriger si l'audit confirme ».
+- **CLOSEST DTE** : le code disait déjà « j » (pas de typo « i » en
+  source) ; espace ajoutée (« MSFT 6 j ») pour tuer l'ambiguïté de
+  lecture. **VOLATILITÉ H/L** : non reproductible — le JSX et le DOM
+  rendent « H 14.72 · L 14.18 » (inchangé depuis le 18.07) ; aucun
+  correctif nécessaire, à relire sur la capture.
+
+### Tests (mission E)
+- `utils/metrics/__tests__/curveStats.test.js` : 19 tests (peak, DD
+  courant/max par courbe, jours calendaires — scénario exact du constat
+  pic 27.04 → 15.08 = 110 j —, recovery, joursGagnants, deltaNet/
+  deltaExposure/thetaDollarJour). heroStats.test.js : verrou de
+  cohérence verts+rouges = total = J. CLÔTURE. Suite complète : 338 ✓.
+
 ## [1.0.1-rc.3] — 2026-08-13
 
 **HERO-FOOTER — « Le pied au niveau du héros » (chantier v1.0.1,

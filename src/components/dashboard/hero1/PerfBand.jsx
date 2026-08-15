@@ -30,9 +30,14 @@ export default function PerfBand({ w, range, rate, synth = false }) {
   }
   const chf = fmtChf(w.pnl, rate, true);
   const tone = tone3(w.pnl);
+  // É3.1 — base affichée (NLV) + formule en title : ce cumul est le
+  // delta flow-neutral de la fenêtre, PAS le Σ réalisé du Héros 2.
   return (
-    <div className="lh-perf lh-perf--slim">
-      <span className="lh-perf__head">SUR CETTE PÉRIODE · {range}</span>
+    <div
+      className="lh-perf lh-perf--slim"
+      title={`NLV · ${range} — Δ flow-neutral de la fenêtre (apports neutralisés, latent inclus) ; % sur la NLV de départ. ≠ CUMULÉ · RÉAL (Héros 2, clôtures seules).`}
+    >
+      <span className="lh-perf__head">SUR CETTE PÉRIODE · {range} · NLV</span>
       <span className={`lh-perf__value${tone ? ` lh-perf__value--${tone}` : ''}`}>{signUsd(w.pnl)}</span>
       <span className="lh-perf__sub--inline">{`${signPct(w.pnlPct)}${chf ? ` · ${chf}` : ''}`}</span>
       {synth ? <span className="lh-perf__none lh-perf__none--end">{SYNTH_NOTE}</span> : null}

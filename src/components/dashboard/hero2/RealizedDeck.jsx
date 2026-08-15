@@ -16,12 +16,12 @@ import { TickValue } from '../decision/parts';
 import { MIN_DECISIVE_WINRATE } from '../../../utils/significance';
 
 // Cellule-MONDE (identique 1.D) — value null → cellule ignorée.
-function Cell({ label, value, chf, sub, tone, bar }) {
+function Cell({ label, value, chf, sub, tone, bar, title }) {
   if (value == null) return null;
   // 1.F — pas de « · » devant un sub qui commence par « / ».
   const meta = [chf, sub].filter(Boolean).join(sub && sub.startsWith('/') ? ' ' : ' · ');
   return (
-    <div className="pf-c">
+    <div className="pf-c" title={title || undefined}>
       <span className="pf-c__label">{label}</span>
       <TickValue text={value} className={`pf-c__val${tone ? ` pf-c__val--${tone}` : ''}`} />
       <span className="pf-c__meta">{meta || ' '}</span>
@@ -55,8 +55,22 @@ export default function RealizedDeck({ m, rate, range }) {
       sub: expectancyOk ? '/ clôture' : `${decisive} décisifs / ${MIN_DECISIVE_WINRATE} requis`,
       tone: expectancyOk ? toneSign(mx.expectancy) : undefined,
     },
-    { label: 'MAX DD CUMUL', value: mx.maxDD > 0 ? fmtUsd(-mx.maxDD) : mx.n ? '$0' : null, chf: mx.maxDD > 0 ? chf(-mx.maxDD) : null, sub: 'pic → creux', tone: mx.maxDD > 0 ? 'loss' : undefined },
-    { label: 'RECOVERY', value: mx.recovery == null ? null : `${mx.recovery.toFixed(2)}×`, sub: 'réalisé / DD' },
+    // É3.1 — base [RÉAL · fenêtre] affichée + formule en title : ce DD et
+    // ce recovery vivent sur la courbe du CUMUL RÉALISÉ, pas sur la NLV.
+    {
+      label: 'MAX DD · RÉAL',
+      value: mx.maxDD > 0 ? fmtUsd(-mx.maxDD) : mx.n ? '$0' : null,
+      chf: mx.maxDD > 0 ? chf(-mx.maxDD) : null,
+      sub: `pic → creux · ${range}`,
+      tone: mx.maxDD > 0 ? 'loss' : undefined,
+      title: `RÉAL · ${range} — pic→creux de la courbe du cumul réalisé (clôtures seules, latent exclu) ; ≠ MAX DD · NLV du pied Héros 1`,
+    },
+    {
+      label: 'RECOVERY',
+      value: mx.recovery == null ? null : `${mx.recovery.toFixed(2)}×`,
+      sub: 'réalisé / DD · RÉAL',
+      title: `RÉAL · ${range} — Σ réalisé de la fenêtre ÷ max DD du cumul réalisé ; ≠ RECOVERY · NLV du pied Héros 1 (P&L flow-neutral / DD NLV)`,
+    },
   ];
   const extremes = [
     { label: 'MEILLEURE', value: mx.n ? fmtUsdSigned(mx.best) : null, chf: chf(mx.best, true), tone: mx.best > 0 ? 'profit' : undefined },
@@ -76,8 +90,11 @@ export default function RealizedDeck({ m, rate, range }) {
       {/* Panneau 1 — RÉALISÉ TOTAL (hero cumulé + gross). */}
       <div className="mk-cell pf-cell">
         <div className="mk-title">RÉALISÉ TOTAL</div>
-        <div className="pf-hero">
-          <div className="pf-hero__lbl">CUMULÉ · {range}</div>
+        <div
+          className="pf-hero"
+          title={`RÉAL · ${range} — Σ des P&L de clôture de la fenêtre (argent encaissé) ; ≠ « SUR CETTE PÉRIODE · NLV » du Héros 1 (flow-neutral, latent inclus)`}
+        >
+          <div className="pf-hero__lbl">CUMULÉ · RÉAL · {range}</div>
           <div className={`pf-hero__val h2-giant--${toneSign(mx.realizedTotal) || 'mute'}`}>
             <TickValue text={mx.n ? fmtUsdSigned(mx.realizedTotal) : '—'} />
           </div>

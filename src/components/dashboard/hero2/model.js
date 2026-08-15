@@ -15,6 +15,8 @@
 
 import { tradePnlUsd } from '../../../utils/calculations';
 import { filterByTimeframe } from '../../../utils/equity';
+// É3.1 — métriques de courbe via la maison unique (plus de recalcul local).
+import { maxDrawdownOf, recoveryOf, joursGagnants } from '../../../utils/metrics/curveStats';
 
 // Running sum de la série quotidienne réalisée → trajectoire cumulée.
 export function buildCumul(daily) {
@@ -82,17 +84,13 @@ export function buildMatrix(pnls, cumulSeries) {
   const best = n ? Math.max(...clean) : 0;
   const worst = n ? Math.min(...clean) : 0;
 
-  // Max drawdown de la trajectoire CUMULÉE réalisée (pic → creux).
-  let maxDD = 0;
-  if (Array.isArray(cumulSeries) && cumulSeries.length) {
-    let runPeak = cumulSeries[0].cumul;
-    for (const p of cumulSeries) {
-      if (p.cumul > runPeak) runPeak = p.cumul;
-      const dd = runPeak - p.cumul;
-      if (dd > maxDD) maxDD = dd;
-    }
-  }
-  const recovery = maxDD > 0 ? realizedTotal / maxDD : null;
+  // Max drawdown de la trajectoire CUMULÉE réalisée (pic → creux) —
+  // É3.1 : via curveStats (courbe RÉAL), plus de boucle locale.
+  const dd = maxDrawdownOf(
+    (cumulSeries || []).map((p) => ({ date: p.date, value: p.cumul }))
+  );
+  const maxDD = dd ? dd.usd : 0;
+  const recovery = recoveryOf(realizedTotal, maxDD > 0 ? maxDD : null);
 
   return {
     n, wins: wins.length, losses: losses.length, breakeven: breakeven.length,
@@ -102,22 +100,21 @@ export function buildMatrix(pnls, cumulSeries) {
 }
 
 // Stats jour (footer) : extrêmes de journée + % jours gagnants + série.
+// É3.1 — % jours gagnants via curveStats.joursGagnants (LA définition
+// unique, partagée avec le pied du Héros 1) ; les ex-streaks longWin/
+// longLoss (affichés « ↑/↓ max » sous un label de %) sont MORTS —
+// les compteurs affichés sont désormais verts/rouges, cohérents.
 export function buildDayStats(daily) {
-  const vals = (daily || []).map((p) => p.dailyPnl || 0);
-  if (!vals.length) return { bestDay: 0, worstDay: 0, pctWinDays: null, activeDays: 0, longWin: 0, longLoss: 0 };
-  const winDays = vals.filter((v) => v > 0).length;
-  let longWin = 0, longLoss = 0, curW = 0, curL = 0;
-  for (const v of vals) {
-    if (v > 0) { curW += 1; curL = 0; if (curW > longWin) longWin = curW; }
-    else if (v < 0) { curL += 1; curW = 0; if (curL > longLoss) longLoss = curL; }
-    else { curW = 0; curL = 0; }
-  }
+  const days = (daily || []).map((p) => ({ date: p.date, pnl: p.dailyPnl || 0 }));
+  const jg = joursGagnants(days);
+  if (!days.length) return { bestDay: 0, worstDay: 0, pctWinDays: null, activeDays: 0, joursGagnants: jg };
+  const vals = days.map((d) => d.pnl);
   return {
     bestDay: Math.max(...vals),
     worstDay: Math.min(...vals),
-    pctWinDays: vals.length ? (winDays / vals.length) * 100 : null,
+    pctWinDays: jg.pct,
     activeDays: vals.filter((v) => v !== 0).length,
-    longWin, longLoss,
+    joursGagnants: jg,
   };
 }
 
