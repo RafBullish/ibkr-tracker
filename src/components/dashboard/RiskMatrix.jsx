@@ -351,7 +351,7 @@ function WinRateGauge({
       </svg>
       <div className="risk-matrix__winrate-stats">
         <div className="risk-matrix__winrate-row">
-          <span className="risk-matrix__winrate-label">{winCount ?? 0} wins</span>
+          <span className="risk-matrix__winrate-label">{winCount ?? 0} gagnants</span>
           <span className="risk-matrix__cell--profit risk-matrix__winrate-amount">
             {fmtUsdSigned(totalWinAmount)}
           </span>
@@ -365,7 +365,7 @@ function WinRateGauge({
           <span className="risk-matrix__winrate-ratio-loss" style={{ width: `${lossRatio}%` }} />
         </div>
         <div className="risk-matrix__winrate-row">
-          <span className="risk-matrix__winrate-label">{lossCount ?? 0} losses</span>
+          <span className="risk-matrix__winrate-label">{lossCount ?? 0} perdants</span>
           <span className="risk-matrix__cell--loss risk-matrix__winrate-amount">
             {fmtUsdSigned(-Math.abs(totalLossAmount || 0))}
           </span>
