@@ -141,7 +141,9 @@ export default function Dashboard() {
             CAPITAL). Absorbe AlertsFeed (fusion U7 → ATTENTION). */}
         <DecisionBand metrics={portfolioMetrics} greeks={greeks} area="decision" />
         <RiskMatrix metrics={riskMetrics} area="risk" />
-        <LivePositions data={positions} area="positions" />
+        {/* É3.1 — greeks (agrégat canonique) passé au footer : Δ éq.
+            actions / Σ Θ $/J = MÊMES chiffres que deck + bande CAPITAL. */}
+        <LivePositions data={positions} greeks={greeks} area="positions" />
         <TradeHistory data={closedTrades} liveRate={portfolioMetrics?.liveRate ?? 1} area="history" />
         {/* 1.F — rangée de clôture « veille » : Watchlist | CalendarMini. */}
         <Watchlist data={watchlist} area="watch" />

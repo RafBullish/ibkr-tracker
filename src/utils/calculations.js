@@ -681,6 +681,11 @@ export function calculatePortfolioMetrics(state) {
     unrealizedPnlUsd,
     unrealizedPnlChf: fxValid ? unrealizedPnlChf : null,
     totalAllFees,
+    // É3.1 — commissions des CLÔTURES seules (Σ t.cm ‖ t.fi+t.fo).
+    // Sert le « /tr » honnête de RiskMatrix : totalAllFees inclut aussi
+    // les frais des positions OUVERTES + frais cash — le diviser par le
+    // nombre de trades clôturés gonflait la moyenne affichée.
+    totalClosedFees: roundTo2(totalClosedFees),
     monthlyPnlUsd,
     monthlyPnlChf: fxValid ? monthlyPnlChf : null,
     winRate,
