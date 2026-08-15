@@ -34,10 +34,13 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
   jumeau (HeroFootCell partagée, 6×1) ; morts : deriveWindowStats/
   deriveSeriesStats, GAIN/PERTE MOY.+EXPECTANCY du pied (maison =
   deck PERFORMANCE), h2-cfoot--*, lh-cfoot--dense.
-- **COULEUR ⏳ (branche `v1/couleur`, ATTENTE GO)** — « La loi remise en
-  place » : RiskMatrix instrument (14 neutralisations, argent réel
-  gardé), badge REAL ambre, DEPUIS PIC au pied H1. Préparée, poussée
-  (preview Vercel), en attente du GO visuel de Rafael.
+- **COULEUR ✅ (1.0.1-rc.6, GO Rafael 15.08)** — « La loi remise en
+  place » : RiskMatrix instrument (14 neutralisations — EDGE+/− et
+  jauges de ratios rendus à l'encre, Kelly désambré, volTone mort —
+  l'argent réel garde ses couleurs), badge REAL ambre (un mode n'est
+  pas un gain), DEPUIS PIC au pied H1 (remplace PEAK ≡ HAUT, même pic
+  flow-neutral que MAX DD/DD COURANT). Backlog post-1.0 items 1+2
+  SOLDÉS.
 - **É3.1 ✅ (1.0.1-rc.4)** — « Vérité des chiffres » : source unique des
   métriques globales du Dashboard. `utils/metrics/curveStats.js` (pur,
   19 tests) : peak / DD courant / max DD / jours-depuis-pic CALENDAIRES
@@ -347,9 +350,9 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
 
 ## Backlog post-1.0 (explicite)
 
-1. RiskMatrix — passe couleur dédiée (EDGE+/−, jauges ratios, Kelly
-   ambre, vol verte, R toné — constat panel É3, préexistant).
-2. Badge REAL vert StatusBar (arbitrage architecte si neutralisation).
+1. ~~RiskMatrix — passe couleur dédiée~~ **SOLDÉ** (brique COULEUR,
+   1.0.1-rc.6, GO 15.08).
+2. ~~Badge REAL vert StatusBar~~ **SOLDÉ** (COULEUR : REAL ambre).
 3. Pipeline IV Rank (source fiable requise ; qc:ivHistory collecte).
 4. Thème daylight sur pages canoniques.
 5. CANONICAL-PURGE (zone TRANSITION + theme/tokens.js legacy).

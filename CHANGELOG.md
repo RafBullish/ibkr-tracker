@@ -6,6 +6,28 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.1-rc.6] — 2026-08-15
+
+**COULEUR — « La loi remise en place » (chantier v1.0.1, brique 4 —
+GO Rafael 15.08, mergée après É3.1/É3.2).** Le gisement couleur
+préexistant de RiskMatrix (consigné à É3) est soldé.
+
+- **RiskMatrix instrument** : 14 neutralisations — EDGE+/− (badge et
+  mentions), jauges de ratios, deltas vs bench, Kelly ambré, volTone
+  (vert/ambre) rendus à l'encre neutre : un ratio/une statistique
+  n'est pas de l'argent. L'argent réel (P&L, DD $, streak P&L) GARDE
+  ses couleurs.
+- **Badge REAL ambre** (StatusBar) : un mode n'est ni un gain ni une
+  perte — l'ex-vert du backlog était périmé ; ambre = marqueur
+  décisionnel. Backlog post-1.0 items 1+2 SOLDÉS.
+- **DEPUIS PIC au pied Héros 1** : remplace la cellule PEAK (≡ HAUT,
+  doublon) — jours calendaires depuis le pic flow-neutral, LE MÊME pic
+  qui fonde MAX DD / DD COURANT, daté (« pic 27.04 »).
+- Résolution de merge : volTone mort (couleur) + updatedStr mort
+  (É3.2) cohabitent ; DEPUIS PIC porte le tooltip de base É3.1.
+  Harnais de preuve `scripts/couleur-proof.mjs` + captures
+  `docs/captures/couleur/`. 350 tests ✓.
+
 ## [1.0.1-rc.5] — 2026-08-15
 
 **É3.2 — ZÉRO FANTÔME · un slot est servi ou n'existe pas (chantier
