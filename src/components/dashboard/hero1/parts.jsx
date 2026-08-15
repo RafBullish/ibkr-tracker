@@ -138,11 +138,15 @@ export function ChartFooter({ stats, rate, range = 'ALL' }) {
   if (stats.empty) return <div className="lh-cfoot--empty">Série NLV vide</div>;
   const sf = (v) => (v == null ? '—' : `${v >= 0 ? '+' : '−'}$${Math.abs(Math.round(v)).toLocaleString('de-CH')}`);
   const pct = (v) => (v == null ? '—' : fmtPct(v));
+  const dayShort = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '—');
   const jg = stats.joursGagnants || { verts: 0, rouges: 0, total: 0, pct: null };
   // [label, value, sub, usdForChf, tone, title]
+  // COULEUR (C3) — PEAK ≡ HAUT (doublon constaté brique 3) : PEAK meurt,
+  // DEPUIS PIC dit depuis combien de jours aucun nouveau sommet
+  // flow-neutral (le MÊME pic qui fonde MAX DD / DD COURANT). Neutre.
   const cells = [
-    ['PEAK', fmtUsd(stats.peak), null, stats.peak, null,
-      `NLV · ${range} — plus haute NLV de la fenêtre`],
+    ['DEPUIS PIC', stats.daysSincePeak == null ? '—' : `${stats.daysSincePeak} j`, `pic ${dayShort(stats.peakDate)}`, null, null,
+      `NLV · ${range} — jours calendaires depuis le pic flow-neutral (le même pic que MAX DD / DD COURANT)`],
     ['HAUT / BAS', fmtUsd(stats.high), `bas ${fmtUsd(stats.low)}`, stats.high, null,
       `NLV · ${range} — extrêmes quotidiens de la fenêtre`],
     [`MAX DD · NLV`, fmtUsd(-stats.maxDDUsd), pct(stats.maxDDPct), -stats.maxDDUsd, null,

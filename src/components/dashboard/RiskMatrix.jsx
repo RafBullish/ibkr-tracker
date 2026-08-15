@@ -71,15 +71,17 @@ const fmtUsdSigned = (v) => {
   return (v > 0 ? '+' : '-') + '$' + USD_FMT_0D_RM.format(Math.abs(v));
 };
 
-function deltaVsBench(value, bench, profitIfAbove = true) {
+// COULEUR (v1.0.1/4, D1a) : le Δ vs bench d'un RATIO est une
+// STATISTIQUE — le signe reste dans le texte, le jugement coloré est
+// mort. Toujours mute.
+function deltaVsBench(value, bench) {
   if (value == null || !Number.isFinite(value) || bench == null) {
     return { text: '—', tone: 'mute' };
   }
   const d = value - bench;
   if (d === 0) return { text: '0', tone: 'mute' };
-  const tone = (profitIfAbove ? d > 0 : d < 0) ? 'profit' : 'loss';
   const sign = d > 0 ? '+' : '';
-  return { text: `${sign}${d.toFixed(2)}`, tone };
+  return { text: `${sign}${d.toFixed(2)}`, tone: 'mute' };
 }
 
 // ─── Export CSV de la matrice ───────────────────────────────────
@@ -167,7 +169,11 @@ function computeMonthlyPnL(closedTrades, liveRate, monthsBack = 6) {
 // ─── Sub-components ─────────────────────────────────────────────
 
 // Gauge horizontale par métrique (5e colonne Performance).
-// `mode` : 'higher-is-better' | 'lower-is-better' | 'info'
+// `mode` : 'higher-is-better' | 'lower-is-better' | 'info' (mode ne
+// sert plus qu'à la géométrie — COULEUR D1b : remplissage NEUTRE
+// ink-soft sur piste hairline, graduations conservées ; le jugement
+// vert/rouge d'un RATIO est mort, le repère ambre 70 % reste exclusif
+// aux jauges de capital/exposition).
 function MetricGauge({ value, bench, mode = 'higher-is-better' }) {
   if (value == null || !Number.isFinite(value)) {
     return <div className="risk-matrix__gauge" aria-hidden="true" />;
@@ -175,32 +181,24 @@ function MetricGauge({ value, bench, mode = 'higher-is-better' }) {
   if (mode === 'info') {
     return (
       <div className="risk-matrix__gauge" aria-hidden="true">
-        <div className="risk-matrix__gauge-fill" data-tone="amber" style={{ width: '50%' }} />
+        <div className="risk-matrix__gauge-fill" style={{ width: '50%' }} />
       </div>
     );
   }
   // Fallback bench=0 (R Avg) — use abs(value) * 50 as scale.
   if (bench == null || bench === 0) {
     const fillPct = Math.min(100, Math.max(0, Math.abs(value) * 50));
-    const tone =
-      mode === 'higher-is-better' ? (value >= 0 ? 'profit' : 'loss') : value <= 0 ? 'profit' : 'loss';
     return (
       <div className="risk-matrix__gauge" aria-hidden="true">
-        <div
-          className="risk-matrix__gauge-fill"
-          data-tone={tone}
-          style={{ width: `${fillPct}%` }}
-        />
+        <div className="risk-matrix__gauge-fill" style={{ width: `${fillPct}%` }} />
       </div>
     );
   }
   // Standard : fill = value / (bench*2) * 100, clampé 0-100. Marker à 50% (bench position).
   const fillPct = Math.min(100, Math.max(0, (value / (bench * 2)) * 100));
-  const isGood = mode === 'higher-is-better' ? value >= bench : value <= bench;
-  const tone = isGood ? 'profit' : 'loss';
   return (
     <div className="risk-matrix__gauge" aria-hidden="true">
-      <div className="risk-matrix__gauge-fill" data-tone={tone} style={{ width: `${fillPct}%` }} />
+      <div className="risk-matrix__gauge-fill" style={{ width: `${fillPct}%` }} />
       <div className="risk-matrix__gauge-marker" style={{ left: '50%' }} />
     </div>
   );
@@ -735,58 +733,55 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
     [m.lossCount, m.averageLoss]
   );
 
-  // EDGE badge tone.
+  // EDGE badge — COULEUR (D1c) : l'INFO survit (le libellé, dérivé de
+  // PF & win rate), le jugement coloré est mort — variante neutre
+  // unique (PF/WR sont des ratios, pas de l'argent).
   const edge = useMemo(() => {
     const pf = m.profitFactor;
     const wr = m.winRate;
     const pfFinite = Number.isFinite(pf) || pf === Infinity;
     if (pfFinite && (pf === Infinity || pf > 1.5) && Number.isFinite(wr) && wr > 50) {
-      return { tone: 'profit', label: 'EDGE+ ACTIF' };
+      return { label: 'EDGE+ ACTIF' };
     }
     if (pfFinite && (pf === Infinity || pf > 1)) {
-      return { tone: 'amber', label: 'EDGE NEUTRE' };
+      return { label: 'EDGE NEUTRE' };
     }
-    return { tone: 'loss', label: 'EDGE− ALERTE' };
+    return { label: 'EDGE− ALERTE' };
   }, [m.profitFactor, m.winRate]);
 
-  // Vol (ann.) tone (lower-is-better). A2a — field renamed from
-  // `vol30dPct` to `volAnnPct` (the 30-day window approach is retired;
-  // the canonical primitive uses all-history returns + obs/years gate).
-  const volTone = useMemo(() => {
-    if (m.volAnnPct == null || !Number.isFinite(m.volAnnPct)) return 'mute';
-    return m.volAnnPct > 20 ? 'amber' : 'profit';
-  }, [m.volAnnPct]);
-
+  // COULEUR (D1a) — volTone est MORT (une volatilité est une
+  // statistique, pas de l'argent : ligne Vol neutre).
   // É3.2 — l'ex `updatedStr` (new Date() au render, affiché comme une
   // fraîcheur de synchro) est MORT : la vérité vit dans syncLabel.
 
-  // Δ vs benchmarks.
-  const sharpeDelta = deltaVsBench(m.sharpeRatio, 1.0, true);
-  const sortinoDelta = deltaVsBench(m.sortinoRatio, 1.5, true);
-  const calmarDelta = deltaVsBench(m.calmarRatio, 3.0, true);
-  const sqnDelta = deltaVsBench(m.sqn, 1.6, true);
-  const cagrDelta = deltaVsBench(cagr, 15, true);
-  const twrDelta = deltaVsBench(m.twr, 15, true);
-  const volDelta = deltaVsBench(m.volAnnPct, 20, false);
-  const recoveryDelta = deltaVsBench(m.recoveryFactor, 3.0, true);
+  // Δ vs benchmarks — tous mute (COULEUR D1a : statistiques).
+  const sharpeDelta = deltaVsBench(m.sharpeRatio, 1.0);
+  const sortinoDelta = deltaVsBench(m.sortinoRatio, 1.5);
+  const calmarDelta = deltaVsBench(m.calmarRatio, 3.0);
+  const sqnDelta = deltaVsBench(m.sqn, 1.6);
+  const cagrDelta = deltaVsBench(cagr, 15);
+  const twrDelta = deltaVsBench(m.twr, 15);
+  const volDelta = deltaVsBench(m.volAnnPct, 20);
+  const recoveryDelta = deltaVsBench(m.recoveryFactor, 3.0);
 
+  // Mentions edge+/edge− : l'info textuelle survit, le ton meurt (D1a).
   const pfEdge =
     m.profitFactor === Infinity
-      ? { text: 'edge+', tone: 'profit' }
+      ? { text: 'edge+', tone: 'mute' }
       : m.profitFactor == null || !Number.isFinite(m.profitFactor)
         ? { text: '—', tone: 'mute' }
         : m.profitFactor > 1.5
-          ? { text: 'edge+', tone: 'profit' }
+          ? { text: 'edge+', tone: 'mute' }
           : m.profitFactor < 1
-            ? { text: 'edge−', tone: 'loss' }
+            ? { text: 'edge−', tone: 'mute' }
             : { text: '—', tone: 'mute' };
 
   const rAvgEdge =
     m.rAverage == null || !Number.isFinite(m.rAverage)
       ? { text: '—', tone: 'mute' }
       : m.rAverage > 0
-        ? { text: 'edge+', tone: 'profit' }
-        : { text: 'edge−', tone: 'loss' };
+        ? { text: 'edge+', tone: 'mute' }
+        : { text: 'edge−', tone: 'mute' };
 
   // U3 — Export CSV : sérialise les métriques affichées du cockpit
   // (mêmes champs m.* et mêmes formatters que le rendu). Désactivé
@@ -949,7 +944,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
         </div>
         <div className="risk-matrix__context risk-matrix__context--right">
           <span className="risk-matrix__tier-badge">TIER {tierLabel}</span>
-          <span className="risk-matrix__edge-badge" data-tone={edge.tone}>
+          <span className="risk-matrix__edge-badge">
             <span className="risk-matrix__edge-dot" aria-hidden="true" />
             {edge.label}
           </span>
@@ -1045,7 +1040,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
           <RowPerf
             label="Vol (ann.)"
             value={fmtPct(m.volAnnPct)}
-            valueTone={volTone}
+            valueTone="value"
             bench="20.0%"
             delta={volDelta.text}
             deltaTone={volDelta.tone}
@@ -1066,38 +1061,30 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             gauge={<MetricGauge value={m.recoveryFactor} bench={3.0} mode="higher-is-better" />}
             title="RÉAL · ALL — Σ réalisé ÷ Max DD · RÉAL · ALL (par trade). ≠ RECOVERY · NLV du Héros 1 (P&L flow-neutral / DD NLV) et ≠ RECOVERY · RÉAL fenêtré du Héros 2."
           />
+          {/* COULEUR D1a — Expectancy/Kelly/R Avg : ratios & moyennes
+              statistiques → neutres (le Kelly ambre est mort). */}
           <RowPerf
             label="Expectancy"
             value={fmtUsdSigned(m.expectancy)}
-            valueTone={
-              m.expectancy == null
-                ? 'mute'
-                : m.expectancy > 0
-                  ? 'profit-bold'
-                  : m.expectancy < 0
-                    ? 'loss-bold'
-                    : 'mute'
-            }
+            valueTone="value"
             bench="—"
             delta={fmtPctSigned(m.expectancy, 0)}
-            deltaTone={m.expectancy > 0 ? 'profit' : m.expectancy < 0 ? 'loss' : 'mute'}
+            deltaTone="mute"
             gauge={<MetricGauge value={m.expectancy} bench={null} mode="info" />}
           />
           <RowPerf
             label="Kelly Optimal"
             value={fmtPct(m.kellyPercent)}
-            valueTone="amber"
+            valueTone="value"
             bench="—"
             delta="info"
-            deltaTone="amber"
+            deltaTone="mute"
             gauge={<MetricGauge value={m.kellyPercent} bench={null} mode="info" />}
           />
           <RowPerf
             label="R Avg / σ"
             value={m.rAverage == null ? '—' : `${m.rAverage >= 0 ? '+' : ''}${fmtNum(m.rAverage)}`}
-            valueTone={
-              m.rAverage == null ? 'mute' : m.rAverage > 0 ? 'profit-bold' : 'loss-bold'
-            }
+            valueTone="value"
             bench={`σ ${fmtNum(m.rStdDev)}`}
             delta={rAvgEdge.text}
             deltaTone={rAvgEdge.tone}
@@ -1182,6 +1169,8 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             subTone="mute"
             title="RÉAL — jours CALENDAIRES entre le pic du cumul réalisé et aujourd'hui (plus jamais pic→dernier trade)."
           />
+          {/* COULEUR D1 — montant à recouvrer = hypothétique (amendement
+              15.07) et % = ratio : l'ambre ambiant est mort, neutres. */}
           <Row3
             label="Recovery to Peak"
             value={
@@ -1189,7 +1178,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
                 ? fmtPct(m.recoveryPctValue)
                 : '—'
             }
-            valueTone="amber"
+            valueTone="value"
             sub="du creux récupéré"
             subTone="mute"
             title="RÉAL · ALL — (meilleur point post-creux − creux) ÷ (pic − creux) : 100 % = pic retrouvé. L'ex-ligne répétait le Current DD $ sous un label de récupération."
@@ -1365,7 +1354,8 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
           <div className="risk-matrix__subzone">
             <div className="risk-matrix__subzone-head">
               <span>WIN RATE GAUGE</span>
-              <span className="risk-matrix__cell--accent">
+              {/* COULEUR D1 — PF est un ratio : ambre mort, encre pleine. */}
+              <span className="risk-matrix__cell--value">
                 PF{' '}
                 {m.profitFactor === Infinity
                   ? '∞'

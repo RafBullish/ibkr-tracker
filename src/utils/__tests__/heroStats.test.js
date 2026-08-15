@@ -130,6 +130,39 @@ describe('deriveHeroWindowStats — vérité pré-resample', () => {
     expect(deriveHeroWindowStats({ dailyFull: one, range: 'ALL' }).empty).toBe(true);
   });
 
+  it('DEPUIS PIC (C3) : pic flow-neutral daté — même référence que le DD courant', () => {
+    const mk = (i, fn) => ({
+      date: iso(i),
+      nlv: fn,
+      flowNeutral: fn,
+      drawdownUsd: 0,
+      drawdownPct: 0,
+    });
+    // Pic à J2 (fn 12 000), puis sous l'eau jusqu'à J6.
+    const daily = [mk(0, 10_000), mk(1, 11_000), mk(2, 12_000), mk(3, 11_500), mk(4, 11_200), mk(5, 11_800), mk(6, 11_600)];
+    const s = deriveHeroWindowStats({ dailyFull: daily, range: 'ALL', closedTrades: [] });
+    expect(s.peakDate).toBe(iso(2));
+    expect(s.daysSincePeak).toBe(4); // J6 − J2
+  });
+
+  it('DEPUIS PIC : « 0 j » quand le point courant EST le pic', () => {
+    const mk = (i, fn) => ({ date: iso(i), nlv: fn, flowNeutral: fn, drawdownUsd: 0, drawdownPct: 0 });
+    const rising = [mk(0, 10_000), mk(1, 10_500), mk(2, 11_000)];
+    const s = deriveHeroWindowStats({ dailyFull: rising, range: 'ALL', closedTrades: [] });
+    expect(s.peakDate).toBe(iso(2));
+    expect(s.daysSincePeak).toBe(0);
+  });
+
+  it('DEPUIS PIC : le pic HORS fenêtre courte reste la référence (comme MAX DD/DD COURANT)', () => {
+    const mk = (i, fn) => ({ date: iso(i), nlv: fn, flowNeutral: fn, drawdownUsd: 0, drawdownPct: 0 });
+    // Pic historique à J1, fenêtre 1M sur une série de 100 jours plats ensuite.
+    const daily = [mk(0, 10_000), mk(1, 15_000)];
+    for (let i = 2; i < 100; i++) daily.push(mk(i, 12_000));
+    const s = deriveHeroWindowStats({ dailyFull: daily, range: '1M', closedTrades: [] });
+    expect(s.peakDate).toBe(iso(1)); // hors fenêtre, mais LA référence
+    expect(s.daysSincePeak).toBe(98); // J99 − J1
+  });
+
   it('P&L de fenêtre = delta flow-neutral (un apport ne gagne rien)', () => {
     const win = [
       { date: iso(0), nlv: 10_000, flowNeutral: 10_000, drawdownUsd: 0, drawdownPct: 0 },
