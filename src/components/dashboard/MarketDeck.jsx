@@ -522,26 +522,36 @@ function MondeCell({ quotes }) {
 }
 
 // ─── R2 · FUT · O/N — slot permanent (rail des entrailles) ──────
+// É3.2 « zéro fantôme » — le feed est branché et sert même le week-end
+// (clôture de vendredi, prouvé /api/quote/ES=F 200 un samedi) : trois
+// rangées de tirets nus = premier train de quotes pas encore arrivé
+// (cache froid / 429 transitoire), PAS une session fermée. Tant que
+// rien n'a servi → UN état explicite (pattern « — aucun événement »
+// de l'AGENDA) ; dès le premier train complet, rangées permanentes.
 function FutCell({ quotes, futServed }) {
   return (
     <div className="mk-cell mk-fut">
       <div className="mk-title">FUT · O/N</div>
-      {FUTURES.map(({ sym, label }) => {
-        const q = quotes[sym];
-        const served = futServed && Number.isFinite(q?.price);
-        return (
-          <div className="mk-futr" key={sym}>
-            <span className="mk-fsym">{label}</span>
-            <span className="mk-fval">{served ? fmtVal(q.price, 'index') : '—'}</span>
-            <DeltaArrow pct={served ? q?.changePercent : null} size={13.5} />
-            <span className="mk-frng">
-              {served && validHL(q?.low) && validHL(q?.high)
-                ? `${fmtVal(q.low, 'index')}–${fmtVal(q.high, 'index')}`
-                : '—'}
-            </span>
-          </div>
-        );
-      })}
+      {futServed ? (
+        FUTURES.map(({ sym, label }) => {
+          const q = quotes[sym];
+          const served = Number.isFinite(q?.price);
+          return (
+            <div className="mk-futr" key={sym}>
+              <span className="mk-fsym">{label}</span>
+              <span className="mk-fval">{served ? fmtVal(q.price, 'index') : '—'}</span>
+              <DeltaArrow pct={served ? q?.changePercent : null} size={13.5} />
+              <span className="mk-frng">
+                {served && validHL(q?.low) && validHL(q?.high)
+                  ? `${fmtVal(q.low, 'index')}–${fmtVal(q.high, 'index')}`
+                  : '—'}
+              </span>
+            </div>
+          );
+        })
+      ) : (
+        <div className="mk-ahsub mk-ahsub--none">— en attente du flux quotes</div>
+      )}
     </div>
   );
 }

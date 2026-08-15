@@ -23,7 +23,9 @@
 //  Header 34 px avec 3 boutons (98/99/97) + title cockpit.
 //  Sub-header 4 infos (Init Cap, Live FX, N trades, YTD Active)
 //  + 2 badges (TIER + EDGE dynamique selon profitFactor & winRate).
-//  Footer 26 px avec QueryID Flex + PMET <GO>.
+//  Footer 26 px : ligne de synchro VÉRIDIQUE (lastSync — É3.2 :
+//  IMPORT CSV / IBKR FLEX · Query masqué / IBKR BRIDGE, ou rien)
+//  + PMET <GO>.
 //
 //  Tous les colors via var(--*). Aucun hex hardcoded.
 //
@@ -39,6 +41,9 @@ import { tierParams } from '../../utils/sniperMeta';
 // É3.1 — métriques de courbe via la maison unique (curveStats) : DD
 // courant, jours-depuis-pic CALENDAIRES, max DD YTD. Courbe RÉAL.
 import { currentDrawdownOf, daysSincePeakOf, maxDrawdownOf } from '../../utils/metrics/curveStats';
+// É3.2 — la ligne de synchro du footer dit la vérité de lastSync
+// (source csv/flex/bridge, QueryID masqué) ou n'existe pas.
+import { deriveSyncLabel } from '../../utils/syncProvenance';
 
 // ─── Formatters ─────────────────────────────────────────────────
 
@@ -659,17 +664,21 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
   // du Dashboard. TODO Phase C.3 résolu.
   const tierLabel = tierParams(settings?.activeSniperTier).label;
 
-  // (E) QueryID Flex — lu depuis la config Flex de Settings → API
-  // (clé localStorage ibkr_flex_queryid, hors store zustand). AUCUN
-  // fallback en dur : tant que rien n'est configuré on affiche un
-  // placeholder générique, jamais un numéro de compte réel.
-  const flexQueryId = useMemo(() => {
+  // (E) É3.2 — ligne de synchro du footer : pilotée par
+  // settings.lastSync (rc.4). source=csv → IMPORT CSV + fichier/date ;
+  // source=flex → IBKR FLEX · Query ****xxxx (QueryID localStorage,
+  // masqué) ; bridge (string) → IBKR BRIDGE + date ; rien → ligne
+  // MORTE. Plus jamais « —— », plus jamais « IBKR Flex Sync » en dur,
+  // plus jamais l'horloge de rendu déguisée en fraîcheur (« Updated »).
+  const syncLabel = useMemo(() => {
+    let queryId = null;
     try {
-      return window.localStorage.getItem('ibkr_flex_queryid') || '——';
+      queryId = window.localStorage.getItem('ibkr_flex_queryid');
     } catch {
-      return '——';
+      queryId = null;
     }
-  }, []);
+    return deriveSyncLabel(settings?.lastSync, queryId);
+  }, [settings?.lastSync]);
 
   // ── Passe finale — underwater % sur realEquity ────────────────
   // 7e (et dernière) implémentation drawdown migrée vers la base
@@ -748,14 +757,8 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
     return m.volAnnPct > 20 ? 'amber' : 'profit';
   }, [m.volAnnPct]);
 
-  // Updated timestamp.
-  const updatedStr = new Date().toLocaleString('fr-CH', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  // É3.2 — l'ex `updatedStr` (new Date() au render, affiché comme une
+  // fraîcheur de synchro) est MORT : la vérité vit dans syncLabel.
 
   // Δ vs benchmarks.
   const sharpeDelta = deltaVsBench(m.sharpeRatio, 1.0, true);
@@ -1386,7 +1389,8 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
       </div>
 
       <footer className="risk-matrix__footer">
-        <span>Updated {updatedStr} CET · IBKR Flex Sync · QueryID {flexQueryId}</span>
+        {/* É3.2 — la ligne dit la vérité de lastSync ou n'existe pas. */}
+        {syncLabel ? <span>{syncLabel}</span> : <span aria-hidden="true" />}
         <div className="risk-matrix__footer-cmd-wrap">
           <span className="risk-matrix__footer-cmd-label">PMET</span>
           <span className="risk-matrix__footer-cmd">&lt;GO&gt;</span>
