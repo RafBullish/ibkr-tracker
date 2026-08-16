@@ -46,32 +46,57 @@ export function deriveKpisReal(ctx) {
   }
 
   // 1.G-a — cellules display-only supplémentaires (données DÉJÀ calculées,
-  // aucune source nouvelle) : apports cumulés, HWM net d'apports + écart,
-  // frais cumulés, Θ % prime/jour, série en cours.
+  // aucune source nouvelle). Amendements 16.08 : Θ% PAR POSITION, HWM inversé.
   const liveRate = num(metrics?.liveRate);
   const fundedUsd = num(metrics?.totalFundedUsd) ?? 0;
   const depChf = num(metrics?.totalDepositedChf) ?? 0;
   // Apports nets, USD-équivalent (le CHF natif converti au FX courant).
   const apportsUsdEq = fundedUsd + (liveRate > 0 ? depChf / liveRate : 0);
-  // HWM NET D'APPORTS = pic de flowNeutral (nlv − dépôts cumulés), même
-  // sémantique honnête que nlvSeries (un apport ne « guérit » pas un
-  // drawdown). L'écart courant = le drawdown déjà calculé sur le dernier
-  // point (rapporté à la NLV au pic → jamais un % absurde). Gaté à ≥ 2
-  // points : sur une base d'un seul jour, pas de HWM décoratif.
+
+  // HWM NET D'APPORTS — présentation INVERSÉE (amendement 16.08). La valeur
+  // héros de la cellule = l'ÉCART courant au pic (drawdown flow-neutral déjà
+  // calculé sur le dernier point, rapporté à la NLV au pic → jamais absurde) ;
+  // le NIVEAU du pic + sa DATE partent en méta. peakFN = pic de flowNeutral
+  // (nlv − dépôts cumulés) ; peakDate = son jour. Gaté à ≥ 2 points (pas de
+  // HWM décoratif à J0).
   let peakFN = -Infinity;
+  let peakDate = null;
   for (const p of series || []) {
-    if (Number.isFinite(p?.flowNeutral) && p.flowNeutral > peakFN) peakFN = p.flowNeutral;
+    if (Number.isFinite(p?.flowNeutral) && p.flowNeutral > peakFN) {
+      peakFN = p.flowNeutral;
+      peakDate = p.date || null;
+    }
   }
-  const hwmNet = (series?.length ?? 0) >= 2 && Number.isFinite(peakFN) ? peakFN : null;
-  const hwmEcartPct = last && Number.isFinite(last.drawdownPct) ? last.drawdownPct : null;
-  // Θ % prime/jour = |theta/jour| ÷ prime payée (capital engagé long).
-  // Valeur SEULE, neutre : le seuil d'entrée (0,8 %) viendra du registre.
-  const premiumPaid = num(metrics?.capitalTiedUp);
-  const thetaD = num(greeks?.thetaDaily);
-  const thetaPctPrime =
-    premiumPaid != null && premiumPaid > 0 && thetaD != null
-      ? (Math.abs(thetaD) / premiumPaid) * 100
-      : null;
+  const enoughSeries = (series?.length ?? 0) >= 2;
+  const hwmLevel = enoughSeries && Number.isFinite(peakFN) ? peakFN : null;
+  const hwmDate = enoughSeries ? peakDate : null;
+  const hwmEcartPct = enoughSeries && last && Number.isFinite(last.drawdownPct) ? last.drawdownPct : null;
+
+  // Θ % PRIME/JOUR — PAR POSITION (amendement 16.08 : l'agrégat |ΣΘ|/Σprime
+  // est ininterprétable face au seuil d'entrée 0,8 %). Pour chaque position
+  // OPTION : |Θ/jour de la position| ÷ prime payée (pi×mul×ct). On retient la
+  // plus décroissante (MAX) — à N=1 c'est LA position, comparable au 0,8 %.
+  // Θ/jour = g.theta (per-share, per-AN) ÷ 365 × ct × mul (cf. utils/greeks).
+  // NEUTRE (Θ est un greek). '—' tant que les greeks async ne sont pas là.
+  const gmap = greeks?.greeksMap ?? null;
+  let maxThetaPct = null;
+  let maxThetaTicker = null;
+  for (const p of positions || []) {
+    if (p?.as !== 'Option') continue;
+    const g = gmap?.get?.(p.id);
+    if (!g || g.source === 'unavailable' || g.theta == null) continue;
+    const mul = Math.abs(Number(p.mu)) || 100;
+    const ct = Math.abs(Number(p.ct)) || 0;
+    const pi = Number(p.pi);
+    const premium = Number.isFinite(pi) ? pi * mul * ct : 0;
+    if (!(premium > 0)) continue;
+    const posThetaDay = Math.abs((g.theta / 365) * ct * mul);
+    const pct = (posThetaDay / premium) * 100;
+    if (maxThetaPct == null || pct > maxThetaPct) {
+      maxThetaPct = pct;
+      maxThetaTicker = p.tk || null;
+    }
+  }
 
   return {
     // graphe (overlay) — inchangé
@@ -120,12 +145,15 @@ export function deriveKpisReal(ctx) {
     avgLoss: num(trading?.avgLoss) ?? num(metrics?.averageLoss),
     // 1.G-a — CAPITAL (neutres, display-only). apports 0 → cellule tue.
     apportsCumules: Math.abs(apportsUsdEq) >= 0.5 ? apportsUsdEq : null,
-    hwmNet,
+    // HWM inversé : écart = valeur héros ; niveau + date = méta.
     hwmEcartPct,
+    hwmLevel,
+    hwmDate,
     // P&L — FRAIS CUMULÉS (neutre : déjà inclus dans le RÉALISÉ net).
     feesTotal: num(metrics?.totalAllFees),
-    // GREEKS — Θ % prime/jour (neutre) · PERFORMANCE — série en cours (neutre).
-    thetaPctPrime,
+    // GREEKS — Θ % prime/jour PAR POSITION (max, neutre) + ticker · série en cours.
+    thetaPctPrime: maxThetaPct,
+    thetaPctTicker: maxThetaTicker,
     streak: num(metrics?.currentStreak),
   };
 }

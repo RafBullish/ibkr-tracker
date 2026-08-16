@@ -790,3 +790,55 @@
     width: 84px;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   PALIER ≥ 2000 — CIBLE DE RÉFÉRENCE 2560 physique @ 90 % = ~2844 px CSS
+   (amendement 16.08.2026, cf. CLAUDE.md §2/§7). MIGRATION D'ÉCHELLE : les
+   cibles S0..S4 du DECK + du « cockpit » (bande décision) + la SCALE &
+   DENSITÉ du MARKETDECK (gel 1.C levé) vivent ICI ; le socle ≤ 1591 revient
+   à l'ANTÉRIEUR (v1-heros base). Ce bloc suit le bloc 1440 en source (même
+   fichier, importé en dernier) → gagne à spécificité égale. S0..S4 = le
+   PLANCHER de ce palier (calibré à l'œil sur 2560, remontable). Budget
+   premier écran ~1417 : haut ~800, graphe ~450.
+   ════════════════════════════════════════════════════════════════════ */
+@media (min-width: 2000px) {
+  /* ── DECK DASHBOARD · échelle S0..S4 (ex-1.G-a, sortie de v1-heros base).
+     Plancher S0..S4 = 56/32/22/13/11 ; REMONTÉ à la cible 2560 (calibré à
+     l'œil sur 2844, le deck respirait trop petit au plancher). ── */
+  .pf-deck .pf-c__label { font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; line-height: 15px; }  /* S4 */
+  .pf-deck .pf-c__val { font-size: 25px; font-weight: 600; line-height: 29px; }                              /* S2 */
+  .pf-deck .pf-c__val--s1 { font-size: 37px; font-weight: 700; line-height: 40px; }                          /* S1 lead */
+  .pf-deck .pf-c__meta { font-size: 14px; font-weight: 500; min-height: 16px; line-height: 16px; }           /* S3 */
+  .pf-deck .pf-hero__val { font-size: 66px; }                                                                /* S0 */
+  .pf-deck .pf-hero__lbl { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; }                      /* S4 */
+  .pf-deck .pf-hero__meta { font-size: 14px; font-weight: 500; }                                             /* S3 */
+  .pf-cell .mk-title { font-size: 12px; letter-spacing: 0.08em; }                                            /* S4 titre de panneau */
+  .pf-deck .pf-grid { row-gap: 9px; grid-auto-rows: minmax(70px, auto); }
+
+  /* ── « COCKPIT » = BANDE DÉCISION (interprétation de « deck + cockpit » ;
+     la classe littérale .cockpit = MarketDeck, traité plus bas). Scale-up
+     MODÉRÉ pour la cohérence avec le deck à 2844, scopé .decision-band. ── */
+  .decision-band .db-c__val { font-size: 24px; line-height: 26px; }
+  .decision-band .mk-title { font-size: 12px; }
+  .decision-band .db-grid3 { grid-auto-rows: minmax(48px, auto); }
+
+  /* ── MARKETDECK · GEL 1.C LEVÉ — ÉCHELLE + DENSITÉ SEULEMENT. Doto,
+     animation de tick et loi des couleurs INTOUCHÉS. Les rangées fixes
+     grandissent avec les valeurs pour ne pas rogner. ── */
+  .market-deck { grid-template-rows: 184px 1px 136px; }
+  .mk-cell { padding: 13px 18px; }
+  .mk-sstate { font-size: 25px; }
+  .mk-scd { font-size: 38px; }
+  .mk-tpx { font-size: 34px; }
+  .mk-vval { font-size: 37px; }
+  .mk-fxval { font-size: 27px; }
+  .mk-ahname { font-size: 20px; }
+
+  /* ── BUDGET VERTICAL · dégraissage autour du graphe (palier ≥2000 SEUL ;
+     le plancher ≤1591 garde ses hauteurs). ── */
+  .lh-frontier { padding: 5px 18px; }
+  .lh-zonesep { padding: 5px 22px; }
+  .lh-graphzone__bar { height: 30px; }
+  .lh-perf--slim { padding: 4px 6px; }
+  .lh-fuse__stage { height: 450px; }
+}

@@ -6,6 +6,52 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.2-rc.2] — 2026-08-16
+
+**1.G-b — Migration d'échelle (palier ≥ 2000) + amendement constitutionnel
++ 3 correctifs de fond + finitions. EN ATTENTE GO VISUEL.** Suite des
+directives architecte sur `feat/1g-a-deck-densite` (pas de merge).
+
+- **AMENDEMENT CONSTITUTIONNEL (§2/§7)** — cible de design = **2560 physique
+  @ 90 % = ~2844 px CSS** ; **1591 conservé comme PLANCHER de non-régression**
+  (plus la cible). `audit:visual` a deux profils : **2560** par défaut,
+  `AUDIT_VIEWPORT=1591` pour le plancher (sortie `…-1591/`). Mémoire
+  `c3-4k-calibration` amendée (renverse le « surtout pas min-width 2560+ »).
+- **MIGRATION D'ÉCHELLE** — les cibles typo **S0..S4 sortent de la base** :
+  au plancher ≤ 1591 le deck **retombe à ses tailles antérieures** (hero 34,
+  valeur 22/700, meta/label 10, pas de lead) ; la densité vit désormais dans
+  un **`@media (min-width: 2000px)`** neuf de `c3-hires.css` (deck + cockpit +
+  MarketDeck). S0..S4 = **plancher du palier, REMONTÉ à la cible 2560**
+  (hero 66, lead 37, valeur 25, meta 14, label 11,5 — calibré à l'œil sur
+  2844). Scoping strict (`.pf-deck`) : les bandeaux de page gardent la base.
+- **COCKPIT = BANDE DÉCISION** (interprétation de « deck + cockpit » — la
+  classe littérale `.cockpit` est le cadre MarketDeck, gelé) : scale-up modéré
+  scopé `.decision-band` (db-c__val 20→24), 0 overflow. À confirmer au GO.
+- **MARKETDECK — gel 1.C LEVÉ**, portée strictement échelle + densité au
+  palier ≥ 2000 (rangées 162/119 → 184/136, mk-cell padding, valeurs héros
+  scd/tpx/vval/sstate/fxval/ahname relevées) ; **Doto, animation de tick et
+  loi des couleurs INTOUCHÉS** ; 0 overflow.
+- **BUDGET VERTICAL** (≥ 2000) — dégraissage autour du graphe (frontier,
+  zonesep, bar 40→30, perf slim, stage 460→450) → **haut ~820 · graphe 450**,
+  le graphe tient dans le premier écran (~1417) ; plancher ≤ 1591 intact.
+- **CORRECTIF (a)** — **Θ % PRIME/JOUR PAR POSITION** (max, + ticker) au lieu
+  de l'agrégat ininterprétable : |Θ/jour position| ÷ prime payée, comparable
+  au seuil 0,8 %. NEUTRE.
+- **CORRECTIF (b)** — **HWM NET D'APPORTS inversé** : la valeur = l'écart
+  courant au pic (drawdown honnête) ; la méta = le niveau du pic + sa date.
+- **CORRECTIF (c)** — **DELTA $ ENGAGÉ supprimée** (doublon enterré par É3.1)
+  et **fusionnée dans Δ NET** (Σ Δ × spot en méta).
+- **RÉSIDU** — EXPOSITION promue en **lead S1** (provisoire, DÉPLOYABLE
+  prendra la place). FRAIS CUMULÉS : inchangé.
+- **FINITIONS (géométrie seule, aucune couleur)** — 4 cadres unifiés à
+  **radius 7** (overlay 8→7, tooltip 4→7) ; 5 pastilles au **radius 2** (pill
+  4→2, kpi-est padding 0 3→0 4). Texte **« ↑ marché · 1.C intangible » retiré**
+  du frontier Héros 1 (jumeau Héros 2 intact).
+- **Recette @2560 (2844×1417) ET @1591** (Playwright isolé) : correctifs +
+  scale + décision band + MarketDeck (0 overflow) + plancher 1591 = antérieur
+  prouvé au style calculé. 415 tests ✓ · `check:color-law` 0 ✓ · build ✓ ·
+  captures `docs/captures/audit-20260816/` (2560) + `…-1591/` (plancher).
+
 ## [1.0.2-rc.1] — 2026-08-16
 
 **1.G-a — PortfolioDeck v2 (sous-ensemble « sans registre ») + état-vide

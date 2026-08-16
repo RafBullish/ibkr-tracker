@@ -36,6 +36,21 @@ if (SEED_PROFILE && !SEED_PROFILES[SEED_PROFILE]) {
   console.error(`✗ AUDIT_SEED inconnu : "${SEED_PROFILE}" (profils : ${Object.keys(SEED_PROFILES).join(', ')})`);
   process.exit(2);
 }
+
+// Amendement 16.08.2026 — DEUX profils de viewport (cf. CLAUDE.md §2/§7).
+//   défaut « 2560 »  → cible de design : 2560 physique @ 90 % = ~2844×1417 px CSS.
+//   AUDIT_VIEWPORT=1591 → plancher de non-régression 1591×900 DPR 1.35 (ex-cible),
+//                          captures suffixées « -1591 ».
+const VIEWPORTS = {
+  '2560': { width: 2844, height: 1417, deviceScaleFactor: 1.35, tag: '' },
+  '1591': { width: 1591, height: 900, deviceScaleFactor: 1.35, tag: '-1591' },
+};
+const VIEWPORT_KEY = process.env.AUDIT_VIEWPORT || '2560';
+const VP = VIEWPORTS[VIEWPORT_KEY];
+if (!VP) {
+  console.error(`✗ AUDIT_VIEWPORT inconnu : "${VIEWPORT_KEY}" (profils : ${Object.keys(VIEWPORTS).join(', ')})`);
+  process.exit(2);
+}
 // Port-tolérant : AUDIT_BASE_URL force une URL ; sinon on sonde 5173 puis 5174
 // (Vite bascule sur 5174 quand 5173 est occupé) et on garde le premier joignable.
 const BASE_CANDIDATES = process.env.AUDIT_BASE_URL
@@ -51,7 +66,7 @@ const OUT = path.join(
   ROOT,
   'docs',
   'captures',
-  `audit-${stamp}${SEED_PROFILE ? `-${SEED_PROFILE}` : ''}`
+  `audit-${stamp}${SEED_PROFILE ? `-${SEED_PROFILE}` : ''}${VP.tag}`
 );
 
 // Le dataset de test (dates relatives) vit dans audit-seeds.mjs —
@@ -102,8 +117,8 @@ async function main() {
 
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
-    viewport: { width: 1591, height: 900 },
-    deviceScaleFactor: 1.35,
+    viewport: { width: VP.width, height: VP.height },
+    deviceScaleFactor: VP.deviceScaleFactor,
     colorScheme: 'dark',
   });
   const seed = SEED_PROFILE ? SEED_PROFILES[SEED_PROFILE]() : buildSeed();
@@ -144,7 +159,7 @@ async function main() {
   await browser.close();
 
   const thin = results.filter((r) => r.dataNodes < 3);
-  console.log(`\n✓ audit:visual — ${results.length} captures @1591×900 dpr 1.35 → ${path.relative(ROOT, OUT)}/`);
+  console.log(`\n✓ audit:visual — ${results.length} captures @${VP.width}×${VP.height} dpr ${VP.deviceScaleFactor} → ${path.relative(ROOT, OUT)}/`);
   if (thin.length) {
     console.warn(`⚠ pages potentiellement peu peuplées : ${thin.map((t) => t.name).join(', ')}`);
   }

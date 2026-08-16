@@ -6,24 +6,25 @@
 //  COLONNES par panneau. Métriques sans valeur RETIRÉES (aucune ligne
 //  « — » nue). Barres d'allocation style MarketDeck.
 //
-//  1.G-a (densité + honnêteté) — échelle de type S0..S4 (hero 56 · lead
-//  de bloc 32 · valeur 22 · meta 13 · libellé 11). Cellules display-only
-//  ajoutées (données DÉJÀ calculées, zéro source nouvelle) : DELTA $
-//  ENGAGÉ (Σ Δ × spot, « — » si le spot manque — jamais un faux $0),
-//  APPORTS CUMULÉS, HWM NET D'APPORTS + écart, FRAIS CUMULÉS, Θ % PRIME/
-//  JOUR (valeur seule, seuil au registre), SÉRIE EN COURS. PROFIT FACTOR
-//  porte son suffixe de fenêtre (tout l'historique — pas de fausse « 30 »).
-//  Grille tolérante au N=1 : une cellule impaire de fin rend sa colonne
-//  au voisin (span pleine largeur), jamais de trou.
+//  1.G-a (densité + honnêteté) — cellules display-only (données DÉJÀ
+//  calculées, zéro source nouvelle) : APPORTS CUMULÉS, HWM NET D'APPORTS
+//  (INVERSÉ : valeur = écart au pic, méta = niveau + date), FRAIS CUMULÉS,
+//  Θ % PRIME/JOUR PAR POSITION (max, comparable au seuil 0,8 %), SÉRIE EN
+//  COURS. Δ NET porte l'exposition $ (Σ Δ × spot) en méta (ex-DELTA $ ENGAGÉ
+//  fusionnée). EXPOSITION en lead S1 (provisoire). PROFIT FACTOR porte son
+//  suffixe de fenêtre (tout l'historique — pas de fausse « 30 »). Grille
+//  tolérante au N=1 : cellule impaire de fin span pleine largeur, jamais de
+//  trou. ÉCHELLE S0..S4 — la densité vit au palier ≥ 2000 (c3-hires.css) ;
+//  au plancher 1591 le deck retombe à ses tailles antérieures (amendement §2).
 //
 //  Loi de couleur : rouge/vert = argent réel (P&L) ; liquidité / apports /
-//  HWM / frais / Θ / Θ% / Δ / delta-$ / Γ / V / notionnel / ratios /
-//  barres / streak = NEUTRES. LIQUIDITÉ DISPO = Available Funds RÉEL IBKR
+//  HWM (écart = drawdown) / frais / Θ / Θ% / Δ / delta-$ / Γ / V / notionnel /
+//  ratios / barres / streak = NEUTRES. LIQUIDITÉ DISPO = Available Funds RÉEL IBKR
 //  (marqueur neutre « IBKR ») quand le bridge est frais, sinon estimation
 //  cash-A (marqueur « est. »).
 // ═══════════════════════════════════════════════════════════════
 
-import { fmtUsd, fmtUsdSigned, fmtUsdCompact, fmtChf, fmtPct, toneSign } from './kit';
+import { fmtUsd, fmtUsdSigned, fmtUsdCompact, fmtChf, fmtPct, fmtAxisDate, toneSign } from './kit';
 // 1.F — tick au changement de valeur LIVE (fondu + 2 px, 180 ms,
 // coupé sous prefers-reduced-motion). Portée sanctionnée : cellules
 // des decks Héros 1/2 + bande décision. MarketDeck : NON (gelé).
@@ -74,17 +75,14 @@ export default function PortfolioDeck({ kpi, rate }) {
   const capital = [
     { label: 'EXPOSITION', value: k.exposure == null ? null : fmtUsdCompact(k.exposure), chf: chf(k.exposure), sub: k.expoPct != null ? `Σ mark · ${Math.round(k.expoPct)} % NLV` : 'Σ valeur mark', bar: k.expoPct != null ? { pct: k.expoPct, mark: 70 } : null },
     { label: 'NOTIONNEL', value: k.notional == null ? null : fmtUsdCompact(k.notional), chf: chf(k.notional) },
-    // DELTA $ ENGAGÉ — exposition directionnelle réelle (Σ Δ × spot),
-    // NEUTRE (dérivé directionnel, loi §6). « — » si le spot manque
-    // (positions sans greeks), jamais un faux $0 qui dirait « zéro expo ».
-    { label: 'DELTA $ ENGAGÉ', value: k.positionsCount ? (k.netDeltaDollar ? fmtUsdSigned(k.netDeltaDollar) : '—') : null, sub: 'Σ Δ × spot' },
+    // DELTA $ ENGAGÉ — SUPPRIMÉE (amendement 16.08) : doublon de « Δ NET ×
+    // spot », la cellule que É3.1 avait enterrée. Fusionnée dans Δ NET (méta).
     // APPORTS CUMULÉS — capital injecté (nets), NEUTRE (pas un P&L).
     { label: 'APPORTS CUMULÉS', value: k.apportsCumules == null ? null : fmtUsd(k.apportsCumules), chf: chf(k.apportsCumules), sub: 'nets' },
-    // HWM NET D'APPORTS — pic de l'équité net d'apports + écart courant.
-    // NEUTRE (référence de drawdown, pas de l'argent réalisé). Méta =
-    // l'écart (l'info reine) ; pas de CHF ici (ce serait la contrepartie
-    // d'un niveau de référence, marginale — l'écart prime).
-    { label: 'HWM NET D’APPORTS', value: k.hwmNet == null ? null : fmtUsdSigned(k.hwmNet), sub: k.hwmEcartPct != null ? `écart ${fmtPct(k.hwmEcartPct)}` : null },
+    // HWM NET D'APPORTS — présentation INVERSÉE (amendement 16.08) : la
+    // VALEUR = l'écart courant au pic (drawdown flow-neutral honnête, NEUTRE) ;
+    // la méta porte le NIVEAU du pic et sa DATE.
+    { label: 'HWM NET D’APPORTS', value: k.hwmEcartPct == null ? null : fmtPct(k.hwmEcartPct), sub: k.hwmLevel == null ? null : `pic ${fmtUsdSigned(k.hwmLevel)}${k.hwmDate ? ` · ${fmtAxisDate(k.hwmDate)}` : ''}` },
     { label: 'POSITIONS', value: k.positionsCount == null ? null : `${k.positionsCount}`, sub: 'ouvertes' },
     // É3 §4.2.6 — expirée = « EXP » honnête, jamais « 0 j » ambigu.
     { label: 'DTE PROCHE', value: k.dte == null ? null : k.dteExpired ? 'EXP' : `${k.dte} j`, sub: k.dteTicker || null },
@@ -100,16 +98,19 @@ export default function PortfolioDeck({ kpi, rate }) {
     // déjà inclus dans le RÉALISÉ (FifoPnlRealized net) → pas de double-rouge.
     { label: 'FRAIS CUMULÉS', value: k.feesTotal ? fmtUsd(k.feesTotal) : null, chf: chf(k.feesTotal), sub: 'commissions cumul.' },
   ];
-  // Ordre : CAP. RISQUE → Δ → Γ → Θ → Θ% → V (greeks Δ Γ Θ V). DELTA$ vit
-  // désormais dans CAPITAL (exposition), Δ NET garde les actions-éq.
+  // Ordre : CAP. RISQUE → Δ → Γ → Θ → Θ% → V (greeks Δ Γ Θ V). Δ NET porte
+  // l'exposition directionnelle en $ (fusion 16.08 : Σ Δ × spot en méta).
   const greeks = [
     { label: 'CAP. RISQUE', value: k.riskDollar == null ? null : fmtUsd(k.riskDollar), chf: chf(k.riskDollar), sub: k.nlvAtRiskPct != null ? `${k.nlvAtRiskPct.toFixed(1)} % NLV` : null, bar: k.nlvAtRiskPct != null ? { pct: k.nlvAtRiskPct } : null },
-    { label: 'Δ NET', value: sharesSigned(k.netDeltaShares), sub: 'actions-éq.' },
+    // Δ NET — actions-équivalent + exposition $ (Σ Δ × spot) en méta. NEUTRE
+    // (dérivé directionnel, loi §6). L'ex-cellule DELTA $ ENGAGÉ vit ici.
+    { label: 'Δ NET', value: sharesSigned(k.netDeltaShares), sub: k.netDeltaDollar ? `exp. ${fmtUsdSigned(k.netDeltaDollar)}` : 'actions-éq.' },
     { label: 'Γ NET', value: num2(k.gamma), sub: 'gamma' },
     { label: 'Θ / JOUR', value: k.thetaDay == null ? null : fmtUsdSigned(k.thetaDay), chf: chf(k.thetaDay, true), sub: 'carry' },
-    // Θ % PRIME/JOUR — theta rapporté à la prime payée. NEUTRE, VALEUR
-    // SEULE : le seuil d'entrée 0,8 % viendra du registre (aucune couleur).
-    { label: 'Θ % PRIME/J', value: k.thetaPctPrime == null ? null : `${k.thetaPctPrime.toFixed(2)} %`, sub: '/ jour' },
+    // Θ % PRIME/JOUR — PAR POSITION (max, amendement 16.08 : l'agrégat était
+    // ininterprétable). NEUTRE, valeur seule (seuil 0,8 % au registre). Méta =
+    // le ticker de la position la plus décroissante.
+    { label: 'Θ % PRIME/J', value: k.thetaPctPrime == null ? null : `${k.thetaPctPrime.toFixed(2)} %`, sub: k.thetaPctTicker || '/ jour' },
     { label: 'V NET', value: k.vega == null ? null : fmtUsdSigned(k.vega), chf: chf(k.vega, true), sub: '/1 % IV' },
   ];
   const perf = [
@@ -170,7 +171,10 @@ export default function PortfolioDeck({ kpi, rate }) {
             ) : null}
             <div className="pf-grid">
               {visible.map((c, i) => (
-                <Cell key={c.label} {...c} lead={!p.hero && i === 0} />
+                // Résidu 16.08 : EXPOSITION promue en S1 (provisoire — DÉPLOYABLE
+                // prendra la place). Le lead tombe sur la 1re cellule de CHAQUE
+                // bloc, CAPITAL inclus (le héros S0 reste l'ancre au-dessus).
+                <Cell key={c.label} {...c} lead={i === 0} />
               ))}
             </div>
           </div>

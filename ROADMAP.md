@@ -9,6 +9,20 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
 
 ## v1.0.2 — PortfolioDeck v2 (ouvert le 16.08.2026)
 
+- **1.G-b ✅ (1.0.2-rc.2, EN ATTENTE GO VISUEL)** — « Migration d'échelle +
+  3 correctifs de fond ». AMENDEMENT CONSTITUTIONNEL (§2/§7 + mémoire
+  c3-4k-calibration) : cible = 2560 physique @ 90 % (~2844 CSS), 1591 =
+  plancher de non-régression ; `audit:visual` bi-profil (2560 défaut,
+  `AUDIT_VIEWPORT=1591`). MIGRATION : S0..S4 quittent la base → `@media
+  (min-width:2000px)` de c3-hires (deck + cockpit=bande décision + MarketDeck
+  gel levé, échelle/densité seule) ; plancher ≤1591 = antérieur. Budget
+  vertical (haut ~820 / graphe 450, tient dans 1417). CORRECTIFS : (a) Θ %
+  PRIME/JOUR PAR POSITION (max + ticker, fini l'agrégat), (b) HWM inversé
+  (valeur = écart au pic, méta = niveau + date), (c) DELTA $ ENGAGÉ supprimée
+  (doublon É3.1) → fusionnée dans Δ NET. RÉSIDU EXPOSITION en lead S1. FINITIONS
+  géométrie : 4 cadres radius 7, 5 pastilles radius 2, texte « ↑ marché · 1.C
+  intangible » retiré du frontier H1. Recette @2560 + @1591, 415 tests,
+  color-law 0, build ✓. Branche `feat/1g-a-deck-densite`, **non mergée**.
 - **1.G-a ✅ (1.0.2-rc.1, EN ATTENTE GO VISUEL)** — « Le deck excellent à
   N=1, sans inventer de donnée ». Recon 9 agents : le spec complet (bloc
   PORTES, DÉPLOYABLE, IV entrée→maintenant, PF-30) dépend du registre
