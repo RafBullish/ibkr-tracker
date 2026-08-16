@@ -46,7 +46,8 @@
    au rendu nominal (vérifié seed standard + seed de stress @1591). */
 .pf-cell { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 .pf-cell + .pf-cell { border-left: 1px solid var(--line-emphasis); }
-.pf-cell .mk-title { margin-bottom: 7px; overflow: hidden; text-overflow: ellipsis; }
+/* S4 — titre de panneau (scopé .pf-cell : NE touche PAS le MarketDeck). */
+.pf-cell .mk-title { font-size: 11px; letter-spacing: 0.08em; margin-bottom: 7px; overflow: hidden; text-overflow: ellipsis; }
 
 /* Héros LIQUIDITÉ DISPO — prominent (registre du héros FX/VOL) */
 .pf-hero { display: flex; flex-direction: column; gap: 0; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--hairline-rest); }
@@ -66,9 +67,6 @@
    RANGÉES à hauteur uniforme (grid-auto-rows) → cellules jamais décalées.
    Chaque cellule a une STRUCTURE UNIFORME (label · valeur · meta · barre)
    → baselines alignées d'une colonne à l'autre. */
-/* 1.F §4.8 — rangées minmax(55px, auto) : la pile réelle d'une cellule
-   à barre fait 56px (13+24+12+7) → l'ancien 55px fixe rognait 1px de
-   barre. minmax garde l'alignement de rangée sans jamais rogner. */
 .pf-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; row-gap: 5px; grid-auto-rows: minmax(55px, auto); align-content: start; }
 .pf-c { display: flex; flex-direction: column; gap: 0; min-width: 0; overflow: hidden; }
 .pf-c__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 13px; }
@@ -76,6 +74,25 @@
 .pf-c__val--profit { color: var(--pnl-up); }
 .pf-c__val--loss { color: var(--pnl-down); }
 .pf-c__meta { font-size: 10px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 12px; line-height: 12px; }
+
+/* ── 1.G-a — DENSITÉ DU DECK DASHBOARD (échelle S0..S4), SCOPÉE .pf-deck ──
+   Les classes .pf-* ci-dessus sont RÉUTILISÉES par les bandeaux de
+   commandement des pages (.greeks-command .pf-c__val, .pos-command…,
+   .analytics-command…) qui n'y surchargent QUE la taille : toute retouche
+   de poids / interligne / taille de meta EN BASE fuirait chez elles. La
+   densité 1.G-a est donc scopée au seul deck du Dashboard (.pf-deck) ; les
+   pages gardent la base intacte (§5 « scopé par page, jamais en hack »). */
+.pf-deck .pf-c__label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; line-height: 14px; }   /* S4 */
+.pf-deck .pf-c__val { font-size: 22px; font-weight: 600; line-height: 26px; }                              /* S2 */
+.pf-deck .pf-c__val--s1 { font-size: 32px; font-weight: 700; line-height: 34px; }                          /* S1 lead (après S2 → gagne l'égalité de spécificité) */
+.pf-deck .pf-c__meta { font-size: 13px; font-weight: 500; min-height: 15px; line-height: 15px; }           /* S3 */
+.pf-deck .pf-hero__val { font-size: 56px; }                                                                /* S0 */
+.pf-deck .pf-hero__lbl { font-weight: 600; letter-spacing: 0.08em; }                                       /* S4 */
+.pf-deck .pf-hero__meta { font-size: 13px; font-weight: 500; }                                             /* S3 */
+.pf-deck .pf-grid { row-gap: 6px; grid-auto-rows: minmax(62px, auto); }
+/* Décompte impair : la DERNIÈRE cellule seule rend sa colonne au voisin
+   (span pleine largeur) → zéro slot vide. Vaut aussi à N=1 (null-filtering). */
+.pf-deck .pf-grid > .pf-c:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .pf-c__barslot { height: 7px; display: flex; align-items: center; }
 
 /* Mini-barre d'allocation — style MarketDeck (piste + remplissage

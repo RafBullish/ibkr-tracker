@@ -686,6 +686,9 @@ export function calculatePortfolioMetrics(state) {
     // les frais des positions OUVERTES + frais cash — le diviser par le
     // nombre de trades clôturés gonflait la moyenne affichée.
     totalClosedFees: roundTo2(totalClosedFees),
+    // 1.G-a — capital engagé (Σ costBasis signé : + long / − short),
+    // exposé pour le ratio Θ % prime/jour du deck (theta ÷ prime payée).
+    capitalTiedUp: roundTo2(capitalTiedUp),
     monthlyPnlUsd,
     monthlyPnlChf: fxValid ? monthlyPnlChf : null,
     winRate,

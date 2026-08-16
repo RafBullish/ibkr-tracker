@@ -45,6 +45,34 @@ export function deriveKpisReal(ctx) {
     }
   }
 
+  // 1.G-a — cellules display-only supplémentaires (données DÉJÀ calculées,
+  // aucune source nouvelle) : apports cumulés, HWM net d'apports + écart,
+  // frais cumulés, Θ % prime/jour, série en cours.
+  const liveRate = num(metrics?.liveRate);
+  const fundedUsd = num(metrics?.totalFundedUsd) ?? 0;
+  const depChf = num(metrics?.totalDepositedChf) ?? 0;
+  // Apports nets, USD-équivalent (le CHF natif converti au FX courant).
+  const apportsUsdEq = fundedUsd + (liveRate > 0 ? depChf / liveRate : 0);
+  // HWM NET D'APPORTS = pic de flowNeutral (nlv − dépôts cumulés), même
+  // sémantique honnête que nlvSeries (un apport ne « guérit » pas un
+  // drawdown). L'écart courant = le drawdown déjà calculé sur le dernier
+  // point (rapporté à la NLV au pic → jamais un % absurde). Gaté à ≥ 2
+  // points : sur une base d'un seul jour, pas de HWM décoratif.
+  let peakFN = -Infinity;
+  for (const p of series || []) {
+    if (Number.isFinite(p?.flowNeutral) && p.flowNeutral > peakFN) peakFN = p.flowNeutral;
+  }
+  const hwmNet = (series?.length ?? 0) >= 2 && Number.isFinite(peakFN) ? peakFN : null;
+  const hwmEcartPct = last && Number.isFinite(last.drawdownPct) ? last.drawdownPct : null;
+  // Θ % prime/jour = |theta/jour| ÷ prime payée (capital engagé long).
+  // Valeur SEULE, neutre : le seuil d'entrée (0,8 %) viendra du registre.
+  const premiumPaid = num(metrics?.capitalTiedUp);
+  const thetaD = num(greeks?.thetaDaily);
+  const thetaPctPrime =
+    premiumPaid != null && premiumPaid > 0 && thetaD != null
+      ? (Math.abs(thetaD) / premiumPaid) * 100
+      : null;
+
   return {
     // graphe (overlay) — inchangé
     nlv, nlvSpark: sparkFrom(series, 'nlv', 30),
@@ -90,5 +118,14 @@ export function deriveKpisReal(ctx) {
     worstTrade: num(trading?.worstTrade),
     avgWin: num(trading?.avgWin) ?? num(metrics?.averageWin),
     avgLoss: num(trading?.avgLoss) ?? num(metrics?.averageLoss),
+    // 1.G-a — CAPITAL (neutres, display-only). apports 0 → cellule tue.
+    apportsCumules: Math.abs(apportsUsdEq) >= 0.5 ? apportsUsdEq : null,
+    hwmNet,
+    hwmEcartPct,
+    // P&L — FRAIS CUMULÉS (neutre : déjà inclus dans le RÉALISÉ net).
+    feesTotal: num(metrics?.totalAllFees),
+    // GREEKS — Θ % prime/jour (neutre) · PERFORMANCE — série en cours (neutre).
+    thetaPctPrime,
+    streak: num(metrics?.currentStreak),
   };
 }

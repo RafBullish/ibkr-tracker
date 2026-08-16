@@ -6,6 +6,50 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.2-rc.1] — 2026-08-16
+
+**1.G-a — PortfolioDeck v2 (sous-ensemble « sans registre ») + état-vide
+du graphe (chantier post-1.0.1, brique 1.G-a). EN ATTENTE GO VISUEL.**
+Recon préalable (workflow 9 agents) : le spec PortfolioDeck v2 + remise à
+zéro suppose un registre (`parametres.json`) et les briques de données
+Q-B/Q-C (marks `qc:positionMarks`, earnings confirmées, `ivRankAtEntry`)
+ABSENTS du repo — précondition « Q1-Q6 scellé » NON tenue. Décision
+Rafael : livrer maintenant le seul sous-ensemble honnête (display-only),
+laisser le bloc PORTES et les cellules registre/Q-B/Q-C en attente.
+
+- **Densité — échelle de type S0..S4** (`v1-heros.css`, SCOPÉE `.pf-deck`) :
+  héros 56 px (S0) · valeur PRINCIPALE de bloc 32 px (S1, nouvelle classe
+  `.pf-c__val--s1` sur la 1re cellule servie de chaque bloc analytique) ·
+  valeur secondaire 22 px (S2) · méta 13 px (S3) · libellés 11 px (S4).
+  Scoping STRICT au deck du Dashboard : les bandeaux de commandement des
+  pages (`.greeks-command .pf-c__val`…) réutilisent les mêmes classes et
+  gardent la base intacte (700) — non-régression Greeks prouvée.
+- **Grille tolérante au N=1** : la cellule impaire de fin rend sa colonne
+  au voisin (`grid-column: 1 / -1`) → les deux trous de grille morts, y
+  compris quand le null-filtering change le décompte à N=1.
+- **Cellules display-only ajoutées** (données DÉJÀ calculées, zéro source
+  nouvelle, toutes NEUTRES) : DELTA $ ENGAGÉ (Σ Δ × spot ; « — » si le
+  spot manque — jamais un faux $0) · APPORTS CUMULÉS · HWM NET D'APPORTS
+  + écart (pic flow-neutral + drawdown honnête réutilisés de `nlvSeries`) ·
+  FRAIS CUMULÉS · Θ % PRIME/JOUR (valeur seule, aucune couleur — le seuil
+  0,8 % viendra du registre) · SÉRIE EN COURS. `capitalTiedUp` exposé par
+  `calculatePortfolioMetrics` pour le ratio Θ%/prime.
+- **PROFIT FACTOR** porte son suffixe de fenêtre honnête (« tout
+  l'historique » — pas de fausse « 30 » : la fenêtre 30 du registre n'est
+  pas là). **RÉALISÉ NET DE FRAIS** retirée du spec (double comptage : le
+  réalisé est DÉJÀ net de `FifoPnlRealized`).
+- **1.H — état-vide du graphe Hero 1** (calqué sur Hero 2) : sur base
+  purgée, message honnête « Série NLV vide » au lieu d'un canvas encadré
+  vide. Recette base-vide vérifiée @1591 : 0 NaN, 0 « — » isolé, 0
+  division par zéro, aucun graphe sans point.
+- **Recette visuelle @1591×900 DPR 1.35** (midnight, Playwright isolé) :
+  deck peuplé (seed) + base vide + non-régression du bandeau Greeks.
+  415 tests ✓ · `check:color-law` 0 violation ✓ · build ✓ · captures
+  `docs/captures/audit-20260816/`.
+- **HORS périmètre (en attente registre/Q-B/Q-C/broker)** : bloc PORTES
+  (SL/TRAIL/DTE/EARNINGS/STAGNATION), DÉPLOYABLE (sizing 60 %), NON RÉGLÉ
+  J+1, IV entrée→maintenant, PF fenêtre 30.
+
 ## [1.0.1] — 2026-08-16
 
 **VERSION FINALE — chantier maintenance v1.0.1 CLOS (décision Rafael

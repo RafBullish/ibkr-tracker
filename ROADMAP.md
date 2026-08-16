@@ -7,6 +7,26 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
 
 ---
 
+## v1.0.2 — PortfolioDeck v2 (ouvert le 16.08.2026)
+
+- **1.G-a ✅ (1.0.2-rc.1, EN ATTENTE GO VISUEL)** — « Le deck excellent à
+  N=1, sans inventer de donnée ». Recon 9 agents : le spec complet (bloc
+  PORTES, DÉPLOYABLE, IV entrée→maintenant, PF-30) dépend du registre
+  `parametres.json` et des briques Q-B/Q-C (marks `qc:positionMarks`,
+  earnings confirmées, `ivRankAtEntry`) ABSENTS du repo → précondition
+  Q1-Q6 non tenue. Livré le sous-ensemble display-only HONNÊTE : échelle
+  typo S0..S4 scopée `.pf-deck` (le « on voit rien » soldé), grille
+  tolérante au N=1 (span d'impair, deux trous morts), cellules DELTA $
+  ENGAGÉ / APPORTS CUMULÉS / HWM NET D'APPORTS+écart / FRAIS CUMULÉS /
+  Θ % PRIME/JOUR / SÉRIE EN COURS (toutes neutres), PROFIT FACTOR suffixe
+  de fenêtre honnête, RÉALISÉ NET DE FRAIS retirée (double comptage),
+  état-vide du graphe Hero 1 (1.H). Bloc PORTES + cellules registre/
+  broker EN ATTENTE. Recette @1591 (deck peuplé + base vide + non-rég.
+  Greeks), 415 tests, color-law 0, build ✓. Branche
+  `feat/1g-a-deck-densite`, **non mergée** (GO visuel Rafael requis).
+
+---
+
 ## v1.0.1 — Maintenance (ouvert le 12.08.2026)
 
 - **FIX-NLV ✅ (1.0.1-rc.1)** — « L'histoire reconstituée » : le Héros 1
