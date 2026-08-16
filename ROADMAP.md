@@ -7,6 +7,28 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
 
 ---
 
+## v1.0.2 — PortfolioDeck v2 (ouvert le 16.08.2026)
+
+- **1.G-a ✅ MERGÉE (rc.1→rc.3, GO Rafael 16.08)** — PortfolioDeck v2 au N=1
+  SANS inventer de donnée + migration d'échelle. **rc.1** : recon 9 agents
+  (spec complet bloqué sur registre/Q-B/Q-C absents) → sous-ensemble
+  display-only HONNÊTE (typo S0..S4, grille N=1, cellules APPORTS / HWM /
+  FRAIS / Θ% / SÉRIE neutres, PF suffixe fenêtre, RÉALISÉ NET DE FRAIS retirée,
+  état-vide graphe Hero 1). **rc.2** : AMENDEMENT §2/§7 (cible 2560 ~2844 CSS,
+  1591 plancher, audit bi-profil) ; S0..S4 migrées en `@media (min-width:2000px)`
+  de c3-hires (deck + cockpit=bande décision + MarketDeck gel levé échelle/
+  densité) ; budget vertical (haut ~820 / graphe 450) ; finitions cadres r7 /
+  pastilles r2 / frontier « 1.C intangible » retiré. **rc.3** : Θ % PAR
+  POSITION dénominateur = MARK courant + ticker + DTE ; HWM méta « pic NLV
+  {niveau} · date ». Recette @2560 + @1591, 415 tests, color-law 0, build ✓.
+- **1.G-b ⏳ (à venir — lot BLOQUÉ sur les données)** — bloc PORTES (SL /
+  TRAIL / DTE / EARNINGS / STAGNATION), DÉPLOYABLE (sizing), NON RÉGLÉ J+1,
+  IV entrée→maintenant, PF fenêtre 30. Dépend du registre `parametres.json`
+  + briques Q-B (saisie) / Q-C (marks `qc:positionMarks`) — précondition
+  Q1-Q6 non tenue.
+
+---
+
 ## v1.0.1 — Maintenance (ouvert le 12.08.2026)
 
 - **FIX-NLV ✅ (1.0.1-rc.1)** — « L'histoire reconstituée » : le Héros 1

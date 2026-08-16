@@ -178,9 +178,15 @@ export default function Hero1({ area = 'hero1' }) {
             <NlvHero nlv={kpi.nlv} rate={rate} dayPnl={kpi.dayPnl} dayPct={kpi.dayPct} spark={kpi.nlvSpark} size="lg" />
           </div>
           <div className="lh-fuse__chart">
-            <Suspense fallback={<div className="lh-canvas lh-canvas--empty">Chargement…</div>}>
-              <TvChart data={intradaySeries || series} view={view} line="neutral" intraday={Boolean(intradaySeries)} />
-            </Suspense>
+            {/* 1.H — état-vide dessiné (calqué sur Hero 2) : sur base purgée,
+                un message honnête au lieu d'un canvas encadré vide. */}
+            {(intradaySeries || series).length === 0 ? (
+              <div className="lh-canvas lh-canvas--empty">Série NLV vide — le graphe apparaît au premier point</div>
+            ) : (
+              <Suspense fallback={<div className="lh-canvas lh-canvas--empty">Chargement…</div>}>
+                <TvChart data={intradaySeries || series} view={view} line="neutral" intraday={Boolean(intradaySeries)} />
+              </Suspense>
+            )}
           </div>
         </div>
       </div>

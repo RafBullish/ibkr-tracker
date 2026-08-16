@@ -6,6 +6,111 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.2-rc.3] — 2026-08-16
+
+**1.G-a — Deux correctifs avant merge (GO donné) + correction de nommage.**
+Toute cette livraison (rc.1→rc.3) est **1.G-a** ; « 1.G-b » est réservé au
+lot bloqué sur les données (bloc PORTES, décision architecte).
+
+- **Θ % PRIME/JOUR** — dénominateur = **mark COURANT** (`pc×mul×ct`), plus la
+  prime d'entrée (`pi`) ; la méta affiche **ticker + DTE** de la position la
+  plus décroissante (« MSFT · 30 j »). Confirmé : c'était la prime d'entrée.
+- **HWM NET D'APPORTS** — la méta **nomme sa base** : « **pic NLV** {niveau} ·
+  {date} », le niveau = la **NLV brute** au pic flow-neutral (hwmNlv), plus le
+  flowNeutral. Ex. « pic NLV +$10'398 · 16/08 ».
+- Recette @2844×1417 : Θ « 3.01 % · MSFT · 30 j », HWM « 0.0% · pic NLV
+  +$10'398 · 16/08 ». 415 tests ✓ · `check:color-law` 0 ✓ · build ✓.
+
+## [1.0.2-rc.2] — 2026-08-16
+
+**1.G-a (2ᵉ passe) — Migration d'échelle (palier ≥ 2000) + amendement
+constitutionnel + 3 correctifs de fond + finitions.** Suite des directives
+architecte sur `feat/1g-a-deck-densite`.
+
+- **AMENDEMENT CONSTITUTIONNEL (§2/§7)** — cible de design = **2560 physique
+  @ 90 % = ~2844 px CSS** ; **1591 conservé comme PLANCHER de non-régression**
+  (plus la cible). `audit:visual` a deux profils : **2560** par défaut,
+  `AUDIT_VIEWPORT=1591` pour le plancher (sortie `…-1591/`). Mémoire
+  `c3-4k-calibration` amendée (renverse le « surtout pas min-width 2560+ »).
+- **MIGRATION D'ÉCHELLE** — les cibles typo **S0..S4 sortent de la base** :
+  au plancher ≤ 1591 le deck **retombe à ses tailles antérieures** (hero 34,
+  valeur 22/700, meta/label 10, pas de lead) ; la densité vit désormais dans
+  un **`@media (min-width: 2000px)`** neuf de `c3-hires.css` (deck + cockpit +
+  MarketDeck). S0..S4 = **plancher du palier, REMONTÉ à la cible 2560**
+  (hero 66, lead 37, valeur 25, meta 14, label 11,5 — calibré à l'œil sur
+  2844). Scoping strict (`.pf-deck`) : les bandeaux de page gardent la base.
+- **COCKPIT = BANDE DÉCISION** (interprétation de « deck + cockpit » — la
+  classe littérale `.cockpit` est le cadre MarketDeck, gelé) : scale-up modéré
+  scopé `.decision-band` (db-c__val 20→24), 0 overflow. À confirmer au GO.
+- **MARKETDECK — gel 1.C LEVÉ**, portée strictement échelle + densité au
+  palier ≥ 2000 (rangées 162/119 → 184/136, mk-cell padding, valeurs héros
+  scd/tpx/vval/sstate/fxval/ahname relevées) ; **Doto, animation de tick et
+  loi des couleurs INTOUCHÉS** ; 0 overflow.
+- **BUDGET VERTICAL** (≥ 2000) — dégraissage autour du graphe (frontier,
+  zonesep, bar 40→30, perf slim, stage 460→450) → **haut ~820 · graphe 450**,
+  le graphe tient dans le premier écran (~1417) ; plancher ≤ 1591 intact.
+- **CORRECTIF (a)** — **Θ % PRIME/JOUR PAR POSITION** (max, + ticker) au lieu
+  de l'agrégat ininterprétable : |Θ/jour position| ÷ prime payée, comparable
+  au seuil 0,8 %. NEUTRE.
+- **CORRECTIF (b)** — **HWM NET D'APPORTS inversé** : la valeur = l'écart
+  courant au pic (drawdown honnête) ; la méta = le niveau du pic + sa date.
+- **CORRECTIF (c)** — **DELTA $ ENGAGÉ supprimée** (doublon enterré par É3.1)
+  et **fusionnée dans Δ NET** (Σ Δ × spot en méta).
+- **RÉSIDU** — EXPOSITION promue en **lead S1** (provisoire, DÉPLOYABLE
+  prendra la place). FRAIS CUMULÉS : inchangé.
+- **FINITIONS (géométrie seule, aucune couleur)** — 4 cadres unifiés à
+  **radius 7** (overlay 8→7, tooltip 4→7) ; 5 pastilles au **radius 2** (pill
+  4→2, kpi-est padding 0 3→0 4). Texte **« ↑ marché · 1.C intangible » retiré**
+  du frontier Héros 1 (jumeau Héros 2 intact).
+- **Recette @2560 (2844×1417) ET @1591** (Playwright isolé) : correctifs +
+  scale + décision band + MarketDeck (0 overflow) + plancher 1591 = antérieur
+  prouvé au style calculé. 415 tests ✓ · `check:color-law` 0 ✓ · build ✓ ·
+  captures `docs/captures/audit-20260816/` (2560) + `…-1591/` (plancher).
+
+## [1.0.2-rc.1] — 2026-08-16
+
+**1.G-a — PortfolioDeck v2 (sous-ensemble « sans registre ») + état-vide
+du graphe (chantier post-1.0.1, brique 1.G-a). EN ATTENTE GO VISUEL.**
+Recon préalable (workflow 9 agents) : le spec PortfolioDeck v2 + remise à
+zéro suppose un registre (`parametres.json`) et les briques de données
+Q-B/Q-C (marks `qc:positionMarks`, earnings confirmées, `ivRankAtEntry`)
+ABSENTS du repo — précondition « Q1-Q6 scellé » NON tenue. Décision
+Rafael : livrer maintenant le seul sous-ensemble honnête (display-only),
+laisser le bloc PORTES et les cellules registre/Q-B/Q-C en attente.
+
+- **Densité — échelle de type S0..S4** (`v1-heros.css`, SCOPÉE `.pf-deck`) :
+  héros 56 px (S0) · valeur PRINCIPALE de bloc 32 px (S1, nouvelle classe
+  `.pf-c__val--s1` sur la 1re cellule servie de chaque bloc analytique) ·
+  valeur secondaire 22 px (S2) · méta 13 px (S3) · libellés 11 px (S4).
+  Scoping STRICT au deck du Dashboard : les bandeaux de commandement des
+  pages (`.greeks-command .pf-c__val`…) réutilisent les mêmes classes et
+  gardent la base intacte (700) — non-régression Greeks prouvée.
+- **Grille tolérante au N=1** : la cellule impaire de fin rend sa colonne
+  au voisin (`grid-column: 1 / -1`) → les deux trous de grille morts, y
+  compris quand le null-filtering change le décompte à N=1.
+- **Cellules display-only ajoutées** (données DÉJÀ calculées, zéro source
+  nouvelle, toutes NEUTRES) : DELTA $ ENGAGÉ (Σ Δ × spot ; « — » si le
+  spot manque — jamais un faux $0) · APPORTS CUMULÉS · HWM NET D'APPORTS
+  + écart (pic flow-neutral + drawdown honnête réutilisés de `nlvSeries`) ·
+  FRAIS CUMULÉS · Θ % PRIME/JOUR (valeur seule, aucune couleur — le seuil
+  0,8 % viendra du registre) · SÉRIE EN COURS. `capitalTiedUp` exposé par
+  `calculatePortfolioMetrics` pour le ratio Θ%/prime.
+- **PROFIT FACTOR** porte son suffixe de fenêtre honnête (« tout
+  l'historique » — pas de fausse « 30 » : la fenêtre 30 du registre n'est
+  pas là). **RÉALISÉ NET DE FRAIS** retirée du spec (double comptage : le
+  réalisé est DÉJÀ net de `FifoPnlRealized`).
+- **1.H — état-vide du graphe Hero 1** (calqué sur Hero 2) : sur base
+  purgée, message honnête « Série NLV vide » au lieu d'un canvas encadré
+  vide. Recette base-vide vérifiée @1591 : 0 NaN, 0 « — » isolé, 0
+  division par zéro, aucun graphe sans point.
+- **Recette visuelle @1591×900 DPR 1.35** (midnight, Playwright isolé) :
+  deck peuplé (seed) + base vide + non-régression du bandeau Greeks.
+  415 tests ✓ · `check:color-law` 0 violation ✓ · build ✓ · captures
+  `docs/captures/audit-20260816/`.
+- **HORS périmètre (en attente registre/Q-B/Q-C/broker)** : bloc PORTES
+  (SL/TRAIL/DTE/EARNINGS/STAGNATION), DÉPLOYABLE (sizing 60 %), NON RÉGLÉ
+  J+1, IV entrée→maintenant, PF fenêtre 30.
+
 ## [1.0.1] — 2026-08-16
 
 **VERSION FINALE — chantier maintenance v1.0.1 CLOS (décision Rafael

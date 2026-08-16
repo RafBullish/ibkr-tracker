@@ -20,7 +20,6 @@ export function Frontier() {
     <div className="lh-frontier">
       <span className="lh-frontier__zone">PORTEFEUILLE</span>
       <span className="lh-frontier__rule" aria-hidden="true" />
-      <span className="lh-frontier__ctx">↑ marché · 1.C intangible</span>
     </div>
   );
 }

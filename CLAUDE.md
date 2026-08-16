@@ -26,8 +26,13 @@ seuls appels réseau passent par des proxies (quotes, calendriers) via fonctions
 final** : aucune brique à fort impact visuel ne merge sur `main` sans son GO.
 
 Contraintes de rendu (uniques, non négociables) :
-- Écran **4K**, Chrome à **90 %**, viewport CSS **~1591 px**, **DPR 1.35**.
-- Toute vérification et toute capture se font à cette cible : **1591×900, DPR 1.35**.
+- **Cible de design (amendement 16.08.2026)** : écran **2560** physique, Chrome à
+  **90 %**, viewport CSS **~2844 px**. C'est le **palier de référence** — les règles
+  de densité de ce palier vivent en `@media (min-width: 2000px)` (cf. §5 et §7). La
+  calibration se fait **à l'œil sur 2560**.
+- **1591 conservé comme PLANCHER de non-régression** (ex-cible 4K@90 %, DPR 1.35) —
+  il ne doit **jamais casser**, mais **n'est plus** la cible de design (les cibles
+  S0–S4 y retombent à leurs tailles antérieures).
 - Le rendu **mobile <1440** est un socle existant à **ne pas casser**, mais ce n'est
   jamais la cible de design.
 
@@ -294,8 +299,10 @@ vérifient la correctness du *code*, pas celle de la *feature*. La preuve est
 1. Vérifier que le dev server tourne. Vite écoute **http://localhost:5173** par
    défaut, mais **bascule sur 5174** si 5173 est déjà pris — vérifier le port réel
    dans la sortie de `npm run dev` et ouvrir la bonne URL.
-2. Via **Playwright MCP** (isolé, cf. ci-dessous), ouvrir la route concernée à
-   viewport **1591×900, DPR 1.35**, thème midnight.
+2. Via **Playwright MCP** (isolé, cf. ci-dessous), ouvrir la route concernée à la
+   **cible de référence 2560** : viewport CSS **~2844×1600** (2560 physique @ 90 %),
+   thème midnight — **puis** re-vérifier au **plancher 1591×900, DPR 1.35** (non-
+   régression). La calibration de densité se fait à l'œil sur 2560 (amendement §2).
 3. **Exercer** concrètement la feature (cliquer, survoler, scroller — pas juste
    charger). Vérifier **0 overflow horizontal, 0 chevauchement, colonnes tenues**.
 4. **Lire** une capture / un snapshot a11y : confirmer que l'état attendu est rendu
@@ -328,11 +335,13 @@ isolée écraserait le **portefeuille réel** de Rafael (clés `ibkr_u_*`, cf. �
 - `npm run check:color-law` — contrôle **statique** (pas un test) : scanne `src/` et
   signale toute application de token/classe de perte à un champ greek. Sortie
   `fichier:ligne` + extrait, **exit ≠ 0** si violation. À faire tourner avant merge.
-- `npm run audit:visual` — Playwright : capture les 12 pages à **1591×900, DPR 1.35**,
-  thème midnight, vers `docs/captures/audit-AAAAMMJJ/`. **Dev server requis** (sonde
-  automatiquement 5173 puis 5174 ; `AUDIT_BASE_URL` force une URL). Seed un dataset de
-  test reproductible → les captures doivent montrer des pages **peuplées** (des captures
-  vides = travail non terminé).
+- `npm run audit:visual` — Playwright : capture les 12 pages, thème midnight, vers
+  `docs/captures/audit-AAAAMMJJ/`. **Deux profils de viewport** (amendement 16.08) :
+  **cible 2560** (~2844×1600) par défaut, et **plancher 1591×900 DPR 1.35** via
+  `AUDIT_VIEWPORT=1591` (sortie `…-1591/`). **Dev server requis** (sonde automatiquement
+  5173 puis 5174 ; `AUDIT_BASE_URL` force une URL). Seed un dataset de test reproductible
+  → les captures doivent montrer des pages **peuplées** (des captures vides = travail
+  non terminé).
 
 ### Artefacts
 
