@@ -80,7 +80,17 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
   fmtStrike sans centimes inutiles, milliers suisses ≥ 1'000, « j »
   partout. Témoins : langueTemoin.test.js (54 assertions) +
   format.test.js (11) ; DOM exercé 3 pages, 0 occurrence interdite.
-- **Prochaine brique : au prompt architecte.**
+- **v1.0.1 FINALE ✅ (tag `v1.0.1`, 16.08.2026)** — chantier maintenance
+  CLOS sur décision Rafael (« finalise tout, nettoie tout ») : scellement
+  de rc.7, recette 12 pages @1591, nettoyage des branches mergées,
+  docs amendées. **Le site est en version finale.**
+- **EN ATTENTE — chantier Q1-Q6 (conformité Sniper V2.0)** : terrain
+  audité (15.08), briques Q-A (registre) et Q-B (saisie/Check-10)
+  stoppées net — les pièces canoniques `parametres.json` +
+  `PARAMETRES.md` v2.0.1 ne sont jamais parvenues. Reprise sur simple
+  dépôt des fichiers (mandat : registre → saisie/Check-10 → portes
+  TRAIL/J+21/earnings → compteur Edge). Maintenance sur demande
+  explicite uniquement.
 
 ---
 

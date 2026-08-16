@@ -1,9 +1,17 @@
-# ÉTAT DU SITE — QuantumCall v1.0.0
+# ÉTAT DU SITE — QuantumCall v1.0.1
 
 > Cartographie de référence de l'outil LIVRÉ. Rafraîchie en Étape 4
 > (recette v1.0, 06.08.2026) — remplace l'état rc.7. Chaque fait est
 > vérifié dans le code au moment de l'écriture ; les résidus abrogés
 > depuis rc.7 ont été retirés.
+>
+> **Addendum v1.0.1 (16.08.2026)** — chantier maintenance CLOS en 7
+> briques (§10) : FIX-NLV, POLISH-1, HERO-FOOTER, COULEUR, É3.1 vérité
+> des chiffres (`utils/metrics/curveStats.js` maison unique), É3.2 zéro
+> fantôme (LivePositions 15 col, ligne de synchro véridique, badge CSV),
+> É3.3 langue & formats (famille fmt centrale `utils/format.js`,
+> fmtExpiry DDMMMYY, dd.mm.yy, milliers suisses, témoin de langue).
+> La cartographie ci-dessous reste valide sauf mentions §9 amendées.
 
 ---
 
@@ -11,8 +19,9 @@
 
 - **Produit** : QuantumCall — tracker d'options **personnel** (mono-utilisateur),
   une seule stratégie : achat de premium (doctrine « Sniper OTM »).
-- **Version** : `1.0.0` (tag `v1.0.0`), fin de la phase finale ouverte le 15.07.2026
-  sur la baseline v2.3.1.
+- **Version** : `1.0.1` (tag `v1.0.1`, 16.08.2026 — chantier maintenance
+  v1.0.1 clos) ; v1.0.0 taguée le 06.08.2026, phase finale ouverte le
+  15.07.2026 sur la baseline v2.3.1.
 - **Prod** : Vercel, alias canonique **ibkr-tracker-lemon.vercel.app** (projet
   `prj_RApArMFpRix2WtwZ5pXIGQL0PEt5`, team `team_9ymYgzp1xzDvDhphaketRViT`),
   déploiement auto sur push `main`.
@@ -231,15 +240,13 @@ mobile <768 : SubNav + BottomNav.
 
 ## 9. RÉSIDUS RÉELS & BACKLOG POST-1.0
 
-1. **RiskMatrix — gisement couleur préexistant** (constat panel É3) : badge
-   EDGE+/− vert/rouge, jauges de ratios (Sharpe & co) remplies vert/rouge,
-   « Kelly Optimal » ambre, vol annualisée verte ≤20 %, R Avg/σ toné →
-   passe dédiée post-1.0 (la vue est statistique, hors mandat É3).
-2. **Badge REAL vert** (StatusBar) — convention gelée ; neutralisation
-   app-wide = arbitrage architecte.
-3. **Pipeline IV Rank** — non construit (IVR tiret honnête sur Chain ;
-   `qc:ivHistory` collecte en silence). À rouvrir seulement avec une source
-   fiable.
+1. ~~RiskMatrix — gisement couleur préexistant~~ **SOLDÉ v1.0.1**
+   (brique COULEUR, rc.6, GO 15.08 : 14 neutralisations, argent réel gardé).
+2. ~~Badge REAL vert~~ **SOLDÉ v1.0.1** (COULEUR : REAL ambre ; badge CSV
+   de provenance ajouté en É3.1).
+3. **Pipeline IV Rank** — non construit ; colonnes IVR MORTES partout
+   depuis É3.2 (l'import écrit toujours `ivRankAtEntry: null`). Renaissance
+   prévue par la SAISIE obligatoire du chantier Q1-Q6 (cf. item 11).
 4. **Daylight** non fonctionnel sur les pages canoniques (pré-existant,
    assumé — midnight est LE thème).
 5. **Zone TRANSITION de canonical.css** (alias legacy) — vivante tant que le
@@ -254,6 +261,12 @@ mobile <768 : SubNav + BottomNav.
 9. `api/account-summary/sync.js` serveur (fast-follow 1.D jamais construit).
 10. Double scrollbar potentielle cheatsheet (max-height 70vh dans un body
     auto) — cosmétique, pré-existant.
+11. **Chantier Q1-Q6 (conformité Sniper V2.0) EN ATTENTE** — terrain
+    audité le 15.08 (état des lieux complet), briques Q-A/Q-B stoppées
+    net : les pièces canoniques `parametres.json` + `PARAMETRES.md`
+    v2.0.1 ne sont jamais parvenues. Reprise dès réception des fichiers
+    (mandat : registre → saisie/Check-10 → portes TRAIL/J+21/earnings →
+    compteur Edge).
 
 ## 10. HISTORIQUE DE LA PHASE v1.0
 
@@ -268,3 +281,14 @@ Utilitaires + dette Flex (rc.14) — CLOSE. **Étape 3 — Cohérence & modales*
 panel adversarial — CLOSE. **Étape 4 — Recette** (1.0.0) : purge orphelins
 (−1 600 l), code-splitting (index −29 % gzip), audit 12 pages @1591+@1920,
 sécurité re-prouvée, docs finales, **tag v1.0.0** — LIVRÉ.
+
+**Chantier maintenance v1.0.1** (12–16.08.2026) : FIX-NLV backfill lecture
+seule (rc.1) · POLISH-1 sept échardes (rc.2) · HERO-FOOTER pieds à
+l'échelle héros + heroStats pré-resample (rc.3) · É3.1 vérité des
+chiffres — curveStats maison unique, footers Δ au canonique, bases
+[RÉAL|NLV] + tooltips, badge CSV (rc.4) · É3.2 zéro fantôme — colonnes
+IVR/EDGE/C-TIER/SPARK mortes (19→15), ligne de synchro véridique,
+FUT·O/N état explicite (rc.5) · COULEUR — RiskMatrix instrument,
+REAL ambre, DEPUIS PIC (rc.6, GO 15.08) · É3.3 langue & formats — une
+seule voix, famille fmt centrale, témoins 54+11 (rc.7) — **tag v1.0.1,
+16.08.2026, CLOS**.
