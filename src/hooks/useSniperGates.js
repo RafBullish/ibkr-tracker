@@ -28,11 +28,16 @@
 import { useMemo } from 'react';
 import { useOpenPositions } from '../store/useStore';
 import { unrealizedPnlPct, dteFromExp, daysHeld } from '../utils/positions';
+// Q-A (16.08) — la gate DTE (45) vient du REGISTRE (source unique) ; le
+// baseline de jauge et l'escalade des badges du registre app. SL35 (gate DTE
+// 35) et TP fixe (50) sont LEGACY MORTS (buildGates n'est plus consommé —
+// row.gates[] jamais lu) → retirés en Q-C.
+import { DTE_GATE_JOURS, JAUGES } from '../config/registre';
 
-const SL35_THRESHOLD = 35;
-const DTE45_THRESHOLD = 45;
-const TP_TARGET_PCT = 50;
-const SAFE_BUFFER = 60; // baseline DTE for "well clear" of any expiry gate
+const SL35_THRESHOLD = 35; // LEGACY — gate DTE 35 morte (É3 « SL35 MORT »), retiré Q-C
+const DTE45_THRESHOLD = DTE_GATE_JOURS; // 45 — gate doctrine DTE (registre P3)
+const TP_TARGET_PCT = 50; // LEGACY — TP fixe short premium (mort V3), retiré Q-C
+const SAFE_BUFFER = JAUGES.safeBufferDte; // 60 — baseline de jauge (registre app)
 
 function clamp01(v) {
   if (!Number.isFinite(v)) return 0;
@@ -42,9 +47,9 @@ function clamp01(v) {
 }
 
 function statusFromFill(fillPct) {
-  if (fillPct >= 95) return 'armed';
-  if (fillPct >= 70) return 'imminent';
-  if (fillPct >= 30) return 'normal';
+  if (fillPct >= JAUGES.escalade.armed) return 'armed';
+  if (fillPct >= JAUGES.escalade.imminent) return 'imminent';
+  if (fillPct >= JAUGES.escalade.normal) return 'normal';
   return 'safe';
 }
 
@@ -71,7 +76,7 @@ function buildGates(pos, ref) {
   if (dte != null) {
     dte45Fill = clamp01(((SAFE_BUFFER - dte) / SAFE_BUFFER) * 100);
     dte45Status = dte <= DTE45_THRESHOLD ? 'armed' : statusFromFill(dte45Fill);
-    dte45Label = dte <= DTE45_THRESHOLD ? `DTE ${dte}d ≤ 45 ARMED` : `DTE ${dte}d (45)`;
+    dte45Label = dte <= DTE45_THRESHOLD ? `DTE ${dte}d ≤ ${DTE45_THRESHOLD} ARMED` : `DTE ${dte}d (${DTE45_THRESHOLD})`;
   }
 
   // TP : for short premium, captured % == unrealized % (positive).

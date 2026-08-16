@@ -1,0 +1,160 @@
+{
+  "version": "3.0.0",
+  "date_registre": "2026-08-16",
+  "source": "SNIPER_OTM_Carte_V3.md",
+  "remplace": ["2.0.1"],
+  "note_de_lecture": "Transcription machine de la Carte V3. La carte fait foi ; ce fichier ne fait qu'exprimer ses valeurs. Cinq points que la carte ne tranchait pas ont ete arretes par Rafael le 16.08.2026 et sont marques resolution_16_08.",
+
+  "capital": {
+    "C1_date_lancement": "2026-09-01",
+    "C1_lancement_ferme": true,
+    "C2_point_de_decision_conditionnel": false,
+    "C3_apport_initial_chf": 1200,
+    "C3_virement_initie": "2026-08-31",
+    "C4_apport_mensuel_chf": 1200,
+    "C4_nb_mois_engages": 12,
+    "C10_type_compte": "cash",
+    "C10_devise": "CHF",
+    "C10_reglement_ventes": "T+1"
+  },
+
+  "sizing": {
+    "S1_pct_max_par_position": 0.60,
+    "S2_mode_courant_pct": { "min": 0.40, "max": 0.50 },
+    "S3_ticket_min_usd": 150,
+    "S4_n_max": {
+      "formule": "capital_chf < 6000 ? 1 : 2",
+      "seuil_chf": 6000,
+      "valeur_sous_seuil": 1,
+      "valeur_au_dessus": 2,
+      "plafond_absolu": 2,
+      "resolution_16_08": "plafond fixe a 2 : aucun palier superieur n'existe dans la carte"
+    },
+    "S5_entrees_max_jour": 1,
+    "S6_max_par_sous_jacent": 1,
+    "avertissement": "Le plafond de 60 % est une decision de Rafael prise contre la recommandation de Claude. Fraction de Kelly calculee sur ses chiffres de mars-mai 2026 : 17 %. 60 % vaut 3,5 fois Kelly, au-dela du point ou la croissance composee devient negative malgre un edge positif. Le depot de septembre achete 1,5 tentative.",
+    "echelle_edge": null,
+    "paliers_pf": null
+  },
+
+  "entree": {
+    "E1_instrument": "option_longue_tenue_en_prime",
+    "E1_types_autorises": ["call", "put"],
+    "E1_jamais_exercice": true,
+    "E2_theta_max_pct_prime_jour": 0.008,
+    "E2_base": "theta absolu / prime mid, par position, jamais agrege",
+    "E3_delta": { "min": 0.15, "max": 0.40, "caractere": "indicatif" },
+    "E4_spread_max_pct_mid": 0.30,
+    "E5_fenetre_execution": {
+      "debut": "15:45",
+      "fin": "21:45",
+      "fuseau": "Europe/Zurich"
+    },
+    "E6_ordre": {
+      "type": "limit",
+      "reajustements_max": 3,
+      "depassement_max": null
+    },
+    "E7_dte": { "min": null, "max": null },
+    "E8_open_interest_min": null,
+    "E9_prime_min_usd": null,
+    "E10_iv_rank_max": null,
+    "E11_catalyseur_date_requis": false,
+    "E12_these_ecrite_requise": false,
+    "E13_regimes_vix": null,
+    "resolution_16_08": "E8 open interest et E9 prime minimum : la carte ne les conserve pas et ne les liste pas parmi les suppressions. Ils sont laisses a null, conformement au texte. Consequence acceptee : aucun filtre de liquidite ne s'applique.",
+    "habitude_journal": {
+      "obligatoire": false,
+      "regle": "une phrase avant de cliquer : ce qui doit se passer, et ce qui dira que c'est rate",
+      "statut": "habitude, pas une porte"
+    }
+  },
+
+  "portes": {
+    "P1_sl": {
+      "alerte_pct": -0.30,
+      "execution_pct": -0.35,
+      "base": "mid_entree",
+      "resolution_16_08": "pourcentage du mid d'entree"
+    },
+    "P2_trail": {
+      "activation_pic_pct": 0.50,
+      "part_du_gain_rendue": 0.40,
+      "formule_sortie": "sortie_pct = pic_pct * (1 - 0.40)",
+      "exemples": [
+        { "pic_pct": 1.00, "sortie_pct": 0.60 },
+        { "pic_pct": 2.00, "sortie_pct": 1.20 }
+      ],
+      "base_pic": "mid_de_cloture_de_session",
+      "intraday_ignore": true,
+      "plancher_pct": null
+    },
+    "P3_dte": {
+      "jours": 45,
+      "conditionnel": false
+    },
+    "P4_earnings": {
+      "fenetre_debut_jours": 7,
+      "fenetre_fin_jours": 5,
+      "unite": "jours_de_bourse",
+      "condition": "pnl_pct > 0",
+      "action_si_condition": "sortie",
+      "action_sinon": "tenir_a_travers",
+      "resolution_16_08": "fenetre J-7 a J-5 comptee en jours de bourse"
+    },
+    "P5_stagnation": {
+      "jour": 30,
+      "unite": "jours_calendaires",
+      "bande_basse_pct": -0.20,
+      "bande_haute_pct": 0.30,
+      "evaluation": "etat_courant_au_jour_30",
+      "resolution_16_08": "la bande est evaluee sur le P&L courant au jour 30, pas sur l'historique du trade"
+    }
+  },
+
+  "garde_fous": {
+    "G5_serie_pertes": { "seuil": 5, "pause_heures": 72 },
+    "G1_hwm": null,
+    "G2_dd_pause": null,
+    "G3_dd_arret": null,
+    "G4_coupe_circuit_mensuel": null,
+    "G6_auto_pause": null
+  },
+
+  "app": {
+    "role": "enregistreur_de_vol",
+    "blocage_dur": false,
+    "check_10_bloquant": false,
+    "comportement_violation": "marquer VIOLATION et enregistrer, ne jamais refuser une entree ni effacer un trade reel",
+    "journal_champs_obligatoires_a_la_cloture": [
+      "prix_entree",
+      "pic_atteint",
+      "prix_sortie",
+      "porte_declenchee",
+      "porte_respectee"
+    ]
+  },
+
+  "rendez_vous": {
+    "avant_deuxieme_apport": "relire le journal avant de verser les 1'200 CHF suivants",
+    "caractere": "condition d'apprentissage, pas une regle bloquante"
+  },
+
+  "supprime_le_16_08_2026": [
+    "Engagement Fondateur signe",
+    "procedure d'amendement PR-4 a 3 niveaux",
+    "revue annuelle C7",
+    "garde-fous G2, G3, G4",
+    "regimes VIX A/B/C",
+    "filtre IV rank",
+    "filtre catalyseur date",
+    "exigence de these ecrite",
+    "plancher 60 DTE",
+    "plafond 150 DTE",
+    "plafond secteur GICS",
+    "interdiction des puts",
+    "blocage dur dans l'app",
+    "point de decision conditionnel C2",
+    "echelle Edge et paliers indexes sur le profit factor"
+  ]
+}

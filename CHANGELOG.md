@@ -6,6 +6,51 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.2-rc.4] — 2026-08-16
+
+**Q-A — LE REGISTRE (chantier conformité Sniper V3, brique 1/4). EN ATTENTE.**
+Fait entrer le registre dans le repo et coupe le cordon avec les valeurs de
+doctrine codées en dur. **Q-A n'écrit aucune porte** (recâblage = Q-C) : il
+rend les valeurs lisibles depuis une **source unique** et prouve que plus rien
+de normatif ne vit dans le code. Aucun changement de comportement — valeurs
+IDENTIQUES là où elles survivent (415 tests inchangés = preuve de parité).
+
+- **Le registre** — `src/config/parametres.json` v3.0.0 (copié **octet pour
+  octet** depuis la Carte V3 ; diff identique). Sépare la LOI de trading
+  (`parametres.json`, ne bouge que par décision de Rafael) de l'ERGONOMIE
+  (`parametres.app.json`, nouveau — affichage/seuils). **Aucune valeur ne vit
+  dans les deux.** Loader unique `src/config/registre.js` : seul endroit de
+  `src/` où un nombre normatif a le droit d'apparaître.
+- **Migration à valeurs identiques** (là où la valeur survit) : SL exécution
+  −35 / 0.35 → `P1_sl.execution_pct` (`alerts.js`, `decision/model.js`,
+  `detectExitReason.js`, `risk.js`) ; gate DTE 45 → `P3_dte.jours`
+  (`decision/model.js`, `useSniperGates.js`, `detectExitReason.js`) ; jour de
+  stagnation 30 → `P5_stagnation.jour` (`detectExitReason.js`). App :
+  `sniperMeta` 30/70, `significance` (10 + 5 siblings), `statusFromFill` 95/70/30
+  + `SAFE_BUFFER` 60 + approches 0.7/5 → `parametres.app.json`.
+- **PIÈGES ÉVITÉS** (coïncidences numériques) : le TP fixe 50 (mort en V3)
+  N'EST PAS l'activation du trailing +50 % (P2) — laissé LEGACY, non mappé ;
+  la stagnation 30 j de `detectExitReason` (ancienne V1) est dérivée du registre
+  P5, pas laissée par coïncidence. LEGACY laissés en place (Q-C retire) :
+  TP fixe 50/40/80, gate DTE-35 (SL35 mort É3), DTE 90/100, kill switch −500.
+  DIVERGENCE documentée : bande de stagnation ±10 (code) vs −20/+30 (registre
+  P5) — réconciliée en Q-C, pas par Q-A (aucun recâblage).
+- **Exposé pour Q-C** (aucun site code, lecture seule) : P2 trail (0.50/0.40),
+  P4 earnings (J−7/J−5 jours de bourse), θ d'entrée 0.008, sizing S1..S6,
+  garde-fou G5 (5/72 h), alerte SL −30.
+- **Témoin permanent** — `scripts/check-doctrine.mjs` + `npm run check:doctrine`
+  (esprit `check:color-law`/`langueTemoin`) : échoue si un nombre normatif V3
+  réapparaît en dur hors du registre. Prouvé non-vacuous (détecte les 6 formes
+  de violation, ignore les sosies : bande de delta 0.35, opacité rgba, formes
+  migrées). Portée = valeurs ACTIVES V3 ; les morts/divergents ne sont pas
+  traqués (la V3 ne les contient plus).
+- **Recette** — `check:doctrine` 0 · `check:color-law` 0 · build ✓ · **429
+  tests** (415 inchangés = parité + 14 de preuve `registre.test.js`).
+- **RÉSERVE** — la **Carte `SNIPER_OTM_Carte_V3.md` est ABSENTE** de
+  Téléchargements (seul le JSON, qui « fait foi pour l'app », y était). Elle
+  reste à déposer pour une copie **octet pour octet** vers `docs/` (jamais
+  retapée). N'a pas bloqué Q-A (le JSON est la source machine).
+
 ## [1.0.2-rc.3] — 2026-08-16
 
 **1.G-a — Deux correctifs avant merge (GO donné) + correction de nommage.**

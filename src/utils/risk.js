@@ -201,9 +201,12 @@ export function positionNotional(pos) {
   return Math.abs(mark * qty * mul);
 }
 
-// ─── Brique 13 — risque max par position (gate SL35) ───────────
+// ─── Brique 13 — risque max par position (stop-loss doctrine) ───────────
 
-const SL_DERIVED_FRACTION = 0.35;
+// Q-A (16.08) — la fraction du stop d'exécution vient du REGISTRE (source
+// unique) : |portes.P1_sl.execution_pct| = 0.35. Valeur INCHANGÉE.
+import { SL_EXECUTION_MAGNITUDE } from '../config/registre';
+const SL_DERIVED_FRACTION = SL_EXECUTION_MAGNITUDE;
 
 /**
  * Risque max en USD pour UNE position ouverte — le montant perdu si

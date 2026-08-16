@@ -20,6 +20,12 @@
 
 import { toFloat, ensurePositive } from '../math';
 import { holdingDays, dteAtEntry as dayDiff } from '../dates';
+// Q-A (16.08) — les valeurs de doctrine qui SURVIVENT en V3 viennent du
+// REGISTRE (source unique), à VALEUR IDENTIQUE : SL exec -35, DTE 45, jour de
+// stagnation 30. LEGACY/DIVERGENT laissés en place (Q-C recâble/réconcilie) :
+// le TP fixe +50 % (tp_50, mort en V3), la fenêtre earnings 14 j après clôture
+// (≠ P4 J-7/J-5), la bande de stagnation ±10 % (≠ registre P5 -20/+30).
+import { SL_EXECUTION_PCT, DTE_GATE_JOURS, STAGNATION_JOUR } from '../../config/registre';
 
 const DAY_MS = 86400000;
 
@@ -44,22 +50,22 @@ export function detectExitReason(trade, opts = {}) {
   const dteAtExit = trade.do && trade.ex ? dayDiff(trade.do, trade.ex) : null;
 
   // Rule 1 — hard SL first: a -35%+ loss dominates any other concurrent signal.
-  if (pnlPct <= -35) {
+  if (pnlPct <= SL_EXECUTION_PCT) {
     return { reason: 'sl_35', confidence: 'high' };
   }
 
-  // Rule 2 — TP at +50%. Flag medium confidence when the exit is also
-  // near expiry with a borderline gain, because it could plausibly be
-  // a dte_45 close that happened to land in the profit band.
+  // Rule 2 — TP at +50%. LEGACY : le take-profit fixe +50 % est MORT en V3
+  // (supprimé le 16.08 ; remplacé par le trailing P2). Conservé ici comme
+  // étiquette d'HISTORIQUE des trades passés — Q-C décide de son sort.
   if (pnlPct >= 50) {
-    if (dteAtExit != null && dteAtExit <= 45 && pnlPct >= 45 && pnlPct <= 55) {
+    if (dteAtExit != null && dteAtExit <= DTE_GATE_JOURS && pnlPct >= 45 && pnlPct <= 55) {
       return { reason: 'tp_50', confidence: 'medium' };
     }
     return { reason: 'tp_50', confidence: 'high' };
   }
 
-  // Rule 3 — pre-expiry close in the neutral band.
-  if (dteAtExit != null && dteAtExit <= 45 && pnlPct > -35 && pnlPct < 50) {
+  // Rule 3 — pre-expiry close in the neutral band (borne haute 50 = LEGACY TP).
+  if (dteAtExit != null && dteAtExit <= DTE_GATE_JOURS && pnlPct > SL_EXECUTION_PCT && pnlPct < 50) {
     return { reason: 'dte_45', confidence: 'high' };
   }
 
@@ -78,8 +84,11 @@ export function detectExitReason(trade, opts = {}) {
     }
   }
 
-  // Rule 5 — stagnation: long hold, flat outcome.
-  if (hold != null && hold >= 30 && pnlPct >= -10 && pnlPct <= 10) {
+  // Rule 5 — stagnation: long hold, flat outcome. Le JOUR (30) vient du
+  // registre P5 (identique). ⚠ La bande ±10 % DIVERGE du registre P5
+  // (-0.20 / +0.30) : ÉCART DE VALEUR laissé en place — réconciliation en
+  // Q-C (Q-A ne recâble pas la logique).
+  if (hold != null && hold >= STAGNATION_JOUR && pnlPct >= -10 && pnlPct <= 10) {
     return { reason: 'stagnation', confidence: 'medium' };
   }
 

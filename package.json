@@ -1,7 +1,7 @@
 {
   "name": "quantumcall",
   "private": true,
-  "version": "1.0.2-rc.3",
+  "version": "1.0.2-rc.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check:color-law": "node scripts/check-color-law.mjs",
+    "check:doctrine": "node scripts/check-doctrine.mjs",
     "audit:visual": "node scripts/visual-audit.mjs"
   },
   "dependencies": {

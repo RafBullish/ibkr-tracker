@@ -3,6 +3,10 @@
 // on the trade shape, so no schema migration is needed. Readers return
 // null silently on absence or malformed JSON, never throw.
 
+// Q-A (16.08) — plancher cash / plafond notionnel d'AFFICHAGE (30/70) au
+// registre app (source unique). DISTINCT de la doctrine sizing (parametres.json).
+import { PORTFOLIO_AFFICHAGE } from '../config/registre';
+
 const KEY_PREFIX = 'qc:sniperMeta:';
 
 export const EDGE_KEYS = ['E0', 'E1', 'E2', 'E3', 'E4'];
@@ -104,18 +108,16 @@ export function readAllSniperMeta() {
 // Stage letter : dérivée du capital tier (C1→A … C5→E) — cohérente
 // avec le libellé historique 'A · E0×C1'.
 //
-// cashFloorPct / notionalMaxPct : règles portfolio Sniper OTM v1.0
-// Finale (30 / 70). Le document de stratégie ne définit pas (encore)
-// de variation par tier — PORTFOLIO_RULES est le point unique à
-// éclater en table par-coordonnée le jour où il le fera. Ne pas
-// re-hardcoder 30/70 ailleurs.
+// cashFloorPct / notionalMaxPct : plancher cash / plafond notionnel
+// d'AFFICHAGE (30 / 70), déportés au registre app (Q-A 16.08 →
+// parametres.app.json / PORTFOLIO_AFFICHAGE, source unique). DISTINCT de la
+// doctrine sizing S1 (0.60 par position, parametres.json) : deux nombres,
+// deux sens. Valeurs INCHANGÉES ; le jour d'une table par-tier, c'est le
+// registre app qui s'éclate, pas ce fichier.
 
 const STAGE_BY_CAPITAL = { C1: 'A', C2: 'B', C3: 'C', C4: 'D', C5: 'E' };
 
-const PORTFOLIO_RULES = {
-  cashFloorPct: 30,
-  notionalMaxPct: 70,
-};
+const PORTFOLIO_RULES = PORTFOLIO_AFFICHAGE;
 
 export const DEFAULT_TIER = Object.freeze({ e: 'E0', c: 'C1' });
 

@@ -15,23 +15,29 @@
 //  per-trade noise dominates the denominator.
 // ═══════════════════════════════════════════════════════════════
 
+// Q-A (16.08) — ces seuils de significativité sont de l'ERGONOMIE (honnêteté
+// d'affichage, pas de la doctrine) : ils vivent au registre app
+// (parametres.app.json → SIGNIFICANCE). Valeurs STRICTEMENT INCHANGÉES ; on
+// ne fait que les lire d'une source unique (plus de nombre en dur ici).
+import { SIGNIFICANCE } from '../config/registre';
+
 /** Minimum closed-trade count below which annualised ratios are unreliable. */
-export const MIN_TRADES_ANNUALIZED = 20;
+export const MIN_TRADES_ANNUALIZED = SIGNIFICANCE.minTradesAnnualized;
 
 /** Minimum elapsed years below which annualised compounding explodes. */
-export const MIN_YEARS_ANNUALIZED = 0.25;
+export const MIN_YEARS_ANNUALIZED = SIGNIFICANCE.minYearsAnnualized;
 
 /** Minimum observation count for any per-observation ratio (Sharpe-like). */
-export const MIN_OBS_RATIO = 30;
+export const MIN_OBS_RATIO = SIGNIFICANCE.minObsRatio;
 
 /** Minimum losing trades for a meaningful Profit Factor. */
-export const MIN_LOSSES_PF = 3;
+export const MIN_LOSSES_PF = SIGNIFICANCE.minLossesPf;
 
 /** Minimum reference capital (USD) below which % returns are dominated by noise. */
-export const MIN_CAPITAL_REF_USD = 500;
+export const MIN_CAPITAL_REF_USD = SIGNIFICANCE.minCapitalRefUsd;
 
 /** Minimum decisive trades (win+loss, excl. break-even) for a meaningful Win Rate. */
-export const MIN_DECISIVE_WINRATE = 10;
+export const MIN_DECISIVE_WINRATE = SIGNIFICANCE.minDecisiveWinrate;
 
 /**
  * @typedef {Object} SignificanceInputs

@@ -1,0 +1,6 @@
+# Registre de doctrine (Q-A, 16.08.2026) — parametres.json est une transcription
+# OCTET POUR OCTET de la Carte V3 (SNIPER_OTM_Carte_V3.md fait foi). On interdit
+# toute conversion de fins de ligne (core.autocrlf) pour préserver les octets
+# exacts à chaque checkout, pas seulement dans le blob.
+src/config/parametres.json -text
+src/config/parametres.app.json -text

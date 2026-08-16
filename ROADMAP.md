@@ -7,6 +7,31 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
 
 ---
 
+## Conformité Sniper V3 — chantier Q (ouvert le 16.08.2026)
+
+Registre V3 (`parametres.json` v3.0.0) reçu ; le 2.0.1 est mort. Séquence
+mandatée : **registre → saisie → portes → palier**.
+
+- **Q-A ✅ (1.0.2-rc.4, EN ATTENTE — branche `v1/q-a-registre`)** — LE REGISTRE.
+  `src/config/parametres.json` (octet pour octet) + `parametres.app.json`
+  (ergonomie) + loader `registre.js` (source unique). Cordon coupé : SL −35,
+  DTE 45, stagnation 30 migrés à valeur identique ; app 30/70 + significativité
+  + escalade migrés ; morts/divergents (TP 50, kill −500, SL35, DTE 90/100,
+  bande ±10) laissés LEGACY/documentés → Q-C. Témoin permanent
+  `npm run check:doctrine` (0 violation, prouvé non-vacuous). **Q-A n'écrit
+  aucune porte.** 429 tests, color-law 0, build ✓. RÉSERVE : Carte
+  `SNIPER_OTM_Carte_V3.md` absente de Téléchargements (à déposer pour copie
+  octet-pour-octet vers `docs/`).
+- **Q-B ⏳ (à venir)** — SAISIE : schéma v8 (earnings confirmée, `ivRankAtEntry`,
+  Check-10 non bloquant), saisie des positions ouvertes.
+- **Q-C ⏳ (à venir)** — PORTES : recâblage des 5 portes sur le registre
+  (P1..P5), writer `qc:positionMarks` (pic pour le trailing P2), marquage
+  VIOLATION, retrait des LEGACY, réconciliation de la bande de stagnation.
+- **Q-D ⏳ (à venir)** — PALIER : passage du deck (bloc PORTES, DÉPLOYABLE…)
+  branché sur les portes câblées.
+
+---
+
 ## v1.0.2 — PortfolioDeck v2 (ouvert le 16.08.2026)
 
 - **1.G-a ✅ MERGÉE (rc.1→rc.3, GO Rafael 16.08)** — PortfolioDeck v2 au N=1
