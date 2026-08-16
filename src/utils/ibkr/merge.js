@@ -14,10 +14,10 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { buildClosedTrades } from './closedTrades';
-
-function positionKey(p) {
-  return `${p.tk}|${p.as}|${p.dir}|${p.ty}|${p.st}|${p.ex}`;
-}
+// Q-B — signature de dédup = signature unique partagée (positions.js), la
+// même que le sidecar de métadonnées : une annotation saisie survit au
+// ré-import parce que la clé est stable (indépendante de l'id régénéré).
+import { positionSignature } from '../positions';
 
 function closedTradeKey(t) {
   return `${t.tk}|${t.ty}|${t.st}|${t.ex}|${t.do || ''}|${t.ct}`;
@@ -27,7 +27,45 @@ function cashFlowKey(cf) {
   return `${cf.da}|${cf.ty}|${cf.a1}`;
 }
 
-export function mergeIbkrData(parsed, currentState) {
+/**
+ * Lignes IGNORÉES par le parser, avec le MOTIF — plus de skip muet.
+ * Dérivé des compteurs déjà collectés (parsed.stats) : classes d'actif
+ * hors OPT/STK, niveaux de détail repliés, trades non-ordre.
+ */
+function buildIgnored(parsed) {
+  const out = [];
+  const ps = parsed?.stats?.positionsSkipped;
+  if (ps) {
+    if (ps.byAssetClass?.CASH) {
+      out.push({ reason: 'Positions cash (hors OPT/STK) ignorées', count: ps.byAssetClass.CASH });
+    }
+    if (ps.byAssetClass?.OTHER) {
+      out.push({ reason: 'Positions d’une classe d’actif non gérée', count: ps.byAssetClass.OTHER });
+    }
+    if (ps.byLevel?.LOT) {
+      out.push({ reason: 'Lignes lot-level repliées dans le résumé', count: ps.byLevel.LOT });
+    }
+    if (ps.byLevel?.OTHER) {
+      out.push({ reason: 'Lignes de position d’un niveau non géré', count: ps.byLevel.OTHER });
+    }
+  }
+  if (parsed?.stats?.tradesSkipped) {
+    out.push({ reason: 'Lignes de trade non-ordre / FX / hors OPT-STK', count: parsed.stats.tradesSkipped });
+  }
+  return out;
+}
+
+/**
+ * @param {Object} parsed        sortie de parseIbkrCsv
+ * @param {Object} currentState  état courant (openPositions, closedTrades, …)
+ * @param {Object} [opts]
+ * @param {Object} [opts.metaBySignature]  carte { [signature]: { earningsDate,
+ *   entryNote } } du sidecar — ré-hydrate les positions NOUVELLEMENT créées
+ *   dont la signature portait déjà une métadonnée saisie (survie au ré-import
+ *   même après suppression). Passée par l'appelant pour garder merge pur.
+ */
+export function mergeIbkrData(parsed, currentState, opts = {}) {
+  const metaBySig = opts.metaBySignature || null;
   const stats = {
     positionsAdded: 0,
     positionsSkipped: 0,
@@ -39,16 +77,31 @@ export function mergeIbkrData(parsed, currentState) {
   };
 
   // ── Open positions ──
-  const existingPosKeys = new Set(currentState.openPositions.map(positionKey));
+  const existingPosKeys = new Set(currentState.openPositions.map(positionSignature));
   const newPositions = [];
   for (const pos of parsed.positions) {
-    if (existingPosKeys.has(positionKey(pos))) {
+    if (existingPosKeys.has(positionSignature(pos))) {
+      // Signature déjà présente : la position EXISTANTE du magasin est
+      // conservée telle quelle (donc ses earningsDate/entryNote saisis
+      // survivent). Reporté comme doublon, jamais écrasé.
       stats.positionsSkipped++;
     } else {
       const clean = { ...pos };
       delete clean._ibkrConid;
       delete clean._ibkrSymbol;
       delete clean._ibkrUnrealized;
+      // Ré-hydratation des métadonnées saisies depuis le sidecar (signature).
+      if (metaBySig) {
+        const meta = metaBySig[positionSignature(clean)];
+        if (meta) {
+          if (clean.earningsDate == null && meta.earningsDate != null) {
+            clean.earningsDate = meta.earningsDate;
+          }
+          if (clean.entryNote == null && meta.entryNote != null) {
+            clean.entryNote = meta.entryNote;
+          }
+        }
+      }
       newPositions.push(clean);
       stats.positionsAdded++;
     }
@@ -114,6 +167,28 @@ export function mergeIbkrData(parsed, currentState) {
   // ── Cash report: store endingCash in settings ──
   const cashReportSettings = parsed.cashReport?.endingCash ? { cashReport: parsed.cashReport } : {};
 
+  // ── Rapport d'import (Q-B) — zéro skip muet, zéro fusion muette ──────
+  // Compteurs véridiques + motifs des lignes ignorées. `createdPositions`
+  // sert au calcul des violations côté Import.jsx (il a le capital de réf).
+  // NB : l'import ne MOYENNE pas (il dédupe par signature) — le moyennage
+  // de lots est le chemin manuel ADD_POSITION ; lotsMerged reste 0 ici.
+  const report = {
+    linesRead: parsed?.stats?.totalLines ?? 0,
+    sectionsFound: parsed?.stats?.sectionsFound ?? [],
+    positions: { created: stats.positionsAdded, duplicatesSkipped: stats.positionsSkipped },
+    closedTrades: {
+      created: stats.closedTradesAdded,
+      duplicatesSkipped: stats.closedTradesSkipped,
+      fifoMatched: stats.fifoMatched ?? 0,
+      fifoFallback: stats.fifoFallback ?? 0,
+    },
+    cashFlows: { created: stats.cashFlowsAdded, duplicatesSkipped: stats.cashFlowsSkipped },
+    lotsMerged: 0,
+    ignored: buildIgnored(parsed),
+    errors: parsed?.errors ?? [],
+    createdPositions: newPositions,
+  };
+
   return {
     mergedData: {
       openPositions: [...currentState.openPositions, ...newPositions],
@@ -126,5 +201,6 @@ export function mergeIbkrData(parsed, currentState) {
       },
     },
     stats,
+    report,
   };
 }

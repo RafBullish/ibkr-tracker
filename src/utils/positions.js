@@ -105,7 +105,12 @@ export function daysHeld(di, ref) {
  * @param {Object} [context]
  * @param {Date}   [context.now]
  * @param {number} [context.ivr]             IV rank actuel (0..100)
- * @param {Array}  [context.earnings]        [{ tk, dte }] — earnings calendar
+ *
+ * Q-B (16.08) — la branche EARN est MORTE : la porte P4 (earnings) tire
+ * désormais sa vérité de `position.earningsDate` (tri-état saisi, câblage
+ * du gate en Q-C), plus du calendrier Finnhub injecté ici. Finnhub survit
+ * en pur affichage de calendrier (Calendar / PreMarket / CalendarMini) —
+ * il ne pilote plus aucune alerte de position.
  */
 export function detectAlert(pos, context = {}) {
   if (!pos) return null;
@@ -114,17 +119,22 @@ export function detectAlert(pos, context = {}) {
   const dte = dteFromExp(pos.ex, now);
   if (dte != null && dte < 7) return 'DTE';
 
-  if (Array.isArray(context.earnings) && pos.tk) {
-    const upcoming = context.earnings.find(
-      (e) => e?.tk === pos.tk && Number.isFinite(e?.dte) && e.dte >= 0 && e.dte < 14
-    );
-    if (upcoming) return 'EARN';
-  }
-
   const ivr = context.ivr;
   if (Number.isFinite(ivr) && (ivr > 70 || ivr < 20)) return 'IV';
 
   return null;
+}
+
+/**
+ * Signature stable d'une position — indépendante de l'id (qui change à
+ * chaque ré-import) et de la date d'entrée. Clé de dédup à l'import ET
+ * clé du sidecar de métadonnées saisies (earningsDate / entryNote), pour
+ * qu'une annotation SURVIVE au ré-import du même CSV.
+ * Forme identique à l'ancienne positionKey de merge.js : tk|as|dir|ty|st|ex.
+ */
+export function positionSignature(p) {
+  if (!p) return '';
+  return `${p.tk}|${p.as}|${p.dir}|${p.ty ?? ''}|${p.st ?? ''}|${p.ex ?? ''}`;
 }
 
 // É3.2 — sparkTrend MORTE avec PositionSparkline (colonne SPARK 7D

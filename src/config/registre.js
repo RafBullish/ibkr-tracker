@@ -70,6 +70,10 @@ export const P2_TRAIL = doctrine.portes.P2_trail;
 export const P4_EARNINGS = doctrine.portes.P4_earnings;
 /** Critère θ d'entrée : θ absolu / prime mid, seuil 0.008 (0,8 %/jour), par position. */
 export const THETA_MAX_PCT_PRIME_JOUR = doctrine.entree.E2_theta_max_pct_prime_jour;
+/** E4 · spread max en fraction du mid : 0.30. Consommé par le marquage de violation Q-B. */
+export const SPREAD_MAX_PCT_MID = doctrine.entree.E4_spread_max_pct_mid;
+/** E5 · fenêtre d'exécution : { debut '15:45', fin '21:45', fuseau 'Europe/Zurich' }. Consommée par Q-B. */
+export const FENETRE_EXECUTION = doctrine.entree.E5_fenetre_execution;
 /** Sizing doctrine : { S1_pct_max_par_position 0.60, S3_ticket_min_usd 150, S4_n_max, … }. */
 export const SIZING = doctrine.sizing;
 /** Garde-fous : { G5_serie_pertes { seuil 5, pause_heures 72 }, G1..G6 null }. */

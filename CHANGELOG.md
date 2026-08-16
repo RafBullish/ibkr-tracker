@@ -6,9 +6,69 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.2-rc.5] — 2026-08-16
+
+**Q-B — LA SAISIE (chantier conformité Sniper V3, brique 2/4). EN ATTENTE.**
+Fait ENREGISTRER à l'app ce que la carte V3 exige, et MARQUE les écarts sans
+jamais en bloquer un seul (« enregistreur de vol, pas un frein »). Aucune valeur
+en dur : tous les seuils viennent du registre (Q-A). check:doctrine reste vert.
+
+- **Schéma v8** — `migrateV7toV8` (pur, garde `=== undefined`, aucune donnée
+  détruite) : positions ouvertes → `earningsDate` (tri-état : une date | `AUCUN`
+  | `null` legacy — SEULE source de la porte P4, câblage Q-C) + `entryNote`
+  (phrase libre) ; trades clôturés → les 3 champs de clôture nouveaux du registre
+  app (`picAtteint`, `porteDeclenchee`, `porteRespectee`). Les 2 autres champs de
+  clôture (prix_entree, prix_sortie) EXISTAIENT déjà (`pi`, `po`). `picAtteint`
+  reste VIDE (valeur = writer `qc:positionMarks`, hors périmètre — Q-C) ; l'UI le
+  dit (« en attente Q-C »), jamais un zéro décoratif.
+- **7 règles de VIOLATION** (`src/utils/violations.js`) — chip AMBRE (jamais
+  rouge, loi §6 : un écart n'est pas une perte), jamais bloquant, à la saisie ET
+  à l'import, TOUTES sourcées du registre : S1 taille>60% (`sizing.S1`), S3
+  ticket<150$ (`sizing.S3`), S5 2ᵉ entrée/jour (`sizing.S5`), S6 2ᵉ position/
+  sous-jacent + MOYENNAGE (`sizing.S6`), E2 θ d'entrée>0,8%/j sur la PRIME
+  D'ENTRÉE `pi` (`entree.E2`, distinct du θ%-du-mark du deck), E4 spread>30%
+  (`entree.E4`), E5 hors 15:45–21:45 Genève (`entree.E5`). Le DELTA est INDICATIF
+  → JAMAIS de violation.
+- **Honnêteté des entrées manquantes** : θ d'entrée, bid/ask, horodatage n'existent
+  pas encore dans le magasin → la règle est « indéterminée » (ni faute, ni
+  conforme, jamais un faux 0). Elle se rallume seule quand l'entrée est capturée
+  (Chain, Q-C, saisie horodatée). S1/S3/S5/S6 sont mesurées AUJOURD'HUI.
+- **ADD_POSITION n'est plus MUET** : le moyennage garde la provenance (`lots[]`,
+  journal de lots) + pose `averaged` → le moteur en dérive l'écart S6 (visible,
+  marqué). Reducer pur (aucun journal psychologique pollué).
+- **detectAlert : branche EARN MORTE** — la porte P4 tire désormais de
+  `position.earningsDate`. Finnhub SURVIT en pur affichage de calendrier
+  (Calendar / PreMarket / CalendarMini, intouchés) ; `earnings` retiré de
+  `useLivePositions` (l'arg n'était d'ailleurs jamais alimenté aux appelants).
+- **Import = un RAPPORT** (zéro skip muet, zéro fusion muette) : lignes lues,
+  positions créées, doublons dédupliqués, lots moyennés (0 — l'import ne moyenne
+  pas, il dédupe par signature), lignes IGNORÉES avec le MOTIF (classe d'actif
+  hors OPT/STK, niveau replié, trade non-ordre), écarts de doctrine marqués.
+  `merge.js` (report enrichi) + `Import.jsx` (étage Résultat réécrit).
+- **Survie des métadonnées au ré-import** : sidecar `positionMeta` keyé par
+  SIGNATURE stable (`tk|as|dir|ty|st|ex`, indépendante de l'id régénéré),
+  localStorage `ibkr_u_m`. Ré-hydratation des positions créées à l'import ;
+  écriture à l'édition. Prouvé : annoter → ré-importer le même CSV → la date de
+  résultats / la note survivent (test dédié).
+- **Saisie (UI)** : tiroir détail /trading/positions → sections « Saisie · carte
+  V3 » (date de résultats, note) + « Conformité doctrine » (écarts ambre + règles
+  indéterminées neutres) ; marqueur d'écart compact sur la ligne (ticker).
+  Édition → earningsDate tri-état + note. Clôture (+ AddTradeModal) → porte
+  déclenchée / respectée + pic atteint honnête. AUCUN bouton bloqué sur un écart.
+- **Registre** : deux exports ajoutés — `SPREAD_MAX_PCT_MID` (E4=0.30) +
+  `FENETRE_EXECUTION` (E5) — ré-expression identique du JSON.
+- **HORS PÉRIMÈTRE** (Q-C / 1.G-b) : câblage des 5 portes, writer
+  `qc:positionMarks`, calcul du pic, bloc PORTES du deck, DÉPLOYABLE.
+- **Preuve** : 470 tests (+41 : migration v8, 7 règles, sidecar + survie,
+  moyennage non muet, rapport d'import) ; check:doctrine 0, check:color-law 0,
+  build vert.
+
+---
+
 ## [1.0.2-rc.4] — 2026-08-16
 
-**Q-A — LE REGISTRE (chantier conformité Sniper V3, brique 1/4). EN ATTENTE.**
+**Q-A — LE REGISTRE (chantier conformité Sniper V3, brique 1/4). MERGÉE sur main
+(self-merge §4 : brique outillage, delta visuel nul, gates verts).**
 Fait entrer le registre dans le repo et coupe le cordon avec les valeurs de
 doctrine codées en dur. **Q-A n'écrit aucune porte** (recâblage = Q-C) : il
 rend les valeurs lisibles depuis une **source unique** et prouve que plus rien

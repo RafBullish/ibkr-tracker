@@ -224,6 +224,48 @@
 .position-detail__tag-btn {
   align-self: flex-start;
 }
+
+/* ── Q-B — conformité doctrine (tiroir détail) + saisie carte V3 ───────
+   Écart marqué = chip AMBRE (db-badge--arme, loi de couleur : un écart
+   n'est pas une perte). Règle non mesurable = jeton NEUTRE honnête. */
+.position-detail__doctrine {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.position-detail__doctrine-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.position-detail__doctrine-mute {
+  font-family: var(--qc-font-num);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 2px;
+  color: var(--ink-mute);
+  border: 1px solid var(--line-hairline);
+  background: transparent;
+}
+.position-detail__doctrine-msg {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+.position-detail__note-line {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  margin: var(--space-2) 0 0;
+}
+/* Marqueur d'écart compact sur la ligne (ticker) — ambre, tooltip = détail. */
+.pos-ticker-cell__viol {
+  font-size: 9px;
+  letter-spacing: 0.02em;
+  cursor: default;
+}
 .position-detail__nav {
   margin-top: var(--space-2);
   align-self: flex-start;

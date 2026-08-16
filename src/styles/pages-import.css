@@ -335,3 +335,76 @@
   line-height: 1.55;
   max-width: 560px;
 }
+
+/* ── Rapport d'import (Q-B) — zéro skip muet ─────────────────────
+   Ligne méta + écarts de doctrine (chips AMBRE, jamais rouge : un
+   écart n'est pas une perte d'argent) + lignes ignorées (neutres). */
+.import-report__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: var(--type-caption);
+  color: var(--ink-mute);
+  letter-spacing: 0.01em;
+}
+
+.import-report__section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-hairline);
+}
+.import-report__section-title {
+  font-size: var(--type-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+
+.import-report__viol-list,
+.import-report__ignored-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.import-report__viol-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.import-report__viol-instr {
+  font-family: var(--qc-font-num);
+  font-size: 12px;
+  color: var(--ink-soft);
+  min-width: 120px;
+}
+.import-report__viol-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.import-report__viol-chip {
+  cursor: default;
+}
+
+.import-report__ignored-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--ink-mute);
+}
+.import-report__ignored-n {
+  font-family: var(--qc-font-num);
+  font-variant-numeric: tabular-nums slashed-zero;
+  color: var(--ink-soft);
+  min-width: 28px;
+  text-align: right;
+}

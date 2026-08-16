@@ -176,6 +176,22 @@
   border-color: var(--accent);
 }
 
+/* Q-B — select (portes de clôture, carte V3) aligné sur le champ input. */
+.add-trade-form__row select {
+  padding: 8px 10px;
+  background: var(--depth-base);
+  border: 1px solid var(--hairline-rest);
+  border-radius: 2px;
+  color: var(--ink-pure);
+  font-family: var(--qc-font-sans);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 120ms ease-out;
+}
+.add-trade-form__row select:focus {
+  border-color: var(--accent);
+}
+
 .add-trade-form__toggle {
   display: inline-flex;
   gap: 2px;

@@ -131,7 +131,7 @@ import { detectExitReason } from '../utils/trades/detectExitReason';
 import { generateId } from '../utils/math';
 
 export const SCHEMA_VERSION_KEY = 'ibkr_schema_v';
-export const CURRENT_SCHEMA_VERSION = 7;
+export const CURRENT_SCHEMA_VERSION = 8;
 
 // ─── Individual migration steps ───────────────────────────────
 
@@ -344,6 +344,38 @@ function migrateV6toV7(state) {
   return { ...state, settings, openPositions };
 }
 
+/**
+ * v7 → v8 — Brique Q-B « la saisie ». Ouvre le schéma à ce que la
+ * carte V3 exige d'ENREGISTRER (pas de gate — l'app reste un
+ * enregistreur de vol) :
+ *   · positions ouvertes : earningsDate (tri-état : une date | 'AUCUN'
+ *     pour un sous-jacent sans résultats | null legacy — SEULE source
+ *     de la porte P4, câblée en Q-C) + entryNote (phrase libre).
+ *   · trades clôturés : les 3 champs de clôture nouveaux du registre app
+ *     (journal_champs_obligatoires_a_la_cloture) — picAtteint (vide tant
+ *     que le writer qc:positionMarks (Q-C) n'existe pas ; l'UI le dit,
+ *     jamais un zéro décoratif), porteDeclenchee, porteRespectee. Les
+ *     deux autres champs (prix_entree, prix_sortie) EXISTENT déjà (pi, po).
+ * Garde '=== undefined' : toute valeur déjà posée (date, 'AUCUN', une
+ * porte saisie) passe INTACTE. Pur, superficiel, aucune donnée détruite.
+ */
+function migrateV7toV8(state) {
+  const openPositions = (state.openPositions || []).map((p) => {
+    const next = { ...p };
+    if (next.earningsDate === undefined) next.earningsDate = null;
+    if (next.entryNote === undefined) next.entryNote = null;
+    return next;
+  });
+  const closedTrades = (state.closedTrades || []).map((t) => {
+    const next = { ...t };
+    if (next.picAtteint === undefined) next.picAtteint = null;
+    if (next.porteDeclenchee === undefined) next.porteDeclenchee = null;
+    if (next.porteRespectee === undefined) next.porteRespectee = null;
+    return next;
+  });
+  return { ...state, openPositions, closedTrades };
+}
+
 // ─── Migration chain ─────────────────────────────────────────
 // Index N contains the migration from version N → N+1.
 
@@ -355,6 +387,7 @@ const MIGRATIONS = [
   migrateV4toV5, // 4 → 5
   migrateV5toV6, // 5 → 6
   migrateV6toV7, // 6 → 7
+  migrateV7toV8, // 7 → 8
 ];
 
 // ─── Entry points ────────────────────────────────────────────

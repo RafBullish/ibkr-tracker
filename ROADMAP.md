@@ -12,18 +12,29 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
 Registre V3 (`parametres.json` v3.0.0) reçu ; le 2.0.1 est mort. Séquence
 mandatée : **registre → saisie → portes → palier**.
 
-- **Q-A ✅ (1.0.2-rc.4, EN ATTENTE — branche `v1/q-a-registre`)** — LE REGISTRE.
-  `src/config/parametres.json` (octet pour octet) + `parametres.app.json`
-  (ergonomie) + loader `registre.js` (source unique). Cordon coupé : SL −35,
-  DTE 45, stagnation 30 migrés à valeur identique ; app 30/70 + significativité
-  + escalade migrés ; morts/divergents (TP 50, kill −500, SL35, DTE 90/100,
-  bande ±10) laissés LEGACY/documentés → Q-C. Témoin permanent
-  `npm run check:doctrine` (0 violation, prouvé non-vacuous). **Q-A n'écrit
-  aucune porte.** 429 tests, color-law 0, build ✓. RÉSERVE : Carte
-  `SNIPER_OTM_Carte_V3.md` absente de Téléchargements (à déposer pour copie
+- **Q-A ✅ MERGÉE sur main (1.0.2-rc.4, self-merge §4 : outillage, delta visuel
+  nul, gates verts)** — LE REGISTRE. `src/config/parametres.json` (octet pour
+  octet) + `parametres.app.json` (ergonomie) + loader `registre.js` (source
+  unique). Cordon coupé : SL −35, DTE 45, stagnation 30 migrés à valeur
+  identique ; app 30/70 + significativité + escalade migrés ; morts/divergents
+  (TP 50, kill −500, SL35, DTE 90/100, bande ±10) laissés LEGACY/documentés →
+  Q-C. Témoin permanent `npm run check:doctrine` (0 violation, prouvé
+  non-vacuous). **Q-A n'écrit aucune porte.** color-law 0, build ✓. RÉSERVE :
+  Carte `SNIPER_OTM_Carte_V3.md` absente de Téléchargements (à déposer pour copie
   octet-pour-octet vers `docs/`).
-- **Q-B ⏳ (à venir)** — SAISIE : schéma v8 (earnings confirmée, `ivRankAtEntry`,
-  Check-10 non bloquant), saisie des positions ouvertes.
+- **Q-B ✅ (1.0.2-rc.5, EN ATTENTE — branche `v1/q-b-saisie`)** — LA SAISIE.
+  Schéma **v8** (`earningsDate` tri-état = source P4 ; `entryNote` ; 3 champs de
+  clôture `picAtteint`/`porteDeclenchee`/`porteRespectee`, `picAtteint` vide en
+  attente Q-C). **7 règles de VIOLATION** (`violations.js`) chip AMBRE jamais
+  bloquant, seuils du registre (S1/S3/S5/S6 mesurées ; E2/E4/E5 « indéterminées »
+  tant que l'entrée n'est pas capturée ; DELTA indicatif → jamais jugé).
+  ADD_POSITION non muet (moyennage → `lots[]` + `averaged` + S6). detectAlert
+  EARN morte (P4 = `earningsDate` ; Finnhub survit au calendrier). Import = un
+  RAPPORT (lignes lues/créées/dédupliquées/ignorées+motif/écarts marqués), zéro
+  skip muet. Survie des métadonnées au ré-import (sidecar `positionMeta` keyé
+  signature, prouvé). Saisie UI (tiroir détail : Saisie carte V3 + Conformité
+  doctrine ; édition earnings/note ; clôture portes + pic honnête). 470 tests,
+  check:doctrine 0, color-law 0, build ✓. **Q-B n'écrit aucune porte** (Q-C).
 - **Q-C ⏳ (à venir)** — PORTES : recâblage des 5 portes sur le registre
   (P1..P5), writer `qc:positionMarks` (pic pour le trailing P2), marquage
   VIOLATION, retrait des LEGACY, réconciliation de la bande de stagnation.
