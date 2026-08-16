@@ -8,6 +8,10 @@
 import { dteFromExp } from './positions';
 import { calculateOpenPositionPnl } from './calculations';
 import { toFloat } from './math';
+// Q-A (16.08) — le stop d'exécution (-35 %) vient du REGISTRE (source unique).
+// Les seuils DTE 90/100, TIME_STOP 5/15 et TP 40/80 de ce moteur sont LEGACY
+// (morts pour la bande décision depuis É3 / 1.F-c1) → retirés en Q-C.
+import { SL_EXECUTION_PCT } from '../config/registre';
 
 const SEVERITY_ORDER = { red: 0, orange: 1, green: 2 };
 
@@ -52,7 +56,7 @@ export function generateAlerts(positions, greeksMap, fxRate) {
       });
     }
 
-    if (pctChg <= -35) {
+    if (pctChg <= SL_EXECUTION_PCT) {
       alerts.push({
         positionId: pos.id,
         ticker: pos.tk,
@@ -63,7 +67,7 @@ export function generateAlerts(positions, greeksMap, fxRate) {
       });
     }
 
-    if (daysHeld >= 5 && pctChg < 15 && pctChg > -35) {
+    if (daysHeld >= 5 && pctChg < 15 && pctChg > SL_EXECUTION_PCT) {
       alerts.push({
         positionId: pos.id,
         ticker: pos.tk,

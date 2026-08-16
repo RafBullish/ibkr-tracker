@@ -41,15 +41,20 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { MIN_DECISIVE_WINRATE } from '../../../utils/significance';
+// Q-A (16.08) — les seuils DOCTRINE (SL exécution, gate DTE) viennent du
+// REGISTRE (source unique, valeurs identiques) ; les fenêtres d'approche
+// (SL 70 % du chemin, DTE +5 j) du registre app. Les TP fixes (40/50/80)
+// sont LEGACY (morts en V3, remplacés par le trailing) → retirés en Q-C.
+import { SL_EXECUTION_MAGNITUDE_PCT, DTE_GATE_JOURS, JAUGES, PORTFOLIO_AFFICHAGE } from '../../../config/registre';
 
-// ── Seuils réels des moteurs (miroirs, pas des re-calculs) ──────────
-const SL_PCT = 35; // stop-loss P&L (generateAlerts STOP_LOSS)
-const SL_APPROACH_FRAC = 0.7; // convention statusFromFill (≥70 % du chemin)
-const GATE_DTE45 = 45; // gate doctrine (useSniperGates DTE45)
-const GATE_DTE45_APPROACH = 5; // fenêtre « DTE 46 → gate 45 » (J+5)
-const TP_SHORT_PCT = 50; // useSniperGates TP (short premium)
-const TP1_PCT = 40;
-const TP2_PCT = 80;
+// ── Seuils des moteurs (miroirs, pas des re-calculs) ────────────────
+const SL_PCT = SL_EXECUTION_MAGNITUDE_PCT; // 35 — magnitude du stop -35 % (registre P1)
+const SL_APPROACH_FRAC = JAUGES.approcheSlFrac; // 0.7 — approche d'affichage (registre app)
+const GATE_DTE45 = DTE_GATE_JOURS; // 45 — gate doctrine DTE (registre P3)
+const GATE_DTE45_APPROACH = JAUGES.approcheDteJours; // 5 — fenêtre d'approche (registre app)
+const TP_SHORT_PCT = 50; // LEGACY — TP fixe short premium (mort V3), retiré Q-C
+const TP1_PCT = 40; // LEGACY — TP fixe partiel (mort V3)
+const TP2_PCT = 80; // LEGACY — TP fixe total (mort V3)
 
 export const SEV = { CRITIQUE: 2, ARME: 1 };
 
@@ -233,7 +238,7 @@ export function deriveCapital({ metrics, greeks, availableUsd, availableIsReal, 
   return {
     deployed: nf(deployed),
     deployedPct: deployed != null && nlv > 0 ? (deployed / nlv) * 100 : null,
-    capPct: tier?.notionalMaxPct ?? 70,
+    capPct: tier?.notionalMaxPct ?? PORTFOLIO_AFFICHAGE.notionalMaxPct,
     available: availableUsd ?? null,
     availableIsReal: availableIsReal === true && availableUsd != null,
     availablePct: availableUsd != null && nlv > 0 ? (availableUsd / nlv) * 100 : null,

@@ -1,0 +1,29 @@
+{
+  "version": "3.0.0-app",
+  "date_registre": "2026-08-16",
+  "note_de_lecture": "Valeurs d'ERGONOMIE et d'AFFICHAGE — PAS de doctrine de trading. La loi de trading vit dans parametres.json (la Carte V3 fait foi). Aucune valeur ne vit dans les deux fichiers. Ces seuils peuvent bouger sans decision de Rafael (contrairement a parametres.json).",
+
+  "portfolio_affichage": {
+    "cashFloorPct": 30,
+    "notionalMaxPct": 70,
+    "note": "Plancher cash / plafond notionnel d'AFFICHAGE (jauge exposition vs NLV, badge Settings). DISTINCT de la doctrine sizing S1 (0.60 par position, parametres.json) : deux nombres, deux sens."
+  },
+
+  "significance": {
+    "minDecisiveWinrate": 10,
+    "minLossesPf": 3,
+    "minTradesAnnualized": 20,
+    "minYearsAnnualized": 0.25,
+    "minObsRatio": 30,
+    "minCapitalRefUsd": 500,
+    "note": "Seuils de significativite statistique — honnetete d'affichage (« — » / « n requis »), loi §4.6 : un ratio n'est pas de l'argent. Pas de doctrine."
+  },
+
+  "jauges": {
+    "safeBufferDte": 60,
+    "escalade": { "armed": 95, "imminent": 70, "normal": 30 },
+    "approcheSlFrac": 0.70,
+    "approcheDteJours": 5,
+    "note": "Normalisation des jauges (safeBufferDte = DTE de base « bien au clair »), escalade des badges (statusFromFill), fenetre d'approche visuelle avant la porte (SL 70 % du chemin, DTE +5 j). Ergonomie, pas des portes."
+  }
+}
