@@ -6,6 +6,33 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.1] — 2026-08-16
+
+**VERSION FINALE — chantier maintenance v1.0.1 CLOS (décision Rafael
+16.08 : « finalise tout, nettoie tout »).** Scellement de rc.7 en
+version finale, sans changement de code applicatif.
+
+- **Contenu livré par le chantier** (7 briques, 12–15.08) : FIX-NLV
+  (rc.1) · POLISH-1 (rc.2) · HERO-FOOTER (rc.3) · É3.1 vérité des
+  chiffres (rc.4) · É3.2 zéro fantôme (rc.5) · COULEUR (rc.6, GO) ·
+  É3.3 langue & formats (rc.7). Détail dans les entrées ci-dessous.
+- **Recette de scellement** : suite complète 415 tests ✓ ·
+  `check:color-law` 0 violation ✓ · build ✓ · audit visuel 12 pages
+  @1591×900 DPR 1.35 (captures `docs/captures/final-v1.0.1/`).
+- **Nettoyage** : branches de briques MERGÉES supprimées (local +
+  origin) — v1/fix-nlv, v1/polish-1, v1/hero-footer, v1/couleur,
+  v1/verite-chiffres, v1/zero-fantome, v1/langue-formats ;
+  `feat/nlv-dataset` CONSERVÉE (non mergée — interdit constitutionnel).
+- **Docs** : ETAT-DU-SITE-V1 amendé (addendum v1.0.1, §9 : items 1-2
+  soldés par COULEUR, item 11 = chantier Q1-Q6 en attente des pièces
+  registre 2.0.1), ROADMAP clos.
+- **Reste ouvert (backlog)** : chantier Q1-Q6 (conformité Sniper V2.0)
+  — terrain audité, briques Q-A/Q-B stoppées faute des pièces
+  canoniques `parametres.json`/`PARAMETRES.md` v2.0.1 ; reprise dès
+  réception. Backlog technique ETAT-DU-SITE §9 (IV Rank, daylight,
+  CANONICAL-PURGE…).
+- **Tag `v1.0.1`** poussé ; prod Vercel sur `main`.
+
 ## [1.0.1-rc.7] — 2026-08-15
 
 **É3.3 — LANGUE & FORMATS · une seule voix, un seul format (chantier
