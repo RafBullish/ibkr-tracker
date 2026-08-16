@@ -55,46 +55,54 @@ export function deriveKpisReal(ctx) {
 
   // HWM NET D'APPORTS — présentation INVERSÉE (amendement 16.08). La valeur
   // héros de la cellule = l'ÉCART courant au pic (drawdown flow-neutral déjà
-  // calculé sur le dernier point, rapporté à la NLV au pic → jamais absurde) ;
-  // le NIVEAU du pic + sa DATE partent en méta. peakFN = pic de flowNeutral
-  // (nlv − dépôts cumulés) ; peakDate = son jour. Gaté à ≥ 2 points (pas de
-  // HWM décoratif à J0).
+  // calculé sur le dernier point, rapporté à la NLV au pic → jamais absurde).
+  // La méta NOMME sa base (correctif 16.08) : « pic NLV {niveau} · {date} » où
+  // le NIVEAU = la NLV BRUTE au point de pic flow-neutral (hwmNlv de
+  // nlvSeries), PAS le flowNeutral. peakFN sélectionne le pic ; peakNlv = la
+  // NLV de ce point ; peakDate = son jour. Gaté à ≥ 2 points (pas de HWM à J0).
   let peakFN = -Infinity;
   let peakDate = null;
+  let peakNlv = null;
   for (const p of series || []) {
     if (Number.isFinite(p?.flowNeutral) && p.flowNeutral > peakFN) {
       peakFN = p.flowNeutral;
       peakDate = p.date || null;
+      peakNlv = Number.isFinite(p.nlv) ? p.nlv : null;
     }
   }
   const enoughSeries = (series?.length ?? 0) >= 2;
-  const hwmLevel = enoughSeries && Number.isFinite(peakFN) ? peakFN : null;
+  const hwmLevel = enoughSeries && Number.isFinite(peakNlv) ? peakNlv : null;   // NLV brute au pic
   const hwmDate = enoughSeries ? peakDate : null;
   const hwmEcartPct = enoughSeries && last && Number.isFinite(last.drawdownPct) ? last.drawdownPct : null;
 
-  // Θ % PRIME/JOUR — PAR POSITION (amendement 16.08 : l'agrégat |ΣΘ|/Σprime
-  // est ininterprétable face au seuil d'entrée 0,8 %). Pour chaque position
-  // OPTION : |Θ/jour de la position| ÷ prime payée (pi×mul×ct). On retient la
-  // plus décroissante (MAX) — à N=1 c'est LA position, comparable au 0,8 %.
-  // Θ/jour = g.theta (per-share, per-AN) ÷ 365 × ct × mul (cf. utils/greeks).
+  // Θ % PRIME/JOUR — PAR POSITION (amendement 16.08 : l'agrégat est
+  // ininterprétable face au seuil 0,8 %). Pour chaque position OPTION :
+  // |Θ/jour de la position| ÷ VALEUR AU MARK COURANT (correctif 16.08 :
+  // pc×mul×ct, PAS la prime d'entrée pi — theta rapporté à la valeur COURANTE
+  // de l'option). On retient la plus décroissante (MAX) + son ticker + son
+  // DTE. Θ/jour = g.theta (per-share, per-AN) ÷ 365 × ct × mul (cf. greeks).
   // NEUTRE (Θ est un greek). '—' tant que les greeks async ne sont pas là.
   const gmap = greeks?.greeksMap ?? null;
   let maxThetaPct = null;
   let maxThetaTicker = null;
+  let maxThetaDte = null;
+  let maxThetaExpired = false;
   for (const p of positions || []) {
     if (p?.as !== 'Option') continue;
     const g = gmap?.get?.(p.id);
     if (!g || g.source === 'unavailable' || g.theta == null) continue;
     const mul = Math.abs(Number(p.mu)) || 100;
     const ct = Math.abs(Number(p.ct)) || 0;
-    const pi = Number(p.pi);
-    const premium = Number.isFinite(pi) ? pi * mul * ct : 0;
-    if (!(premium > 0)) continue;
+    const pc = Number(p.pc);
+    const markValue = Number.isFinite(pc) && pc > 0 ? pc * mul * ct : 0;
+    if (!(markValue > 0)) continue;
     const posThetaDay = Math.abs((g.theta / 365) * ct * mul);
-    const pct = (posThetaDay / premium) * 100;
+    const pct = (posThetaDay / markValue) * 100;
     if (maxThetaPct == null || pct > maxThetaPct) {
       maxThetaPct = pct;
       maxThetaTicker = p.tk || null;
+      maxThetaDte = p.ex ? dteFromExp(p.ex, today) : null;
+      maxThetaExpired = p.ex ? isExpired(p.ex, today) : false;
     }
   }
 
@@ -151,9 +159,11 @@ export function deriveKpisReal(ctx) {
     hwmDate,
     // P&L — FRAIS CUMULÉS (neutre : déjà inclus dans le RÉALISÉ net).
     feesTotal: num(metrics?.totalAllFees),
-    // GREEKS — Θ % prime/jour PAR POSITION (max, neutre) + ticker · série en cours.
+    // GREEKS — Θ % prime/jour PAR POSITION (max, neutre) + ticker + DTE · série.
     thetaPctPrime: maxThetaPct,
     thetaPctTicker: maxThetaTicker,
+    thetaPctDte: maxThetaDte,
+    thetaPctExpired: maxThetaExpired,
     streak: num(metrics?.currentStreak),
   };
 }

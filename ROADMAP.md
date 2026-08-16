@@ -9,35 +9,23 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
 
 ## v1.0.2 — PortfolioDeck v2 (ouvert le 16.08.2026)
 
-- **1.G-b ✅ (1.0.2-rc.2, EN ATTENTE GO VISUEL)** — « Migration d'échelle +
-  3 correctifs de fond ». AMENDEMENT CONSTITUTIONNEL (§2/§7 + mémoire
-  c3-4k-calibration) : cible = 2560 physique @ 90 % (~2844 CSS), 1591 =
-  plancher de non-régression ; `audit:visual` bi-profil (2560 défaut,
-  `AUDIT_VIEWPORT=1591`). MIGRATION : S0..S4 quittent la base → `@media
-  (min-width:2000px)` de c3-hires (deck + cockpit=bande décision + MarketDeck
-  gel levé, échelle/densité seule) ; plancher ≤1591 = antérieur. Budget
-  vertical (haut ~820 / graphe 450, tient dans 1417). CORRECTIFS : (a) Θ %
-  PRIME/JOUR PAR POSITION (max + ticker, fini l'agrégat), (b) HWM inversé
-  (valeur = écart au pic, méta = niveau + date), (c) DELTA $ ENGAGÉ supprimée
-  (doublon É3.1) → fusionnée dans Δ NET. RÉSIDU EXPOSITION en lead S1. FINITIONS
-  géométrie : 4 cadres radius 7, 5 pastilles radius 2, texte « ↑ marché · 1.C
-  intangible » retiré du frontier H1. Recette @2560 + @1591, 415 tests,
-  color-law 0, build ✓. Branche `feat/1g-a-deck-densite`, **non mergée**.
-- **1.G-a ✅ (1.0.2-rc.1, EN ATTENTE GO VISUEL)** — « Le deck excellent à
-  N=1, sans inventer de donnée ». Recon 9 agents : le spec complet (bloc
-  PORTES, DÉPLOYABLE, IV entrée→maintenant, PF-30) dépend du registre
-  `parametres.json` et des briques Q-B/Q-C (marks `qc:positionMarks`,
-  earnings confirmées, `ivRankAtEntry`) ABSENTS du repo → précondition
-  Q1-Q6 non tenue. Livré le sous-ensemble display-only HONNÊTE : échelle
-  typo S0..S4 scopée `.pf-deck` (le « on voit rien » soldé), grille
-  tolérante au N=1 (span d'impair, deux trous morts), cellules DELTA $
-  ENGAGÉ / APPORTS CUMULÉS / HWM NET D'APPORTS+écart / FRAIS CUMULÉS /
-  Θ % PRIME/JOUR / SÉRIE EN COURS (toutes neutres), PROFIT FACTOR suffixe
-  de fenêtre honnête, RÉALISÉ NET DE FRAIS retirée (double comptage),
-  état-vide du graphe Hero 1 (1.H). Bloc PORTES + cellules registre/
-  broker EN ATTENTE. Recette @1591 (deck peuplé + base vide + non-rég.
-  Greeks), 415 tests, color-law 0, build ✓. Branche
-  `feat/1g-a-deck-densite`, **non mergée** (GO visuel Rafael requis).
+- **1.G-a ✅ MERGÉE (rc.1→rc.3, GO Rafael 16.08)** — PortfolioDeck v2 au N=1
+  SANS inventer de donnée + migration d'échelle. **rc.1** : recon 9 agents
+  (spec complet bloqué sur registre/Q-B/Q-C absents) → sous-ensemble
+  display-only HONNÊTE (typo S0..S4, grille N=1, cellules APPORTS / HWM /
+  FRAIS / Θ% / SÉRIE neutres, PF suffixe fenêtre, RÉALISÉ NET DE FRAIS retirée,
+  état-vide graphe Hero 1). **rc.2** : AMENDEMENT §2/§7 (cible 2560 ~2844 CSS,
+  1591 plancher, audit bi-profil) ; S0..S4 migrées en `@media (min-width:2000px)`
+  de c3-hires (deck + cockpit=bande décision + MarketDeck gel levé échelle/
+  densité) ; budget vertical (haut ~820 / graphe 450) ; finitions cadres r7 /
+  pastilles r2 / frontier « 1.C intangible » retiré. **rc.3** : Θ % PAR
+  POSITION dénominateur = MARK courant + ticker + DTE ; HWM méta « pic NLV
+  {niveau} · date ». Recette @2560 + @1591, 415 tests, color-law 0, build ✓.
+- **1.G-b ⏳ (à venir — lot BLOQUÉ sur les données)** — bloc PORTES (SL /
+  TRAIL / DTE / EARNINGS / STAGNATION), DÉPLOYABLE (sizing), NON RÉGLÉ J+1,
+  IV entrée→maintenant, PF fenêtre 30. Dépend du registre `parametres.json`
+  + briques Q-B (saisie) / Q-C (marks `qc:positionMarks`) — précondition
+  Q1-Q6 non tenue.
 
 ---
 

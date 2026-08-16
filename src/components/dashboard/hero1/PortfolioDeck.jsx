@@ -79,10 +79,10 @@ export default function PortfolioDeck({ kpi, rate }) {
     // spot », la cellule que É3.1 avait enterrée. Fusionnée dans Δ NET (méta).
     // APPORTS CUMULÉS — capital injecté (nets), NEUTRE (pas un P&L).
     { label: 'APPORTS CUMULÉS', value: k.apportsCumules == null ? null : fmtUsd(k.apportsCumules), chf: chf(k.apportsCumules), sub: 'nets' },
-    // HWM NET D'APPORTS — présentation INVERSÉE (amendement 16.08) : la
-    // VALEUR = l'écart courant au pic (drawdown flow-neutral honnête, NEUTRE) ;
-    // la méta porte le NIVEAU du pic et sa DATE.
-    { label: 'HWM NET D’APPORTS', value: k.hwmEcartPct == null ? null : fmtPct(k.hwmEcartPct), sub: k.hwmLevel == null ? null : `pic ${fmtUsdSigned(k.hwmLevel)}${k.hwmDate ? ` · ${fmtAxisDate(k.hwmDate)}` : ''}` },
+    // HWM NET D'APPORTS — présentation INVERSÉE : la VALEUR = l'écart courant
+    // au pic (drawdown flow-neutral honnête, NEUTRE) ; la méta NOMME sa base :
+    // « pic NLV {niveau} · {date} » (le niveau = la NLV brute au pic).
+    { label: 'HWM NET D’APPORTS', value: k.hwmEcartPct == null ? null : fmtPct(k.hwmEcartPct), sub: k.hwmLevel == null ? null : `pic NLV ${fmtUsdSigned(k.hwmLevel)}${k.hwmDate ? ` · ${fmtAxisDate(k.hwmDate)}` : ''}` },
     { label: 'POSITIONS', value: k.positionsCount == null ? null : `${k.positionsCount}`, sub: 'ouvertes' },
     // É3 §4.2.6 — expirée = « EXP » honnête, jamais « 0 j » ambigu.
     { label: 'DTE PROCHE', value: k.dte == null ? null : k.dteExpired ? 'EXP' : `${k.dte} j`, sub: k.dteTicker || null },
@@ -107,10 +107,10 @@ export default function PortfolioDeck({ kpi, rate }) {
     { label: 'Δ NET', value: sharesSigned(k.netDeltaShares), sub: k.netDeltaDollar ? `exp. ${fmtUsdSigned(k.netDeltaDollar)}` : 'actions-éq.' },
     { label: 'Γ NET', value: num2(k.gamma), sub: 'gamma' },
     { label: 'Θ / JOUR', value: k.thetaDay == null ? null : fmtUsdSigned(k.thetaDay), chf: chf(k.thetaDay, true), sub: 'carry' },
-    // Θ % PRIME/JOUR — PAR POSITION (max, amendement 16.08 : l'agrégat était
-    // ininterprétable). NEUTRE, valeur seule (seuil 0,8 % au registre). Méta =
-    // le ticker de la position la plus décroissante.
-    { label: 'Θ % PRIME/J', value: k.thetaPctPrime == null ? null : `${k.thetaPctPrime.toFixed(2)} %`, sub: k.thetaPctTicker || '/ jour' },
+    // Θ % PRIME/JOUR — PAR POSITION (max ; dénominateur = MARK COURANT).
+    // NEUTRE, valeur seule (seuil 0,8 % au registre). Méta = ticker + DTE de
+    // la position la plus décroissante (« UNH · 4 j »).
+    { label: 'Θ % PRIME/J', value: k.thetaPctPrime == null ? null : `${k.thetaPctPrime.toFixed(2)} %`, sub: k.thetaPctTicker ? `${k.thetaPctTicker}${k.thetaPctDte != null ? ` · ${k.thetaPctExpired ? 'EXP' : `${k.thetaPctDte} j`}` : ''}` : '/ jour' },
     { label: 'V NET', value: k.vega == null ? null : fmtUsdSigned(k.vega), chf: chf(k.vega, true), sub: '/1 % IV' },
   ];
   const perf = [

@@ -6,11 +6,26 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.2-rc.3] — 2026-08-16
+
+**1.G-a — Deux correctifs avant merge (GO donné) + correction de nommage.**
+Toute cette livraison (rc.1→rc.3) est **1.G-a** ; « 1.G-b » est réservé au
+lot bloqué sur les données (bloc PORTES, décision architecte).
+
+- **Θ % PRIME/JOUR** — dénominateur = **mark COURANT** (`pc×mul×ct`), plus la
+  prime d'entrée (`pi`) ; la méta affiche **ticker + DTE** de la position la
+  plus décroissante (« MSFT · 30 j »). Confirmé : c'était la prime d'entrée.
+- **HWM NET D'APPORTS** — la méta **nomme sa base** : « **pic NLV** {niveau} ·
+  {date} », le niveau = la **NLV brute** au pic flow-neutral (hwmNlv), plus le
+  flowNeutral. Ex. « pic NLV +$10'398 · 16/08 ».
+- Recette @2844×1417 : Θ « 3.01 % · MSFT · 30 j », HWM « 0.0% · pic NLV
+  +$10'398 · 16/08 ». 415 tests ✓ · `check:color-law` 0 ✓ · build ✓.
+
 ## [1.0.2-rc.2] — 2026-08-16
 
-**1.G-b — Migration d'échelle (palier ≥ 2000) + amendement constitutionnel
-+ 3 correctifs de fond + finitions. EN ATTENTE GO VISUEL.** Suite des
-directives architecte sur `feat/1g-a-deck-densite` (pas de merge).
+**1.G-a (2ᵉ passe) — Migration d'échelle (palier ≥ 2000) + amendement
+constitutionnel + 3 correctifs de fond + finitions.** Suite des directives
+architecte sur `feat/1g-a-deck-densite`.
 
 - **AMENDEMENT CONSTITUTIONNEL (§2/§7)** — cible de design = **2560 physique
   @ 90 % = ~2844 px CSS** ; **1591 conservé comme PLANCHER de non-régression**
