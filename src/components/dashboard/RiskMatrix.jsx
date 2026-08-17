@@ -37,7 +37,11 @@
 import { useMemo } from 'react';
 import { useClosedTrades, useSettings } from '../../store/useStore';
 import { tradePnlUsd } from '../../utils/calculations';
-import { tierParams } from '../../utils/sniperMeta';
+// S2 (É4-a) — `tierParams` (badge TIER « A · E0×C1 ») RETIRÉ : doctrine V1
+// morte (régime VIX + palier Edge + Capital tier, abolie par la carte V3).
+// Le magasin dormant (settings.activeSniperTier + reducer + migrations +
+// SniperMetaEditor + PerformanceAttribution) reste en place → purge = refonte
+// de module CONSIGNÉE (hors périmètre recette).
 // É3.1 — métriques de courbe via la maison unique (curveStats) : DD
 // courant, jours-depuis-pic CALENDAIRES, max DD YTD. Courbe RÉAL.
 import { currentDrawdownOf, daysSincePeakOf, maxDrawdownOf } from '../../utils/metrics/curveStats';
@@ -655,10 +659,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
     return (m.totalFxImpact / Math.abs(m.realizedPnlChf)) * 100;
   }, [m.totalFxImpact, m.realizedPnlChf]);
 
-  // (D) TIER badge — Brique 13 : dérivé de settings.activeSniperTier
-  // via tierParams() (utils/sniperMeta), même source que TIER ACTIF
-  // du Dashboard. TODO Phase C.3 résolu.
-  const tierLabel = tierParams(settings?.activeSniperTier).label;
+  // (D) TIER badge SUPPRIMÉ (S2 · É4-a) — doctrine V1 morte, cf. import.
 
   // (E) É3.2 — ligne de synchro du footer : pilotée par
   // settings.lastSync (rc.4). source=csv → IMPORT CSV + fichier/date ;
@@ -790,7 +791,6 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
       ['Contexte', 'FX live USD/CHF', fmtNum(liveRate, 4), ''],
       ['Contexte', 'Trades (N)', String(tradeCount), ''],
       ['Contexte', 'YTD actif (jours)', ytdDaysActive != null ? String(ytdDaysActive) : '—', ''],
-      ['Contexte', 'Tier Sniper', tierLabel, ''],
 
       ['Performance', 'Sharpe (YTD)', fmtNum(m.sharpeRatio), 'bench 1.00'],
       ['Performance', 'Sortino', fmtNum(m.sortinoRatio), 'bench 1.50'],
@@ -942,7 +942,7 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
           </span>
         </div>
         <div className="risk-matrix__context risk-matrix__context--right">
-          <span className="risk-matrix__tier-badge">TIER {tierLabel}</span>
+          {/* S2 — badge TIER « A · E0×C1 » retiré (doctrine V1 morte). */}
           <span className="risk-matrix__edge-badge">
             <span className="risk-matrix__edge-dot" aria-hidden="true" />
             {edge.label}
@@ -1312,11 +1312,11 @@ export default function RiskMatrix({ metrics, area = 'risk' }) {
             valueTone="mute"
             sub={
               m.totalClosedFees != null && tradeCount > 0
-                ? `${(m.totalClosedFees / tradeCount).toFixed(2)} / tr`
+                ? `Ø ${(m.totalClosedFees / tradeCount).toFixed(2)}/tr clôt.`
                 : '—'
             }
             subTone="mute"
-            title="Total = commissions clôturées + frais des positions ouvertes + frais cash. « /tr » = commissions des CLÔTURES seules ÷ N trades (l'ex-moyenne divisait le total gonflé par les seuls trades clôturés)."
+            title="Total = commissions clôturées + frais des positions ouvertes + frais cash (base LARGE). « Ø …/tr clôt. » = MOYENNE des commissions de clôture par trade clôturé (base ÉTROITE) — les deux bases diffèrent, donc Ø×N ≠ total (ce n'est pas une erreur arithmétique)."
           />
           <Row3
             label="Impact FX"

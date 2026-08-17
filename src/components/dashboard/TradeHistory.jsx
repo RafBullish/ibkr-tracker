@@ -306,6 +306,10 @@ export default function TradeHistory({ data, liveRate, area = 'history' }) {
         </div>
       </header>
 
+      {/* S1 (É4-a) — sous-en-tête gaté sur hasTrades (comme LivePositions) :
+          plus de bande « Σ Durée 0.0 j · … · GAGNANTS 0 · PERDANTS 0 » au-dessus
+          du « Aucun trade fermé » sur base vide. */}
+      {hasTrades && (
       <div className="trade-history__subheader">
         <div className="trade-history__ctx">
           Σ Durée{' '}
@@ -351,6 +355,7 @@ export default function TradeHistory({ data, liveRate, area = 'history' }) {
           PERDANTS {aggStats.losses}
         </div>
       </div>
+      )}
 
       {hasTrades ? (
         <div className="trade-history__body">
@@ -467,6 +472,10 @@ export default function TradeHistory({ data, liveRate, area = 'history' }) {
         </div>
       )}
 
+      {/* S1 (É4-a) — pied gaté sur hasTrades : plus de « Win Rate 0.0% (0/0) »
+          (mensonge : le win-rate est indéfini à 0 trade, pas 0 %) ni de bande
+          $0 sur base vide. Le corps montre déjà l'état « Aucun trade fermé ». */}
+      {hasTrades && (
       <footer className="trade-history__footer">
         <div className="trade-history__footer-cell">
           <span className="trade-history__footer-label">Σ P&amp;L</span>
@@ -513,6 +522,7 @@ export default function TradeHistory({ data, liveRate, area = 'history' }) {
           </span>
         </div>
       </footer>
+      )}
     </section>
   );
 }

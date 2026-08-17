@@ -175,7 +175,7 @@ export default function Hero1({ area = 'hero1' }) {
         )}
         <div className="lh-fuse__stage">
           <div className="lh-fuse__overlay">
-            <NlvHero nlv={kpi.nlv} rate={rate} dayPnl={kpi.dayPnl} dayPct={kpi.dayPct} spark={kpi.nlvSpark} size="lg" />
+            <NlvHero nlv={kpi.nlv} rate={rate} dayPnl={kpi.dayPnl} dayPct={kpi.dayPct} spark={kpi.nlvSpark} size="lg" live={realAvailableUsd != null} />
           </div>
           <div className="lh-fuse__chart">
             {/* 1.H — état-vide dessiné (calqué sur Hero 2) : sur base purgée,

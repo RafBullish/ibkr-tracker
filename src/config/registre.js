@@ -112,3 +112,7 @@ export const PORTFOLIO_AFFICHAGE = app.portfolio_affichage;
 export const SIGNIFICANCE = app.significance;
 /** Normalisation des jauges + escalade des badges + fenêtres d'approche. */
 export const JAUGES = app.jauges;
+/** Jours de fermeture pleine du NYSE (table app.json, révision annuelle). */
+export const JOURS_FERIES_US = app.jours_feries_us?.dates || [];
+/** Set des fériés US pour lookup O(1) dans le compteur de jours de bourse. */
+export const JOURS_FERIES_US_SET = new Set(JOURS_FERIES_US);

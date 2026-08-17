@@ -219,3 +219,61 @@ describe('aggregateGreeks — composite books', () => {
     expect(r.vegaPer1Pct).toBeGreaterThan(0);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+//  S5 · RECETTE É4-a — TÉMOIN DE PLAUSIBILITÉ DES GRECS
+//  Trois garanties demandées par l'architecte :
+//   (1) signe correct pour un BOOK LONG : θ < 0, Γ > 0, ν > 0 ;
+//   (2) multiplicateur ×100 appliqué UNE SEULE fois (jamais ×100²,
+//       jamais oublié) ;
+//   (3) somme des positions == agrégat AFFICHÉ (aucune fuite de
+//       facteur d'échelle entre le détail par position et l'agrégat).
+// ═══════════════════════════════════════════════════════════════
+describe('aggregateGreeks — S5 plausibilité (recette É4-a)', () => {
+  // Deux options LONG aux grecs choisis pour une arithmétique exacte
+  // (θ/365 et ν/100 tombent juste). mul = 100 (contrat standard).
+  const A = { id: 'A', as: 'Option', dir: 'Long', ct: '2', mu: '100', tk: 'AAPL', ty: 'CALL' };
+  const B = { id: 'B', as: 'Option', dir: 'Long', ct: '1', mu: '100', tk: 'MSFT', ty: 'PUT' };
+  const gA = { delta: 0.45, gamma: 0.02, theta: -18.25, vega: 12, spot: 100 }; // θ/365 = -0.05, ν/100 = 0.12
+  const gB = { delta: -0.3, gamma: 0.015, theta: -10.95, vega: 8, spot: 100 }; // θ/365 = -0.03, ν/100 = 0.08
+  const book = [A, B];
+  const map = new Map([['A', gA], ['B', gB]]);
+
+  it('(1) book LONG : θ < 0, Γ > 0, ν > 0 ; delta net dominé par le call', () => {
+    const r = aggregateGreeks(book, map);
+    expect(r.sumTheta).toBeLessThan(0); // long premium paie la décote
+    expect(r.thetaDaily).toBeLessThan(0);
+    expect(r.sumGamma).toBeGreaterThan(0); // long gamma
+    expect(r.sumVega).toBeGreaterThan(0); // long vol
+    expect(r.vegaPer1Pct).toBeGreaterThan(0);
+    // Σ Δ = 0.45×2×100 + (−0.30)×1×100 = 90 − 30 = 60 (net long).
+    expect(r.sumDelta).toBeCloseTo(60, 2);
+  });
+
+  it('(2) ×100 appliqué UNE SEULE fois (ni ×100², ni oublié)', () => {
+    const single = { id: 'S', as: 'Option', dir: 'Long', ct: '1', mu: '100', tk: 'X', ty: 'CALL' };
+    const r = aggregateGreeks([single], new Map([['S', { delta: 0.5, gamma: 0.02, theta: -36.5, vega: 10, spot: 100 }]]));
+    // delta 0.5 × 1 contrat × 100 = 50. PAS 0.5 (mul oublié), PAS 5000 (×100²).
+    expect(r.sumDelta).toBeCloseTo(50, 6);
+    expect(r.sumDelta).not.toBe(0.5);
+    expect(r.sumDelta).not.toBe(5000);
+    // θ/jour = (−36.5/365) × 100 = −10. ν/1% = (10/100) × 100 = 10.
+    expect(r.thetaDaily).toBeCloseTo(-10, 6);
+    expect(r.vegaPer1Pct).toBeCloseTo(10, 6);
+    expect(r.sumGamma).toBeCloseTo(2, 6); // 0.02 × 100
+  });
+
+  it('(3) somme des positions == agrégat affiché (aucune fuite d’échelle)', () => {
+    const r = aggregateGreeks(book, map);
+    const MUL = 100;
+    // Reconstitue l'agrégat depuis le DÉTAIL par position (valeurs
+    // per-share signées × contrats × mul) — doit égaler l'agrégat.
+    const recon = (key) =>
+      r.positions.reduce((s, p) => s + (p[key] ?? 0) * p.contracts * MUL, 0);
+    expect(recon('delta')).toBeCloseTo(r.sumDelta, 2);
+    expect(recon('gamma')).toBeCloseTo(r.sumGamma, 2);
+    expect(recon('theta')).toBeCloseTo(r.thetaDaily, 2);
+    expect(recon('vega')).toBeCloseTo(r.vegaPer1Pct, 2);
+    expect(r.optionsCount).toBe(2);
+  });
+});

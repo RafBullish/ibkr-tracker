@@ -337,8 +337,10 @@ function FlatState({ closedTrades, lr, navigate, reducedMotion }) {
           <div className="positions-flat__zone">
             <div className="mk-title">PROCHAIN SETUP</div>
             <p className="positions-flat__setup">
+              {/* S2 (É4-a) — « IV Rank < 40 » retiré : métrique morte (aucun
+                  pipeline IV Rank, cf. sweep doctrine). Delta = zone Sniper vivante. */}
               Scanne la Chain Options pour trouver ton prochain <strong>Sniper OTM</strong> : Delta
-              0.25-0.35, IV Rank &lt; 40, DTE 120-150.
+              0.25-0.35, DTE 120-150.
             </p>
             <button
               type="button"

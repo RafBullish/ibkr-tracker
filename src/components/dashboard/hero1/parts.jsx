@@ -52,7 +52,7 @@ export function MiniSpark({ points, w = 110, h = 34 }) {
 }
 
 // ── HÉROS NLV — le plus gros et le plus soigné du bloc ──────────
-export function NlvHero({ nlv, rate, dayPnl, dayPct, spark, size = 'md' }) {
+export function NlvHero({ nlv, rate, dayPnl, dayPct, spark, size = 'md', live = false }) {
   const tone = dayPnl == null || dayPnl === 0 ? 'mute' : dayPnl > 0 ? 'profit' : 'loss';
   const chf = fmtChf(nlv, rate);
   const pill =
@@ -63,7 +63,20 @@ export function NlvHero({ nlv, rate, dayPnl, dayPct, spark, size = 'md' }) {
     <div className={`lh-hero lh-hero--${size}`}>
       <div className="lh-hero__head">
         <span className="lh-hero__label">NET LIQUIDATION</span>
-        <span className="lh-hero__live"><span className="lh-hero__live-dot" aria-hidden="true" />LIVE</span>
+        {/* S6.5 (É4-a) — le témoin dit la VÉRITÉ : « LIVE » seulement quand le
+            bridge IBKR est frais (marks temps réel) ; sinon « EST. » — la NLV
+            est reconstituée (réalisé + apports), pas un feed broker live. Même
+            honnêteté que LIQUIDITÉ DISPO. Le vrai live NLV = V1.1. */}
+        {live ? (
+          <span className="lh-hero__live"><span className="lh-hero__live-dot" aria-hidden="true" />LIVE</span>
+        ) : (
+          <span
+            className="lh-hero__live lh-hero__live--est"
+            title="NLV reconstituée (réalisé + apports) — aucun feed broker live tant que le bridge IBKR n'est pas frais / V1.1"
+          >
+            EST.
+          </span>
+        )}
       </div>
       {/* Montant + sparkline COLLÉE + pill à proximité (une ligne). */}
       <div className="lh-hero__row">

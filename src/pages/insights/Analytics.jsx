@@ -339,12 +339,14 @@ export default function Analytics() {
             value={avgHold != null ? `${avgHold} j` : '—'}
             meta="jours moyens"
           />
-          {/* Max DD = argent RÉEL rendu depuis un pic → toné (loi de couleur). */}
+          {/* Max DD = argent RÉEL rendu depuis un pic → toné (loi de couleur).
+              S4.1 (É4-a) : granularité NOMMÉE — « RÉAL » = courbe PAR TRADE
+              réalisée (distincte du « MAX DD · NLV » quotidien du Héros 1). */}
           <CommandCell
-            label="MAX DD"
-            title="Pire perte cumulative historique depuis un pic d'équité. Montant réel."
+            label="MAX DD · RÉAL"
+            title="Pire perte cumulative depuis un pic d'équité — granularité PAR TRADE (courbe réalisée). Distinct du « MAX DD · NLV » quotidien du Héros 1. Montant réel."
             value={fmtUsd(metrics?.maxDrawdown ?? null)}
-            meta="pire perte cumulée"
+            meta="pire perte cumulée · par trade"
             tone="loss"
           />
         </div>

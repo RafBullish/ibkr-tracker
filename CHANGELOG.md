@@ -6,6 +6,85 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.2-rc.9] — 2026-08-18
+
+**É4-a — LA RECETTE (première passe structurelle). EN ATTENTE DU GO (non
+mergée).** La recette ne construit rien : elle vérifie, prouve, consigne. Seuls
+les points explicitement « à corriger » ont été touchés ; tout autre défaut est
+consigné pour arbitrage. Passe finale (état du tag) prévue fin août.
+
+### Corrigé
+
+- **S3 · Fériés US** — `tradingDays.js` sautait les week-ends mais PAS les fériés
+  NYSE : une semaine fériée décalait la fenêtre earnings P4 (risque de tenir à
+  travers une publication). Table `jours_feries_us` (2026→2030, observances
+  incluses, note de révision annuelle) ajoutée à **`parametres.app.json`**,
+  exposée par le registre, consommée par `tradingDaysUntil` (set injectable).
+  Le gate P4 (`gates.js`) en hérite. Tests aux bornes (MLK, Good Friday,
+  Thanksgiving, week-end prolongé, set injecté).
+- **S1 · Base vide** — le sous-en-tête ET le pied de `TradeHistory` se rendaient
+  même à 0 trade (bande « Σ Durée 0.0 j · … · Win Rate 0.0% (0/0) »), le
+  `(0/0)` étant un mensonge (win-rate indéfini, pas 0 %). Gatés sur `hasTrades`
+  comme LivePositions. Reste des pages : **aucun NaN, aucune division par zéro,
+  aucun cadre Recharts vide** (pipeline déjà durci — vérifié).
+- **S4.1 · Granularité Max DD** — Analytics « MAX DD » (courbe par trade)
+  ne nommait pas sa granularité → « MAX DD · RÉAL » (aligné RiskMatrix /
+  Réalisé) ; le « MAX DD · NLV » quotidien du Héros 1 nomme déjà la sienne.
+- **S4.2 · Frais totaux à deux bases** — « $175 · 1.70/tr » lisait comme une
+  erreur (Ø×N ≠ total). Sous-libellé rendu explicite : « Ø …/tr clôt. » +
+  tooltip nommant les deux bases (large vs étroite).
+- **S6.3 · Exposition vs notionnel** — `totalNotional` = Σ|mark×ct×mul|, formule
+  IDENTIQUE à EXPOSITION → même nombre sous deux libellés (et le label
+  « notionnel » mentait : pas de strike, §8). Cellule NOTIONNEL du deck
+  **supprimée** ; EXPOSITION (Σ valeur mark, §8) reste la source unique.
+- **S6.5 · Badge « LIVE » du Héros 1** — codé en dur, toujours affiché, alors
+  que la courbe est de l'historique reconstitué (réalisé + apports). Désormais
+  gaté sur la fraîcheur RÉELLE du bridge IBKR : « LIVE » si frais, sinon
+  **« EST. »** (même honnêteté que LIQUIDITÉ DISPO). Vrai NLV live = V1.1.
+- **S2 · Doctrine morte affichée** — retraits PUREMENT display : badge
+  **TIER « A · E0×C1 »** de RiskMatrix (+ colonne CSV + import `tierParams`),
+  clause **« IV Rank < 40 »** de l'encart Prochain Setup (Positions), cellule
+  **« IVR —— »** de Chain (usine IV Rank jamais construite). Le régime VIX
+  « A/B/C » et le « plafond notionnel » ne sont plus rendus (faux positifs).
+- **S5 · Plausibilité des grecs** — témoin ajouté : book LONG → θ<0, Γ>0, ν>0 ;
+  ×100 appliqué UNE seule fois (ni ×100², ni oublié) ; somme des positions ==
+  agrégat affiché.
+
+### Consigné (arbitrage architecte — NON corrigé)
+
+- **S2 module** : purge du magasin dormant `activeSniperTier` (reducer +
+  `useStore` + `migrations` + `sniperMeta.js`) et des composants
+  `SniperMetaEditor` / `PerformanceAttribution` (matrice Edge×Capital,
+  E0-E4 / C1-C5) — refonte de module, hors périmètre recette.
+- **S4.3** : outil de mesure point-à-point sur le graphe — jamais construit.
+- **S4.4** : exports morts (`NumAnat`, `realCurve` / `nlvCurve` / `greeksTotals`
+  de `curveStats`) — 0 consommateur hors tests.
+- **S6.3 résidu** : « Σ Notionnel » de LivePositions porte le MÊME mensonge
+  mark (à réaligner ou bâtir un vrai notionnel strike-based) ; plomberie
+  `positionNotional`/`totalNotional` désormais orpheline (ne sert plus que des
+  ratios `concentrationH`/`notionalPct` non affichés).
+- **S1 résidu** : le graphe NLV du Héros 1 trace une ligne PLATE à $0 sur base
+  vide (le backfill émet des points synthétiques $0) au lieu du message d'état
+  vide — honnête (NLV = $0) mais discutable ; arbitrage architecte.
+- **S7** : le round-trip d'import Flex RÉEL (+ survie de `earningsDate` au
+  ré-import) exige un token Flex — non rejouable en dev isolé. Chip de violation
+  ambre : nécessite une position volontairement non conforme (couvert par
+  `violations.test.js`). Pic partiel : nécessite un cycle d'écriture de clôture
+  (`qc:positionMarks`).
+
+### Vérifié (S7 · répétition du 1er septembre)
+
+Base vide → une position ouverte (NVDA, earnings J-7) : les **5 portes**
+s'affichent avec distances (SL +20 % · TRAIL « pas de pic » · DTE 59 j /
+14 j-bourse avant 45 · **EARN en fenêtre** — `earningsDate` consommé + comptage
+holiday-aware · STAG) ; **PORTE LA PLUS PROCHE = NVDA · EARN** ; **DÉPLOYABLE
+« N max atteint · quota 1 »**. Captures `docs/captures/e4a-recette/` (@2560+@1591).
+
+**567 tests** (+12 : fériés, grecs), `check:doctrine` 0, `check:color-law` 0,
+build vert.
+
+---
+
 ## [1.0.2-rc.8] — 2026-08-17
 
 **1.G-c — BANDEAU & COCKPIT. EN ATTENTE DU GO VISUEL (non mergée).** Les trois
