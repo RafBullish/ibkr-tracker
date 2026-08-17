@@ -65,6 +65,15 @@ mandatée : **registre → saisie → portes → palier**.
   **table de dates fériées US dans `parametres.app.json`** (clé `jours_feries_us`),
   exposée via `registre.js`, consommée par `tradingDaysUntil` (sauter aussi les
   jours ouvrés fériés). À solder avant tout tag v1.0.2.
+- **RECETTE É4 — BALAYAGE DES LIBELLÉS DE DOCTRINE MORTE (décision architecte
+  17.08)** : `check:doctrine` ne les VOIT PAS (il traque les nombres, pas les
+  libellés). Passe dédiée à balayer et retirer partout : **régime VIX A/B/C**,
+  **palier Edge (E0–E4)**, **Capital tier (C1–C5)**, **IV Rank**, **secteur
+  GICS** — tous abolis par la carte V3. Sites connus : `RiskMatrix.jsx` (badge
+  tier via `tierParams`), `sniperMeta.js` (tierParams/EDGE_KEYS/CAPITAL_KEYS,
+  encore load-bearing pour `RiskMatrix` + reducer), `store` (`activeSniperTier`
+  dormant), + toute trace « E×C » / « IV rank » / « GICS ». 1.G-b a déjà retiré
+  le chip TIER du deck ET de Settings/General ; le reste = ce balayage.
 - **Micro-brique E2/E4 (à venir)** — capture manuelle à l'entrée (θ d'entrée sur
   la prime `pi` ; bid/ask pour le spread), pour allumer E2 et E4.
 

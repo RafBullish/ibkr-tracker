@@ -816,7 +816,7 @@
   .pf-deck .pf-grid { row-gap: 9px; grid-auto-rows: minmax(70px, auto); }
 
   /* ── 1.G-b · BLOC PORTES · échelle S2/S3/S4 à la cible 2560 ── */
-  .pf-portes__head-val { font-size: 20px; }
+  .pf-portes__head-val { font-size: 34px; }   /* S1 — la phrase du matin */
   .pf-porte-row__tk { font-size: 18px; }
   .pf-porte-row__sub { font-size: 11px; }
   .pf-porte-row__pnl { font-size: 15px; }
