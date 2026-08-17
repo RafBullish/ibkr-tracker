@@ -549,7 +549,9 @@ export default function Chain() {
                 meta="|Δ| 0.25 – 0.35"
                 tone={sniperCount > 0 ? 'accent' : undefined}
               />
-              <Cell label="IVR" value="——" meta="rang indispo · série en collecte" tone="mute" />
+              {/* S2 (É4-a) — cellule « IVR ——  rang indispo » RETIRÉE : métrique
+                  morte (usine IV Rank jamais construite ; qc:ivHistory collecte
+                  sans consommateur → collecte morte CONSIGNÉE). */}
             </div>
           </div>
 

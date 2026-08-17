@@ -5,16 +5,28 @@
 //  BOURSE, pas en jours calendaires. Ce module compte les jours ouvrés
 //  (lundi→vendredi) entre deux dates.
 //
-//  ⚠ DÉFAUT DATÉ — À CORRIGER AVANT LE TAG (recette É4, décision architecte
-//  17.08.2026). Les JOURS FÉRIÉS US ne sont PAS gérés. Ce n'est PAS une
-//  simple approximation : une SEMAINE fériée décale la fenêtre P4 et peut
-//  faire TENIR une position à travers une publication de résultats (la porte
-//  se croit hors fenêtre alors qu'elle y est). Correctif prévu : une table
-//  de dates fériées US dans `parametres.app.json` (clé `jours_feries_us`),
-//  lue ici pour sauter aussi les jours ouvrés fériés (cf. ROADMAP recette Q-C).
+//  FÉRIÉS US (recette É4-a, 17.08.2026) : les jours de bourse SAUTENT aussi
+//  les fériés de fermeture pleine du NYSE, pas seulement les week-ends. Une
+//  SEMAINE fériée décalait la fenêtre P4 et pouvait faire TENIR une position
+//  à travers une publication (la porte se croyait hors fenêtre). La table de
+//  dates vit dans `parametres.app.json` (clé `jours_feries_us`, révision
+//  annuelle) et transite par le registre — AUCUNE date en dur ici. Le set est
+//  injectable (param `holidays`) pour les tests aux bornes.
 //  Convention de fuseau : midi (T12:00:00) comme dates.js, pour éviter les
 //  bascules de jour au DST.
 // ═══════════════════════════════════════════════════════════════
+
+import { JOURS_FERIES_US_SET } from '../config/registre';
+
+// Date locale (construite à midi) → 'YYYY-MM-DD' à partir des composants
+// LOCAUX (pas toISOString, qui basculerait en UTC). Sûr quel que soit le
+// fuseau : |offset| < 12 h, donc midi reste le même jour calendaire.
+function isoLocal(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
 /**
  * Nombre de JOURS DE BOURSE (lun–ven) entre `fromISO` (exclu) et `toISO`
@@ -25,9 +37,11 @@
  *
  * @param {string} fromISO 'YYYY-MM-DD'
  * @param {string} toISO   'YYYY-MM-DD'
+ * @param {Set<string>} [holidays] set de fériés 'YYYY-MM-DD' (défaut : NYSE
+ *        du registre). Injectable pour les tests.
  * @returns {number|null}
  */
-export function tradingDaysUntil(fromISO, toISO) {
+export function tradingDaysUntil(fromISO, toISO, holidays = JOURS_FERIES_US_SET) {
   if (!fromISO || !toISO) return null;
   const cur = new Date(`${String(fromISO).slice(0, 10)}T12:00:00`);
   const target = new Date(`${String(toISO).slice(0, 10)}T12:00:00`);
@@ -39,7 +53,8 @@ export function tradingDaysUntil(fromISO, toISO) {
   for (let guard = 0; guard < 100000 && cur.getTime() !== target.getTime(); guard += 1) {
     cur.setDate(cur.getDate() + step);
     const d = cur.getDay();
-    if (d >= 1 && d <= 5) n += step;
+    // Jour de bourse = lun–ven ET non férié NYSE.
+    if (d >= 1 && d <= 5 && !holidays.has(isoLocal(cur))) n += step;
   }
   return n;
 }
@@ -49,8 +64,8 @@ export function tradingDaysUntil(fromISO, toISO) {
  * `fromISO` (bornes incluses). Sert la porte P4 : armée quand
  * `fin <= tradingDaysUntil(today, earnings) <= debut` (J−7 à J−5).
  */
-export function withinTradingDayWindow(fromISO, toISO, debut, fin) {
-  const n = tradingDaysUntil(fromISO, toISO);
+export function withinTradingDayWindow(fromISO, toISO, debut, fin, holidays = JOURS_FERIES_US_SET) {
+  const n = tradingDaysUntil(fromISO, toISO, holidays);
   if (n == null) return null;
   return n >= fin && n <= debut;
 }

@@ -127,6 +127,29 @@ mandatée : **registre → saisie → portes → palier**.
   build ✓, vérif @2560+@1591 (3 groupes + dots + P&L, FX âge, MONDE recomposé
   0 chevauchement, tape ≥2000, éditeur exercé). **NON dans cette brique** :
   capture θ/spread, recette É4, bridge V1.1, batch chart.
+- **É4-a ✅ MERGÉE sur main (1.0.2-rc.9, GO Rafael 18.08)** — LA
+  RECETTE, première passe STRUCTURELLE (vérifie/prouve/consigne, ne construit
+  pas ; passe finale fin août sur l'état du tag). **Corrigé** : S3 fériés US
+  (`jours_feries_us` 2026→2030 dans `parametres.app.json` → `tradingDays.js` →
+  gate P4, tests aux bornes) · S1 bande zéros de `TradeHistory` gatée sur
+  `hasTrades` (fin du « Win Rate 0.0% (0/0) ») · S4.1 « MAX DD · RÉAL » (nomme la
+  granularité par-trade) · S4.2 frais « Ø …/tr clôt. » (fin du mensonge à deux
+  bases) · S6.3 cellule NOTIONNEL du deck supprimée (doublon strict d'EXPOSITION,
+  label mentait §8) · S6.5 badge Héros 1 « LIVE »→« EST. » gaté sur la fraîcheur
+  RÉELLE du bridge · S2 doctrine morte affichée retirée (badge TIER A·E0×C1 +
+  CSV, clause « IV Rank < 40 », cellule « IVR —— ») · S5 témoin de plausibilité
+  des grecs (θ<0/Γ>0/ν>0, ×100 une fois, Σ positions == agrégat). **Consigné**
+  (arbitrage) : purge module `activeSniperTier`/`sniperMeta`/`SniperMetaEditor`/
+  `PerformanceAttribution` ; outil de mesure point-à-point (jamais fait) ;
+  exports morts `NumAnat`/`realCurve`/`nlvCurve`/`greeksTotals` ; « Σ Notionnel »
+  de LivePositions (même mensonge mark) + plomberie notional orpheline ; graphe
+  NLV plat à $0 sur base vide ; round-trip Flex réel (token requis). **Vérifié
+  S7** : base vide → position → 5 portes + distances, EARN en fenêtre,
+  DÉPLOYABLE « N max atteint ». **567 tests**, doctrine 0, color-law 0, build ✓,
+  captures @2560+@1591. **VERDICT** : l'app N'EST PAS prête à taguer aujourd'hui
+  — il manque la 2ᵉ passe (état exact du tag) + les GO en attente (1.G-c mergée,
+  É4-a à merger) + arbitrage des consignés. Fondations saines (0 NaN, 0
+  color-law, 0 doctrine, portes/registre opérationnels).
 
 ---
 

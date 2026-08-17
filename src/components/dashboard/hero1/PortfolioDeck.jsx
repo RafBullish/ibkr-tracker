@@ -79,7 +79,12 @@ export default function PortfolioDeck({ kpi, rate }) {
     // héros au-dessus est désormais DÉPLOYABLE. Marqueur IBKR/est. en méta.
     { label: 'LIQUIDITÉ DISPO', value: k.powder == null ? null : fmtUsd(k.powder), chf: chf(k.powder), sub: k.powderPct != null ? `${Math.round(k.powderPct)} % NLV · ${k.powderIsReal ? 'IBKR' : 'est.'}` : k.powderIsReal ? 'IBKR' : 'est.' },
     { label: 'EXPOSITION', value: k.exposure == null ? null : fmtUsdCompact(k.exposure), chf: chf(k.exposure), sub: k.expoPct != null ? `Σ mark · ${Math.round(k.expoPct)} % NLV` : 'Σ valeur mark', bar: k.expoPct != null ? { pct: k.expoPct, mark: 70 } : null },
-    { label: 'NOTIONNEL', value: k.notional == null ? null : fmtUsdCompact(k.notional), chf: chf(k.notional) },
+    // S6.3 (É4-a) — cellule NOTIONNEL SUPPRIMÉE : `totalNotional` = Σ|mark×ct×mul|,
+    // formule IDENTIQUE à EXPOSITION (Σ|valeur mark|) → même nombre sous deux
+    // libellés (doublon). Le vrai notionnel de §8 (strike×100×contrats) n'était
+    // PAS calculé (le label mentait). EXPOSITION (Σ valeur mark, §8) reste la
+    // source unique. Résidu consigné : bâtir un vrai notionnel strike-based si
+    // désiré + réaligner « Σ Notionnel » de LivePositions (même mensonge mark).
     // DELTA $ ENGAGÉ — SUPPRIMÉE (amendement 16.08) : doublon de « Δ NET ×
     // spot », la cellule que É3.1 avait enterrée. Fusionnée dans Δ NET (méta).
     // APPORTS CUMULÉS — capital injecté (nets), NEUTRE (pas un P&L).
