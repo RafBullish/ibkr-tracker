@@ -22,19 +22,24 @@ mandatée : **registre → saisie → portes → palier**.
   non-vacuous). **Q-A n'écrit aucune porte.** color-law 0, build ✓. RÉSERVE :
   Carte `SNIPER_OTM_Carte_V3.md` absente de Téléchargements (à déposer pour copie
   octet-pour-octet vers `docs/`).
-- **Q-B ✅ (1.0.2-rc.5, EN ATTENTE — branche `v1/q-b-saisie`)** — LA SAISIE.
-  Schéma **v8** (`earningsDate` tri-état = source P4 ; `entryNote` ; 3 champs de
-  clôture `picAtteint`/`porteDeclenchee`/`porteRespectee`, `picAtteint` vide en
-  attente Q-C). **7 règles de VIOLATION** (`violations.js`) chip AMBRE jamais
-  bloquant, seuils du registre (S1/S3/S5/S6 mesurées ; E2/E4/E5 « indéterminées »
-  tant que l'entrée n'est pas capturée ; DELTA indicatif → jamais jugé).
-  ADD_POSITION non muet (moyennage → `lots[]` + `averaged` + S6). detectAlert
-  EARN morte (P4 = `earningsDate` ; Finnhub survit au calendrier). Import = un
-  RAPPORT (lignes lues/créées/dédupliquées/ignorées+motif/écarts marqués), zéro
-  skip muet. Survie des métadonnées au ré-import (sidecar `positionMeta` keyé
-  signature, prouvé). Saisie UI (tiroir détail : Saisie carte V3 + Conformité
-  doctrine ; édition earnings/note ; clôture portes + pic honnête). 470 tests,
-  check:doctrine 0, color-law 0, build ✓. **Q-B n'écrit aucune porte** (Q-C).
+- **Q-B ✅ MERGÉE sur main (1.0.2-rc.5, GO Rafael)** — LA SAISIE. Schéma **v8**
+  (`earningsDate` tri-état = source P4 ; `entryNote` ; 3 champs de clôture
+  `picAtteint`/`porteDeclenchee`/`porteRespectee`, `picAtteint` vide en attente
+  Q-C). **7 règles de VIOLATION** (`violations.js`) chip AMBRE jamais bloquant,
+  seuils du registre : **S1 (base = NLV, jamais dépôts) / S3 / S5 / S6 / E5
+  mesurées** ; **E5** allumée depuis l'horodatage Flex (`instantFromExchangeDateTime`,
+  ET→Zurich avec DST : 09:42 ET = 15:42 Genève → violation) ; **E2/E4 encore
+  « indéterminées »** (capture manuelle à l'entrée = micro-brique à venir) ;
+  DELTA indicatif → jamais jugé. ADD_POSITION non muet (moyennage → `lots[]` +
+  `averaged` + S6). detectAlert EARN morte (P4 = `earningsDate` ; Finnhub survit
+  au calendrier). Import = un RAPPORT (lignes lues/créées/dédupliquées/ignorées+
+  motif/écarts marqués), zéro skip muet. Survie des métadonnées au ré-import
+  (sidecar `positionMeta` keyé signature, prouvé). Saisie UI (tiroir détail :
+  Saisie carte V3 + Conformité doctrine ; édition earnings/note ; clôture portes
+  + pic honnête). 480 tests, check:doctrine 0, color-law 0, build ✓. **Q-B
+  n'écrit aucune porte** (Q-C).
+- **Micro-brique E2/E4 (à venir)** — capture manuelle à l'entrée (θ d'entrée sur
+  la prime `pi` ; bid/ask pour le spread), pour allumer E2 et E4.
 - **Q-C ⏳ (à venir)** — PORTES : recâblage des 5 portes sur le registre
   (P1..P5), writer `qc:positionMarks` (pic pour le trailing P2), marquage
   VIOLATION, retrait des LEGACY, réconciliation de la bande de stagnation.

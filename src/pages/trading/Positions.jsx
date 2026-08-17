@@ -1092,9 +1092,10 @@ export default function Positions() {
 
   const m = usePortfolioMetrics();
   const nlvUsd = m.netLiquidationValueUsd;
-  // Q-B — base capital pour la règle de taille S1 : capital de référence
-  // (dépôts) sinon NLV, sinon null → S1 « indéterminée » (jamais un faux 0).
-  const capitalUsd = m.initialCapital ?? m.netLiquidationValueUsd ?? null;
+  // Q-B — base de la règle de taille S1 = NLV (valeur nette), JAMAIS les
+  // dépôts : un compte réduit de moitié ne doit pas se voir autoriser une
+  // position supérieure à sa valeur réelle. NLV absente → indéterminée, sans repli.
+  const capitalUsd = m.netLiquidationValueUsd ?? null;
 
   // 2.A — rows 19-colonnes de LivePositions (lecture seule, MÊMES
   // dérivations que le Dashboard : sidecar Sniper, IVR, days-in, spark,

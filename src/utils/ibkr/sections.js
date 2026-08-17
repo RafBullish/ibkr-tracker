@@ -78,6 +78,11 @@ export function mapPositionRow(fields, headerMap, skipStats) {
     st: isOption ? String(sf(get('Strike'))) : '',
     ex: isOption ? isoDate(get('Expiry')) : '',
     di: '',
+    // Q-B — horodatage d'entrée absolu (ISO UTC), posé par
+    // enrichPositionsWithTrades depuis l'exécution d'ouverture. Alimente
+    // la règle E5 (fenêtre d'exécution). null tant qu'aucune exécution
+    // d'ouverture n'est trouvée dans l'import.
+    entryTs: null,
     ct: String(Math.abs(qty)),
     mu: String(sf(get('Multiplier')) || (isOption ? 100 : 1)),
     pi: String(sf(get('CostBasisPrice'))),
@@ -151,6 +156,10 @@ export function mapTradeRow(fields, headerMap) {
       fi: String(Math.abs(sf(get('IBCommission')))),
       fxi: String(sf(get('FXRateToBase'))),
       pc: String(sf(get('ClosePrice'))),
+      // Q-B — horodatage brut d'exécution (YYYYMMDD;HHMMSS, heure de
+      // l'échange). Peuplé sur 100 % des exécutions ; sert à E5 (fenêtre
+      // d'exécution) via enrichPositionsWithTrades → pos.entryTs.
+      _ibkrDateTime: get('DateTime'),
       _ibkrTradeId: get('TradeID'),
       _ibkrTransactionId: get('TransactionID'),
       _ibkrOpenClose: openClose,

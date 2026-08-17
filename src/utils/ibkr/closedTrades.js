@@ -14,7 +14,7 @@
 //  reconstructed as close.di — WRONG — and entryFee lost).
 // ═══════════════════════════════════════════════════════════════
 
-import { sf } from './csvReader';
+import { sf, instantFromExchangeDateTime } from './csvReader';
 import { dteAtEntry } from '../dates';
 
 function contractKey(t) {
@@ -226,6 +226,10 @@ export function enrichPositionsWithTrades(positions, trades) {
       fxi: t.fxi,
     }));
     pos.di = matching[0].di;
+    // Q-B — horodatage d'entrée absolu (ISO UTC) depuis l'exécution
+    // d'ouverture (heure de l'échange → instant). Alimente E5 ; reste null
+    // si l'export ne porte pas de DateTime sur la ligne.
+    pos.entryTs = instantFromExchangeDateTime(matching[0]._ibkrDateTime) || null;
     pos.fi = String(matching.reduce((s, t) => s + sf(t.fi), 0).toFixed(5));
     // Now that `di` is known, compute the DTE-at-entry for this position.
     pos.dteAtEntry = dteAtEntry(pos.di, pos.ex);

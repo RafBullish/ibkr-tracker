@@ -108,7 +108,7 @@ function FlexSection({ onResult }) {
   const settings = useSettings();
   const dispatch = useDispatch();
   const metrics = usePortfolioMetrics();
-  const capitalUsd = metrics?.initialCapital ?? metrics?.netLiquidationValueUsd ?? null;
+  const capitalUsd = metrics?.netLiquidationValueUsd ?? null;
   const state = { openPositions, closedTrades, cashFlows, journalEntries, settings };
   const showToast = useToast();
   const saved = getFlexConfig();
@@ -270,7 +270,7 @@ function CsvUploadSection({ onResult }) {
   const settings = useSettings();
   const dispatch = useDispatch();
   const metrics = usePortfolioMetrics();
-  const capitalUsd = metrics?.initialCapital ?? metrics?.netLiquidationValueUsd ?? null;
+  const capitalUsd = metrics?.netLiquidationValueUsd ?? null;
   const state = { openPositions, closedTrades, cashFlows, journalEntries, settings };
   const showToast = useToast();
   const inputRef = useRef(null);

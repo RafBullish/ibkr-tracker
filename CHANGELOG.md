@@ -23,16 +23,28 @@ en dur : tous les seuils viennent du registre (Q-A). check:doctrine reste vert.
   dit (« en attente Q-C »), jamais un zéro décoratif.
 - **7 règles de VIOLATION** (`src/utils/violations.js`) — chip AMBRE (jamais
   rouge, loi §6 : un écart n'est pas une perte), jamais bloquant, à la saisie ET
-  à l'import, TOUTES sourcées du registre : S1 taille>60% (`sizing.S1`), S3
-  ticket<150$ (`sizing.S3`), S5 2ᵉ entrée/jour (`sizing.S5`), S6 2ᵉ position/
-  sous-jacent + MOYENNAGE (`sizing.S6`), E2 θ d'entrée>0,8%/j sur la PRIME
-  D'ENTRÉE `pi` (`entree.E2`, distinct du θ%-du-mark du deck), E4 spread>30%
-  (`entree.E4`), E5 hors 15:45–21:45 Genève (`entree.E5`). Le DELTA est INDICATIF
-  → JAMAIS de violation.
-- **Honnêteté des entrées manquantes** : θ d'entrée, bid/ask, horodatage n'existent
-  pas encore dans le magasin → la règle est « indéterminée » (ni faute, ni
-  conforme, jamais un faux 0). Elle se rallume seule quand l'entrée est capturée
-  (Chain, Q-C, saisie horodatée). S1/S3/S5/S6 sont mesurées AUJOURD'HUI.
+  à l'import, TOUTES sourcées du registre : S1 taille>60% **de la NLV**
+  (`sizing.S1`), S3 ticket<150$ (`sizing.S3`), S5 2ᵉ entrée/jour (`sizing.S5`),
+  S6 2ᵉ position/sous-jacent + MOYENNAGE (`sizing.S6`), E2 θ d'entrée>0,8%/j sur
+  la PRIME D'ENTRÉE `pi` (`entree.E2`, distinct du θ%-du-mark du deck), E4
+  spread>30% (`entree.E4`), **E5 hors 15:45–21:45 Genève** (`entree.E5`). Le
+  DELTA est INDICATIF → JAMAIS de violation.
+- **S1 = NLV, jamais les dépôts** (décision architecte) : sur un compte réduit
+  de moitié, la base dépôts autoriserait une position supérieure à la valeur
+  réelle. Dénominateur = `netLiquidationValueUsd` ; NLV absente → indéterminée,
+  SANS repli.
+- **E5 lit l'horodatage réel de l'import** : l'export Flex porte `DateTime` /
+  `OrderTime` (`YYYYMMDD;HHMMSS`, heure de l'échange) sur 100 % des exécutions.
+  Nouveau `instantFromExchangeDateTime` (csvReader) interprète l'heure comme
+  America/New_York et renvoie un instant absolu UTC **avec gestion du DST** (le
+  décalage ET↔UTC est lu par Intl à la date exacte, jamais figé) ;
+  `enrichPositionsWithTrades` pose `pos.entryTs` depuis l'exécution d'ouverture ;
+  E5 se reformate en Europe/Zurich. Cas prouvé : 09:42 ET = 15:42 Genève →
+  VIOLATION (avant 15:45), été comme hiver.
+- **Honnêteté des entrées encore manquantes** : θ d'entrée (E2) et bid/ask (E4)
+  exigent une capture manuelle à l'entrée (micro-brique à venir) → règle
+  « indéterminée » (ni faute, ni conforme, jamais un faux 0), rallumée seule le
+  jour de la capture. S1/S3/S5/S6/**E5** sont mesurées AUJOURD'HUI.
 - **ADD_POSITION n'est plus MUET** : le moyennage garde la provenance (`lots[]`,
   journal de lots) + pose `averaged` → le moteur en dérive l'écart S6 (visible,
   marqué). Reducer pur (aucun journal psychologique pollué).
@@ -59,9 +71,9 @@ en dur : tous les seuils viennent du registre (Q-A). check:doctrine reste vert.
   `FENETRE_EXECUTION` (E5) — ré-expression identique du JSON.
 - **HORS PÉRIMÈTRE** (Q-C / 1.G-b) : câblage des 5 portes, writer
   `qc:positionMarks`, calcul du pic, bloc PORTES du deck, DÉPLOYABLE.
-- **Preuve** : 470 tests (+41 : migration v8, 7 règles, sidecar + survie,
-  moyennage non muet, rapport d'import) ; check:doctrine 0, check:color-law 0,
-  build vert.
+- **Preuve** : 480 tests (+51 : migration v8, 7 règles, sidecar + survie,
+  moyennage non muet, rapport d'import, conversion DST ET→Zurich + E5 réelle) ;
+  check:doctrine 0, check:color-law 0, build vert.
 
 ---
 

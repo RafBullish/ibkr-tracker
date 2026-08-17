@@ -100,20 +100,25 @@ function descriptor(code, label, source, status, message, extra) {
 // Chaque règle renvoie un descriptor de VIOLATION, un descriptor
 // INDÉTERMINÉ (entrée absente), ou null (conforme → rien à afficher).
 
-/** S1 — taille > 60 % du capital. Dénominateur = ctx.capitalUsd. */
+/**
+ * S1 — taille > 60 % de la NLV. Dénominateur = ctx.capitalUsd, qui DOIT
+ * être la valeur nette de liquidation (NLV), jamais les dépôts : sur un
+ * compte réduit de moitié, la base dépôts autoriserait une position
+ * supérieure à la valeur réelle. NLV absente → indéterminée, SANS repli.
+ */
 function ruleS1(pos, ctx) {
   const src = 'sizing.S1_pct_max_par_position';
   const max = SIZING.S1_pct_max_par_position;
   const ticket = ticketUsd(pos);
-  const capital = toFloat(ctx.capitalUsd);
-  if (!(ticket > 0) || !(capital > 0)) {
+  const nlv = toFloat(ctx.capitalUsd);
+  if (!(ticket > 0) || !(nlv > 0)) {
     return descriptor('S1', 'Taille du ticket', src, V_STATUS.INDETERMINE,
-      'Taille indéterminée — capital de référence non résolu.');
+      'Taille indéterminée — NLV (valeur nette) non résolue.');
   }
-  const frac = ticket / capital;
+  const frac = ticket / nlv;
   if (frac > max) {
     return descriptor('S1', 'Taille > cap doctrine', src, V_STATUS.VIOLATION,
-      `Ticket = ${Math.round(frac * 100)} % du capital (max ${Math.round(max * 100)} %).`,
+      `Ticket = ${Math.round(frac * 100)} % de la NLV (max ${Math.round(max * 100)} %).`,
       { fraction: frac, max });
   }
   return null;
