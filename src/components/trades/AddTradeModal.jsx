@@ -36,6 +36,19 @@ const TAG_PRESETS = [
   'Discipline',
 ];
 
+// Q-B — portes de sortie carte V3 (libellés d'UI, pas des nombres normatifs).
+// Deux des 5 champs de clôture obligatoires (registre app).
+const PORTES_OPTIONS = [
+  { v: '', l: '— non renseignée' },
+  { v: 'P1_SL', l: 'P1 · Stop-loss' },
+  { v: 'P2_TRAIL', l: 'P2 · Trailing' },
+  { v: 'P3_DTE', l: 'P3 · DTE' },
+  { v: 'P4_EARNINGS', l: 'P4 · Earnings' },
+  { v: 'P5_STAGNATION', l: 'P5 · Stagnation' },
+  { v: 'AUCUNE', l: 'Aucune (sortie discrétionnaire)' },
+  { v: 'MANUELLE', l: 'Manuelle / autre' },
+];
+
 export default function AddTradeModal({
   open,
   onClose,
@@ -56,6 +69,9 @@ export default function AddTradeModal({
   const [dout, setDout] = useState(todayDateString());
   const [note, setNote] = useState('');
   const [tag, setTag] = useState(preset.tag || '');
+  // Q-B — journal de clôture carte V3 (optionnel, jamais bloquant).
+  const [porteDeclenchee, setPorteDeclenchee] = useState('');
+  const [porteRespectee, setPorteRespectee] = useState('');
 
   const isOpt = assetType === 'Option';
   const mul = isOpt ? 100 : 1;
@@ -74,6 +90,8 @@ export default function AddTradeModal({
     setOptType(preset.ty || 'CALL');
     setDir(preset.dir || 'Long');
     setTag(preset.tag || '');
+    setPorteDeclenchee('');
+    setPorteRespectee('');
   };
 
   const handleSave = () => {
@@ -98,6 +116,11 @@ export default function AddTradeModal({
       note: note || null,
       tag: tag || null,
       src: 'manual',
+      // Q-B — 5 champs de clôture (prix_entree=pi, prix_sortie=po déjà là).
+      // picAtteint vide tant que le writer qc:positionMarks (Q-C) n'existe pas.
+      picAtteint: null,
+      porteDeclenchee: porteDeclenchee || null,
+      porteRespectee: porteRespectee || null,
     };
     onSave(trade);
     reset();
@@ -224,6 +247,35 @@ export default function AddTradeModal({
                 </button>
               ))}
             </div>
+          </label>
+        </div>
+        <div className="add-trade-form__row">
+          <label>
+            <span className="uppercase-label">Porte déclenchée</span>
+            <select
+              className="add-trade-form__select"
+              value={porteDeclenchee}
+              onChange={(e) => setPorteDeclenchee(e.target.value)}
+            >
+              {PORTES_OPTIONS.map((o) => (
+                <option key={o.v} value={o.v}>
+                  {o.l}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span className="uppercase-label">Porte respectée</span>
+            <select
+              className="add-trade-form__select"
+              value={porteRespectee}
+              onChange={(e) => setPorteRespectee(e.target.value)}
+            >
+              <option value="">— non renseignée</option>
+              <option value="OUI">Oui</option>
+              <option value="NON">Non</option>
+              <option value="NA">N/A</option>
+            </select>
           </label>
         </div>
         <div className="add-trade-form__row">

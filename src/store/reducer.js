@@ -159,9 +159,15 @@ export function applyAction(state, action) {
         // Guard against div-by-zero when aggregated quantity is zero (corrupted lots).
         // Falls back to the incoming lot's values rather than persisting NaN in localStorage.
         const avgPrice = tq > 0 ? tv / tq : toFloat(pos.pi);
+        // Q-B — le moyennage n'est plus MUET : lots[] garde la provenance
+        // de chaque entrée (journal de lots) et `averaged` rend l'événement
+        // VISIBLE. Le marquage de violation S6 (chip ambre) est dérivé de
+        // lots.length par le moteur evaluatePositionViolations. On enregistre,
+        // on ne bloque pas.
         const updated = {
           ...existing,
           lots: newLots,
+          averaged: true,
           ct: String(roundTo6(tq)),
           pi: String(roundTo6(avgPrice)),
           pc: String(roundTo6(avgPrice)),
@@ -196,7 +202,9 @@ export function applyAction(state, action) {
       // tout désync entre ct/pi top-level et les lots agrégés.
       const { id, ...incoming } = action.payload || {};
       if (!id) return state;
-      const EDITABLE = ['tk', 'ty', 'dir', 'st', 'ex', 'pi', 'ct', 'di'];
+      // Q-B — earningsDate (tri-état) + entryNote éditables via le tiroir.
+      // Ils ne touchent pas lots (stripLots ne se déclenche que sur pi/ct).
+      const EDITABLE = ['tk', 'ty', 'dir', 'st', 'ex', 'pi', 'ct', 'di', 'earningsDate', 'entryNote'];
       const patch = {};
       for (const k of EDITABLE) {
         if (incoming[k] !== undefined) patch[k] = incoming[k];

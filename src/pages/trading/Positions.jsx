@@ -42,6 +42,11 @@ import { toFloat, ensurePositive, generateId } from '../../utils/math';
 import { getGreeksForAllPositions } from '../../utils/greeksApi';
 import { generateAlerts, getPositionAlerts } from '../../utils/alerts';
 import { effectiveSlDollar } from '../../utils/risk';
+// Q-B — marquage des écarts de doctrine (chips ambre, jamais bloquants) +
+// sidecar de métadonnées saisies (survie au ré-import via la signature).
+import { evaluatePositionViolations, violationsOnly, V_STATUS } from '../../utils/violations';
+import { positionSignature } from '../../utils/positions';
+import { writePositionMeta } from '../../utils/positionMeta';
 import { TickValue } from '../../components/dashboard/decision/parts';
 import { fmtUsd, fmtUsdSigned, fmtChf } from '../../components/dashboard/hero1/kit';
 
@@ -445,8 +450,15 @@ function PanelGreek({ label, value, ivEstimated, digits = 2 }) {
   );
 }
 
-function PositionDetailBody({ row, greeks, posAlerts, navigate, onEdit, onCloseMode, onTagMeta }) {
+function earningsLabel(earningsDate) {
+  if (earningsDate === 'AUCUN') return 'AUCUN (sous-jacent sans résultats)';
+  if (typeof earningsDate === 'string' && earningsDate) return earningsDate;
+  return '— non renseignée';
+}
+
+function PositionDetailBody({ row, greeks, posAlerts, violations, navigate, onEdit, onCloseMode, onTagMeta }) {
   const { pos, r, pctChg, isOpt, dte, costBasis, maxLoss } = row;
+  const doctrine = violations || [];
   const pnl = r.unrealizedPnlUsd;
   const pnlTone = pnl > 0 ? 'profit' : pnl < 0 ? 'loss' : 'neutral';
   const sl = effectiveSlDollar(pos);
@@ -549,6 +561,49 @@ function PositionDetailBody({ row, greeks, posAlerts, navigate, onEdit, onCloseM
         </button>
       </div>
 
+      {/* Q-B — saisie carte V3 : date de résultats (source P4, câblage Q-C)
+          + note d'entrée. Édition via « Éditer ». */}
+      <div className="position-detail__section">
+        <span className="position-detail__section-title">Saisie · carte V3</span>
+        <div className="position-detail__grid">
+          <DetailItem label="Date de résultats">{earningsLabel(pos.earningsDate)}</DetailItem>
+        </div>
+        <p className="position-detail__note-line">
+          {pos.entryNote ? pos.entryNote : <span className="text-tertiary">Aucune note d’entrée</span>}
+        </p>
+      </div>
+
+      {/* Q-B — conformité doctrine : écarts MARQUÉS (ambre), jamais bloqués ;
+          règles non mesurables affichées honnêtement (ni faute, ni conforme). */}
+      <div className="position-detail__section">
+        <span className="position-detail__section-title">Conformité doctrine</span>
+        {doctrine.length === 0 ? (
+          <span className="text-tertiary mono position-detail__no-alert">
+            Aucun écart mesurable
+          </span>
+        ) : (
+          <div className="position-detail__doctrine">
+            {doctrine.map((d) => (
+              <div key={d.code} className="position-detail__doctrine-row">
+                <span
+                  className={
+                    d.status === V_STATUS.VIOLATION
+                      ? 'db-badge db-badge--arme'
+                      : 'position-detail__doctrine-mute'
+                  }
+                >
+                  {d.code}
+                </span>
+                <span className="position-detail__doctrine-msg">{d.message}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="position-detail__note-line text-tertiary">
+          Marquage informatif — jamais bloquant (enregistreur de vol).
+        </p>
+      </div>
+
       <div className="position-detail__section">
         <span className="position-detail__section-title">Alertes</span>
         {posAlerts.length === 0 ? (
@@ -608,19 +663,46 @@ function PositionEditForm({ row, onSave, onCancel }) {
   const [pi, setPi] = useState(pos.pi != null ? String(pos.pi) : '');
   const [ct, setCt] = useState(pos.ct != null ? String(pos.ct) : '');
   const [di, setDi] = useState(pos.di || '');
+  // Q-B — earningsDate tri-état (une date | 'AUCUN' | null) + note d'entrée.
+  const [earningsNone, setEarningsNone] = useState(pos.earningsDate === 'AUCUN');
+  const [earningsDate, setEarningsDate] = useState(
+    pos.earningsDate && pos.earningsDate !== 'AUCUN' ? pos.earningsDate : ''
+  );
+  const [entryNote, setEntryNote] = useState(pos.entryNote || '');
 
+  // earningsDate/entryNote sont OPTIONNELS — jamais dans la condition de
+  // validité (enregistreur de vol : on ne bloque pas une saisie incomplète).
   const valid =
     !!tk.trim() && toFloat(pi) > 0 && toFloat(ct) > 0 && (!isOpt || (toFloat(st) > 0 && !!ex));
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!valid) return;
-    const patch = { id: pos.id, tk: tk.trim().toUpperCase(), dir, pi, ct, di };
+    const finalEarnings = earningsNone ? 'AUCUN' : earningsDate || null;
+    const finalNote = entryNote.trim() ? entryNote.trim() : null;
+    const patch = {
+      id: pos.id,
+      tk: tk.trim().toUpperCase(),
+      dir,
+      pi,
+      ct,
+      di,
+      earningsDate: finalEarnings,
+      entryNote: finalNote,
+    };
     if (isOpt) {
       patch.ty = ty;
       patch.st = st;
       patch.ex = ex;
     }
+    // Sidecar durable, keyé sur la signature de la position APRÈS édition :
+    // la métadonnée survit au ré-import du même CSV (id régénéré, signature
+    // stable). Le stamp est fourni ici (le module reste déterministe).
+    writePositionMeta(
+      positionSignature({ ...pos, ...patch }),
+      { earningsDate: finalEarnings, entryNote: finalNote },
+      new Date().toISOString()
+    );
     onSave(patch);
   };
 
@@ -701,6 +783,50 @@ function PositionEditForm({ row, onSave, onCancel }) {
           </label>
         </div>
       )}
+      {/* Q-B — saisie carte V3 : date de résultats (source unique de P4) +
+          note d'entrée. Tri-état earnings : une date, AUCUN, ou vide. */}
+      <div className="add-trade-form__row">
+        <label>
+          <span className="uppercase-label">Date de résultats (P4)</span>
+          <input
+            type="date"
+            value={earningsDate}
+            disabled={earningsNone}
+            onChange={(e) => setEarningsDate(e.target.value)}
+          />
+        </label>
+        <label>
+          <span className="uppercase-label">Résultats</span>
+          <div className="add-trade-form__toggle">
+            <button
+              type="button"
+              data-active={!earningsNone || undefined}
+              onClick={() => setEarningsNone(false)}
+            >
+              Date
+            </button>
+            <button
+              type="button"
+              data-active={earningsNone || undefined}
+              onClick={() => setEarningsNone(true)}
+            >
+              AUCUN
+            </button>
+          </div>
+        </label>
+      </div>
+      <div className="add-trade-form__row">
+        <label className="add-trade-form__full">
+          <span className="uppercase-label">Note d&apos;entrée (optionnelle)</span>
+          <textarea
+            className="add-trade-form__textarea"
+            value={entryNote}
+            onChange={(e) => setEntryNote(e.target.value)}
+            rows={2}
+            placeholder="thèse, contexte… — jamais bloquant"
+          />
+        </label>
+      </div>
       <div className="add-trade-form__footer">
         <button type="button" className="pg-mock-btn" onClick={onCancel}>
           Annuler
@@ -718,15 +844,34 @@ function PositionEditForm({ row, onSave, onCancel }) {
 //  AddTradeModal) et dispatch CLOSE_POSITION. GARDE DUR : prix de sortie
 //  > 0 et date de sortie ≥ date d'entrée. Résumé + P&L avant confirmation.
 // ═══════════════════════════════════════════════════════════════
+// Q-B — portes de sortie de la carte V3 (libellés d'UI, pas des nombres
+// normatifs → hors périmètre check:doctrine). « porte_declenchee » +
+// « porte_respectee » sont deux des 5 champs de clôture du registre app.
+const PORTES_OPTIONS = [
+  { v: '', l: '— non renseignée' },
+  { v: 'P1_SL', l: 'P1 · Stop-loss' },
+  { v: 'P2_TRAIL', l: 'P2 · Trailing' },
+  { v: 'P3_DTE', l: 'P3 · DTE' },
+  { v: 'P4_EARNINGS', l: 'P4 · Earnings' },
+  { v: 'P5_STAGNATION', l: 'P5 · Stagnation' },
+  { v: 'AUCUNE', l: 'Aucune (sortie discrétionnaire)' },
+  { v: 'MANUELLE', l: 'Manuelle / autre' },
+];
+
 function PositionCloseForm({ row, lr, onConfirm, onCancel }) {
   const { pos } = row;
   const isOpt = pos.as === 'Option';
   const [po, setPo] = useState('');
   const [doDate, setDoDate] = useState(todayDateString());
   const [fo, setFo] = useState('0');
+  // Q-B — champs de clôture carte V3 (registre app). picAtteint reste vide
+  // (sa valeur vient du writer qc:positionMarks, hors périmètre — Q-C).
+  const [porteDeclenchee, setPorteDeclenchee] = useState('');
+  const [porteRespectee, setPorteRespectee] = useState('');
 
   const poValid = toFloat(po) > 0;
   const dateValid = !!doDate && (!pos.di || doDate >= pos.di);
+  // Les portes sont OPTIONNELLES — jamais bloquantes (enregistreur de vol).
   const valid = poValid && dateValid;
 
   const closedTradeBase = useMemo(
@@ -750,8 +895,16 @@ function PositionCloseForm({ row, lr, onConfirm, onCancel }) {
       tag: pos.tag ?? null,
       note: null,
       src: 'manual',
+      // Q-B — 5 champs de clôture (registre app). prix_entree=pi, prix_sortie=po
+      // déjà présents. picAtteint vide (Q-C), portes saisies (ou null).
+      picAtteint: null,
+      porteDeclenchee: porteDeclenchee || null,
+      porteRespectee: porteRespectee || null,
+      // report d'entrée conservé au dossier du trade clôturé.
+      earningsDate: pos.earningsDate ?? null,
+      entryNote: pos.entryNote ?? null,
     }),
-    [pos, po, doDate, fo, isOpt]
+    [pos, po, doDate, fo, isOpt, porteDeclenchee, porteRespectee]
   );
 
   const pnlPreview = valid ? tradePnlUsd(closedTradeBase, lr) : null;
@@ -796,6 +949,38 @@ function PositionCloseForm({ row, lr, onConfirm, onCancel }) {
         </p>
       )}
 
+      {/* Q-B — journal de clôture carte V3 : porte déclenchée + respectée
+          (optionnelles, jamais bloquantes). */}
+      <div className="add-trade-form__row">
+        <label>
+          <span className="uppercase-label">Porte déclenchée</span>
+          <select
+            className="add-trade-form__select"
+            value={porteDeclenchee}
+            onChange={(e) => setPorteDeclenchee(e.target.value)}
+          >
+            {PORTES_OPTIONS.map((o) => (
+              <option key={o.v} value={o.v}>
+                {o.l}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span className="uppercase-label">Porte respectée</span>
+          <select
+            className="add-trade-form__select"
+            value={porteRespectee}
+            onChange={(e) => setPorteRespectee(e.target.value)}
+          >
+            <option value="">— non renseignée</option>
+            <option value="OUI">Oui</option>
+            <option value="NON">Non</option>
+            <option value="NA">N/A</option>
+          </select>
+        </label>
+      </div>
+
       <div className="position-detail__close-summary">
         <span className="position-detail__section-title">Confirmation</span>
         <div className="position-detail__grid">
@@ -803,8 +988,13 @@ function PositionCloseForm({ row, lr, onConfirm, onCancel }) {
             {pos.tk}
             {isOpt ? ` ${pos.ty} $${toFloat(pos.st).toFixed(0)}` : ''}
           </DetailItem>
-          <DetailItem label="Quantité">{toFloat(pos.ct)}</DetailItem>
+          <DetailItem label="Prix entrée">${toFloat(pos.pi).toFixed(2)}</DetailItem>
           <DetailItem label="Prix sortie">{poValid ? `$${toFloat(po).toFixed(2)}` : '—'}</DetailItem>
+          <DetailItem label="Pic atteint">
+            <span className="text-tertiary" title="Pic non mesuré — writer qc:positionMarks (Q-C) non branché.">
+              — en attente Q-C
+            </span>
+          </DetailItem>
           <DetailItem label="P&L résultant">
             <span className={`text-${pnlTone}`}>
               {pnlPreview == null
@@ -902,6 +1092,10 @@ export default function Positions() {
 
   const m = usePortfolioMetrics();
   const nlvUsd = m.netLiquidationValueUsd;
+  // Q-B — base de la règle de taille S1 = NLV (valeur nette), JAMAIS les
+  // dépôts : un compte réduit de moitié ne doit pas se voir autoriser une
+  // position supérieure à sa valeur réelle. NLV absente → indéterminée, sans repli.
+  const capitalUsd = m.netLiquidationValueUsd ?? null;
 
   // 2.A — rows 19-colonnes de LivePositions (lecture seule, MÊMES
   // dérivations que le Dashboard : sidecar Sniper, IVR, days-in, spark,
@@ -968,6 +1162,16 @@ export default function Positions() {
     () => alerts.filter((a) => a.severity === 'red' || a.severity === 'orange'),
     [alerts]
   );
+
+  // Q-B — écarts de doctrine par position (7 règles, seuils du registre).
+  // Le book de référence = les positions ouvertes (S5/S6). Non bloquant.
+  const violByPos = useMemo(() => {
+    const map = new Map();
+    for (const pos of openPositions) {
+      map.set(pos.id, evaluatePositionViolations(pos, { capitalUsd, book: openPositions }));
+    }
+    return map;
+  }, [openPositions, capitalUsd]);
 
   // É3 §4.2.1 — classifieur de gates de la bande décision, servi par le
   // hook PARTAGÉ useAttentionMap (mêmes entrées, même Map) : une
@@ -1102,12 +1306,23 @@ export default function Positions() {
           </span>
         </span>
       ),
-      render: (v, row) => (
-        <div className="pos-ticker-cell">
-          <span className="mono pos-ticker-cell__tk">{v || '—'}</span>
-          <TypeBadge as={row.pos.as} ty={row.pos.ty} />
-        </div>
-      ),
+      render: (v, row) => {
+        const viols = violationsOnly(violByPos.get(row.pos.id) || []);
+        return (
+          <div className="pos-ticker-cell">
+            <span className="mono pos-ticker-cell__tk">{v || '—'}</span>
+            <TypeBadge as={row.pos.as} ty={row.pos.ty} />
+            {viols.length > 0 && (
+              <span
+                className="db-badge db-badge--arme pos-ticker-cell__viol"
+                title={viols.map((x) => `${x.code} · ${x.message}`).join('\n')}
+              >
+                {viols.map((x) => x.code).join(' ')}
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'strike',
@@ -1519,6 +1734,7 @@ export default function Positions() {
             row={detailRow}
             greeks={greeksMap.get(detailRow.pos.id)}
             posAlerts={getPositionAlerts(detailRow.pos.id, alerts)}
+            violations={violByPos.get(detailRow.pos.id) || []}
             navigate={navigate}
             onEdit={() => setDetailMode('edit')}
             onCloseMode={() => setDetailMode('close')}

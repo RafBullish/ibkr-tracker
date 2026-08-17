@@ -50,6 +50,33 @@ import {
 import InfoTooltip from '../../components/ui/InfoTooltip';
 import { TickValue } from '../../components/dashboard/decision/parts';
 import { RISE_CONTAINER_VARIANTS, RISE_TILE_VARIANTS } from '../../theme/animationVariants';
+import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
+import { readAllPositionMeta } from '../../utils/positionMeta';
+import { evaluatePositionViolations, violationsOnly } from '../../utils/violations';
+
+// Q-B — un import PRODUIT un rapport (zéro skip muet, zéro fusion muette).
+// On calcule les VIOLATIONS de doctrine (chips ambre, jamais bloquantes)
+// pour chaque position créée, sur le book fusionné + le capital de réf.
+function buildImportOutcome(result, source, capitalUsd) {
+  const report = result?.report || {};
+  const book = result?.mergedData?.openPositions || [];
+  const created = report.createdPositions || [];
+  const violations = [];
+  for (const pos of created) {
+    const items = violationsOnly(evaluatePositionViolations(pos, { capitalUsd, book }));
+    if (items.length) {
+      violations.push({ tk: pos.tk, ty: pos.ty, st: pos.st, ex: pos.ex, items });
+    }
+  }
+  return {
+    source,
+    at: new Date().toISOString(),
+    positions: report.positions?.created ?? 0,
+    trades: report.closedTrades?.created ?? 0,
+    cashFlows: report.cashFlows?.created ?? 0,
+    report: { ...report, violations },
+  };
+}
 
 function formatLastSync(lastSync) {
   if (!lastSync) return null;
@@ -80,6 +107,8 @@ function FlexSection({ onResult }) {
   const journalEntries = useJournalEntries();
   const settings = useSettings();
   const dispatch = useDispatch();
+  const metrics = usePortfolioMetrics();
+  const capitalUsd = metrics?.netLiquidationValueUsd ?? null;
   const state = { openPositions, closedTrades, cashFlows, journalEntries, settings };
   const showToast = useToast();
   const saved = getFlexConfig();
@@ -107,7 +136,7 @@ function FlexSection({ onResult }) {
       const csvText = await syncFlex(tk, qid);
       setStatus('Analyse des données…');
       const parsed = parseIbkrCsv(csvText);
-      const result = mergeIbkrData(parsed, state);
+      const result = mergeIbkrData(parsed, state, { metaBySignature: readAllPositionMeta() });
       dispatch({ type: 'IMPORT_DATA', payload: result.mergedData });
       const s = result.stats || {};
       const syncInfo = {
@@ -123,13 +152,7 @@ function FlexSection({ onResult }) {
       };
       dispatch({ type: 'IMPORT_DATA', payload: { settings: { lastSync: syncInfo } } });
       setStatus('');
-      onResult({
-        source: 'Flex IBKR',
-        positions: s.positionsAdded || 0,
-        trades: s.closedTradesAdded || 0,
-        cashFlows: s.cashFlowsAdded || 0,
-        at: new Date().toISOString(),
-      });
+      onResult(buildImportOutcome(result, 'Flex IBKR', capitalUsd));
       showToast.success('Synchronisation Flex terminée', {
         detail: `${s.closedTradesAdded || 0} trades · ${s.positionsAdded || 0} positions · ${s.cashFlowsAdded || 0} mouvements ajoutés`,
       });
@@ -246,6 +269,8 @@ function CsvUploadSection({ onResult }) {
   const journalEntries = useJournalEntries();
   const settings = useSettings();
   const dispatch = useDispatch();
+  const metrics = usePortfolioMetrics();
+  const capitalUsd = metrics?.netLiquidationValueUsd ?? null;
   const state = { openPositions, closedTrades, cashFlows, journalEntries, settings };
   const showToast = useToast();
   const inputRef = useRef(null);
@@ -258,7 +283,7 @@ function CsvUploadSection({ onResult }) {
     try {
       const text = await file.text();
       const parsed = parseIbkrCsv(text);
-      const result = mergeIbkrData(parsed, state);
+      const result = mergeIbkrData(parsed, state, { metaBySignature: readAllPositionMeta() });
       dispatch({ type: 'IMPORT_DATA', payload: result.mergedData });
       const s = result.stats || {};
       // É3.1 — provenance persistée (l'import CSV n'écrivait RIEN dans
@@ -279,13 +304,7 @@ function CsvUploadSection({ onResult }) {
           },
         },
       });
-      onResult({
-        source: `CSV · ${file.name}`,
-        positions: s.positionsAdded || 0,
-        trades: s.closedTradesAdded || 0,
-        cashFlows: s.cashFlowsAdded || 0,
-        at: new Date().toISOString(),
-      });
+      onResult(buildImportOutcome(result, `CSV · ${file.name}`, capitalUsd));
       showToast.success('CSV importé', {
         detail: `${s.closedTradesAdded || 0} trades · ${s.positionsAdded || 0} positions · ${s.cashFlowsAdded || 0} mouvements`,
       });
@@ -348,10 +367,23 @@ function CsvUploadSection({ onResult }) {
   );
 }
 
+function labelInstrument(v) {
+  const strike = v.st ? ` $${v.st}` : '';
+  const type = v.ty || (v.st ? 'OPT' : 'STK');
+  return `${v.tk} ${type}${strike}`.trim();
+}
+
 function ResultStage({ lastResult }) {
   const total = lastResult
     ? lastResult.positions + lastResult.trades + lastResult.cashFlows
     : 0;
+  const report = lastResult?.report;
+  const violations = report?.violations || [];
+  const ignored = report?.ignored || [];
+  const dupes =
+    (report?.positions?.duplicatesSkipped || 0) +
+    (report?.closedTrades?.duplicatesSkipped || 0) +
+    (report?.cashFlows?.duplicatesSkipped || 0);
   return (
     <section className="import-page__panel">
       <header className="import-page__panel-head">
@@ -362,7 +394,8 @@ function ResultStage({ lastResult }) {
           <h2 className="import-page__panel-title">Résultat</h2>
           <p className="import-page__panel-desc">
             Le merge est <strong>additif</strong> — il ne remplace ni n&apos;efface jamais tes
-            données existantes (déduplication par date × ticker × signature).
+            données existantes. Rien n&apos;est ignoré en silence : le rapport ci-dessous dit
+            ce qui a été lu, créé, dédupliqué, ignoré, et les écarts de doctrine marqués.
           </p>
         </div>
       </header>
@@ -389,13 +422,63 @@ function ResultStage({ lastResult }) {
               <span className="import-result__k">mouvements</span>
             </div>
           </div>
+
+          {report && (
+            <div className="import-report__meta">
+              <span>{report.linesRead ?? 0} lignes lues</span>
+              <span aria-hidden="true">·</span>
+              <span>{dupes} doublon{dupes > 1 ? 's' : ''} dédupliqué{dupes > 1 ? 's' : ''}</span>
+              <span aria-hidden="true">·</span>
+              <span>{report.lotsMerged ?? 0} lot moyenné (l&apos;import ne moyenne pas)</span>
+            </div>
+          )}
+
+          {violations.length > 0 && (
+            <div className="import-report__section">
+              <div className="import-report__section-title">
+                Écarts de doctrine marqués — enregistrés, <strong>jamais bloqués</strong>
+              </div>
+              <ul className="import-report__viol-list">
+                {violations.map((v, i) => (
+                  <li key={i} className="import-report__viol-row">
+                    <span className="import-report__viol-instr">{labelInstrument(v)}</span>
+                    <span className="import-report__viol-chips">
+                      {v.items.map((it) => (
+                        <span
+                          key={it.code}
+                          className="db-badge db-badge--arme import-report__viol-chip"
+                          title={it.message}
+                        >
+                          {it.code} · {it.label}
+                        </span>
+                      ))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {ignored.length > 0 && (
+            <div className="import-report__section">
+              <div className="import-report__section-title">Lignes ignorées — avec le motif</div>
+              <ul className="import-report__ignored-list">
+                {ignored.map((row, i) => (
+                  <li key={i} className="import-report__ignored-row">
+                    <span className="import-report__ignored-n mono">{row.count}</span>
+                    <span className="import-report__ignored-why">{row.reason}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       ) : (
         <div className="import-empty">
           <div className="import-empty__title">Aucun import cette session</div>
           <div className="import-empty__sub">
-            Synchronise via Flex ou dépose un CSV ci-dessus — le compte de lignes ajoutées
-            s&apos;affichera ici.
+            Synchronise via Flex ou dépose un CSV ci-dessus — le rapport (lignes lues, créées,
+            dédupliquées, ignorées, écarts marqués) s&apos;affichera ici.
           </div>
         </div>
       )}

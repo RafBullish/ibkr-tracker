@@ -85,9 +85,10 @@ function buildRow(pos, context) {
   const edgeTier = sidecar?.edgeTier ?? pos.edgeTier ?? deriveEdgeTier(ivrSnapshot) ?? null;
   const capitalTier = sidecar?.capitalTier ?? pos.capitalTier ?? null;
 
+  // Q-B — plus d'earnings ici : la branche EARN de detectAlert est morte
+  // (P4 tire de position.earningsDate, câblage Q-C). Finnhub reste au calendrier.
   const alert = detectAlert(pos, {
     now: context.now,
-    earnings: context.earnings,
     ivr: ivrSnapshot,
   });
 
@@ -171,7 +172,6 @@ function aggregate(rows) {
 /**
  * @param {Object} [options]
  * @param {Date}   [options.now]        reference for DTE / daysHeld
- * @param {Array}  [options.earnings]   earnings calendar for EARN alert
  * @param {Map}    [options.greeksMap]  greeks par position id (single source
  *                                      of truth de greeksApi). Si absent,
  *                                      les colonnes Δ/Θ tombent sur
@@ -188,7 +188,6 @@ export function useLivePositions(options = {}) {
     void metaVersion;
     const ctx = {
       now: options.now,
-      earnings: options.earnings,
       greeksMap: options.greeksMap,
     };
     const rows = (openPositions || []).map((p) => buildRow(p, ctx));
@@ -199,17 +198,16 @@ export function useLivePositions(options = {}) {
       totalMaxRisk,
       count: rows.length,
     };
-  }, [openPositions, options.now, options.earnings, options.greeksMap, metaVersion]);
+  }, [openPositions, options.now, options.greeksMap, metaVersion]);
 }
 
 /**
  * Variante pure pour /__playground (pas de hook React).
- * Mêmes transforms, accept openPositions + earnings + greeksMap en arg.
+ * Mêmes transforms, accept openPositions + greeksMap en arg.
  */
 export function buildLivePositions(openPositions, options = {}) {
   const ctx = {
     now: options.now,
-    earnings: options.earnings,
     greeksMap: options.greeksMap,
   };
   const rows = (openPositions || []).map((p) => buildRow(p, ctx));
