@@ -108,7 +108,7 @@ mandatée : **registre → saisie → portes → palier**.
   entrée→maintenant, PF fenêtre 30 (mort — hors carte V3), capture θ/spread,
   bridge. 527 tests, doctrine 0, color-law 0, build ✓, vérif @1591+@2560.
   **Changement visuel majeur → GO Rafael requis avant merge.**
-- **1.G-c ⏳ (1.0.2-rc.8, EN ATTENTE DU GO VISUEL — branche `v1/1g-c-bandeau`)** —
+- **1.G-c ✅ MERGÉE sur main (1.0.2-rc.8, GO Rafael 17.08 + correction SMI)** —
   BANDEAU & COCKPIT (les 3 demandes du 16.08 jamais construites). **D2** : le
   bandeau en TROIS GROUPES (MAG 7 fixe · POSITIONS détenues = point ambre + P&L
   latent, vide → disparaît · SECTEURS 8 éditables), dédup Mag 7/positions ; fin
@@ -119,11 +119,14 @@ mandatée : **registre → saisie → portes → palier**.
   `auto`, repli honnête ambre >10 min, source unique `settings.liveRate`
   swap-ready V1.1). **D4** : MONDE recentré (DAX→CAC 40, FTSE→EURONEXT 100,
   COPPER→SMI). Densité R1↔R2 alignée au palier `@≥2000`. Éditeur SECTEURS en
-  Réglages (`SET_TAPE_SECTORS`, `tapeSectors` préférence). **555 tests**,
-  doctrine 0, color-law 0, build ✓, vérif @2560+@1591 (3 groupes + dots + P&L,
-  FX âge, MONDE, densité, éditeur exercé). **NON dans cette brique** : capture
-  θ/spread, recette É4, bridge V1.1, batch chart. **Changement visuel majeur →
-  GO Rafael requis avant merge.**
+  Réglages (`SET_TAPE_SECTORS`, `tapeSectors` préférence). **Correction post-GO** :
+  SMI (indice) déplacé en rangée 1 du MONDE avec les indices (matières = GOLD ·
+  SILVER · CRUDE · NATGAS), MONDE en 2 rangées explicites, « EN 100 » ; + **palier
+  ≥2000 du bandeau ajouté** (barre 92→104 px, LED 40→46 — le bandeau ne montait
+  pas à 2560 alors que le deck oui). **555 tests**, doctrine 0, color-law 0,
+  build ✓, vérif @2560+@1591 (3 groupes + dots + P&L, FX âge, MONDE recomposé
+  0 chevauchement, tape ≥2000, éditeur exercé). **NON dans cette brique** :
+  capture θ/spread, recette É4, bridge V1.1, batch chart.
 
 ---
 
