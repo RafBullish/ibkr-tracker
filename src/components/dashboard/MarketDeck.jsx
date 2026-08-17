@@ -58,21 +58,24 @@ const US = [
 // (la clé du poller partagé est le join ordonné — ne pas dupliquer).
 const INTRADAY_SYMBOLS = ['^SPX', '^NDX', '^DJI', '^RUT', '^VIX'];
 
-// 1.G-c · D4 — MONDE ×10, 2 rangées × 5. Européennes recentrées sur la
-// zone de Rafael : DAX→CAC 40, FTSE→EURONEXT 100 ; COPPER→SMI (indice
-// suisse, donc cls 'index'). NIKKEI/BTC/ETH et GOLD/SILVER/CRUDE/NATGAS
-// inchangés.
+// 1.G-c · D4 — MONDE. Européennes recentrées sur la zone de Rafael :
+// DAX→CAC 40, FTSE→EURONEXT 100 (label court « EN 100 » — le nom complet
+// débordait la cellule au plancher 1591) ; COPPER→**SMI**, indice suisse
+// donc RANGÉE 1 avec les indices actions (un indice sous un en-tête
+// « MATIÈRES » entre GOLD et CRUDE était une incohérence — GO 17.08).
+//   Rangée 1 (ACTIONS · CRYPTO) : CAC 40 · EN 100 · NIKKEI · SMI · BTC · ETH
+//   Rangée 2 (MATIÈRES) se referme sur : GOLD · SILVER · CRUDE · NATGAS
 const WORLD_ROW1 = [
   { sym: '^FCHI', label: 'CAC 40', cls: 'index' },
-  { sym: '^N100', label: 'EURONEXT 100', cls: 'index' },
+  { sym: '^N100', label: 'EN 100', cls: 'index' },
   { sym: '^N225', label: 'NIKKEI', cls: 'index' },
+  { sym: '^SSMI', label: 'SMI', cls: 'index' },
   { sym: 'BTC-USD', label: 'BTC', cls: 'index' },
   { sym: 'ETH-USD', label: 'ETH', cls: 'index' },
 ];
 const WORLD_ROW2 = [
   { sym: 'GC=F', label: 'GOLD', cls: 'cmdty' },
   { sym: 'SI=F', label: 'SILVER', cls: 'cmdty' },
-  { sym: '^SSMI', label: 'SMI', cls: 'index' },
   { sym: 'CL=F', label: 'CRUDE', cls: 'cmdty' },
   { sym: 'NG=F', label: 'NATGAS', cls: 'cmdty' },
 ];
@@ -570,13 +573,16 @@ function MondeCell({ quotes }) {
         MONDE <span className="mk-tsub">ACTIONS · CRYPTO · MATIÈRES</span>
       </div>
       <div className="mk-wgrid">
-        {WORLD_ROW1.map((w) => (
-          <WorldCell key={w.sym} {...w} quotes={quotes} />
-        ))}
-        <div className="mk-whr" aria-hidden="true" />
-        {WORLD_ROW2.map((w) => (
-          <WorldCell key={w.sym} {...w} quotes={quotes} />
-        ))}
+        <div className="mk-wrow mk-wrow--top">
+          {WORLD_ROW1.map((w) => (
+            <WorldCell key={w.sym} {...w} quotes={quotes} />
+          ))}
+        </div>
+        <div className="mk-wrow mk-wrow--bot">
+          {WORLD_ROW2.map((w) => (
+            <WorldCell key={w.sym} {...w} quotes={quotes} />
+          ))}
+        </div>
       </div>
     </div>
   );

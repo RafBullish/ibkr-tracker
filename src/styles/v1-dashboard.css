@@ -511,15 +511,23 @@
   margin-right: 4px;
 }
 
-/* ── R2 · MONDE ×10 — 2 rangées × 5, colonnes réglées ───────────── */
+/* ── R2 · MONDE — 1.G-c · D4 : DEUX rangées EXPLICITES (6 + 4).
+   Rangée 1 = ACTIONS · CRYPTO (CAC 40·EN 100·NIKKEI·SMI·BTC·ETH),
+   rangée 2 = MATIÈRES (GOLD·SILVER·CRUDE·NATGAS). Chaque rangée est
+   sa propre grille → le SMI reste avec les indices, jamais parmi les
+   matières. auto-fit au socle (repli gracieux étroit), figé à 6
+   colonnes au palier ≥1440 (cf. c3-hires). ── */
 .mk-wgrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
-  column-gap: 10px;
-  row-gap: 5px;
+  display: flex;
+  flex-direction: column;
+  row-gap: 4px;
   margin-top: 3px;
 }
-.mk-whr { display: none; }
+.mk-wrow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  column-gap: 8px;
+}
 
 .mk-wcell { min-width: 0; white-space: nowrap; }
 .mk-wtop { display: block; line-height: 1.1; }

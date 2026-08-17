@@ -54,9 +54,27 @@ couleur intouchés).
 
 ### D4 — MONDE recentré
 
-- DAX → **CAC 40** (`^FCHI`) · FTSE → **EURONEXT 100** (`^N100`) · COPPER →
-  **SMI** (`^SSMI`, indice → format `index`). Le reste inchangé. Les nouveaux
-  symboles entrent dans le batch du cockpit.
+- DAX → **CAC 40** (`^FCHI`) · FTSE → **EN 100** (`^N100`, Euronext 100 — label
+  court, le nom complet débordait la cellule au plancher) · COPPER → **SMI**
+  (`^SSMI`). Les nouveaux symboles entrent dans le batch du cockpit.
+- **Correction post-GO (17.08)** : le SMI (indice actions) **quitte la rangée
+  MATIÈRES** et rejoint la **rangée 1** avec les indices (CAC 40 · EN 100 ·
+  NIKKEI · SMI · BTC · ETH) — un indice sous un en-tête « MATIÈRES » entre GOLD
+  et CRUDE était une incohérence. La rangée matières **se referme sur GOLD ·
+  SILVER · CRUDE · NATGAS**. MONDE recomposé en **deux rangées explicites**
+  (rangée 1 à 6 colonnes, rangée 2 des matières à 4 colonnes larges) pour que le
+  SMI reste avec les indices à tout palier ; densité MONDE resserrée au plancher
+  1591 pour tenir 6 colonnes sans chevauchement.
+
+### TickerTape — palier ≥2000 ajouté
+
+- Question de l'architecte : le bandeau avait-il un palier ≥2000 ? **Non** — sa
+  barème LED « salle des marchés » (92 px, prix 40) vit au palier ≥1440 et
+  restait IDENTIQUE de 1591 à 2560, alors que le MarketDeck grandit à ≥2000
+  (1.G-a). **Ajouté** : un palier `@≥2000` propre au bandeau — la barre
+  s'épaissit (92 → 104 px, la rangée AppShell est `auto` et suit) et la LED
+  grossit (prix 40 → 46, symbole 22 → 26, sparkline 84×46 → 96×52), à parité de
+  présence 4K avec les héros du deck. Doto, tick et couleurs marché intouchés.
 
 ### Densité R1 ↔ R2 (vérification au passage)
 

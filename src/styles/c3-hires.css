@@ -706,20 +706,33 @@
     margin-top: 0;
   }
 
-  /* MONDE : colonnes réglées 5 × 2, hairline interne entre rangées. */
+  /* MONDE (1.G-c · D4) : deux rangées EXPLICITES — rangée 1 (ACTIONS ·
+     CRYPTO) à 6 colonnes, rangée 2 (MATIÈRES, 4 titres) alignée sous les
+     4 premiers indices (grille 6 col, 2 vides à droite). Hairline interne
+     conservée via border-top de la rangée du bas. Valeurs/labels resserrés
+     pour tenir 6 colonnes à 1591 sans chevauchement. */
   .mk-wgrid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    column-gap: 6px;
     row-gap: 0;
     margin-top: 2px;
   }
-  .mk-whr {
-    display: block;
-    grid-column: 1 / -1;
-    height: 1px;
-    background: var(--hairline-rest);
-    margin: 3px 0 4px;
+  .mk-wrow {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    column-gap: 3px;
   }
+  /* Rangée MATIÈRES = 4 titres → 4 colonnes LARGES (les valeurs à
+     décimale GOLD/SILVER tiennent sans déborder ; l'alignement strict
+     6-sur-6 était trop étroit au plancher). */
+  .mk-wrow--bot {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-top: 1px solid var(--hairline-rest);
+    margin-top: 4px;
+    padding-top: 4px;
+  }
+  .mk-wval { font-size: 12px; }
+  .mk-wsym { font-size: 10.5px; }
+  .mk-wdd { font-size: 10.5px; }
+  /* scopé MONDE (ne touche pas FX-ligne / FUT au plancher). */
+  .mk-wcell .mk-da { font-size: 11.5px; }
 
 
 
@@ -877,6 +890,25 @@
   .mk-fxap { font-size: 12px; }
   .mk-fxage { font-size: 13px; }
   .mk-ak--row { font-size: 12px; }
+
+  /* ── 1.G-c — TICKERTAPE · PALIER ≥2000 (réponse à l'architecte). La
+     barème LED « salle des marchés » vit au palier ≥1440 (92 px, prix 40)
+     et restait IDENTIQUE de 1591 à 2560, alors que le MarketDeck, lui,
+     grandit à ≥2000 (1.G-a). On donne au bandeau sa propre montée 4K : la
+     barre s'épaissit (la rangée AppShell est `auto` → elle suit) et la LED
+     grossit, à parité de présence avec les héros du deck. Doto, tick et
+     couleurs marché INTOUCHÉS. ── */
+  .ticker-tape { height: 104px; }
+  .ticker-cell { padding: 0 40px; gap: 18px; }
+  .ticker-cell__symbol { font-size: 26px; }
+  .ticker-cell__value { font-size: 46px; }
+  .ticker-cell__change { font-size: 27px; }
+  .ticker-cell__change-net { font-size: 24px; }
+  .ticker-cell__pnl { font-size: 24px; }
+  .ticker-group-label { font-size: 15px; padding: 0 30px; }
+  .ticker-cell__dot { width: 10px; height: 10px; margin-right: 9px; }
+  .ticker-cell__sparkline,
+  .ticker-cell__sparkline svg { height: 52px; width: 96px; }
 
   /* ── BUDGET VERTICAL · dégraissage autour du graphe (palier ≥2000 SEUL ;
      le plancher ≤1591 garde ses hauteurs). ── */
