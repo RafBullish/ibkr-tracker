@@ -133,6 +133,9 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  /* Taille pilotée par CSS (ex-inline 13.5) → scalable au palier ≥2000
+     pour aligner la densité de R2 sur R1 (1.G-c). */
+  font-size: 13.5px;
 }
 .mk-da--up { color: var(--pnl-up); }
 .mk-da--down { color: var(--pnl-down); }
@@ -461,6 +464,23 @@
   margin: 1px 0 3px;
   line-height: 1.2;
   text-transform: uppercase;
+}
+
+/* 1.G-c · D3 — âge du taux FX (remplace le badge MANUEL). Fraîcheur =
+   signal neutre ; au-delà du seuil, ambre (JAMAIS rouge : la fraîcheur
+   n'est pas une perte). */
+.mk-fxage {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+  margin-left: 8px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.mk-fxage.is-stale {
+  color: var(--accent);
 }
 
 /* 3 groupes serrés sur une ligne — gaps FIXES ; le repli en 2

@@ -34,7 +34,6 @@ import { useMarketSparklines } from '../../hooks/useMarketSparklines';
 import useCalendarFeeds from '../../hooks/useCalendarFeeds';
 import { useFx } from '../../hooks/useFx';
 import { useOpenPositions } from '../../store/useStore';
-import { STATIC_FETCH_SYMBOLS } from '../layout/TickerTape';
 import { computeMarketPhase, formatCountdown } from '../../utils/marketPhase';
 import { macroEventsInRange } from '../../data/macroEvents2026';
 
@@ -59,10 +58,13 @@ const US = [
 // (la clé du poller partagé est le join ordonné — ne pas dupliquer).
 const INTRADAY_SYMBOLS = ['^SPX', '^NDX', '^DJI', '^RUT', '^VIX'];
 
-// MONDE ×10 — 2 rangées × 5 (ACTIONS·CRYPTO / MATIÈRES).
+// 1.G-c · D4 — MONDE ×10, 2 rangées × 5. Européennes recentrées sur la
+// zone de Rafael : DAX→CAC 40, FTSE→EURONEXT 100 ; COPPER→SMI (indice
+// suisse, donc cls 'index'). NIKKEI/BTC/ETH et GOLD/SILVER/CRUDE/NATGAS
+// inchangés.
 const WORLD_ROW1 = [
-  { sym: '^GDAXI', label: 'DAX', cls: 'index' },
-  { sym: '^FTSE', label: 'FTSE', cls: 'index' },
+  { sym: '^FCHI', label: 'CAC 40', cls: 'index' },
+  { sym: '^N100', label: 'EURONEXT 100', cls: 'index' },
   { sym: '^N225', label: 'NIKKEI', cls: 'index' },
   { sym: 'BTC-USD', label: 'BTC', cls: 'index' },
   { sym: 'ETH-USD', label: 'ETH', cls: 'index' },
@@ -70,10 +72,31 @@ const WORLD_ROW1 = [
 const WORLD_ROW2 = [
   { sym: 'GC=F', label: 'GOLD', cls: 'cmdty' },
   { sym: 'SI=F', label: 'SILVER', cls: 'cmdty' },
-  { sym: 'HG=F', label: 'COPPER', cls: 'cmdty' },
+  { sym: '^SSMI', label: 'SMI', cls: 'index' },
   { sym: 'CL=F', label: 'CRUDE', cls: 'cmdty' },
   { sym: 'NG=F', label: 'NATGAS', cls: 'cmdty' },
 ];
+
+// 1.G-c · D2 — le cockpit ne partage plus la liste du bandeau (qui porte
+// désormais Mag 7 / positions / secteurs). Il requête SA propre liste :
+// tout ce qu'il rend (indices US, VIX, ligne FX & taux, MONDE). Les FUT
+// sont injectés au même batch via useQuoteBatchExtras. ~18 symboles.
+const COCKPIT_SYMBOLS = [
+  '^SPX',
+  '^NDX',
+  '^DJI',
+  '^RUT',
+  '^VIX',
+  'EURUSD=X',
+  '^TNX',
+  'DX-Y.NYB',
+  ...WORLD_ROW1.map((w) => w.sym),
+  ...WORLD_ROW2.map((w) => w.sym),
+];
+
+// Δ5J VIX : série 7d/1d dédiée (le bandeau ne porte plus ^VIX, donc plus
+// de poller partagé — un seul symbole, cadence 5 min).
+const VIX_DAILY = ['^VIX'];
 
 // ─── Formatage (décimales par classe, gardes ratifiées 1.C.5) ────
 const CHF = new Intl.NumberFormat('de-CH');
@@ -128,6 +151,23 @@ function shortDate(iso) {
 function compactName(name) {
   return String(name || '').split(' — ')[0].split(' (')[0];
 }
+
+// 1.G-c · D3 — âge du taux FX affiché en clair (« il y a 32 s »). Au-delà
+// de ce seuil, le taux est « en retard » (ambre = fraîcheur, JAMAIS une
+// perte) : même si live (60 s) et Frankfurter (5 min) sont tous deux muets,
+// on montre le DERNIER taux connu + son âge — jamais figé passé pour vif.
+const FX_STALE_AGE_MS = 10 * 60 * 1000; // 10 min
+function formatAge(ms) {
+  if (ms == null || !Number.isFinite(ms) || ms < 0) return null;
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `il y a ${s} s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `il y a ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `il y a ${h} h`;
+  const d = Math.floor(h / 24);
+  return `il y a ${d} j`;
+}
 function detailOf(name) {
   const s = String(name || '');
   const dash = s.split(' — ')[1];
@@ -152,19 +192,20 @@ function Pill({ pct, size }) {
 }
 
 // Δ% texte à flèche : signé (FX), non signé (MONDE/FUT — 1.C.7),
-// 0.00 % = mute sans flèche.
-function DeltaArrow({ pct, size = 13.5, signed = false }) {
+// 0.00 % = mute sans flèche. Taille pilotée par CSS (.mk-da) — R2 seul —
+// pour que le palier @≥2000 scale l'ensemble (alignement de densité R1↔R2).
+function DeltaArrow({ pct, signed = false }) {
   if (pct == null || !Number.isFinite(pct)) {
-    return <span className="mk-da mk-da--flat" style={{ fontSize: size }}>—</span>;
+    return <span className="mk-da mk-da--flat">—</span>;
   }
   if (pct === 0) {
-    return <span className="mk-da mk-da--flat" style={{ fontSize: size }}>0.00%</span>;
+    return <span className="mk-da mk-da--flat">0.00%</span>;
   }
   const dir = dirOf(pct);
   const arrow = pct > 0 ? '▲' : '▼';
   const sign = signed ? (pct > 0 ? '+' : '−') : '';
   return (
-    <span className={`mk-da mk-da--${dir}`} style={{ fontSize: size }}>
+    <span className={`mk-da mk-da--${dir}`}>
       {arrow} {sign}{Math.abs(pct).toFixed(2)}%
     </span>
   );
@@ -456,8 +497,26 @@ function AgendaCell({ hero, rows, showEmptyE, localOnly }) {
   );
 }
 
-// ─── R2 · FX & TAUX ─────────────────────────────────────────────
-function FxCell({ quotes, rate, fxBadge }) {
+// ─── R2 · FX & TAUX — USD/CHF automatique (D3) ──────────────────
+// Le badge MANUEL est MORT : le taux se rafraîchit avec le deck et
+// affiche son ÂGE (« il y a 32 s ») à la place. Tick 1 s ISOLÉ à la
+// cellule (ne re-rend pas le deck), gelé sous reduced-motion.
+function FxCell({ quotes, rate, lastUpdated }) {
+  const reduced = useMemo(
+    () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    []
+  );
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    if (reduced) return undefined;
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [reduced]);
+
+  const ageMs = lastUpdated ? nowMs - new Date(lastUpdated).getTime() : null;
+  const ageText = formatAge(ageMs);
+  const ageStale = ageMs == null || ageMs > FX_STALE_AGE_MS;
+
   const groups = [
     { label: 'EUR/USD', q: quotes['EURUSD=X'], cls: 'fx' },
     { label: 'US10Y', q: quotes['^TNX'], cls: 'rate' },
@@ -469,7 +528,9 @@ function FxCell({ quotes, rate, fxBadge }) {
       <div className="mk-fxhero">
         <span className="mk-fxsym">USD/CHF</span>
         <span className="mk-fxval">{Number.isFinite(rate) ? rate.toFixed(4) : '—'}</span>
-        <Chip>{fxBadge}</Chip>
+        <span className={`mk-fxage${ageStale ? ' is-stale' : ''}`}>
+          {ageText || 'taux indisponible'}
+        </span>
       </div>
       <div className="mk-fxap">APPLIQUÉ AU PORTEFEUILLE</div>
       <div className="mk-fxline">
@@ -477,7 +538,7 @@ function FxCell({ quotes, rate, fxBadge }) {
           <span className="mk-fxg" key={label}>
             <span className="mk-fxgsym">{label}</span>
             <span className="mk-fxgval">{fmtVal(q?.price, cls)}</span>
-            <DeltaArrow pct={q?.changePercent} size={13.5} signed />
+            <DeltaArrow pct={q?.changePercent} signed />
           </span>
         ))}
       </div>
@@ -495,7 +556,7 @@ function WorldCell({ sym, label, cls, quotes }) {
         <span className="mk-wval">{fmtVal(q?.price, cls)}</span>
       </span>
       <span className="mk-wbot">
-        <DeltaArrow pct={q?.changePercent} size={13.5} />
+        <DeltaArrow pct={q?.changePercent} />
         <span className={`mk-wdd mk-da mk-da--${dirOf(q?.change)}`}>{fmtNet(q?.change, cls)}</span>
       </span>
     </span>
@@ -540,7 +601,7 @@ function FutCell({ quotes, futServed }) {
             <div className="mk-futr" key={sym}>
               <span className="mk-fsym">{label}</span>
               <span className="mk-fval">{served ? fmtVal(q.price, 'index') : '—'}</span>
-              <DeltaArrow pct={served ? q?.changePercent : null} size={13.5} />
+              <DeltaArrow pct={served ? q?.changePercent : null} />
               <span className="mk-frng">
                 {served && validHL(q?.low) && validHL(q?.high)
                   ? `${fmtVal(q.low, 'index')}–${fmtVal(q.high, 'index')}`
@@ -558,21 +619,19 @@ function FutCell({ quotes, futServed }) {
 
 // ═══ Deck ═══════════════════════════════════════════════════════
 export default function MarketDeck() {
-  const { quotes } = useMarketQuotes(STATIC_FETCH_SYMBOLS);
+  const { quotes } = useMarketQuotes(COCKPIT_SYMBOLS);
   // FUT : MÊME batch de quotes, PERMANENTS (1.C.10 — en RTH les
   // valeurs restent vives, le range O/N est conservé).
-  useQuoteBatchExtras(STATIC_FETCH_SYMBOLS, FUTURES_SYMBOLS);
+  useQuoteBatchExtras(COCKPIT_SYMBOLS, FUTURES_SYMBOLS);
   // Série intraday 1d/5m (poller dédié, 5 appels / 5 min — ratifié).
   const { sparklines: intraday } = useMarketSparklines(INTRADAY_SYMBOLS, '1d', '5m');
-  // Série 7d/1d du tape (poller partagé, zéro appel additionnel) —
-  // consommée UNIQUEMENT pour dériver Δ5J VIX. Ne jamais merger avec
-  // `intraday` (mêmes clés nues, séries différentes).
-  const { sparklines: daily } = useMarketSparklines(STATIC_FETCH_SYMBOLS);
+  // Série 7d/1d dédiée au Δ5J VIX (un seul symbole depuis 1.G-c — le
+  // bandeau ne porte plus ^VIX). Ne jamais merger avec `intraday`.
+  const { sparklines: daily } = useMarketSparklines(VIX_DAILY);
   const openPositions = useOpenPositions();
-  const { rate, mode, source } = useFx();
-
-  const fxBadge =
-    mode === 'manual' ? 'MANUEL' : String(source || '').startsWith('live') ? 'LIVE' : 'AUTO';
+  // 1.G-c · D3 — source FX UNIQUE (settings.liveRate) + horodatage. Le
+  // mode/badge MANUEL est mort ; l'âge remplace le badge dans FxCell.
+  const { rate, lastUpdated: fxLastUpdated } = useFx();
 
   const myTickers = useMemo(
     () => [...new Set((openPositions || []).map((p) => p.tk).filter(Boolean))],
@@ -669,7 +728,7 @@ export default function MarketDeck() {
         showEmptyE={agenda.showEmptyE}
         localOnly={Boolean(calError) && agendaFeedCount.current === 0}
       />
-      <FxCell quotes={quotes} rate={rate} fxBadge={fxBadge} />
+      <FxCell quotes={quotes} rate={rate} lastUpdated={fxLastUpdated} />
       <MondeCell quotes={quotes} />
       <FutCell quotes={quotes} futServed={futServed} />
     </section>

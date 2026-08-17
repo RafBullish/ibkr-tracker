@@ -784,6 +784,20 @@
   .ticker-cell__change-net {
     font-size: 21px;
   }
+  /* 1.G-c — P&L latent (groupe POSITIONS) au poids du Δ net ; étiquette
+     de groupe et point ambre à l'échelle du palier. */
+  .ticker-cell__pnl {
+    font-size: 21px;
+  }
+  .ticker-group-label {
+    font-size: 13px;
+    padding: 0 26px;
+  }
+  .ticker-cell__dot {
+    width: 9px;
+    height: 9px;
+    margin-right: 8px;
+  }
   .ticker-cell__sparkline,
   .ticker-cell__sparkline svg {
     height: 46px;
@@ -840,6 +854,29 @@
   .mk-vval { font-size: 37px; }
   .mk-fxval { font-size: 27px; }
   .mk-ahname { font-size: 20px; }
+
+  /* 1.G-c — ALIGNEMENT DE DENSITÉ R2↔R1. À la cible 2560, R1 montait ses
+     héros (34-38) mais les VALEURS de R2 (MONDE/FUT/FX-ligne/AGENDA-rangs)
+     restaient à leur base (~15-16) → R2 lisait « affamée ». On scale les
+     valeurs de R2 (~×1.3, cran densité D2.F) — pas au niveau héros (les
+     grilles déborderaient), mais au même poids visuel que le secondaire de
+     R1. Δ% (.mk-da) et labels suivent. Hauteurs de rangées absorbent. */
+  .mk-fxgval { font-size: 20px; }
+  .mk-fxgsym { font-size: 14.5px; }
+  .mk-wval { font-size: 20px; }
+  .mk-wsym { font-size: 14.5px; }
+  .mk-wdd { font-size: 15px; }
+  .mk-fval { font-size: 20px; }
+  .mk-fsym { font-size: 14.5px; }
+  .mk-frng { font-size: 14px; }
+  .mk-da { font-size: 16px; }
+  .mk-aname { font-size: 17px; }
+  .mk-adate { font-size: 14.5px; }
+  .mk-aj { font-size: 14.5px; }
+  .mk-aempty { font-size: 14.5px; }
+  .mk-fxap { font-size: 12px; }
+  .mk-fxage { font-size: 13px; }
+  .mk-ak--row { font-size: 12px; }
 
   /* ── BUDGET VERTICAL · dégraissage autour du graphe (palier ≥2000 SEUL ;
      le plancher ≤1591 garde ses hauteurs). ── */

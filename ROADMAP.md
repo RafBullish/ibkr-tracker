@@ -93,8 +93,8 @@ mandatée : **registre → saisie → portes → palier**.
   pastilles r2 / frontier « 1.C intangible » retiré. **rc.3** : Θ % PAR
   POSITION dénominateur = MARK courant + ticker + DTE ; HWM méta « pic NLV
   {niveau} · date ». Recette @2560 + @1591, 415 tests, color-law 0, build ✓.
-- **1.G-b ✅ (1.0.2-rc.7, EN ATTENTE DU GO VISUEL — branche
-  `v1/1g-b-portes-deck`)** — LE BLOC PORTES. Débloqué par Q-A→Q-C (registre +
+- **1.G-b ✅ MERGÉE sur main `4005aa1` (1.0.2-rc.7, GO Rafael 17.08)** — LE BLOC
+  PORTES. Débloqué par Q-A→Q-C (registre +
   moteur `gates.js` + writer `qc:positionMarks`). Bloc PORTES (une rangée/
   position : SL distance −30/−35 · TRAIL pic/sortie pic×0,60/pic partiel · DTE
   avant 45 · EARN fenêtre J−7/J−5 + condition pnl>0/indéterminée · STAG avant
@@ -108,6 +108,22 @@ mandatée : **registre → saisie → portes → palier**.
   entrée→maintenant, PF fenêtre 30 (mort — hors carte V3), capture θ/spread,
   bridge. 527 tests, doctrine 0, color-law 0, build ✓, vérif @1591+@2560.
   **Changement visuel majeur → GO Rafael requis avant merge.**
+- **1.G-c ⏳ (1.0.2-rc.8, EN ATTENTE DU GO VISUEL — branche `v1/1g-c-bandeau`)** —
+  BANDEAU & COCKPIT (les 3 demandes du 16.08 jamais construites). **D2** : le
+  bandeau en TROIS GROUPES (MAG 7 fixe · POSITIONS détenues = point ambre + P&L
+  latent, vide → disparaît · SECTEURS 8 éditables), dédup Mag 7/positions ; fin
+  du doublon cockpit. Endpoint **batch** `/api/quotes` (N symboles → 1 requête,
+  fini le 429) + **cache CDN partagé** (`public, s-maxage` + URL triée
+  déterministe) — preuve navigateur : 3 requêtes/cycle, zéro `/api/quote/X`.
+  **D3** : FX **automatique** (badge MANUEL mort, âge « il y a N s », défaut
+  `auto`, repli honnête ambre >10 min, source unique `settings.liveRate`
+  swap-ready V1.1). **D4** : MONDE recentré (DAX→CAC 40, FTSE→EURONEXT 100,
+  COPPER→SMI). Densité R1↔R2 alignée au palier `@≥2000`. Éditeur SECTEURS en
+  Réglages (`SET_TAPE_SECTORS`, `tapeSectors` préférence). **555 tests**,
+  doctrine 0, color-law 0, build ✓, vérif @2560+@1591 (3 groupes + dots + P&L,
+  FX âge, MONDE, densité, éditeur exercé). **NON dans cette brique** : capture
+  θ/spread, recette É4, bridge V1.1, batch chart. **Changement visuel majeur →
+  GO Rafael requis avant merge.**
 
 ---
 

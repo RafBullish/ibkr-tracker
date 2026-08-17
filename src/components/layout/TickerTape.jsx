@@ -1,18 +1,23 @@
 // ═══════════════════════════════════════════════════════════════
-//  TICKER TAPE — Scrolling marquee, 19 curated instruments
+//  TICKER TAPE — Scrolling marquee, TROIS GROUPES (1.G-c · D2)
 //
-//  Bandeau DÉFILANT type Bloomberg. Avec 19 cellules la bande déborde
-//  largement la viewport → marquee CSS infinite (translateX 0 → -50%
-//  sur contenu dupliqué) révèle progressivement tout le contenu.
-//  Hover pause. prefers-reduced-motion : pas d'animation, scroll manuel
-//  via overflow-x auto (fallback minimal). Hauteur via le token
-//  --qc-ticker-h (92 px ≥1440 depuis 1.B, barème calibré au lab).
+//  Le bandeau ne double plus le cockpit (indices/FX/matières vivaient
+//  aux deux endroits — DAX/FTSE/BTC/ETH deux fois). Il porte désormais
+//  ce que le cockpit ne montre PAS, en trois groupes étiquetés :
+//    1. MAG 7      — fixe : AAPL·MSFT·NVDA·GOOGL·AMZN·META·TSLA.
+//    2. POSITIONS  — sous-jacents détenus (dynamique, dédup. du Mag 7) :
+//                    chaque nom porte un POINT AMBRE + son P&L LATENT.
+//                    Groupe vide → il DISPARAÎT (aucun placeholder).
+//    3. SECTEURS   — 8 leaders hors Mag 7, ÉDITABLES en Réglages.
 //
-//  Liste curée, éditable à la main. Le book d'open positions vit
-//  ailleurs (LivePositions), ce bandeau = contexte marché pur.
+//  Marquee CSS infinite (track dupliqué, translateX 0 → -50 %). Hover
+//  pause. prefers-reduced-motion : rendu 1×, scroll manuel (overflow-x).
+//  Hauteur via --qc-ticker-h (92 px ≥1440). Doto LED + flash au tick
+//  INTOUCHÉS (gel MarketDeck : contenu/échelle/densité seulement).
 //
-//  Cellule = bloc texte empilé [symbole · change%] / [prix héro 24 px]
-//  + sparkline 60×32 à droite. Le prix domine par la taille (héros).
+//  Cellule = [point ambre?] SYMBOLE / PRIX héro + pastille Δ% / Δ net +
+//  [P&L latent si détenu] + sparkline 1D. Quotes/sparks via les pollers
+//  partagés (batch /api/quotes désormais : 1 requête par cycle).
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo } from 'react';
@@ -24,47 +29,8 @@ import useMarketQuotes from '../../hooks/useMarketQuotes';
 import { useMarketSparklines } from '../../hooks/useMarketSparklines';
 import usePriceFlash from '../../hooks/usePriceFlash';
 import { isMarketOpen, getAssetClass } from '../../utils/marketHours';
-
-// Liste curée, éditable à la main. Ajouter / retirer un ticker = touche
-// uniquement ce bloc. classKey pilote l'horaire de marché pour deriveState.
-//
-// Notes classKey :
-//   - US10Y : sémantiquement RATES, mais marketHours.js ne connaît que
-//     US_INDICES/FX/CRYPTO/COMMODITIES/EQUITIES. ^TNX = indice CBOE coté
-//     pendant la session NYSE → US_INDICES couvre correctement.
-//   - INTL_INDICES (DAX/FTSE/NIKKEI) : classe non enregistrée dans
-//     marketHours.js → isMarketOpen renvoie false → state CLOSED en
-//     permanence. Sans impact visuel (pas de règle CSS sur l'état
-//     CLOSED), prix/spark s'affichent normalement. Étendre marketHours.js
-//     si une vraie détection de session étrangère devient nécessaire.
-// Exportés pour le MarketDeck (1.C) : il consomme la MÊME liste → le
-// poller partagé (useMarketQuotes/useMarketSparklines) reste unique.
-export const STATIC_TICKERS = [
-  { display: 'SPX',     fetch: '^SPX',     classKey: 'US_INDICES' },
-  { display: 'NDX',     fetch: '^NDX',     classKey: 'US_INDICES' },
-  { display: 'DJI',     fetch: '^DJI',     classKey: 'US_INDICES' },
-  { display: 'RUT',     fetch: '^RUT',     classKey: 'US_INDICES' },
-  { display: 'VIX',     fetch: '^VIX',     classKey: 'US_INDICES' },
-  { display: 'USD/CHF', fetch: 'USDCHF=X', classKey: 'FX' },
-  { display: 'EUR/USD', fetch: 'EURUSD=X', classKey: 'FX' },
-  { display: 'GOLD',    fetch: 'GC=F',     classKey: 'COMMODITIES' },
-  { display: 'US10Y',   fetch: '^TNX',     classKey: 'US_INDICES' },
-  { display: 'DXY',     fetch: 'DX-Y.NYB', classKey: 'FX' },
-  { display: 'CRUDE',   fetch: 'CL=F',     classKey: 'COMMODITIES' },
-  { display: 'DAX',     fetch: '^GDAXI',   classKey: 'INTL_INDICES' },
-  { display: 'FTSE',    fetch: '^FTSE',    classKey: 'INTL_INDICES' },
-  { display: 'NIKKEI',  fetch: '^N225',    classKey: 'INTL_INDICES' },
-  { display: 'BTC',     fetch: 'BTC-USD',  classKey: 'CRYPTO' },
-  { display: 'ETH',     fetch: 'ETH-USD',  classKey: 'CRYPTO' },
-  { display: 'SILVER',  fetch: 'SI=F',     classKey: 'COMMODITIES' },
-  { display: 'COPPER',  fetch: 'HG=F',     classKey: 'COMMODITIES' },
-  { display: 'NATGAS',  fetch: 'NG=F',     classKey: 'COMMODITIES' },
-];
-
-export const STATIC_FETCH_SYMBOLS = STATIC_TICKERS.map((t) => t.fetch);
-
-// Note : ^SPX et ^VIX peuvent rater Finnhub puis tomber sur Yahoo
-// (cascade auto côté /api/quote). Fallback SPX / VIX sans caret possible.
+import { buildTapeGroups } from '../../config/tapeGroups';
+import { useOpenPositions, useSettings } from '../../store/useStore';
 
 function deriveState(quote, classKey, now) {
   if (!quote || quote.price == null) return 'OFFLINE';
@@ -79,11 +45,6 @@ function deriveState(quote, classKey, now) {
 
 function formatPrice(price, ticker) {
   if (price == null) return '—';
-  // US10Y / ^TNX : la valeur brute renvoyée par /api/quote est déjà dans la
-  // bonne unité (~4.4 pour 4.4 %). Pas de division ici — la division /10
-  // ajoutée lors d'une brique précédente affichait 0.45 et a été retirée.
-  // Le proxy semble normaliser le quirk Yahoo en amont ou Finnhub répond
-  // directement dans la bonne échelle.
   const classKey = getAssetClass(ticker);
   if (classKey === 'FX') return price.toFixed(4);
   if (price >= 1000) {
@@ -95,7 +56,7 @@ function formatPrice(price, ticker) {
 }
 
 // Sparkline inline — spec DA Obsidienne (1.B.2) : stroke 1 px, aire fermée
-// à 8 % (≤ cap 8 %), AUCUN glow, ~56×30. Couleurs directionnelles
+// à 8 % (≤ cap 8 %), AUCUN glow, ~84×46. Couleurs directionnelles
 // conservées (sémantique marché).
 export function TickerSparkline({ prices, color, width = 84, height = 46, stroke = 1 }) {
   if (!prices || prices.length < 2) return null;
@@ -133,7 +94,6 @@ export function TickerSparkline({ prices, color, width = 84, height = 46, stroke
 
 // Δ net en valeur (1.B.2) : priorité au champ `change` du payload quotes ;
 // sinon dérivé du prix et du pourcentage (net = price − price/(1+pct/100)).
-// Aucun nouveau champ réseau, aucun nouvel appel.
 function netChange(quote) {
   if (!quote) return null;
   if (quote.change != null && Number.isFinite(quote.change)) return quote.change;
@@ -143,8 +103,7 @@ function netChange(quote) {
   return price - price / (1 + pct / 100);
 }
 
-// Formatage du Δ net — mêmes conventions d'affichage que formatPrice
-// (FX 4 décimales, de-CH arrondi ≥1000, sinon 2 décimales), signé.
+// Formatage du Δ net — mêmes conventions d'affichage que formatPrice.
 function formatNetChange(net, ticker) {
   if (net == null || !Number.isFinite(net)) return null;
   const sign = net > 0 ? '+' : net < 0 ? '−' : '';
@@ -153,6 +112,18 @@ function formatNetChange(net, ticker) {
   if (classKey === 'FX') return `${sign}${abs.toFixed(4)}`;
   if (abs >= 1000) return `${sign}${new Intl.NumberFormat('de-CH').format(Math.round(abs))}`;
   return `${sign}${abs.toFixed(2)}`;
+}
+
+// P&L latent (USD) d'un sous-jacent détenu — argent RÉEL, donc la LOI DE
+// COULEUR s'applique (le SEUL rouge/vert « argent » du bandeau). Arrondi
+// au dollar, milliers à la suisse, préfixe « $ » manuel (pas d'Intl
+// currency qui insère un NBSP).
+function formatPnlUsd(v) {
+  if (v == null || !Number.isFinite(v)) return null;
+  const sign = v > 0 ? '+' : v < 0 ? '−' : '';
+  const abs = Math.abs(v);
+  const num = abs >= 1000 ? new Intl.NumberFormat('de-CH').format(Math.round(abs)) : Math.round(abs).toString();
+  return `${sign}$${num}`;
 }
 
 function TickerCell({ ticker, quote, spark, state }) {
@@ -167,6 +138,12 @@ function TickerCell({ ticker, quote, spark, state }) {
   // 1.B.3/L2 — flash au tick (variante D) : overlay plat + pulse de
   // luminosité du prix, re-déclenchés par key à chaque changement de prix.
   const flash = usePriceFlash(price);
+
+  // P&L latent (groupe POSITIONS) — loi de couleur : perte réelle rouge,
+  // gain réel vert, plat neutre.
+  const pnlText = ticker.held ? formatPnlUsd(ticker.pnl) : null;
+  const pnlClass =
+    ticker.pnl > 0 ? 'qc-profit' : ticker.pnl < 0 ? 'qc-loss' : 'qc-text-secondary';
 
   const sparkColor = useMemo(() => {
     if (!spark?.prices || spark.prices.length < 2) return 'var(--ink-soft)';
@@ -186,9 +163,12 @@ function TickerCell({ ticker, quote, spark, state }) {
           aria-hidden="true"
         />
       )}
-      {/* Bloc gauche — SYMBOLE au-dessus du PRIX (héros de cellule). */}
+      {/* Bloc gauche — SYMBOLE (point ambre si détenu) au-dessus du PRIX. */}
       <div className="ticker-cell__main">
-        <span className="ticker-cell__symbol">{ticker.display}</span>
+        <span className="ticker-cell__symbol">
+          {ticker.held && <span className="ticker-cell__dot" aria-hidden="true" />}
+          {ticker.display}
+        </span>
         {state === 'OFFLINE' ? (
           <span className="ticker-cell__value ticker-cell__value--offline qc-num">—</span>
         ) : (
@@ -200,8 +180,7 @@ function TickerCell({ ticker, quote, spark, state }) {
           </span>
         )}
       </div>
-      {/* Bloc droit — pastille Δ% au-dessus du Δ net (couleurs marché
-          conservées ; pastille désaturée 16 %, variante D). */}
+      {/* Bloc droit — pastille Δ% au-dessus du Δ net (couleurs marché). */}
       {change != null && Number.isFinite(change) && (
         <div className="ticker-cell__delta">
           <span className={`ticker-cell__change qc-pct ${changeClass}`}>
@@ -213,6 +192,12 @@ function TickerCell({ ticker, quote, spark, state }) {
           )}
         </div>
       )}
+      {/* P&L latent — uniquement pour les sous-jacents détenus. */}
+      {pnlText && (
+        <span className={`ticker-cell__pnl ${pnlClass}`} title="P&L latent de la position">
+          {pnlText}
+        </span>
+      )}
       {state !== 'OFFLINE' && spark?.prices && spark.prices.length > 1 && (
         <span className="ticker-cell__sparkline">
           <TickerSparkline prices={spark.prices} color={sparkColor} width={84} height={46} />
@@ -222,28 +207,45 @@ function TickerCell({ ticker, quote, spark, state }) {
   );
 }
 
-// Vue présentationnelle — reçoit quotes/sparklines en props (héritage
-// du lab 1.B.3, purgé ; conservée : elle isole le rendu des hooks).
-function TickerTapeView({ quotes, sparklines, prefersReducedMotion }) {
+// Séquence PLATE du track : [label][cells…][sep][label][cells…]… Émise
+// telle quelle en enfants flex du track (le label et le séparateur sont
+// des flex-items au même titre que les cellules). `keyPrefix` distingue
+// l'original de sa copie marquee.
+function trackChildren(groups, quotes, sparklines, now, keyPrefix) {
+  const out = [];
+  groups.forEach((g, gi) => {
+    if (gi > 0) {
+      out.push(<span className="ticker-sep" aria-hidden="true" key={`${keyPrefix}sep-${g.key}`} />);
+    }
+    out.push(
+      <span className="ticker-group-label" key={`${keyPrefix}lbl-${g.key}`}>
+        {g.label}
+      </span>
+    );
+    g.items.forEach((it, i) =>
+      out.push(
+        <TickerCell
+          key={`${keyPrefix}${g.key}-${it.fetch}-${i}`}
+          ticker={it}
+          quote={quotes[it.fetch]}
+          spark={sparklines[it.fetch]}
+          state={deriveState(quotes[it.fetch], it.classKey, now)}
+        />
+      )
+    );
+  });
+  return out;
+}
+
+// Vue présentationnelle — reçoit groupes + quotes/sparklines en props.
+function TickerTapeView({ groups, quotes, sparklines, prefersReducedMotion }) {
   const now = new Date();
-
-  const renderCell = (t, key) => (
-    <TickerCell
-      key={key}
-      ticker={t}
-      quote={quotes[t.fetch]}
-      spark={sparklines[t.fetch]}
-      state={deriveState(quotes[t.fetch], t.classKey, now)}
-    />
-  );
-
   return (
     <div className={`ticker-tape ${prefersReducedMotion ? 'ticker-tape--reduced' : ''}`}>
       <div className="ticker-tape__viewport">
         <div className="ticker-tape__track">
-          {STATIC_TICKERS.map((t) => renderCell(t, t.fetch))}
-          {!prefersReducedMotion &&
-            STATIC_TICKERS.map((t) => renderCell(t, `dup-${t.fetch}`))}
+          {trackChildren(groups, quotes, sparklines, now, '')}
+          {!prefersReducedMotion && trackChildren(groups, quotes, sparklines, now, 'dup-')}
         </div>
       </div>
     </div>
@@ -251,8 +253,18 @@ function TickerTapeView({ quotes, sparklines, prefersReducedMotion }) {
 }
 
 export default function TickerTape() {
-  const { quotes } = useMarketQuotes(STATIC_FETCH_SYMBOLS);
-  const { sparklines } = useMarketSparklines(STATIC_FETCH_SYMBOLS);
+  const openPositions = useOpenPositions();
+  const { tapeSectors } = useSettings();
+
+  // Composition des 3 groupes + liste de symboles à requêter (pure,
+  // testée dans config/tapeGroups).
+  const { groups, fetchSymbols } = useMemo(
+    () => buildTapeGroups({ openPositions, tapeSectors }),
+    [openPositions, tapeSectors]
+  );
+
+  const { quotes } = useMarketQuotes(fetchSymbols);
+  const { sparklines } = useMarketSparklines(fetchSymbols);
 
   // Marquee seamless = liste rendue 2× (track translateX 0 → -50 %).
   // En reduced-motion, contenu rendu 1× + overflow-x:auto pour scroll manuel.
@@ -265,6 +277,7 @@ export default function TickerTape() {
 
   return (
     <TickerTapeView
+      groups={groups}
       quotes={quotes}
       sparklines={sparklines}
       prefersReducedMotion={prefersReducedMotion}

@@ -37,6 +37,7 @@ import {
   AlertTriangle,
   Wallet,
   Plus,
+  Activity,
 } from 'lucide-react';
 import {
   useOpenPositions,
@@ -59,6 +60,7 @@ import { TickValue } from '../../components/dashboard/decision/parts';
 import { clearFlexCredentials } from '../../services/flexApi';
 import { todayDateString } from '../../utils/dates';
 import { CONTAINER_VARIANTS, TILE_VARIANTS } from '../../theme/animationVariants';
+import { DEFAULT_SECTORS, sanitizeSectors, MAX_SECTORS } from '../../config/tapeGroups';
 
 const CASH_FLOW_TYPES = [
   { key: 'dep_chf', label: 'Dépôt CHF', sign: '+' },
@@ -366,6 +368,31 @@ export default function SettingsGeneral() {
       ? draftNumber / liveRate
       : null;
 
+  // 1.G-c · D2 — groupe SECTEURS du bandeau (8 leaders hors Mag 7),
+  // éditable. Saisie libre séparée par espaces/virgules ; la
+  // normalisation (majuscules, dédup, plafond) vit dans le reducer.
+  const tapeSectors = settings?.tapeSectors ?? DEFAULT_SECTORS;
+  const [sectorsDraft, setSectorsDraft] = useState(() =>
+    (tapeSectors || DEFAULT_SECTORS).join(' ')
+  );
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing pattern, refactor tracked in BACKLOG.md (post-V1)
+    setSectorsDraft((tapeSectors || DEFAULT_SECTORS).join(' '));
+  }, [tapeSectors]);
+  const commitSectors = () => {
+    const list = String(sectorsDraft)
+      .split(/[\s,]+/)
+      .filter(Boolean);
+    dispatch({ type: 'SET_TAPE_SECTORS', payload: list });
+  };
+  const resetSectors = () => {
+    dispatch({ type: 'SET_TAPE_SECTORS', payload: DEFAULT_SECTORS });
+    setSectorsDraft(DEFAULT_SECTORS.join(' '));
+  };
+  const sectorsPreview = sanitizeSectors(
+    String(sectorsDraft).split(/[\s,]+/).filter(Boolean)
+  );
+
   const activeCount = Object.values(status).filter((s) => s.status === 'active').length;
   const inactiveCount = Object.values(status).filter((s) => s.status === 'inactive').length;
 
@@ -551,6 +578,66 @@ export default function SettingsGeneral() {
                   au taux {liveRate.toFixed(4)}
                 </span>
               )}
+            </div>
+          </Row>
+        </Section>
+      </motion.div>
+
+      {/* ── Bandeau (1.G-c · D2) ── */}
+      <motion.div variants={TILE_VARIANTS}>
+        <Section
+          icon={Activity}
+          title="Bandeau"
+          description="Composition du ruban défilant. MAG 7 et tes positions sont automatiques ; seul le groupe SECTEURS est éditable."
+        >
+          <Row
+            label="Secteurs suivis"
+            description={`Titres hors Mag 7 affichés en fin de bandeau. Séparés par des espaces ou des virgules (max ${MAX_SECTORS}). Vide → défaut.`}
+          >
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 'var(--space-2)',
+                alignItems: 'stretch',
+                width: '100%',
+              }}
+            >
+              <input
+                type="text"
+                aria-label="Secteurs suivis dans le bandeau"
+                className="settings-page__input"
+                style={{ width: '100%', minWidth: 'auto', textTransform: 'uppercase' }}
+                value={sectorsDraft}
+                onChange={(e) => setSectorsDraft(e.target.value)}
+                onBlur={commitSectors}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur();
+                }}
+                placeholder={DEFAULT_SECTORS.join(' ')}
+              />
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 'var(--space-2)',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <span
+                  className="mono"
+                  style={{ color: 'var(--ink-mute)', fontSize: 'var(--fs-xs)' }}
+                >
+                  {sectorsPreview.length
+                    ? `${sectorsPreview.length} titre(s) : ${sectorsPreview.join(' · ')}`
+                    : 'aucun — le défaut sera appliqué'}
+                </span>
+                <button type="button" className="pg-mock-btn" onClick={resetSectors}>
+                  <RefreshCw size={12} />
+                  Réinitialiser
+                </button>
+              </div>
             </div>
           </Row>
         </Section>

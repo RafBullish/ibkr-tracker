@@ -6,6 +6,7 @@
 
 import { toFloat, ensurePositive, generateId, roundTo2, roundTo5, roundTo6 } from '../utils/math';
 import { sanitizeTier } from '../utils/sniperMeta';
+import { sanitizeSectors, DEFAULT_SECTORS } from '../config/tapeGroups';
 
 const normalizeStrike = (s) => String(parseFloat(s) || 0);
 
@@ -56,6 +57,21 @@ export function applyAction(state, action) {
       const value =
         typeof raw === 'number' && Number.isFinite(raw) && raw > 0 ? raw : null;
       return { ...state, settings: { ...state.settings, initialCapitalChf: value } };
+    }
+
+    case 'SET_TAPE_SECTORS': {
+      // 1.G-c · D2 — groupe SECTEURS du bandeau, éditable en Réglages.
+      // Normalisation UNIQUE via sanitizeSectors (majuscules, charset
+      // equity, dédup, plafond). Payload vide/invalide → retour au
+      // défaut (jamais un bandeau amputé du groupe 3).
+      const clean = sanitizeSectors(action.payload);
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          tapeSectors: clean.length ? clean : DEFAULT_SECTORS,
+        },
+      };
     }
 
     case 'SET_FX_STATE': {
@@ -375,6 +391,9 @@ export function applyAction(state, action) {
           fxLastUpdated: state.settings.fxLastUpdated,
           fxSource: state.settings.fxSource,
           activeSniperTier: state.settings.activeSniperTier,
+          // 1.G-c — groupe SECTEURS du bandeau = préférence (comme la
+          // watchlist), pas de la donnée comptable → préservé.
+          tapeSectors: state.settings.tapeSectors,
         },
       };
 
