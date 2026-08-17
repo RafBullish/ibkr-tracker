@@ -13,6 +13,7 @@ import {
 import { applyAction } from './reducer';
 import { DEBOUNCE } from '../constants/timing';
 import { sanitizeTier, DEFAULT_TIER } from '../utils/sniperMeta';
+import { DEFAULT_SECTORS, sanitizeSectors } from '../config/tapeGroups';
 
 // ─── Storage Keys ────────────────────────────────────────────
 
@@ -50,10 +51,17 @@ function loadInitialState() {
 
   const settings = {
     liveRate: 0.88,
-    fxMode: 'manual',
+    // 1.G-c · D3 — le FX est AUTOMATIQUE par défaut. Le mode 'manual'
+    // (gel + badge MANUEL) est mort comme défaut : plus aucun store ne
+    // persiste 'manual' (cf. persistSettings), donc les utilisateurs
+    // existants sans clé `rm` retombent ici sur 'auto' — migration
+    // douce, rien à ré-saisir.
+    fxMode: 'auto',
     fxLastUpdated: null,
     fxSource: null,
     dailySnapshots: [],
+    // 1.G-c · D2 — groupe SECTEURS du bandeau, éditable en Réglages.
+    tapeSectors: DEFAULT_SECTORS,
   };
   const s = safeParse(STORAGE_KEYS.settings, null);
   if (s) {
@@ -79,6 +87,12 @@ function loadInitialState() {
     // Brique 13 — tier Sniper actif (coordonnée matrice E×C, clé `tier`).
     // sanitizeTier rejette silencieusement un payload corrompu → E0×C1.
     if (s.tier) settings.activeSniperTier = sanitizeTier(s.tier);
+    // 1.G-c · D2 — groupe SECTEURS personnalisé (clé courte `tsec`).
+    // Absent → défaut (DEFAULT_SECTORS déjà posé ci-dessus).
+    if (Array.isArray(s.tsec)) {
+      const clean = sanitizeSectors(s.tsec);
+      if (clean.length) settings.tapeSectors = clean;
+    }
   }
 
   // Walk the migration chain from the stored version up to CURRENT_SCHEMA_VERSION.
@@ -143,9 +157,11 @@ let prevSnapshot = {
 function persistSettings(settings) {
   try {
     const toSave = { r: settings.liveRate };
-    // Persist fxMode only when non-default ('auto') to save bytes;
-    // absence of `rm` on load means 'manual'.
-    if (settings.fxMode && settings.fxMode !== 'manual') toSave.rm = settings.fxMode;
+    // 1.G-c · D3 — le défaut est désormais 'auto'. On ne persiste `rm`
+    // que hors défaut (donc 'manual', opt-in explicite) : l'absence de
+    // `rm` au load = 'auto'. Aucun store existant ne portait 'manual'
+    // (l'ancienne logique ne le persistait déjà pas) → bascule douce.
+    if (settings.fxMode && settings.fxMode !== 'auto') toSave.rm = settings.fxMode;
     // Persist timestamp/source only when set (null = default = skip).
     if (settings.fxLastUpdated) toSave.rt = settings.fxLastUpdated;
     if (settings.fxSource) toSave.rs = settings.fxSource;
@@ -171,6 +187,14 @@ function persistSettings(settings) {
     if (settings.activeSniperTier) {
       const t = sanitizeTier(settings.activeSniperTier);
       if (t.e !== DEFAULT_TIER.e || t.c !== DEFAULT_TIER.c) toSave.tier = t;
+    }
+    // 1.G-c · D2 — groupe SECTEURS (clé courte `tsec`). Persisté
+    // seulement quand il diffère du défaut (économie d'octets).
+    if (Array.isArray(settings.tapeSectors)) {
+      const clean = sanitizeSectors(settings.tapeSectors);
+      if (clean.length && clean.join(',') !== DEFAULT_SECTORS.join(',')) {
+        toSave.tsec = clean;
+      }
     }
     localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(toSave));
   } catch {

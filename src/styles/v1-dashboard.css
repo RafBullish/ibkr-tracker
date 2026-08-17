@@ -133,6 +133,9 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  /* Taille pilotée par CSS (ex-inline 13.5) → scalable au palier ≥2000
+     pour aligner la densité de R2 sur R1 (1.G-c). */
+  font-size: 13.5px;
 }
 .mk-da--up { color: var(--pnl-up); }
 .mk-da--down { color: var(--pnl-down); }
@@ -463,6 +466,23 @@
   text-transform: uppercase;
 }
 
+/* 1.G-c · D3 — âge du taux FX (remplace le badge MANUEL). Fraîcheur =
+   signal neutre ; au-delà du seuil, ambre (JAMAIS rouge : la fraîcheur
+   n'est pas une perte). */
+.mk-fxage {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+  margin-left: 8px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.mk-fxage.is-stale {
+  color: var(--accent);
+}
+
 /* 3 groupes serrés sur une ligne — gaps FIXES ; le repli en 2
    rangées aux largeurs étroites est la réponse fluide déclarée
    (précédent ratifié 1.C.8). */
@@ -491,15 +511,23 @@
   margin-right: 4px;
 }
 
-/* ── R2 · MONDE ×10 — 2 rangées × 5, colonnes réglées ───────────── */
+/* ── R2 · MONDE — 1.G-c · D4 : DEUX rangées EXPLICITES (6 + 4).
+   Rangée 1 = ACTIONS · CRYPTO (CAC 40·EN 100·NIKKEI·SMI·BTC·ETH),
+   rangée 2 = MATIÈRES (GOLD·SILVER·CRUDE·NATGAS). Chaque rangée est
+   sa propre grille → le SMI reste avec les indices, jamais parmi les
+   matières. auto-fit au socle (repli gracieux étroit), figé à 6
+   colonnes au palier ≥1440 (cf. c3-hires). ── */
 .mk-wgrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
-  column-gap: 10px;
-  row-gap: 5px;
+  display: flex;
+  flex-direction: column;
+  row-gap: 4px;
   margin-top: 3px;
 }
-.mk-whr { display: none; }
+.mk-wrow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  column-gap: 8px;
+}
 
 .mk-wcell { min-width: 0; white-space: nowrap; }
 .mk-wtop { display: block; line-height: 1.1; }

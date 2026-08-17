@@ -6,6 +6,112 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.2-rc.8] — 2026-08-17
+
+**1.G-c — BANDEAU & COCKPIT. EN ATTENTE DU GO VISUEL (non mergée).** Les trois
+demandes du 16.08 jamais construites : le bandeau ne double plus le cockpit, le
+FX devient automatique, les symboles MONDE sont recentrés. Gel MarketDeck levé
+pour CONTENU / ÉCHELLE / DENSITÉ seulement (Doto, animation de tick, loi de
+couleur intouchés).
+
+### D2 — Le bandeau (TickerTape) en TROIS GROUPES
+
+- **Sortent** : indices / FX / matières (doublons stricts du cockpit et du
+  MONDE — DAX/FTSE/NIKKEI/BTC/ETH paraissaient deux fois). La redondance meurt.
+- **Entrent**, dans cet ordre, avec micro-étiquette de groupe et séparateurs
+  discrets : (1) **MAG 7** fixe (AAPL·MSFT·NVDA·GOOGL·AMZN·META·TSLA) ;
+  (2) **POSITIONS** = sous-jacents détenus, dynamique, **dédupliqué du Mag 7** —
+  chaque nom porte un **point ambre + son P&L latent** (argent réel → loi de
+  couleur : le SEUL rouge/vert « argent » du bandeau) ; groupe vide → il
+  DISPARAÎT (aucun placeholder) ; (3) **SECTEURS** = 8 leaders hors Mag 7,
+  **éditables en Réglages** (défaut LLY·JPM·XOM·WMT·HD·CAT·AVGO·NFLX), eux aussi
+  dédupliqués du Mag 7 ET des positions (un titre jamais deux fois).
+- **Non négociable technique — 429 garanti.** Nouvel endpoint **batch**
+  `/api/quotes?symbols=…` : N symboles en UNE requête (fini le fan-out
+  séquentiel `/api/quote/X` qui déclenchait le 429). Sources factorisées dans
+  `api/_quoteSources.js` (partagé avec l'ancienne route). **Cache CDN
+  PARTAGÉ** : `Cache-Control: public, s-maxage=30, stale-while-revalidate=60` +
+  URL déterministe (symboles normalisés + dédupliqués + **triés** côté client
+  ET serveur) → un seul objet de cache au bord de Vercel, partagé entre toutes
+  les instances et tous les clients (vérifiable via `x-vercel-cache: HIT` sur la
+  preview). **Preuve** : en navigateur, 3 requêtes batch/cycle (bandeau 13 ·
+  cockpit 18 · FX 1) au lieu de ~32 requêtes par-symbole ; zéro `/api/quote/X`.
+- Doto LED + flash au tick + couleurs marché (exception Bloomberg) INTOUCHÉS.
+
+### D3 — FX automatique (source unique)
+
+- **Le badge MANUEL meurt.** Le taux se rafraîchit avec le deck et affiche son
+  **ÂGE** (« il y a 32 s ») à la place. Défaut `fxMode` basculé `manual → auto`
+  (migration douce : aucun store existant ne portait 'manual' — l'ancienne
+  persistance ne le sérialisait déjà pas — donc tous retombent sur 'auto').
+- **Repli honnête** : dernier taux connu + âge, jamais muet, jamais figé passé
+  pour vif ; au-delà de 10 min l'âge passe **ambre** (fraîcheur ≠ perte, jamais
+  rouge). Tick 1 s isolé à la cellule (ne re-rend pas le deck), gelé sous
+  reduced-motion.
+- **Source UNIQUE** confirmée : `settings.liveRate` alimente déjà toutes les
+  conversions CHF ; le bridge V1.1 (mid IDEALPRO) sera un **swap de source**
+  (un seul hook `useFxLiveSync`), pas une réécriture.
+
+### D4 — MONDE recentré
+
+- DAX → **CAC 40** (`^FCHI`) · FTSE → **EN 100** (`^N100`, Euronext 100 — label
+  court, le nom complet débordait la cellule au plancher) · COPPER → **SMI**
+  (`^SSMI`). Les nouveaux symboles entrent dans le batch du cockpit.
+- **Correction post-GO (17.08)** : le SMI (indice actions) **quitte la rangée
+  MATIÈRES** et rejoint la **rangée 1** avec les indices (CAC 40 · EN 100 ·
+  NIKKEI · SMI · BTC · ETH) — un indice sous un en-tête « MATIÈRES » entre GOLD
+  et CRUDE était une incohérence. La rangée matières **se referme sur GOLD ·
+  SILVER · CRUDE · NATGAS**. MONDE recomposé en **deux rangées explicites**
+  (rangée 1 à 6 colonnes, rangée 2 des matières à 4 colonnes larges) pour que le
+  SMI reste avec les indices à tout palier ; densité MONDE resserrée au plancher
+  1591 pour tenir 6 colonnes sans chevauchement.
+
+### TickerTape — palier ≥2000 ajouté
+
+- Question de l'architecte : le bandeau avait-il un palier ≥2000 ? **Non** — sa
+  barème LED « salle des marchés » (92 px, prix 40) vit au palier ≥1440 et
+  restait IDENTIQUE de 1591 à 2560, alors que le MarketDeck grandit à ≥2000
+  (1.G-a). **Ajouté** : un palier `@≥2000` propre au bandeau — la barre
+  s'épaissit (92 → 104 px, la rangée AppShell est `auto` et suit) et la LED
+  grossit (prix 40 → 46, symbole 22 → 26, sparkline 84×46 → 96×52), à parité de
+  présence 4K avec les héros du deck. Doto, tick et couleurs marché intouchés.
+
+### Densité R1 ↔ R2 (vérification au passage)
+
+- À la cible 2560, R1 montait ses héros (34-38) mais les VALEURS de R2
+  (MONDE / FUT / FX-ligne / rangs AGENDA) restaient à leur base (~15-16) → R2
+  lisait « affamée ». Alignées au palier `@≥2000` (~×1,3, cran densité D2.F) —
+  au poids du secondaire de R1, pas au niveau héros (les grilles déborderaient).
+  `DeltaArrow` passe de la taille inline à CSS (`.mk-da`) pour être scalable.
+  Plancher 1591 : densité antérieure conservée (le bloc `@≥2000` ne s'y applique
+  pas).
+
+### Réglages
+
+- Section **Bandeau** ajoutée (`/settings/general`) : éditeur du groupe SECTEURS
+  (saisie libre espaces/virgules, plafond 12, normalisation via reducer
+  `SET_TAPE_SECTORS`, aperçu vivant, bouton Réinitialiser). `tapeSectors` =
+  préférence (clé courte `tsec`, persistée hors défaut, préservée par RESET_ALL
+  comme la watchlist).
+
+### Preuve
+
+- **555 tests** (+28 : `config/tapeGroups` composition/dédup, reducer
+  `SET_TAPE_SECTORS` + préservation RESET_ALL, `fetchQuotesBatch` « 1 requête
+  pour N », endpoint `api/quotes` tri/dédup/cache/plafond). `check:color-law` 0,
+  `check:doctrine` 0, build vert. Vérif visuelle @2560 ET @1591 : 3 groupes +
+  points ambre + P&L (+$299 vert / −$301 rouge / +$99 vert) + dédup (AAPL détenu
+  reste au Mag 7, NFLX passe en POSITIONS et sort de SECTEURS), FX « il y a N s »
+  (badge MANUEL absent), MONDE CAC 40 / EURONEXT 100 / SMI, R1↔R2 alignées,
+  0 overflow, éditeur Réglages exercé (V·KO·PEP → persisté → bandeau), console =
+  finnhub 500 pré-existant.
+
+**HORS PÉRIMÈTRE** (loggé) : micro-brique capture θ/spread, recette É4, bridge
+V1.1 (mid IDEALPRO). Batch chart / sparklines laissé tel quel (cadence 5 min,
+cache, skip-if-fresh — pas la source du 429).
+
+---
+
 ## [1.0.2-rc.7] — 2026-08-17
 
 **1.G-b — LE BLOC PORTES. EN ATTENTE DU GO VISUEL (non mergée).** Remplit le

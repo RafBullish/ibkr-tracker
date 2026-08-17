@@ -598,6 +598,73 @@
 .ticker-cell__change { font-size: 16px; }
 .ticker-cell__change-net { font-size: 15px; }
 
+/* ── 1.G-c · D2 — TROIS GROUPES ──────────────────────────────────
+   Étiquette de groupe (MAG 7 · POSITIONS · SECTEURS) : label discret
+   NON-LED (structure, pas une donnée) qui nomme la section. Séparateur
+   = filet vertical centré, plus court que les hairlines pleine hauteur
+   des cellules → la coupure de groupe se lit sans crier. */
+.ticker-group-label {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  font-family: var(--qc-font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  white-space: nowrap;
+  border-right: 1px solid var(--line-hairline);
+}
+
+.ticker-sep {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 1px;
+  height: 52%;
+  margin: 0 8px;
+  background: var(--line-soft);
+}
+
+/* Point ambre — marque « position détenue » (signal décisionnel, pas
+   une sémantique P&L). */
+.ticker-cell__dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: middle;
+}
+
+/* P&L latent — argent RÉEL : loi de couleur (rouge = perte, vert =
+   gain, neutre = plat). LED comme les autres valeurs du bandeau. */
+.ticker-cell__pnl {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+.ticker-cell__pnl.qc-profit { color: var(--pnl-up); }
+.ticker-cell__pnl.qc-loss { color: var(--pnl-down); }
+.ticker-cell__pnl.qc-text-secondary { color: var(--ink-mute); }
+
+/* LED sur le P&L latent (mêmes diodes que les autres valeurs). */
+.ticker-cell__pnl {
+  font-family: 'Doto Zero Plein', 'Doto Variable', var(--qc-font-num);
+  font-weight: 900;
+  font-variation-settings: 'ROND' 100;
+  letter-spacing: 0.03em;
+  font-size: 15px;
+  -webkit-text-stroke: 0.015em currentColor;
+  text-shadow:
+    0 0 2px color-mix(in srgb, currentColor 67%, transparent),
+    0 0 9px color-mix(in srgb, currentColor 25%, transparent);
+}
+
 .ticker-cell__sparkline {
   display: inline-flex;
   align-items: center;
