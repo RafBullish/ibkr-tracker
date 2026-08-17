@@ -21,7 +21,7 @@
 
 import { useEffect, useState } from 'react';
 import useMarketSession from './useMarketSession';
-import { useOpenPositions } from '../store/useStore';
+import { useOpenPositions, useSettings } from '../store/useStore';
 import { positionSignature } from '../utils/positions';
 import {
   recordSessionClose,
@@ -29,7 +29,7 @@ import {
   POSITION_MARKS_EVENT,
   POSITION_MARKS_KEY,
 } from '../utils/positionMarks';
-import { TIME } from '../constants/timing';
+import { TIME, FRESHNESS } from '../constants/timing';
 
 /** Jour de séance NY ('YYYY-MM-DD') d'un instant. */
 function nyDay(d) {
@@ -43,6 +43,7 @@ function nyDay(d) {
 export function usePositionMarksWriter() {
   const session = useMarketSession({ tickMs: TIME.ONE_MINUTE_MS });
   const positions = useOpenPositions();
+  const settings = useSettings();
 
   useEffect(() => {
     // Base = mid de CLÔTURE : uniquement pendant l'after-hours (post-clôture),
@@ -50,12 +51,20 @@ export function usePositionMarksWriter() {
     if (session.phase !== 'after') return;
     if (!positions || positions.length === 0) return;
     const now = new Date();
+    // Fraîcheur FEED-LEVEL : aucun horodatage de mark PAR POSITION n'existe,
+    // donc pos.pc n'est de confiance que si le snapshot live est frais (même
+    // seuil canonique que le badge LIVE / useAvailableCapital). Non frais →
+    // le writer laisse un TROU (jamais de mid douteux) qui nourrit isPartial.
+    const ts = settings?.ibkrLiveData?.timestamp;
+    const ageMs = ts ? now.getTime() - new Date(ts).getTime() : Infinity;
+    const fresh = Number.isFinite(ageMs) && ageMs >= 0 && ageMs < FRESHNESS.LIVE_DATA_MAX_AGE_MS;
     recordSessionClose(positions, {
       day: nyDay(now),
       stamp: now.toISOString(),
       sig: positionSignature,
+      fresh,
     });
-  }, [session, positions]);
+  }, [session, positions, settings]);
 }
 
 export function usePositionMarksMap() {

@@ -127,20 +127,38 @@ function recomputePic(rec) {
  * @param {string} opts.day    'YYYY-MM-DD' du jour de séance (fourni par l'appelant)
  * @param {string} [opts.stamp] ISO d'horodatage (fourni ; jamais Date.now interne)
  * @param {(p:Object)=>string} [opts.sig] fonction de signature (positionSignature)
+ * @param {boolean} [opts.fresh=true] le flux live est-il frais ? (feed-level ; aucun
+ *   horodatage de mark PAR POSITION n'existe). Non frais → mid douteux → TROU.
  * @returns {Object} la carte marks mise à jour
  */
 export function recordSessionClose(positions, opts = {}) {
-  const { day, stamp = null, sig } = opts;
+  const { day, stamp = null, sig, fresh = true } = opts;
   if (!day || typeof sig !== 'function' || !Array.isArray(positions)) return readPositionMarks();
   const root = readRoot();
   let mutated = false;
 
   for (const pos of positions) {
     if (!pos || pos.as === 'Action') continue; // options seulement (portes = premium long)
-    const close = toFloat(pos.pc);
-    if (!(close > 0)) continue; // pas de mark exploitable
     const signature = sig(pos);
     if (!signature) continue;
+
+    const close = toFloat(pos.pc);
+    // TROU : mid absent / null / ≤0 / NaN OU flux NON FRAIS (stale feed). Un
+    // mid douteux ne s'enregistre JAMAIS. Un trou casse la garantie de
+    // complétude du pic → il DOIT nourrir isPartial sur un record EXISTANT
+    // (la porte TRAIL dira « · pic partiel »).
+    const hole = !(close > 0) || !fresh;
+    if (hole) {
+      const existing = root.marks[signature];
+      if (existing && typeof existing === 'object' && !existing.isPartial) {
+        existing.isPartial = true;
+        existing.updatedAt = stamp;
+        mutated = true;
+      }
+      // NOUVELLE position + trou : on n'amorce PAS (aucun mid fiable). Le pic
+      // partiel viendra de peakSince > entryDay à la 1re amorce fiable.
+      continue;
+    }
 
     let rec = root.marks[signature];
     if (!rec || typeof rec !== 'object') {

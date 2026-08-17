@@ -5,11 +5,15 @@
 //  BOURSE, pas en jours calendaires. Ce module compte les jours ouvrés
 //  (lundi→vendredi) entre deux dates.
 //
-//  ⚠ APPROXIMATION ASSUMÉE : les JOURS FÉRIÉS US ne sont PAS gérés (aucune
-//  table de fériés dans le repo). Un jour férié compté comme ouvré décale
-//  la fenêtre d'au plus un jour — écart borné et documenté, jamais un
-//  faux « pas d'earnings ». Convention de fuseau : midi (T12:00:00) comme
-//  le reste de dates.js, pour éviter les bascules de jour au DST.
+//  ⚠ DÉFAUT DATÉ — À CORRIGER AVANT LE TAG (recette É4, décision architecte
+//  17.08.2026). Les JOURS FÉRIÉS US ne sont PAS gérés. Ce n'est PAS une
+//  simple approximation : une SEMAINE fériée décale la fenêtre P4 et peut
+//  faire TENIR une position à travers une publication de résultats (la porte
+//  se croit hors fenêtre alors qu'elle y est). Correctif prévu : une table
+//  de dates fériées US dans `parametres.app.json` (clé `jours_feries_us`),
+//  lue ici pour sauter aussi les jours ouvrés fériés (cf. ROADMAP recette Q-C).
+//  Convention de fuseau : midi (T12:00:00) comme dates.js, pour éviter les
+//  bascules de jour au DST.
 // ═══════════════════════════════════════════════════════════════
 
 /**

@@ -103,3 +103,44 @@ describe('positionMarks — picPctOf + robustesse', () => {
     expect(POSITION_MARKS_KEY).toBe('qc:positionMarks');
   });
 });
+
+describe('positionMarks — TROU (mid absent / périmé) nourrit isPartial', () => {
+  // Amorce COMPLÈTE (enregistrement dès le jour d'entrée → isPartial false).
+  const seedComplete = () =>
+    recordSessionClose(
+      [{ ...POS, di: '2026-08-17', entryTs: '2026-08-17T14:00:00Z' }],
+      opts('2026-08-17')
+    );
+
+  it('record complet puis jour à mid ABSENT → isPartial flippe, aucun mid ajouté', () => {
+    seedComplete();
+    expect(readMark(SIG).isPartial).toBe(false);
+    recordSessionClose([{ ...POS, di: '2026-08-17', pc: '0' }], opts('2026-08-18'));
+    const rec = readMark(SIG);
+    expect(rec.isPartial).toBe(true); // le trou casse la garantie de complétude
+    expect(rec.series).toEqual([{ d: '2026-08-17', mid: 6 }]); // aucun mid douteux enregistré
+  });
+
+  it('flux NON FRAIS (fresh:false) → TROU → isPartial, le mid potentiellement périmé n’est PAS enregistré', () => {
+    seedComplete();
+    recordSessionClose([{ ...POS, di: '2026-08-17', pc: '99' }], {
+      day: '2026-08-18',
+      stamp: 'x',
+      sig: positionSignature,
+      fresh: false,
+    });
+    const rec = readMark(SIG);
+    expect(rec.isPartial).toBe(true);
+    expect(rec.series.map((p) => p.mid)).toEqual([6]); // le 99 (stale) est refusé
+  });
+
+  it('NOUVELLE position + mid absent → aucun record (jamais un faux pic)', () => {
+    recordSessionClose([{ ...POS, pc: '' }], opts('2026-08-17'));
+    expect(readMark(SIG)).toBeNull();
+  });
+
+  it('fresh omis = défaut true (rétro-compatible, enregistrement normal)', () => {
+    recordSessionClose([POS], opts('2026-08-17'));
+    expect(readMark(SIG)).not.toBeNull();
+  });
+});

@@ -57,6 +57,14 @@ mandatée : **registre → saisie → portes → palier**.
   516 tests, build ✓. **Q-C n'agit jamais** (alerte seule).
 - **Q-D ❌ MORT** — plus d'échelle Edge en V3, plus de palier à câbler. Le bloc
   PORTES du deck reste **1.G-b** (hors périmètre, lot bloqué données).
+- **RECETTE É4 — DÉFAUT DATÉ, À CORRIGER AVANT LE TAG (décision architecte
+  17.08)** : `utils/tradingDays.js` NE gère PAS les jours fériés US. Ce n'est
+  PAS une approximation — une **semaine fériée décale la fenêtre P4** (J−7/J−5
+  en jours de bourse) et peut faire **TENIR une position à travers une
+  publication de résultats** (la porte se croit hors fenêtre). Correctif :
+  **table de dates fériées US dans `parametres.app.json`** (clé `jours_feries_us`),
+  exposée via `registre.js`, consommée par `tradingDaysUntil` (sauter aussi les
+  jours ouvrés fériés). À solder avant tout tag v1.0.2.
 - **Micro-brique E2/E4 (à venir)** — capture manuelle à l'entrée (θ d'entrée sur
   la prime `pi` ; bid/ask pour le spread), pour allumer E2 et E4.
 
