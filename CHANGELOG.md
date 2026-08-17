@@ -6,6 +6,52 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.2-rc.7] — 2026-08-17
+
+**1.G-b — LE BLOC PORTES. EN ATTENTE DU GO VISUEL (non mergée).** Remplit le
+vide du deck avec le seul contenu qui compte au quotidien et fait mourir la
+bande décision (doublon). **Règle absolue : le deck NE RECALCULE aucun seuil** —
+il consomme `utils/gates.js` ; toute distance manquante a été ajoutée au MOTEUR.
+
+- **Moteur** — deux exports purs ajoutés à `gates.js` : `gateDistances(row, ctx)`
+  (état + distance de CHAQUE porte, TOUJOURS — complément d'`evaluateGates` qui
+  ne rend que celles qui sonnent) et `porteProximities` / `nearestPorte` (barres
+  + « porte la plus proche »). Tous seuils du registre, zéro nombre en dur.
+- **Bloc PORTES** (`hero1/PortesBloc.jsx`, sous les 4 panneaux du deck) — une
+  rangée par position : ticker · contrat · P&L % puis **SL** (P&L % + distance à
+  −30/−35) · **TRAIL** (armée + pic + seuil sortie = pic×0,60 + « pic partiel »)
+  · **DTE** (jours avant 45) · **EARN** (jours avant J−7/J−5 + condition pnl>0,
+  absent → indéterminée grisée) · **STAG** (jours avant J+30, grisée hors bande
+  −20/+30) — chacune en S2 + barre de proximité. En-tête **PORTE LA PLUS
+  PROCHE**. **N=0** : cellule pleine largeur « AUCUNE POSITION · déployable
+  <montant> » (jamais six tirets). Kill switch absorbé de la bande.
+- **DÉPLOYABLE** (nouveau S0 héros du panneau CAPITAL) = `sizing.S1 × NLV` ;
+  LIQUIDITÉ DISPO démote en cellule S1. **Piège N-max** : `sizing.S4_n_max`
+  (N=1 sous 6000 CHF) → si positions ≥ N max, « N max atteint » + montant en
+  méta (jamais un faux go). NLV absente → indéterminée, **sans repli sur les
+  dépôts** ; N max indéterminé si le capital CHF est inconnu.
+- **LA BANDE DÉCISION MORTE — absorbée** : `DecisionBand` + `AttentionZone` /
+  `FormeZone` / `CapitalZone` supprimés (grille `decision` retirée de
+  `v4-dashboard.css`) ; `deriveForme` / `deriveCapital` retirés de
+  `decision/model.js` (`deriveAttention` SURVIT — `useAttentionMap` sert les
+  colonnes GATE de Positions / LivePositions / PreMarket, INTACTES). **Preuve
+  qu'aucun chiffre n'est perdu** : FORME (SÉRIE/MTD/EXPECTANCY) et CAPITAL
+  (EXPOSITION/DISPONIBLE/RISK $/Δ/Θ) sont des doublons stricts du deck / Héros 2.
+  Seul le **chip TIER** (décoration ergonomique, pas un chiffre) disparaît — il
+  reste affiché dans Settings/General. Espace vertical récupéré pour le budget.
+- **Deux corrections « ne pas faire » respectées** : PROFIT FACTOR reste
+  ALL-TIME (aucune fenêtre 30) ; Θ % PRIME/JOUR reste NEUTRE (pas de coloration
+  au seuil 0,8 % — filtre d'entrée sur la prime, base ≠ combustion sur le mark).
+- **Preuve** : 527 tests (+11 : gateDistances/nearestPorte aux bornes,
+  DÉPLOYABLE + N-max) ; check:doctrine 0, check:color-law 0, build vert. Vérif
+  @1591 ET @2560 : bloc PORTES 3 états de porte (SL rouge −35 / ambre / grisé),
+  TRAIL « pic partiel », PORTE LA PLUS PROCHE ; DÉPLOYABLE aux DEUX cas (N max
+  atteint + montant libre 60 % NLV) + indéterminée ; N=0 fini ; bande absente ;
+  0 overflow. **HORS PÉRIMÈTRE** : NON RÉGLÉ J+1, IV entrée→maintenant, capture
+  θ/spread, bridge.
+
+---
+
 ## [1.0.2-rc.6] — 2026-08-17
 
 **Q-C — LES PORTES (chantier conformité Sniper V3, dernière brique bloquante).

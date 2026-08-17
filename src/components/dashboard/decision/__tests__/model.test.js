@@ -6,7 +6,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { describe, it, expect } from 'vitest';
-import { deriveAttention, deriveForme, deriveCapital, SEV } from '../model';
+import { deriveAttention, SEV } from '../model';
 
 // Row de position enrichie (forme fournie par useSniperGates, Q-C).
 const gateRow = (over = {}) => ({
@@ -105,80 +105,5 @@ describe('deriveAttention — dédup, tri, débordement', () => {
   it('SEV : perte > critique > armé', () => {
     expect(SEV.PERTE).toBeGreaterThan(SEV.CRITIQUE);
     expect(SEV.CRITIQUE).toBeGreaterThan(SEV.ARME);
-  });
-});
-
-describe('deriveForme — cohérence Héros 2', () => {
-  const trades = (n, sign = 1) =>
-    Array.from({ length: n }, (_, i) => ({
-      pnl: sign * (i + 1) * 10,
-      date: `2026-07-${String(i + 1).padStart(2, '0')}`,
-      tk: 'AAPL',
-    }));
-
-  it('pastilles : 18 max, chronologie conservée, tones win/loss/flat', () => {
-    const perTrade = [...trades(20), { pnl: -5, date: '2026-07-25', tk: 'TSLA' }, { pnl: 0, date: '2026-07-26', tk: 'NVDA' }];
-    const f = deriveForme({ perTrade, matrix: { n: 22, wins: 20, losses: 1, expectancy: 12 } });
-    expect(f.dots).toHaveLength(18);
-    expect(f.dots[f.dots.length - 1].tone).toBe('flat');
-    expect(f.dots[f.dots.length - 2].tone).toBe('loss');
-    expect(f.total).toBe(22);
-  });
-
-  it('streak : positif → V, négatif → D, 0 → null', () => {
-    expect(deriveForme({ currentStreak: 3 }).streak).toEqual({ count: 3, kind: 'V' });
-    expect(deriveForme({ currentStreak: -2 }).streak).toEqual({ count: 2, kind: 'D' });
-    expect(deriveForme({ currentStreak: 0 }).streak).toBeNull();
-  });
-
-  it('expectancy : « — » (null) sous 10 trades décisifs, valeur Héros 2 sinon', () => {
-    const under = deriveForme({ matrix: { n: 9, wins: 5, losses: 4, expectancy: 42 } });
-    expect(under.expectancy).toBeNull();
-    expect(under.decisive).toBe(9);
-    const over = deriveForme({ matrix: { n: 12, wins: 7, losses: 5, expectancy: 42 } });
-    expect(over.expectancy).toBe(42);
-  });
-
-  it('breakeven ne comptent pas comme décisifs', () => {
-    const f = deriveForme({ matrix: { n: 12, wins: 5, losses: 4, expectancy: 42 } });
-    expect(f.decisive).toBe(9);
-    expect(f.expectancy).toBeNull();
-  });
-});
-
-describe('deriveCapital — miroir Héros 1 (CAP 70 % retiré en Q-C)', () => {
-  const metrics = { netLiquidationValueUsd: 20000, totalExposure: 6800 };
-  const greeks = { sumDelta: 142.4, notionalDelta: 4520, thetaDaily: -38.2 };
-
-  it('déployé + % NLV, plus AUCUN cap (doctrine V1 morte contredisant S1)', () => {
-    const c = deriveCapital({ metrics, greeks, tier: { notionalMaxPct: 70, label: 'A · E0×C1' } });
-    expect(c.deployed).toBe(6800);
-    expect(c.deployedPct).toBeCloseTo(34);
-    expect(c.capPct).toBeUndefined();
-    expect(c.tierLabel).toBe('A · E0×C1');
-  });
-
-  it('disponible : réel IBKR seulement si availableIsReal ET valeur présente', () => {
-    const real = deriveCapital({ metrics, greeks, availableUsd: 12000, availableIsReal: true, tier: null });
-    expect(real.availableIsReal).toBe(true);
-    expect(real.availablePct).toBeCloseTo(60);
-    const est = deriveCapital({ metrics, greeks, availableUsd: 12000, availableIsReal: false, tier: null });
-    expect(est.availableIsReal).toBe(false);
-    const none = deriveCapital({ metrics, greeks, availableUsd: null, availableIsReal: true, tier: null });
-    expect(none.availableIsReal).toBe(false);
-  });
-
-  it('risk $ + greeks neutres transmis tels quels', () => {
-    const c = deriveCapital({ metrics, greeks, riskDollar: 1190, tier: null });
-    expect(c.riskDollar).toBe(1190);
-    expect(c.riskPct).toBeCloseTo(5.95);
-    expect(c.deltaShares).toBeCloseTo(142.4);
-    expect(c.thetaDay).toBeCloseTo(-38.2);
-  });
-
-  it('NLV absent → aucun % fabriqué', () => {
-    const c = deriveCapital({ metrics: { totalExposure: 500 }, greeks: {}, riskDollar: 100, tier: null });
-    expect(c.deployedPct).toBeNull();
-    expect(c.riskPct).toBeNull();
   });
 });

@@ -56,7 +56,7 @@ mandatée : **registre → saisie → portes → palier**.
   (`--pnl-down`, badge STOP). check:doctrine 0 (+ détecteurs P2/P5), color-law 0,
   516 tests, build ✓. **Q-C n'agit jamais** (alerte seule).
 - **Q-D ❌ MORT** — plus d'échelle Edge en V3, plus de palier à câbler. Le bloc
-  PORTES du deck reste **1.G-b** (hors périmètre, lot bloqué données).
+  PORTES du deck a été livré en **1.G-b** (voir section v1.0.2).
 - **RECETTE É4 — DÉFAUT DATÉ, À CORRIGER AVANT LE TAG (décision architecte
   17.08)** : `utils/tradingDays.js` NE gère PAS les jours fériés US. Ce n'est
   PAS une approximation — une **semaine fériée décale la fenêtre P4** (J−7/J−5
@@ -84,11 +84,21 @@ mandatée : **registre → saisie → portes → palier**.
   pastilles r2 / frontier « 1.C intangible » retiré. **rc.3** : Θ % PAR
   POSITION dénominateur = MARK courant + ticker + DTE ; HWM méta « pic NLV
   {niveau} · date ». Recette @2560 + @1591, 415 tests, color-law 0, build ✓.
-- **1.G-b ⏳ (à venir — lot BLOQUÉ sur les données)** — bloc PORTES (SL /
-  TRAIL / DTE / EARNINGS / STAGNATION), DÉPLOYABLE (sizing), NON RÉGLÉ J+1,
-  IV entrée→maintenant, PF fenêtre 30. Dépend du registre `parametres.json`
-  + briques Q-B (saisie) / Q-C (marks `qc:positionMarks`) — précondition
-  Q1-Q6 non tenue.
+- **1.G-b ✅ (1.0.2-rc.7, EN ATTENTE DU GO VISUEL — branche
+  `v1/1g-b-portes-deck`)** — LE BLOC PORTES. Débloqué par Q-A→Q-C (registre +
+  moteur `gates.js` + writer `qc:positionMarks`). Bloc PORTES (une rangée/
+  position : SL distance −30/−35 · TRAIL pic/sortie pic×0,60/pic partiel · DTE
+  avant 45 · EARN fenêtre J−7/J−5 + condition pnl>0/indéterminée · STAG avant
+  J+30/grisée hors bande) + en-tête PORTE LA PLUS PROCHE + N=0 « AUCUNE POSITION
+  · déployable ». Moteur : `gateDistances`/`nearestPorte` (règle absolue = le
+  deck ne recalcule aucun seuil). DÉPLOYABLE (S0) = sizing.S1 × NLV + piège
+  N-max (sizing.S4, « N max atteint »), NLV absente → indéterminée. **Bande
+  décision MORTE** (absorbée — ATTENTION→bloc, CAPITAL/FORME doublons supprimés,
+  `deriveAttention` survit ; TIER chip décoratif retiré). Corrections : PF
+  all-time, Θ% neutre. **NON dans cette brique** : NON RÉGLÉ J+1, IV
+  entrée→maintenant, PF fenêtre 30 (mort — hors carte V3), capture θ/spread,
+  bridge. 527 tests, doctrine 0, color-law 0, build ✓, vérif @1591+@2560.
+  **Changement visuel majeur → GO Rafael requis avant merge.**
 
 ---
 

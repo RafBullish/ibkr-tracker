@@ -93,6 +93,53 @@
 .pf-bar__fill { position: absolute; left: 0; top: 0; bottom: 0; background: color-mix(in srgb, var(--ink-soft) 50%, transparent); border-radius: 2px; }
 .pf-bar__mark { position: absolute; top: -1px; bottom: -1px; width: 1px; background: var(--accent-amber); }
 
+/* ── 1.G-b · BLOC PORTES — les 5 portes de sortie, une rangée/position ──
+   Pleine largeur sous les 4 panneaux. Absorbe la zone ATTENTION morte.
+   Consomme utils/gates.js (gateDistances) : ZÉRO seuil recalculé ici.
+   Couleur : porte franchie = ambre ; SEULE exception ROUGE, P1 −35 %. */
+.pf-portes { border-bottom: 1px solid var(--hairline-rest); padding: 10px 22px 12px; display: flex; flex-direction: column; gap: 8px; }
+.pf-portes__head { display: flex; align-items: baseline; gap: 12px; }
+.pf-portes__head-lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-mute); white-space: nowrap; }
+.pf-portes__head-val { font-family: var(--qc-font-num); font-size: 16px; font-weight: 700; color: var(--accent-amber); font-variant-numeric: tabular-nums; letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Kill switch absorbé de la bande (ambre, JAMAIS rouge — pas une perte constatée). */
+.pf-portes__kill { display: flex; align-items: center; gap: 10px; padding: 3px 8px; border-radius: 2px; box-shadow: inset 2px 0 0 var(--accent-amber); background: color-mix(in srgb, var(--accent-amber) 7%, transparent); cursor: pointer; white-space: nowrap; }
+.pf-portes__kill:focus-visible { outline: 1px solid var(--accent-amber); outline-offset: -1px; }
+.pf-portes__kill-msg { font-family: var(--qc-font-mono); font-size: 12px; color: var(--ink-pure); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; }
+
+/* N=0 — pleine largeur, air fini (jamais six tirets ni graphe vide). */
+.pf-portes__empty { display: flex; align-items: baseline; gap: 12px; padding: 8px 2px; }
+.pf-portes__empty-lbl { font-size: 13px; font-weight: 700; letter-spacing: 0.1em; color: var(--ink-soft); }
+.pf-portes__empty-val { font-family: var(--qc-font-num); font-size: 15px; color: var(--ink-mute); font-variant-numeric: tabular-nums; }
+.pf-portes__empty-chf { color: var(--ink-mute); }
+
+/* Rangées : id (ticker · contrat · P&L %) | 5 portes en ligne. */
+.pf-portes__rows { display: flex; flex-direction: column; gap: 0; }
+.pf-porte-row { display: grid; grid-template-columns: minmax(110px, 0.7fr) 4fr; gap: 14px; align-items: stretch; padding: 6px 0; border-top: 1px solid var(--hairline-rest); cursor: pointer; }
+.pf-porte-row:first-child { border-top: none; }
+.pf-porte-row:hover { background: color-mix(in srgb, var(--ink-pure) 3%, transparent); }
+.pf-porte-row:focus-visible { outline: 1px solid var(--accent-amber); outline-offset: -1px; }
+.pf-porte-row__id { display: flex; flex-direction: column; gap: 1px; min-width: 0; justify-content: center; }
+.pf-porte-row__tk { font-family: var(--qc-font-num); font-size: 15px; font-weight: 700; color: var(--ink-pure); letter-spacing: 0.02em; }
+.pf-porte-row__sub { font-size: 10px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pf-porte-row__pnl { font-family: var(--qc-font-num); font-size: 13px; font-variant-numeric: tabular-nums slashed-zero; }
+
+.pf-porte-row__gates { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; min-width: 0; }
+.pf-porte { display: flex; flex-direction: column; gap: 0; min-width: 0; overflow: hidden; padding-left: 9px; border-left: 1px solid var(--hairline-rest); }
+.pf-porte__lbl { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-mute); white-space: nowrap; }
+.pf-porte__val { font-family: var(--qc-font-num); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-soft); line-height: 22px; white-space: nowrap; }
+.pf-porte__meta { font-size: 9.5px; color: var(--ink-mute); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 12px; line-height: 12px; }
+.pf-porte__barslot { height: 6px; display: flex; align-items: center; margin-top: 2px; }
+.pf-porte__bar { position: relative; width: 100%; height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--ink-pure) 9%, transparent); }
+.pf-porte__bar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: color-mix(in srgb, var(--ink-soft) 50%, transparent); }
+/* Tons : AMBRE (porte franchie/armée) · ROUGE (P1 −35 % perte réelle) · GRISÉ. */
+.pf-porte--ambre .pf-porte__val { color: var(--accent-amber); }
+.pf-porte--ambre .pf-porte__bar-fill { background: color-mix(in srgb, var(--accent-amber) 70%, transparent); }
+.pf-porte--rouge .pf-porte__val { color: var(--pnl-down); }
+.pf-porte--rouge .pf-porte__bar-fill { background: color-mix(in srgb, var(--pnl-down) 70%, transparent); }
+.pf-porte--grise { opacity: 0.5; }
+.pf-porte--grise .pf-porte__val { color: var(--ink-mute); }
+
 /* ── 3 · Séparation forte données / graphe ──────────────────────── */
 .lh-zonesep { display: flex; align-items: center; gap: 12px; padding: 9px 22px; background: color-mix(in srgb, var(--depth-void) 78%, transparent); border-top: 2px solid color-mix(in srgb, var(--ink-mute) 42%, transparent); border-bottom: 1px solid var(--hairline-rest); }
 .lh-zonesep__label { font-size: 12px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-soft); }

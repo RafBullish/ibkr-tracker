@@ -22,7 +22,6 @@ import { useEffect, useMemo } from 'react';
 import MarketDeck from '../components/dashboard/MarketDeck';
 import Hero1 from '../components/dashboard/Hero1';
 import Hero2 from '../components/dashboard/Hero2';
-import DecisionBand from '../components/dashboard/decision/DecisionBand';
 import RiskMatrix from '../components/dashboard/RiskMatrix';
 import LivePositions from '../components/dashboard/LivePositions';
 import Watchlist from '../components/dashboard/Watchlist';
@@ -137,9 +136,9 @@ export default function Dashboard() {
         {/* 1.E — Héros 2 : Réalisé pleine largeur (cumulé/quotidien/
             distribution + matrice de non-perte). Remplace DailyPnLChart. */}
         <Hero2 area="hero2" />
-        {/* 1.F — BANDE DÉCISION : étage DÉCISION (ATTENTION · FORME ·
-            CAPITAL). Absorbe AlertsFeed (fusion U7 → ATTENTION). */}
-        <DecisionBand metrics={portfolioMetrics} greeks={greeks} area="decision" />
+        {/* 1.G-b — BANDE DÉCISION MORTE : absorbée par le BLOC PORTES du
+            deck (Héros 1). ATTENTION → bloc PORTES ; FORME / CAPITAL =
+            doublons du deck, supprimés (aucun chiffre perdu). */}
         <RiskMatrix metrics={riskMetrics} area="risk" />
         {/* É3.1 — greeks (agrégat canonique) passé au footer : Δ éq.
             actions / Σ Θ $/J = MÊMES chiffres que deck + bande CAPITAL. */}
