@@ -26,7 +26,9 @@ export const REGISTRE = doctrine;
 export const REGISTRE_APP = app;
 
 const P1 = doctrine.portes.P1_sl;
+const P2 = doctrine.portes.P2_trail;
 const P3 = doctrine.portes.P3_dte;
+const P4 = doctrine.portes.P4_earnings;
 const P5 = doctrine.portes.P5_stagnation;
 
 // ── PORTE P1 · STOP-LOSS ────────────────────────────────────────────
@@ -42,8 +44,10 @@ export const SL_EXECUTION_PCT = Math.round(P1.execution_pct * 100);
 export const SL_EXECUTION_MAGNITUDE = Math.abs(P1.execution_pct);
 /** Magnitude en points de pourcentage : 35. */
 export const SL_EXECUTION_MAGNITUDE_PCT = Math.abs(Math.round(P1.execution_pct * 100));
-/** Palier d'ALERTE (avant exécution) : -30. Exposé pour Q-C — aucun site code aujourd'hui. */
+/** Palier d'ALERTE (avant exécution) : -30. */
 export const SL_ALERTE_PCT = Math.round(P1.alerte_pct * 100);
+/** Fraction signée du palier d'alerte : -0.30. */
+export const SL_ALERTE_FRAC = P1.alerte_pct;
 
 // ── PORTE P3 · DTE ──────────────────────────────────────────────────
 /** Jour-porte DTE de la doctrine : 45. */
@@ -66,8 +70,28 @@ export const STAGNATION_BANDE_HAUTE_PCT = Math.round(P5.bande_haute_pct * 100);
 // expose depuis la source unique pour que Q-C les câble sans re-hardcoder.
 /** P2 trailing : { activation_pic_pct 0.50, part_du_gain_rendue 0.40, … }. */
 export const P2_TRAIL = doctrine.portes.P2_trail;
+/** P2 · pic déclencheur : le trailing s'arme quand le pic atteint +50 %. */
+export const P2_ACTIVATION_FRAC = P2.activation_pic_pct; // 0.50
+/** P2 · part du gain rendue avant sortie : 0.40. */
+export const P2_PART_RENDUE_FRAC = P2.part_du_gain_rendue; // 0.40
+/** P2 · facteur de sortie = (1 − part rendue) : le seuil de sortie = pic_pct × 0.60. */
+export const P2_SORTIE_FACTEUR = 1 - P2.part_du_gain_rendue; // 0.60
+/** P2 · plancher de gain : AUCUN en V3 (la V2 avait +12 %, la V3 ne l'a pas). */
+export const P2_PLANCHER_FRAC = P2.plancher_pct; // null
+/** P2 · le pic ignore l'intraday (base = mid de clôture de session). */
+export const P2_INTRADAY_IGNORE = P2.intraday_ignore; // true
 /** P4 earnings : { fenetre_debut_jours 7, fenetre_fin_jours 5, unite jours_de_bourse, … }. */
 export const P4_EARNINGS = doctrine.portes.P4_earnings;
+/** P4 · début de fenêtre earnings : J−7 (jours de bourse). */
+export const P4_FENETRE_DEBUT_JOURS = P4.fenetre_debut_jours; // 7
+/** P4 · fin de fenêtre earnings : J−5 (jours de bourse). */
+export const P4_FENETRE_FIN_JOURS = P4.fenetre_fin_jours; // 5
+/** P4 · unité de la fenêtre : jours de bourse. */
+export const P4_UNITE = P4.unite; // 'jours_de_bourse'
+/** P5 · bande basse de stagnation, fraction signée : -0.20. */
+export const STAGNATION_BANDE_BASSE_FRAC = P5.bande_basse_pct; // -0.20
+/** P5 · bande haute de stagnation, fraction signée : +0.30. */
+export const STAGNATION_BANDE_HAUTE_FRAC = P5.bande_haute_pct; // 0.30
 /** Critère θ d'entrée : θ absolu / prime mid, seuil 0.008 (0,8 %/jour), par position. */
 export const THETA_MAX_PCT_PRIME_JOUR = doctrine.entree.E2_theta_max_pct_prime_jour;
 /** E4 · spread max en fraction du mid : 0.30. Consommé par le marquage de violation Q-B. */

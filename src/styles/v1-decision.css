@@ -25,6 +25,10 @@
 .db-line:focus-visible { outline: 1px solid var(--accent-amber); outline-offset: -1px; }
 /* Hairline gauche AMBRE sur les lignes critiques (signal décisionnel). */
 .db-line--critique { box-shadow: inset 2px 0 0 var(--accent-amber); }
+/* Q-C — SEULE exception ROUGE : P1 exécution −35 % = perte RÉELLE constatée
+   (loi de couleur §6). Le −30 % (alerte) et toutes les autres portes restent
+   ambre. Aucun greek dans la bande → check:color-law reste à 0. */
+.db-line--perte { box-shadow: inset 2px 0 0 var(--pnl-down); }
 /* Colonnes tenues (au cordeau) : badge / ticker / type à largeur
    minimale fixe → les métriques s'alignent verticalement. */
 .db-line__tk { min-width: 52px; font-family: var(--qc-font-num); font-size: 14px; font-weight: 700; letter-spacing: 0.02em; color: var(--ink-pure); }
@@ -41,6 +45,8 @@
 .db-badge { flex-shrink: 0; display: inline-flex; justify-content: center; min-width: 56px; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 2px; padding: 1px 5px; line-height: 1.3; }
 .db-badge--critique { color: var(--depth-void); border: 1px solid var(--accent-amber); background: var(--accent-amber); }
 .db-badge--arme { color: color-mix(in srgb, var(--accent-amber) 80%, var(--ink-soft)); border: 1px solid color-mix(in srgb, var(--accent-amber) 30%, transparent); background: transparent; }
+/* Q-C — P1 exécution −35 % : perte réelle → ROUGE (--pnl-down). */
+.db-badge--perte { color: var(--depth-void); border: 1px solid var(--pnl-down); background: var(--pnl-down); }
 
 /* Kill switch déclenché — ligne prioritaire pleine largeur en tête. */
 .db-kill { display: flex; align-items: center; gap: 10px; min-height: 26px; margin-bottom: 4px; padding: 2px 10px; border-radius: 2px; box-shadow: inset 2px 0 0 var(--accent-amber); background: color-mix(in srgb, var(--accent-amber) 7%, transparent); cursor: pointer; white-space: nowrap; }

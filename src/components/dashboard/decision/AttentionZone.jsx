@@ -14,7 +14,8 @@ import { fmtUsdSigned } from '../hero1/kit';
 // 1.F-c1 C3 — registre terminal : ARMED / CRITICAL (parité avec le
 // vocabulaire validé de la page : ARMED de l'AgendaCell, LIVE/REAL de
 // la StatusBar). Le reste de la bande reste en français.
-const BADGE = { critique: 'CRITICAL', arme: 'ARMED' };
+// Q-C — 'perte' = P1 exécution −35 % (perte réelle constatée), badge STOP en ROUGE.
+const BADGE = { perte: 'STOP', critique: 'CRITICAL', arme: 'ARMED' };
 
 export default function AttentionZone({ attention }) {
   const navigate = useNavigate();

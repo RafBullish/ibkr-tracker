@@ -83,7 +83,7 @@ function GateBadge({ line }) {
       className={`db-badge db-badge--${line.severity}`}
       title={`${line.metric}${line.others > 0 ? ` · +${line.others} signal${line.others > 1 ? 'aux' : ''}` : ''}`}
     >
-      {line.severity === 'critique' ? 'CRITICAL' : 'ARMED'}
+      {line.severity === 'perte' ? 'STOP' : line.severity === 'critique' ? 'CRITICAL' : 'ARMED'}
     </span>
   );
 }

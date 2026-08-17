@@ -40,7 +40,6 @@ import { formatUsd, formatPnlUsd, fmtExpiry, fmtStrike, fmtUsd2 } from '../../ut
 import { holdingDays, todayDateString } from '../../utils/dates';
 import { toFloat, ensurePositive, generateId } from '../../utils/math';
 import { getGreeksForAllPositions } from '../../utils/greeksApi';
-import { generateAlerts, getPositionAlerts } from '../../utils/alerts';
 import { effectiveSlDollar } from '../../utils/risk';
 // Q-B — marquage des écarts de doctrine (chips ambre, jamais bloquants) +
 // sidecar de métadonnées saisies (survie au ré-import via la signature).
@@ -160,37 +159,9 @@ function TypeBadge({ as, ty }) {
   return <StatusBadge variant="neutral" label="STK" size="xs" />;
 }
 
-// ── Alert inline badges (P6-20, neutralisés 2.A) ────────────
-// Tags FACTUELS neutres (quel signal) — l'URGENCE est portée par la
-// colonne GATE (classifieur de la bande, ambre plein/filet). Un badge
-// rouge sur un signal n'est pas une perte d'argent réel (loi de
-// couleur) ; un seul canal d'urgence = lecture en une seconde.
-const ALERT_SHORT = {
-  DTE_CRITICAL: 'DTE',
-  DTE_WARNING: 'DTE',
-  STOP_LOSS: 'STOP',
-  TIME_STOP: 'TIME',
-  TP1_REACHED: 'TP1',
-  TP2_REACHED: 'TP2',
-  IN_PROFIT: 'OK',
-};
-
-function RowAlerts({ alerts }) {
-  if (!alerts || alerts.length === 0) return <span className="mono text-tertiary">—</span>;
-  return (
-    <div className="positions-v3__row-alerts">
-      {alerts.map((a, i) => (
-        <StatusBadge
-          key={`${a.type}-${i}`}
-          variant="neutral"
-          label={ALERT_SHORT[a.type] || a.type}
-          size="xs"
-          title={a.message}
-        />
-      ))}
-    </div>
-  );
-}
+// Q-C — RowAlerts + ALERT_SHORT MORTS : generateAlerts (legacy) supprimé,
+// le classifieur UNIQUE (colonne GATE via useAttentionMap → moteur de portes)
+// porte seul l'urgence. Zéro doublon d'affichage d'alerte.
 
 // ── Cellule de table riche : valeur + méta empilées (rowHeight 47) ──
 function Cell2({ value, meta, metaTone }) {
@@ -456,7 +427,7 @@ function earningsLabel(earningsDate) {
   return '— non renseignée';
 }
 
-function PositionDetailBody({ row, greeks, posAlerts, violations, navigate, onEdit, onCloseMode, onTagMeta }) {
+function PositionDetailBody({ row, greeks, violations, navigate, onEdit, onCloseMode, onTagMeta }) {
   const { pos, r, pctChg, isOpt, dte, costBasis, maxLoss } = row;
   const doctrine = violations || [];
   const pnl = r.unrealizedPnlUsd;
@@ -604,25 +575,6 @@ function PositionDetailBody({ row, greeks, posAlerts, violations, navigate, onEd
         </p>
       </div>
 
-      <div className="position-detail__section">
-        <span className="position-detail__section-title">Alertes</span>
-        {posAlerts.length === 0 ? (
-          <span className="text-tertiary mono position-detail__no-alert">
-            Aucune alerte active
-          </span>
-        ) : (
-          // É3 §4.3 — alertes FACTUELLES NEUTRES (parité RowAlerts 2.A :
-          // un signal n'est pas une perte d'argent réel ; l'urgence est
-          // portée par le badge GATE du classifieur unique).
-          <div className="position-detail__alerts">
-            {posAlerts.map((a, i) => (
-              <div key={`${a.type}-${i}`} className="position-detail__alert">
-                {a.message}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
       {/* U4-bis — actions de mutation (via les formulaires Éditer /
           Clôturer ; le dispatch passe par les actions reducer canoniques). */}
@@ -1154,14 +1106,6 @@ export default function Positions() {
     () => aggregateGreeks(openPositions, greeksMap),
     [openPositions, greeksMap]
   );
-  const alerts = useMemo(
-    () => generateAlerts(openPositions, greeksMap, lr),
-    [openPositions, greeksMap, lr]
-  );
-  const actionableAlerts = useMemo(
-    () => alerts.filter((a) => a.severity === 'red' || a.severity === 'orange'),
-    [alerts]
-  );
 
   // Q-B — écarts de doctrine par position (7 règles, seuils du registre).
   // Le book de référence = les positions ouvertes (S5/S6). Non bloquant.
@@ -1512,17 +1456,10 @@ export default function Positions() {
             className={`db-badge db-badge--${g.severity}`}
             title={`${g.metric}${g.others > 0 ? ` · +${g.others} signal${g.others > 1 ? 'aux' : ''}` : ''}`}
           >
-            {g.severity === 'critique' ? 'CRITICAL' : 'ARMED'}
+            {g.severity === 'perte' ? 'STOP' : g.severity === 'critique' ? 'CRITICAL' : 'ARMED'}
           </span>
         );
       },
-    },
-    {
-      // P6-20: inline alerts per row instead of global count only
-      key: 'alerts',
-      label: 'Alerts',
-      align: 'left',
-      render: (_v, row) => <RowAlerts alerts={getPositionAlerts(row.pos.id, alerts)} />,
     },
     {
       key: '_delete',
@@ -1555,7 +1492,6 @@ export default function Positions() {
   const mobileCardRender = (row) => {
     const p = row.r.unrealizedPnlUsd;
     const tone = p > 0 ? 'profit' : p < 0 ? 'loss' : 'neutral';
-    const rowAlerts = getPositionAlerts(row.pos.id, alerts);
     return (
       <div className="positions-card">
         <div className="positions-card__head">
@@ -1594,11 +1530,6 @@ export default function Positions() {
               </span>
             )}
           </div>
-          {rowAlerts.length > 0 && (
-            <div className="positions-card__alerts">
-              <RowAlerts alerts={rowAlerts} />
-            </div>
-          )}
         </div>
       </div>
     );
@@ -1616,10 +1547,10 @@ export default function Positions() {
           <h1 className="page-title positions-v3__title">
             <Crosshair size={18} aria-hidden="true" />
             Positions ouvertes
-            {actionableAlerts.length > 0 && (
+            {gateByPos.size > 0 && (
               <StatusBadge
                 variant="warn"
-                label={`${actionableAlerts.length} alerte${actionableAlerts.length > 1 ? 's' : ''}`}
+                label={`${gateByPos.size} porte${gateByPos.size > 1 ? 's' : ''}`}
                 size="xs"
               />
             )}
@@ -1733,7 +1664,6 @@ export default function Positions() {
           <PositionDetailBody
             row={detailRow}
             greeks={greeksMap.get(detailRow.pos.id)}
-            posAlerts={getPositionAlerts(detailRow.pos.id, alerts)}
             violations={violByPos.get(detailRow.pos.id) || []}
             navigate={navigate}
             onEdit={() => setDetailMode('edit')}

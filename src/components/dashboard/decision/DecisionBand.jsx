@@ -30,14 +30,17 @@ import useDailyKillSwitch from '../../../hooks/useDailyKillSwitch';
 import useDailyPnL from '../../../hooks/useDailyPnL';
 import useAvailableCapital, { resolveLiveAvailableUsd } from '../../../hooks/useAvailableCapital';
 import { useOpenPositions, useClosedTrades, useSettings } from '../../../store/useStore';
-import { generateAlerts } from '../../../utils/alerts';
 import { totalSlDollar } from '../../../utils/risk';
 import { tierParams } from '../../../utils/sniperMeta';
-import { toFloat } from '../../../utils/math';
 
-// generateAlerts accepte un greeksMap mais aucune règle red/orange ne
-// l'utilise → Map vide stable (même convention que l'ex-useAlertsFeed).
-const EMPTY_GREEKS = new Map();
+/** Jour de séance NY ('YYYY-MM-DD') — pour la fenêtre P4. */
+function nyToday() {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
+}
 
 export default function DecisionBand({ metrics, greeks, area = 'decision' }) {
   const openPositions = useOpenPositions();
@@ -49,16 +52,8 @@ export default function DecisionBand({ metrics, greeks, area = 'decision' }) {
   const avail = useAvailableCapital();
 
   const rate = metrics?.liveRate || null;
-  const lr = toFloat(settings?.liveRate) || 1;
 
-  // ── ATTENTION ──
-  const alerts = useMemo(
-    () =>
-      generateAlerts(openPositions || [], EMPTY_GREEKS, lr).filter(
-        (a) => a.severity === 'red' || a.severity === 'orange'
-      ),
-    [openPositions, lr]
-  );
+  // ── ATTENTION — moteur UNIQUE de portes (Q-C : plus de generateAlerts) ──
   const watchedCount = useMemo(
     () => (openPositions || []).filter((p) => p.as === 'Option').length,
     [openPositions]
@@ -66,12 +61,12 @@ export default function DecisionBand({ metrics, greeks, area = 'decision' }) {
   const attention = useMemo(
     () =>
       deriveAttention({
-        alerts,
         gateRows: gates.rows,
+        today: nyToday(),
         watchedCount,
         kill: { triggered: kill.triggered, dailyPnlUsd: kill.dailyPnlUsd, maxLoss: kill.maxLoss },
       }),
-    [alerts, gates.rows, watchedCount, kill.triggered, kill.dailyPnlUsd, kill.maxLoss]
+    [gates.rows, watchedCount, kill.triggered, kill.dailyPnlUsd, kill.maxLoss]
   );
 
   // ── FORME (modèle Héros 2, fenêtre ALL) ──

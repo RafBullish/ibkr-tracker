@@ -518,8 +518,10 @@ export default function PreMarketBriefing() {
               {allOpenOptions.map((row) => {
                 const g = gateByPos.get(row.id);
                 const sev = g ? g.severity : null;
-                const badge = sev === 'critique' ? 'CRITICAL' : sev === 'arme' ? 'ARMED' : 'SAFE';
-                const badgeSev = sev === 'critique' ? 'critique' : sev === 'arme' ? 'arme' : 'safe';
+                const badge =
+                  sev === 'perte' ? 'STOP' : sev === 'critique' ? 'CRITICAL' : sev === 'arme' ? 'ARMED' : 'SAFE';
+                const badgeSev =
+                  sev === 'perte' ? 'perte' : sev === 'critique' ? 'critique' : sev === 'arme' ? 'arme' : 'safe';
                 const unrealTone = row.unrealPct > 0 ? 'profit' : row.unrealPct < 0 ? 'loss' : 'neutral';
                 return (
                   <div
