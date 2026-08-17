@@ -40,34 +40,28 @@ export default function CapitalZone({ capital, rate }) {
   const chf = (usd, signed) =>
     Number.isFinite(usd) && Number.isFinite(rate) && rate > 0 ? fmtChf(usd, rate, signed) : null;
   const pct = c.deployedPct != null ? Math.max(0, Math.min(100, c.deployedPct)) : null;
-  const cap = Math.max(0, Math.min(100, c.capPct));
 
   return (
     <div className="db-zone" aria-label="Capital — marge de manœuvre">
       <div className="mk-title">CAPITAL</div>
       <div className="db-gaugewrap">
+        {/* Q-C — CAP 70 % RETIRÉ (doctrine V1 morte contredisant le 60 %/
+            position S1). La V3 n'a pas de plafond d'exposition TOTALE : la
+            jauge montre le déploiement, sans marqueur de plafond. */}
         <span className="db-gauge__lbl">
           EXPOSITION{pct != null ? ` · ${Math.round(pct)} %` : ''}
-          <span className="db-gauge__cap"> · cap {Math.round(cap)} %</span>
         </span>
         <span
           className="db-gauge"
           role="img"
-          aria-label={pct != null ? `Exposition ${Math.round(pct)} % du NLV — cap ${Math.round(cap)} %` : 'exposition inconnue'}
+          aria-label={pct != null ? `Exposition ${Math.round(pct)} % du NLV` : 'exposition inconnue'}
         >
           {[25, 50, 75].map((g) => (
             <span key={g} className="db-gauge__grad" style={{ left: `${g}%` }} aria-hidden="true" />
           ))}
-          {/* 1.F-c1 C1 — remplissage NEUTRE (acier) sous le cap ; il passe
-              INTÉGRALEMENT à l'ambre au franchissement (le signal naît au
-              cap, il n'est plus permanent). */}
           {pct != null ? (
-            <span
-              className={`db-gauge__fill${pct >= cap ? ' db-gauge__fill--cap' : ''}`}
-              style={{ width: `${pct}%` }}
-            />
+            <span className="db-gauge__fill" style={{ width: `${pct}%` }} />
           ) : null}
-          <span className="db-gauge__mark" style={{ left: `${cap}%` }} aria-hidden="true" />
         </span>
       </div>
       <div className="db-grid3">

@@ -41,77 +41,38 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { MIN_DECISIVE_WINRATE } from '../../../utils/significance';
-// Q-A (16.08) — les seuils DOCTRINE (SL exécution, gate DTE) viennent du
-// REGISTRE (source unique, valeurs identiques) ; les fenêtres d'approche
-// (SL 70 % du chemin, DTE +5 j) du registre app. Les TP fixes (40/50/80)
-// sont LEGACY (morts en V3, remplacés par le trailing) → retirés en Q-C.
-import { SL_EXECUTION_MAGNITUDE_PCT, DTE_GATE_JOURS, JAUGES, PORTFOLIO_AFFICHAGE } from '../../../config/registre';
+// Q-C — la bande consomme le MOTEUR UNIQUE de portes (utils/gates), seule
+// source des 5 portes P1..P5. TOUS les seuils y sont lus du registre. Les
+// seuils SL/DTE et les TP fixes (40/50/80, morts en V3) ne vivent plus ici.
+import { evaluateGates, bandSignals, GATE_SEV } from '../../../utils/gates';
 
-// ── Seuils des moteurs (miroirs, pas des re-calculs) ────────────────
-const SL_PCT = SL_EXECUTION_MAGNITUDE_PCT; // 35 — magnitude du stop -35 % (registre P1)
-const SL_APPROACH_FRAC = JAUGES.approcheSlFrac; // 0.7 — approche d'affichage (registre app)
-const GATE_DTE45 = DTE_GATE_JOURS; // 45 — gate doctrine DTE (registre P3)
-const GATE_DTE45_APPROACH = JAUGES.approcheDteJours; // 5 — fenêtre d'approche (registre app)
-const TP_SHORT_PCT = 50; // LEGACY — TP fixe short premium (mort V3), retiré Q-C
-const TP1_PCT = 40; // LEGACY — TP fixe partiel (mort V3)
-const TP2_PCT = 80; // LEGACY — TP fixe total (mort V3)
+// Sévérités de la bande. 'perte' (3) = ROUGE, réservé au SEUL P1 exécution
+// −35 % (perte réelle constatée) ; tout le reste (portes franchies/armées)
+// = AMBRE ('critique' 2 / 'arme' 1).
+export const SEV = { PERTE: 3, CRITIQUE: 2, ARME: 1 };
 
-export const SEV = { CRITIQUE: 2, ARME: 1 };
+const SEV_OF = {
+  [GATE_SEV.PERTE]: SEV.PERTE,
+  [GATE_SEV.CRITIQUE]: SEV.CRITIQUE,
+  [GATE_SEV.ARME]: SEV.ARME,
+};
+const sevName = (s) => (s >= SEV.PERTE ? 'perte' : s === SEV.CRITIQUE ? 'critique' : 'arme');
 
 const nf = (v) => (Number.isFinite(v) ? v : null);
-const pct0 = (v) => `${v < 0 ? '−' : '+'}${Math.abs(Math.round(v))} %`;
 
-// Un signal candidat : { topic, severity, fill, metric }
-function alertToSignal(a) {
-  const v = a.value;
-  switch (a.type) {
-    case 'STOP_LOSS':
-      return { topic: 'pnl', severity: SEV.CRITIQUE, fill: 100 + (Math.abs(v) - SL_PCT), metric: `P&L ${pct0(v)} ≤ SL −${SL_PCT} %` };
-    // DTE_CRITICAL / DTE_WARNING (seuils legacy 90/100 j du moteur U7) :
-    // RETIRÉS de la bande (1.F-c1 C2) — le sujet DTE appartient à la
-    // seule règle doctrine (gateSignals). Leur maison : colonne DTE de
-    // LivePositions + page Positions.
-    // TIME_STOP (« ≥5 j sans +15 % ») : RETIRÉ de la bande (É3
-    // §4.2.2, même mécanisme que les DTE legacy) — seuil hérité non
-    // doctrinal qui saturait ATTENTION. « Jours tenus » reste visible
-    // dans les tables et le détail de position.
-    case 'TP2_REACHED':
-      return { topic: 'tp', severity: SEV.ARME, fill: 100 + (v - TP2_PCT), metric: `${pct0(v)} ≥ TP ${TP2_PCT} %` };
-    case 'TP1_REACHED':
-      return { topic: 'tp', severity: SEV.ARME, fill: (v / TP2_PCT) * 100, metric: `${pct0(v)} ≥ TP ${TP1_PCT} %` };
-    default:
-      return null;
-  }
-}
-
-// Signaux dérivés d'une row useSniperGates (gates câblés uniquement).
-// Règle DTE DOCTRINE de la bande (1.F-c1 C2) : CRITICAL dès la gate 45
-// franchie (on agit — pas de second seuil), ARMED dans la fenêtre
-// d'approche 45 < DTE ≤ 50, RIEN au-delà de 50 (une échéance lointaine
-// n'est pas une décision). `doctrine: true` = vocabulaire Sniper v1.0
-// (préféré à sévérité égale sur le même sujet).
-function gateSignals(row) {
-  const out = [];
-  const { dte, unrealPct, dir } = row;
-  if (Number.isFinite(dte)) {
-    if (dte <= GATE_DTE45) {
-      out.push({ topic: 'dte', severity: SEV.CRITIQUE, doctrine: true, fill: 100 + (GATE_DTE45 - dte), metric: `DTE ${dte} j ≤ gate ${GATE_DTE45}` });
-    } else if (dte <= GATE_DTE45 + GATE_DTE45_APPROACH) {
-      out.push({ topic: 'dte', severity: SEV.ARME, doctrine: true, fill: ((GATE_DTE45 + GATE_DTE45_APPROACH - dte) / GATE_DTE45_APPROACH) * 100, metric: `DTE ${dte} j → gate ${GATE_DTE45}` });
-    }
-  }
-  if (Number.isFinite(unrealPct) && unrealPct < 0) {
-    const captured = Math.abs(unrealPct);
-    // Proximité SL (avant franchissement — le franchissement vit dans
-    // STOP_LOSS du moteur canonique).
-    if (captured < SL_PCT && captured >= SL_PCT * SL_APPROACH_FRAC) {
-      out.push({ topic: 'pnl', severity: SEV.ARME, doctrine: true, fill: (captured / SL_PCT) * 100, metric: `P&L ${pct0(unrealPct)} / SL −${SL_PCT} %` });
-    }
-  }
-  if (dir === 'Short' && Number.isFinite(unrealPct) && unrealPct >= TP_SHORT_PCT) {
-    out.push({ topic: 'tp', severity: SEV.ARME, doctrine: true, fill: 100 + (unrealPct - TP_SHORT_PCT), metric: `${pct0(unrealPct)} ≥ TP ${TP_SHORT_PCT} %` });
-  }
-  return out;
+// Signaux de la bande dérivés d'une row de position enrichie, via le moteur
+// UNIQUE. Chaque descripteur affichable (severity non nulle) devient un
+// signal { topic, severity, fill, metric, doctrine, isRealLoss }. `today`
+// (jour de séance NY) alimente la fenêtre P4.
+function gateSignals(row, today) {
+  return bandSignals(evaluateGates(row, { today })).map((d) => ({
+    topic: d.topic,
+    severity: SEV_OF[d.severity] ?? SEV.ARME,
+    fill: Number.isFinite(d.fill) ? d.fill : 0,
+    metric: d.metric,
+    doctrine: true,
+    isRealLoss: !!d.isRealLoss,
+  }));
 }
 
 const urgencyOf = (s) => s.severity * 1000 + s.fill;
@@ -123,14 +84,14 @@ const displayRank = (s) => s.severity * 10000 + (s.doctrine ? 5000 : 0) + s.fill
  * Dérive les lignes de la zone ATTENTION.
  *
  * @param {Object} ctx
- * @param {Array}  ctx.alerts    generateAlerts filtré red/orange
- *                               ({positionId, ticker, type, severity, value})
- * @param {Array}  ctx.gateRows  useSniperGates().rows
+ * @param {Array}  ctx.gateRows  rows de positions enrichies (dte, unrealPct,
+ *                               daysHeld, earningsDate, picPct, isPartial, …)
+ * @param {string} ctx.today     jour de séance NY 'YYYY-MM-DD' (fenêtre P4)
  * @param {number} ctx.watchedCount  positions option surveillées
  * @param {Object} ctx.kill      { triggered, dailyPnlUsd, maxLoss }
  * @param {number} ctx.maxLines  lignes affichées avant « +N »
  */
-export function deriveAttention({ alerts = [], gateRows = [], watchedCount = 0, kill = null, maxLines = 5 }) {
+export function deriveAttention({ gateRows = [], today = null, watchedCount = 0, kill = null, maxLines = 5 }) {
   const byPos = new Map(); // id → { id, ticker, sub, topics: Map(topic → [signaux]) }
   const rowById = new Map(gateRows.map((r) => [r.id, r]));
 
@@ -150,8 +111,8 @@ export function deriveAttention({ alerts = [], gateRows = [], watchedCount = 0, 
     else entry.topics.set(sig.topic, [sig]);
   };
 
-  for (const a of alerts) push(a.positionId, a.ticker, alertToSignal(a));
-  for (const row of gateRows) for (const sig of gateSignals(row)) push(row.id, row.ticker, sig);
+  // Moteur UNIQUE : plus de fusion avec generateAlerts (legacy retiré).
+  for (const row of gateRows) for (const sig of gateSignals(row, today)) push(row.id, row.ticker, sig);
 
   const lines = [...byPos.values()]
     .map((e) => {
@@ -168,7 +129,7 @@ export function deriveAttention({ alerts = [], gateRows = [], watchedCount = 0, 
         id: e.id,
         ticker: e.ticker,
         sub: e.sub,
-        severity: top.display.severity === SEV.CRITIQUE ? 'critique' : 'arme',
+        severity: sevName(top.display.severity),
         metric: top.display.metric,
         others: topics.length - 1,
         otherMetrics: topics.slice(1).map((t) => t.display.metric),
@@ -235,10 +196,15 @@ export function deriveForme({ perTrade = [], matrix = null, currentStreak = null
 export function deriveCapital({ metrics, greeks, availableUsd, availableIsReal, riskDollar, tier }) {
   const nlv = metrics?.netLiquidationValueUsd ?? null;
   const deployed = metrics?.totalExposure ?? null;
+  // Q-C — CAP 70 % RETIRÉ : le « plafond notionnel » 70 % est le plafond
+  // d'investi total du régime A de la V1 (doctrine MORTE), et il CONTREDIT
+  // le plafond de 60 % PAR POSITION (S1). La V3 n'a AUCUN plafond d'exposition
+  // TOTALE (seul S1 par position, marqué au niveau violation Q-B) — afficher
+  // un cap sur une jauge d'exposition totale inventerait une doctrine. La
+  // jauge montre donc le déploiement sans marqueur de plafond.
   return {
     deployed: nf(deployed),
     deployedPct: deployed != null && nlv > 0 ? (deployed / nlv) * 100 : null,
-    capPct: tier?.notionalMaxPct ?? PORTFOLIO_AFFICHAGE.notionalMaxPct,
     available: availableUsd ?? null,
     availableIsReal: availableIsReal === true && availableUsd != null,
     availablePct: availableUsd != null && nlv > 0 ? (availableUsd / nlv) * 100 : null,

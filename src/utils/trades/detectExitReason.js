@@ -20,25 +20,26 @@
 
 import { toFloat, ensurePositive } from '../math';
 import { holdingDays, dteAtEntry as dayDiff } from '../dates';
-// Q-A (16.08) — les valeurs de doctrine qui SURVIVENT en V3 viennent du
-// REGISTRE (source unique), à VALEUR IDENTIQUE : SL exec -35, DTE 45, jour de
-// stagnation 30. LEGACY/DIVERGENT laissés en place (Q-C recâble/réconcilie) :
-// le TP fixe +50 % (tp_50, mort en V3), la fenêtre earnings 14 j après clôture
-// (≠ P4 J-7/J-5), la bande de stagnation ±10 % (≠ registre P5 -20/+30).
-import { SL_EXECUTION_PCT, DTE_GATE_JOURS, STAGNATION_JOUR } from '../../config/registre';
-
-const DAY_MS = 86400000;
+// Q-A/Q-C — les valeurs de doctrine qui SURVIVENT viennent du REGISTRE
+// (source unique) : SL exec -35, DTE 45, jour de stagnation 30, ET la bande
+// de stagnation -20/+30 (RÉCONCILIÉE en Q-C, ex-±10). `tp_50` est CONSERVÉ
+// comme LABEL D'HISTORIQUE (les trades passés ont bien sorti autour de +50 %
+// sous la doctrine V2) — ce n'est plus une porte live (le TP fixe est mort,
+// remplacé par le trailing P2). La fenêtre earnings 14 j est RETIRÉE (Q-C :
+// elle n'était pas la porte P4 J-7/J-5 et ne se déclenchait jamais).
+import {
+  SL_EXECUTION_PCT,
+  DTE_GATE_JOURS,
+  STAGNATION_JOUR,
+  STAGNATION_BANDE_BASSE_PCT,
+  STAGNATION_BANDE_HAUTE_PCT,
+} from '../../config/registre';
 
 /**
  * @param {object} trade  closed trade (tracker shape)
- * @param {object} [opts]
- * @param {Array<{ticker:string, date:string}>} [opts.earningsCalendar]
- *   Upcoming earnings dates per ticker. Used for the pre_earnings rule.
  * @returns {{ reason: string, confidence: 'high'|'medium'|'low' }}
  */
-export function detectExitReason(trade, opts = {}) {
-  const earningsCalendar = opts.earningsCalendar || [];
-
+export function detectExitReason(trade) {
   const pi = toFloat(trade.pi);
   const ct = toFloat(trade.ct);
   const mu = ensurePositive(trade.mu);
@@ -69,26 +70,18 @@ export function detectExitReason(trade, opts = {}) {
     return { reason: 'dte_45', confidence: 'high' };
   }
 
-  // Rule 4 — earnings event within 14 days after the close, for the
-  // same ticker. Only evaluated when a calendar is provided.
-  if (earningsCalendar.length > 0 && trade.do && trade.tk) {
-    const exitMs = new Date(trade.do + 'T12:00:00').getTime();
-    if (Number.isFinite(exitMs)) {
-      const cutoff = exitMs + 14 * DAY_MS;
-      const match = earningsCalendar.find((e) => {
-        if (!e || e.ticker !== trade.tk || !e.date) return false;
-        const earnMs = new Date(e.date + 'T12:00:00').getTime();
-        return Number.isFinite(earnMs) && earnMs > exitMs && earnMs <= cutoff;
-      });
-      if (match) return { reason: 'pre_earnings', confidence: 'medium' };
-    }
-  }
+  // Rule 4 (earnings 14 j après clôture) RETIRÉE en Q-C : ce n'était pas la
+  // porte P4 (J-7 à J-5 AVANT les résultats) et elle ne se déclenchait jamais
+  // (aucun calendrier n'était passé). La porte P4 live est dans utils/gates.
 
-  // Rule 5 — stagnation: long hold, flat outcome. Le JOUR (30) vient du
-  // registre P5 (identique). ⚠ La bande ±10 % DIVERGE du registre P5
-  // (-0.20 / +0.30) : ÉCART DE VALEUR laissé en place — réconciliation en
-  // Q-C (Q-A ne recâble pas la logique).
-  if (hold != null && hold >= STAGNATION_JOUR && pnlPct >= -10 && pnlPct <= 10) {
+  // Rule 4 (ex-5) — stagnation : longue tenue, résultat plat. Le JOUR (30) et
+  // la BANDE (-20/+30) viennent du registre P5 (bande RÉCONCILIÉE en Q-C, ex-±10).
+  if (
+    hold != null &&
+    hold >= STAGNATION_JOUR &&
+    pnlPct >= STAGNATION_BANDE_BASSE_PCT &&
+    pnlPct <= STAGNATION_BANDE_HAUTE_PCT
+  ) {
     return { reason: 'stagnation', confidence: 'medium' };
   }
 

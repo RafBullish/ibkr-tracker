@@ -38,13 +38,35 @@ mandatée : **registre → saisie → portes → palier**.
   Saisie carte V3 + Conformité doctrine ; édition earnings/note ; clôture portes
   + pic honnête). 480 tests, check:doctrine 0, color-law 0, build ✓. **Q-B
   n'écrit aucune porte** (Q-C).
+- **Q-C ✅ (1.0.2-rc.6, EN ATTENTE — branche `v1/q-c-portes`)** — LES PORTES,
+  dernière brique bloquante. Moteur UNIQUE `utils/gates.js` (P1 SL 2 paliers −30
+  ambre/−35 ROUGE ; P2 TRAIL pic +50 %→sortie pic×0,60 aucun plancher, pic
+  PARTIEL dit ; P3 DTE 45 inconditionnel ; P4 EARN J−7/J−5 jours de bourse, se
+  tait si P&L≤0, absent→indéterminée ; P5 STAG jour 30 bande −20/+30 courant),
+  tous seuils du registre, branché dans `deriveAttention` (bande + 3
+  consommateurs inchangés). Writer du pic `qc:positionMarks` (mid de clôture,
+  jamais intraday, amorce + `isPartial`, forward-compatible table V1.1
+  `position_marks`) + `usePositionMarks` monté dans AppShell + `utils/tradingDays.js`
+  (P4). `useSniperGates` réduit à un fournisseur de rows (zéro doublon de porte).
+  Legacy RETIRÉ : `alerts.js` supprimé, colonne Alerts Positions retirée,
+  TP fixe/DTE 90-100/TIME_STOP/±10 morts, `detectExitReason` réconcilié −20/+30 +
+  `tp_50` gardé en label d'historique. **CAP 70 % TRANCHÉ → retiré** (doctrine V1
+  morte contredisant le 60 %/position S1 ; la V3 n'a pas de plafond d'exposition
+  totale). Couleur : porte franchie ambre, SEULE exception P1 −35 % rouge
+  (`--pnl-down`, badge STOP). check:doctrine 0 (+ détecteurs P2/P5), color-law 0,
+  516 tests, build ✓. **Q-C n'agit jamais** (alerte seule).
+- **Q-D ❌ MORT** — plus d'échelle Edge en V3, plus de palier à câbler. Le bloc
+  PORTES du deck reste **1.G-b** (hors périmètre, lot bloqué données).
+- **RECETTE É4 — DÉFAUT DATÉ, À CORRIGER AVANT LE TAG (décision architecte
+  17.08)** : `utils/tradingDays.js` NE gère PAS les jours fériés US. Ce n'est
+  PAS une approximation — une **semaine fériée décale la fenêtre P4** (J−7/J−5
+  en jours de bourse) et peut faire **TENIR une position à travers une
+  publication de résultats** (la porte se croit hors fenêtre). Correctif :
+  **table de dates fériées US dans `parametres.app.json`** (clé `jours_feries_us`),
+  exposée via `registre.js`, consommée par `tradingDaysUntil` (sauter aussi les
+  jours ouvrés fériés). À solder avant tout tag v1.0.2.
 - **Micro-brique E2/E4 (à venir)** — capture manuelle à l'entrée (θ d'entrée sur
   la prime `pi` ; bid/ask pour le spread), pour allumer E2 et E4.
-- **Q-C ⏳ (à venir)** — PORTES : recâblage des 5 portes sur le registre
-  (P1..P5), writer `qc:positionMarks` (pic pour le trailing P2), marquage
-  VIOLATION, retrait des LEGACY, réconciliation de la bande de stagnation.
-- **Q-D ⏳ (à venir)** — PALIER : passage du deck (bloc PORTES, DÉPLOYABLE…)
-  branché sur les portes câblées.
 
 ---
 

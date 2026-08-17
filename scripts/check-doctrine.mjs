@@ -10,16 +10,22 @@
  * 45/35/30 » : ces nombres vivent légitimement ailleurs (bande de delta
  * 0.25–0.35, opacité rgba, comptes divers) et ne sont pas des faux positifs.
  *
- * Portée exacte (les formes que Q-A a retirées du code, à VALEUR identique) :
+ * Portée exacte (formes migrées Q-A + portes câblées Q-C, à VALEUR identique) :
  *   · SL exécution : -35 en comparaison, 0.35 en affectation/multiplication,
  *     SL_PCT=35              → P1_sl.execution_pct (SL_EXECUTION_*).
  *   · gate DTE : « dte* <= 45 », GATE_DTE45=45, DTE45_THRESHOLD=45
  *                              → P3_dte.jours (DTE_GATE_JOURS).
  *   · jour de stagnation : « hold|daysHeld|holdDays >= 30 »
  *                              → P5_stagnation.jour (STAGNATION_JOUR).
- * Les valeurs MORTES ou DIVERGENTES (TP fixe 50/40/80, gate DTE-35 SL35,
- * DTE 90/100, bande de stagnation ±10, kill -500) ne sont PAS traquées : la
- * V3 ne les contient plus (supprimé le 16.08) — Q-C les retire du code.
+ *   · P2 trail (Q-C) : « picPct < 0.5 » (activation) et « picPct * 0.6 »
+ *                      (facteur de sortie) → P2_ACTIVATION_FRAC / P2_SORTIE_FACTEUR.
+ *   · P5 bande (Q-C) : ex-±10 réconciliée en -20/+30 → revert-guard sur
+ *                      « pnlPct >= -10 » / « pnlPct <= 10 » (STAGNATION_BANDE_*).
+ * Q-C a RETIRÉ le legacy du code (TP fixe 50/40/80, gate DTE-35 SL35, DTE
+ * 90/100, bande de stagnation ±10, alertes 15/40/80) : la V3 ne les contient
+ * plus. `tp_50` survit comme LABEL d'historique (détecté par aucun détecteur :
+ * ce n'est pas une porte live). Le kill -500 est un réglage utilisateur, pas
+ * une doctrine (absent du registre). Ces valeurs ne sont donc PAS traquées.
  *
  * Sortie : `fichier:ligne` + extrait par violation. Exit ≠ 0 si ≥ 1.
  * Usage : `npm run check:doctrine`.
@@ -59,6 +65,18 @@ const DETECTORS = [
     // hold / daysHeld / holdDays comparés en dur à 30 (le jour de stagnation).
     name: 'jour de stagnation (30) → src/config/registre STAGNATION_JOUR',
     re: /\b(?:hold|holdDays|daysHeld)\s*>=\s*30(?!\d)/i,
+  },
+  {
+    // Q-C — P2 trail : activation (picPct < 0.5) et facteur de sortie
+    // (picPct * 0.6) ancrés sur le nom `picPct` (aucun faux positif).
+    name: 'P2 trail (0.5 / 0.6) → src/config/registre P2_ACTIVATION_FRAC / P2_SORTIE_FACTEUR',
+    re: /\bpicPct\s*(?:<\s*0\.5(?!\d)|\*\s*0\.6(?!\d))/,
+  },
+  {
+    // Q-C — revert-guard de la bande de stagnation ex-±10 (réconciliée
+    // -20/+30). Ancré sur `pnlPct` (la forme historique divergente retirée).
+    name: 'P5 bande ±10 (réconciliée -20/+30) → src/config/registre STAGNATION_BANDE_*',
+    re: /\bpnlPct\s*(?:>=\s*-\s*10(?!\d)|<=\s*10(?!\d))/,
   },
 ];
 

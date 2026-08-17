@@ -6,6 +6,70 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.2-rc.6] — 2026-08-17
+
+**Q-C — LES PORTES (chantier conformité Sniper V3, dernière brique bloquante).
+EN ATTENTE.** Câble les 5 portes de la carte V3 sur le registre, crée le writer
+du pic, retire le legacy laissé par Q-A, unifie le moteur. **Les portes
+ALERTENT, elles n'AGISSENT jamais** (aucune fermeture auto, aucun ordre, aucun
+blocage) : l'app signale, Rafael exécute chez IBKR. Aucune valeur en dur — tout
+seuil vient du registre ; check:doctrine reste 0.
+
+- **Moteur UNIQUE de portes** — `src/utils/gates.js` (pur, style violations.js) :
+  **P1** SL deux paliers (alerte −30 % ambre / exécution −35 % **ROUGE**, base mid
+  d'entrée) · **P2** TRAIL (armé quand le pic atteint +50 %, sortie = pic×0,60,
+  **aucun plancher**, pic PARTIEL dit à l'écran) · **P3** DTE 45 inconditionnel ·
+  **P4** EARNINGS J−7 à J−5 **en jours de bourse**, sortie si P&L>0, **on tient à
+  travers si P&L≤0** (la porte se tait), earningsDate absent → **indéterminée** ·
+  **P5** STAGNATION jour 30, P&L courant dans −20 %/+30 %. Le DELTA reste
+  indicatif → jamais de porte. Branché DANS `deriveAttention` (bande décision) :
+  la Map de `useAttentionMap` et ses 3 consommateurs (Positions/LivePositions/
+  PreMarket) sont **inchangés** — même forme de ligne.
+- **Writer du pic** — `qc:positionMarks` (`utils/positionMarks.js` + hook
+  `usePositionMarks`, monté isolé dans AppShell) : enregistre le **mid de CLÔTURE
+  de session** (jamais intraday, `intraday_ignore`), une fois/jour (phase 'after'
+  post-clôture RTH, week-end-safe). Amorce pic = max(mid entrée, 1er mid clôture),
+  `peakSince` ; si `peakSince` > date d'entrée → **pic PARTIEL** (`isPartial`), la
+  porte TRAIL l'affiche (« · pic partiel »). Clé hors store (doctrine qc:*),
+  keyée par signature. **Contrat forward-compatible** avec la table V1.1
+  `position_marks` (le bridge la remplira en intraday dès le 02.09, même schéma :
+  signature, mark_date, mid, source). `utils/tradingDays.js` (neuf) pour P4
+  (jours ouvrés, fériés US non gérés — approximation documentée).
+- **`useSniperGates` réduit à un fournisseur de rows** enrichies (id, ticker,
+  type, dir, strike, dte, daysHeld, unrealPct, earningsDate, picPct, isPartial) :
+  l'ex-`buildGates`/SL35/TP fixe (morts É3) sont retirés — **une porte ne vit
+  qu'à un seul endroit** (le moteur), zéro doublon.
+- **Legacy RETIRÉ** : `alerts.js` SUPPRIMÉ (generateAlerts — DTE 90/100,
+  TIME_STOP, TP 40/80, IN_PROFIT ; P1 SL absorbé par le moteur) ; colonne
+  « Alerts » + RowAlerts + section « Alertes » du tiroir Positions retirées
+  (le classifieur unique = colonne GATE) ; `model.js` purgé de TP_SHORT/TP1/TP2 +
+  `alertToSignal` ; `detectExitReason` bande de stagnation ±10 → **−20/+30**
+  (registre), fenêtre earnings 14 j retirée, `tp_50` conservé comme **label
+  d'historique** (past trades V2, pas une porte live). Le kill −500 est un réglage
+  utilisateur (pas une doctrine) → intact.
+- **CAP 70 % TRANCHÉ → RETIRÉ de l'affichage** : le « plafond notionnel » 70 %
+  est le plafond d'investi total du **régime A de la V1** (doctrine MORTE) et il
+  **contredit le plafond de 60 % PAR POSITION** (S1). La V3 n'a AUCUN plafond
+  d'exposition TOTALE (seul S1 par position, marqué au niveau violation Q-B) —
+  afficher un cap sur une jauge d'exposition totale inventerait une doctrine. La
+  jauge EXPOSITION montre le déploiement, **sans marqueur de plafond**.
+- **Couleur** : porte franchie = AMBRE ; **SEULE exception ROUGE, P1 −35 %**
+  (perte réelle constatée) via `--pnl-down` + variante `.db-badge--perte` /
+  `.db-line--perte` (badge STOP). −30 % (alerte) et P2/P3/P4/P5 restent ambre.
+  La bande ne rend aucun greek → check:color-law reste 0.
+- **Témoin** : `check:doctrine` gagne des détecteurs P2 (picPct 0.5/0.6) + P5
+  (revert-guard ±10) ; reste 0.
+- **HORS PÉRIMÈTRE** (Q-D mort — plus d'échelle Edge en V3) : bloc PORTES du deck
+  (1.G-b), DÉPLOYABLE, micro-brique E2/E4, bridge & V1.1.
+- **Preuve** : 516 tests (+36 : moteur aux bornes exactes −29,9/−30/−34,9/−35 ·
+  pic +49,9/+50/pic×0,60 · DTE 46/45 · earnings J−8/J−7/J−5/J−4 gain&perte ·
+  stagnation J+29/J+30 ; writer du pic + amorce + partiel ; jours de bourse) ;
+  check:doctrine 0, check:color-law 0, build vert. Vérif visuelle @1591 : bande
+  ATTENTION 5 portes (P1 rouge STOP, reste ambre, pic partiel dit), CAPITAL sans
+  cap, colonne Alerts retirée, console propre.
+
+---
+
 ## [1.0.2-rc.5] — 2026-08-16
 
 **Q-B — LA SAISIE (chantier conformité Sniper V3, brique 2/4). EN ATTENTE.**

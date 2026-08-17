@@ -32,6 +32,7 @@ import CheatsheetModal from '../ui/CheatsheetModal';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import useIbkrLive from '../../hooks/useIbkrLive';
 import { useIntradayNlvWriter } from '../../hooks/useIntradayNlv';
+import { usePositionMarksWriter } from '../../hooks/usePositionMarks';
 
 // Persistance du repli SideNav — pattern qc:* (PAS une slice du store).
 const SIDENAV_COLLAPSED_KEY = 'qc:sidenav:collapsed';
@@ -72,6 +73,15 @@ const NAV_PATHS = [
 // jamais l'arbre AppShell (SideNav/tape/page routée intacts).
 function IntradayNlvWriter() {
   useIntradayNlvWriter();
+  return null;
+}
+
+// Q-C — writer du pic : enregistre le mid de CLÔTURE de session de chaque
+// position ouverte (une fois/jour, phase 'after' post-clôture RTH) vers
+// qc:positionMarks. Base du trailing P2. Isolé comme le writer NLV : le tick
+// minute ne re-rend que ce composant nul.
+function PositionMarksWriter() {
+  usePositionMarksWriter();
   return null;
 }
 
@@ -253,6 +263,7 @@ export default function AppShell() {
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
       <CheatsheetModal open={cheatOpen} onClose={() => setCheatOpen(false)} />
       <IntradayNlvWriter />
+      <PositionMarksWriter />
     </div>
   );
 }
