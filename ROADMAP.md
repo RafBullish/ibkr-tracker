@@ -127,7 +127,7 @@ mandatée : **registre → saisie → portes → palier**.
   build ✓, vérif @2560+@1591 (3 groupes + dots + P&L, FX âge, MONDE recomposé
   0 chevauchement, tape ≥2000, éditeur exercé). **NON dans cette brique** :
   capture θ/spread, recette É4, bridge V1.1, batch chart.
-- **É4-a ⏳ (1.0.2-rc.9, EN ATTENTE DU GO — branche `v1/e4a-recette`)** — LA
+- **É4-a ✅ MERGÉE sur main (1.0.2-rc.9, GO Rafael 18.08)** — LA
   RECETTE, première passe STRUCTURELLE (vérifie/prouve/consigne, ne construit
   pas ; passe finale fin août sur l'état du tag). **Corrigé** : S3 fériés US
   (`jours_feries_us` 2026→2030 dans `parametres.app.json` → `tradingDays.js` →
