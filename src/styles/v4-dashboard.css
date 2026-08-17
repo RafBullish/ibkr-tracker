@@ -40,7 +40,6 @@
   grid-template-areas:
     "hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1 hero1"
     "hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2 hero2"
-    "decision decision decision decision decision decision decision decision decision decision decision decision"
     "risk risk risk risk risk risk risk risk risk risk risk risk"
     "positions positions positions positions positions positions positions positions positions positions positions positions"
     "history history history history history history history history history history history history"
@@ -60,8 +59,7 @@
 /* 1.D/1.E — Héros 1 & Héros 2 : hauteur AUTO (chaque bloc dimensionne ses
    zones ; le graphe terminal a une hauteur interne fixe). */
 .dash-grid > [style*="grid-area: hero1"],
-.dash-grid > [style*="grid-area: hero2"],
-.dash-grid > [style*="grid-area: decision"] {
+.dash-grid > [style*="grid-area: hero2"] {
   height: auto;
 }
 .dash-grid > [style*="grid-area: risk"] {
@@ -2167,7 +2165,6 @@
     /* Phase C.2.10 — SniperGate retiré du dashboard. */
     grid-template-areas:
       "master"
-      "decision"
       "risk"
       "greeks"
       "positions"

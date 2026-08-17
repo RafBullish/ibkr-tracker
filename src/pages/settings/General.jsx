@@ -33,7 +33,6 @@ import {
   Database,
   ChevronRight,
   ShieldAlert,
-  Crosshair,
   Trash2,
   AlertTriangle,
   Wallet,
@@ -59,12 +58,6 @@ import Modal from '../../components/ui/Modal';
 import { TickValue } from '../../components/dashboard/decision/parts';
 import { clearFlexCredentials } from '../../services/flexApi';
 import { todayDateString } from '../../utils/dates';
-import {
-  tierParams,
-  sanitizeTier,
-  EDGE_KEYS,
-  CAPITAL_KEYS,
-} from '../../utils/sniperMeta';
 import { CONTAINER_VARIANTS, TILE_VARIANTS } from '../../theme/animationVariants';
 
 const CASH_FLOW_TYPES = [
@@ -339,16 +332,10 @@ export default function SettingsGeneral() {
     killSwitch.setMaxLoss(n);
   };
 
-  // Brique 13 — tier Sniper actif. Pas de draft : un <select> commit
-  // immédiatement via SET_ACTIVE_SNIPER_TIER. Le payload est le patch
-  // SEUL ({e} ou {c}) — le merge contre l'état courant vit dans le
-  // reducer, pour qu'un double changement rapide ne repasse pas par
-  // une closure périmée. Label/params dérivés via tierParams().
-  const activeTier = sanitizeTier(settings?.activeSniperTier);
-  const activeTierInfo = tierParams(activeTier);
-  const commitTier = (patch) => {
-    dispatch({ type: 'SET_ACTIVE_SNIPER_TIER', payload: patch });
-  };
+  // 1.G-b — tier Sniper (matrice E×C) MORT : doctrine abolie par la carte V3
+  // (régime VIX / palier Edge / Capital tier). Plus d'affichage ni d'éditeur
+  // ici. Le reducer SET_ACTIVE_SNIPER_TIER + settings.activeSniperTier restent
+  // dormants (aucune écriture) ; leur purge = recette É4 (balayage doctrine morte).
 
   // B4 — capital de référence manuel (CHF). Stocké brut, converti en USD
   // au taux courant pour alimenter la cascade dans calculatePortfolioMetrics.
@@ -415,11 +402,6 @@ export default function SettingsGeneral() {
             }
             meta={initialCapitalChf != null ? 'CHF de référence' : 'non défini'}
             tone={initialCapitalChf != null ? undefined : 'mute'}
-          />
-          <Cell
-            label="Tier Sniper"
-            value={`${activeTier.e}·${activeTier.c}`}
-            meta={`TIER ${activeTierInfo.label}`}
           />
           <Cell
             label="Mode"
@@ -705,68 +687,11 @@ export default function SettingsGeneral() {
         </Section>
       </motion.div>
 
-      {/* ── Stratégie Sniper (Brique 13) ── */}
-      <motion.div variants={TILE_VARIANTS}>
-        <Section
-          icon={Crosshair}
-          title="Stratégie Sniper"
-          description="Tier actif de la matrice E0–E4 × C1–C5 (Sniper OTM v1.0 Finale). Pilote le badge TIER du cockpit et le bloc TIER ACTIF du Dashboard."
-        >
-          <Row
-            label="Tier actif (matrice E×C)"
-            description="Edge tier = conviction (IV Rank à l'entrée). Capital tier = taille de position en % NLV."
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-2)',
-                flexWrap: 'wrap',
-              }}
-            >
-              <select
-                aria-label="Edge tier (E0 à E4)"
-                className="settings-page__input"
-                style={{ width: 84, minWidth: 'auto' }}
-                value={activeTier.e}
-                onChange={(e) => commitTier({ e: e.target.value })}
-              >
-                {EDGE_KEYS.map((k) => (
-                  <option key={k} value={k}>
-                    {k}
-                  </option>
-                ))}
-              </select>
-              <span
-                className="mono"
-                style={{ color: 'var(--ink-mute)', fontSize: 'var(--fs-xs)' }}
-              >
-                ×
-              </span>
-              <select
-                aria-label="Capital tier (C1 à C5)"
-                className="settings-page__input"
-                style={{ width: 84, minWidth: 'auto' }}
-                value={activeTier.c}
-                onChange={(e) => commitTier({ c: e.target.value })}
-              >
-                {CAPITAL_KEYS.map((k) => (
-                  <option key={k} value={k}>
-                    {k}
-                  </option>
-                ))}
-              </select>
-              <span
-                className="mono"
-                style={{ color: 'var(--ink-mute)', fontSize: 'var(--fs-xs)' }}
-              >
-                → TIER {activeTierInfo.label} · cash floor {activeTierInfo.cashFloorPct}% ·
-                notional max {activeTierInfo.notionalMaxPct}%
-              </span>
-            </div>
-          </Row>
-        </Section>
-      </motion.div>
+      {/* 1.G-b — la section « Stratégie Sniper » (matrice tier E×C) est MORTE :
+          « A · E0×C1 » réfère au régime VIX, au palier Edge et au Capital tier,
+          tous ABOLIS par la carte V3 (Q-D mort). Le chip TIER meurt donc aussi
+          ici, comme dans le deck. (Balayage des autres libellés de doctrine
+          morte : recette É4.) */}
 
       {/* ── Connexions API — §13.4 harmonized with /settings/api ── */}
       <motion.div variants={TILE_VARIANTS}>
@@ -951,7 +876,6 @@ export default function SettingsGeneral() {
           <ul className="settings-danger__survives-list">
             <li>Watchlist (tickers suivis)</li>
             <li>Taux USD/CHF et préférences FX</li>
-            <li>Tier Sniper actif</li>
             <li>Seuil du kill switch, nom de profil, mode daltonien</li>
           </ul>
           <label className="settings-danger__type-label">

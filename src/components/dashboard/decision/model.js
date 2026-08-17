@@ -40,7 +40,6 @@
 //  signal décisionnel sanctionné DA §3), jamais par un rouge/vert P&L.
 // ═══════════════════════════════════════════════════════════════
 
-import { MIN_DECISIVE_WINRATE } from '../../../utils/significance';
 // Q-C — la bande consomme le MOTEUR UNIQUE de portes (utils/gates), seule
 // source des 5 portes P1..P5. TOUS les seuils y sont lus du registre. Les
 // seuils SL/DTE et les TP fixes (40/50/80, morts en V3) ne vivent plus ici.
@@ -152,67 +151,7 @@ export function deriveAttention({ gateRows = [], today = null, watchedCount = 0,
   };
 }
 
-/**
- * Dérive la zone FORME depuis le modèle Héros 2 (deriveRealized ALL) —
- * MÊMES chiffres que le deck Réalisé, zéro recalcul divergent.
- *
- * @param {Object} ctx
- * @param {Array}  ctx.perTrade       m.perTrade (hero2/model, tri chrono ↑)
- * @param {Object} ctx.matrix         m.matrix (hero2/model)
- * @param {number} ctx.currentStreak  usePortfolioMetrics().currentStreak (+W / −L)
- * @param {number} ctx.mtd            usePortfolioMetrics().monthlyPnlUsd
- * @param {number} ctx.maxDots        pastilles affichées (18)
- */
-export function deriveForme({ perTrade = [], matrix = null, currentStreak = null, mtd = null, maxDots = 18 }) {
-  const dots = perTrade.slice(-maxDots).map((t) => ({
-    pnl: t.pnl,
-    date: t.date,
-    tk: t.tk,
-    tone: t.pnl > 0 ? 'win' : t.pnl < 0 ? 'loss' : 'flat',
-  }));
-  const decisive = matrix ? matrix.wins + matrix.losses : 0;
-  return {
-    dots,
-    total: perTrade.length,
-    streak:
-      !Number.isFinite(currentStreak) || currentStreak === 0
-        ? null
-        : { count: Math.abs(currentStreak), kind: currentStreak > 0 ? 'V' : 'D' },
-    mtd: nf(mtd),
-    // Expectancy = CELLE de Héros 2 (matrix.expectancy), affichée
-    // honnêtement : « — » sous 10 trades décisifs (MIN_DECISIVE_WINRATE).
-    expectancy: matrix && matrix.n && decisive >= MIN_DECISIVE_WINRATE ? matrix.expectancy : null,
-    decisive,
-    n: matrix ? matrix.n : 0,
-  };
-}
-
-/**
- * Dérive la zone CAPITAL — mêmes formules que hero1/model.deriveKpisReal
- * (miroir strict : EXPOSITION = metrics.totalExposure = Σ |valeur mark|
- * (É3 §4.2.7 — le libellé dit la vérité du calcul), DISPONIBLE =
- * resolveLiveAvailableUsd sinon estimation, RISK $ = totalSlDollar).
- */
-export function deriveCapital({ metrics, greeks, availableUsd, availableIsReal, riskDollar, tier }) {
-  const nlv = metrics?.netLiquidationValueUsd ?? null;
-  const deployed = metrics?.totalExposure ?? null;
-  // Q-C — CAP 70 % RETIRÉ : le « plafond notionnel » 70 % est le plafond
-  // d'investi total du régime A de la V1 (doctrine MORTE), et il CONTREDIT
-  // le plafond de 60 % PAR POSITION (S1). La V3 n'a AUCUN plafond d'exposition
-  // TOTALE (seul S1 par position, marqué au niveau violation Q-B) — afficher
-  // un cap sur une jauge d'exposition totale inventerait une doctrine. La
-  // jauge montre donc le déploiement sans marqueur de plafond.
-  return {
-    deployed: nf(deployed),
-    deployedPct: deployed != null && nlv > 0 ? (deployed / nlv) * 100 : null,
-    available: availableUsd ?? null,
-    availableIsReal: availableIsReal === true && availableUsd != null,
-    availablePct: availableUsd != null && nlv > 0 ? (availableUsd / nlv) * 100 : null,
-    riskDollar: nf(riskDollar),
-    riskPct: riskDollar != null && nlv > 0 ? (riskDollar / nlv) * 100 : null,
-    deltaShares: nf(greeks?.sumDelta),
-    deltaDollar: nf(greeks?.notionalDelta),
-    thetaDay: nf(greeks?.thetaDaily),
-    tierLabel: tier?.label ?? null,
-  };
-}
+// 1.G-b — deriveForme + deriveCapital SUPPRIMÉS avec la bande décision
+// (leurs chiffres sont des doublons stricts du PortfolioDeck / Héros 2 ;
+// zéro donnée perdue). Seul deriveAttention survit — consommé par
+// useAttentionMap (colonnes GATE de Positions / LivePositions / PreMarket).

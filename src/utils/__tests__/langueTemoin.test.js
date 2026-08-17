@@ -21,7 +21,6 @@ const FILES = [
   'components/dashboard/hero1/PortfolioDeck.jsx',
   'components/dashboard/hero2/RealizedDeck.jsx',
   'components/dashboard/Watchlist.jsx',
-  'components/dashboard/decision/FormeZone.jsx',
   'components/ui/DataTable.jsx',
   'pages/trading/Positions.jsx',
   'pages/trading/History.jsx',
@@ -86,7 +85,9 @@ const REQUIRED = [
   '+ Ajouter',
   "label=\"Depuis pic · RÉAL\"",
   "label=\"Récupération\"",
-  "label=\"SÉRIE\"",
+  // 1.G-b — la bande FORME (label="SÉRIE") est morte ; la SÉRIE (français)
+  // vit désormais dans le PortfolioDeck (« SÉRIE EN COURS »).
+  "'SÉRIE EN COURS'",
 ];
 
 describe('É3.3 — témoin de langue (sources du périmètre)', () => {

@@ -31,6 +31,8 @@ import { fmtUsd, fmtUsdSigned, fmtUsdCompact, fmtChf, fmtPct, fmtAxisDate, toneS
 import { TickValue } from '../decision/parts';
 // É3 §4.2.5 — même gate d'expectancy que la bande (une seule vérité).
 import { MIN_DECISIVE_WINRATE } from '../../../utils/significance';
+// 1.G-b — le BLOC PORTES (5 portes par position) rendu sous les 4 panneaux.
+import PortesBloc from './PortesBloc';
 
 const sharesSigned = (v) => (v == null || !Number.isFinite(v) ? null : `${v >= 0 ? '+' : '−'}${Math.abs(Math.round(v)).toLocaleString('de-CH')}`);
 const num2 = (v) => (v == null || !Number.isFinite(v) ? null : v.toFixed(2));
@@ -73,6 +75,9 @@ export default function PortfolioDeck({ kpi, rate }) {
   // É3 §4.2.7 — EXPOSITION : la méta dit la vérité du calcul
   // (totalExposure = Σ |valeur mark|, pas le coût des primes engagées).
   const capital = [
+    // 1.G-b — LIQUIDITÉ DISPO démote en cellule S1 (le lead du bloc) : le S0
+    // héros au-dessus est désormais DÉPLOYABLE. Marqueur IBKR/est. en méta.
+    { label: 'LIQUIDITÉ DISPO', value: k.powder == null ? null : fmtUsd(k.powder), chf: chf(k.powder), sub: k.powderPct != null ? `${Math.round(k.powderPct)} % NLV · ${k.powderIsReal ? 'IBKR' : 'est.'}` : k.powderIsReal ? 'IBKR' : 'est.' },
     { label: 'EXPOSITION', value: k.exposure == null ? null : fmtUsdCompact(k.exposure), chf: chf(k.exposure), sub: k.expoPct != null ? `Σ mark · ${Math.round(k.expoPct)} % NLV` : 'Σ valeur mark', bar: k.expoPct != null ? { pct: k.expoPct, mark: 70 } : null },
     { label: 'NOTIONNEL', value: k.notional == null ? null : fmtUsdCompact(k.notional), chf: chf(k.notional) },
     // DELTA $ ENGAGÉ — SUPPRIMÉE (amendement 16.08) : doublon de « Δ NET ×
@@ -141,6 +146,7 @@ export default function PortfolioDeck({ kpi, rate }) {
   ];
 
   return (
+    <>
     <div className="pf-deck" aria-label="Portefeuille en un coup d'œil">
       {panels.map((p) => {
         // Pré-filtre : le rendu ne porte QUE les cellules servies → le
@@ -152,20 +158,34 @@ export default function PortfolioDeck({ kpi, rate }) {
             <div className="mk-title">{p.title}</div>
             {p.hero ? (
               <div className="pf-hero">
+                {/* 1.G-b — DÉPLOYABLE (S0) = sizing.S1 × NLV. PIÈGE N-max : quota
+                    atteint → « N max atteint », le montant passe en méta. NLV
+                    absente → indéterminée, sans repli. Aucun seuil en dur. */}
                 <div className="pf-hero__lbl">
-                  LIQUIDITÉ DISPO
-                  {k.powderIsReal ? (
-                    <span className="pf-real" title="Available Funds réel — bridge IBKR (snapshot frais)">IBKR</span>
+                  DÉPLOYABLE
+                  {k.nMaxReached ? (
+                    <span className="pf-est" title={`Quota de positions atteint (N max = ${k.nMax}, carte V3 : N=1 sous 6000 CHF) — rien de déployable`}>N MAX</span>
                   ) : (
-                    <span className="pf-est" title="Estimation cash-A — bridge IBKR hors ligne ou snapshot périmé">est.</span>
+                    <span className="pf-real" title="Plafond de taille PAR POSITION — sizing S1 (60 % du NLV, registre)">S1</span>
                   )}
                 </div>
                 <div className="pf-hero__val">
-                  <TickValue text={k.powder == null ? '—' : fmtUsd(k.powder)} />
+                  <TickValue
+                    text={
+                      k.deployableUsd == null
+                        ? 'indéterminée'
+                        : k.nMaxReached
+                          ? 'N max atteint'
+                          : fmtUsd(k.deployableUsd)
+                    }
+                  />
                 </div>
                 <div className="pf-hero__meta">
-                  {fmtChf(k.powder, rate) || ''}
-                  {k.powderPct != null ? ` · ${Math.round(k.powderPct)} % déployable` : ''}
+                  {k.deployableUsd == null
+                    ? 'NLV absente — sans repli'
+                    : k.nMaxReached
+                      ? `${fmtUsd(k.deployableUsd)}${fmtChf(k.deployableUsd, rate) ? ` · ${fmtChf(k.deployableUsd, rate)}` : ''} · quota ${k.nMax}`
+                      : `${fmtChf(k.deployableUsd, rate) || ''}${k.deployablePct != null ? ` · ${Math.round(k.deployablePct)} % du NLV` : ''}`}
                 </div>
               </div>
             ) : null}
@@ -181,5 +201,10 @@ export default function PortfolioDeck({ kpi, rate }) {
         );
       })}
     </div>
+    {/* 1.G-b — LE BLOC PORTES : les 5 portes de sortie, une rangée par
+        position. Absorbe la zone ATTENTION de la bande décision (morte).
+        N=0 → cellule pleine largeur « AUCUNE POSITION · déployable … ». */}
+    <PortesBloc deployableUsd={k.deployableUsd} rate={rate} />
+    </>
   );
 }

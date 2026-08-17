@@ -11,6 +11,8 @@
 import { MIN_DECISIVE_WINRATE } from '../../../utils/significance';
 // É3 §4.2.6 — moteur DTE unique (clampé 0) + détection expirée.
 import { dteFromExp, isExpired } from '../../../utils/positions';
+// 1.G-b — DÉPLOYABLE = sizing.S1 × NLV, avec le piège N-max (sizing.S4).
+import { SIZING } from '../../../config/registre';
 
 // Micro-série pour le sparkline du héros NLV overlay (zone graphe).
 const sparkFrom = (series, key, n = 30) =>
@@ -106,9 +108,32 @@ export function deriveKpisReal(ctx) {
     }
   }
 
+  // DÉPLOYABLE (1.G-b) — plafond de taille PAR POSITION = sizing.S1 × NLV
+  // (S0 héros). PIÈGE N-max : la carte V3 fixe N=1 sous 6000 CHF ; avec le
+  // quota atteint, RIEN n'est déployable → on lit sizing.S4_n_max et on le
+  // dit. Aucun seuil en dur (registre). NLV absente → indéterminée, SANS
+  // repli sur les dépôts (deployableUsd = null).
+  const deployableUsd = nlv != null && nlv > 0 ? SIZING.S1_pct_max_par_position * nlv : null;
+  const nlvChf =
+    num(metrics?.netLiquidationValueChf) ?? (nlv != null && liveRate > 0 ? nlv * liveRate : null);
+  const s4 = SIZING.S4_n_max;
+  // N max INDÉTERMINÉ quand le capital CHF est inconnu (pas de repli) — sinon
+  // 1 sous le seuil, 2 au-dessus, plafonné. nMaxReached exige un N max connu.
+  const nMax =
+    nlvChf == null
+      ? null
+      : Math.min(s4.plafond_absolu, nlvChf < s4.seuil_chf ? s4.valeur_sous_seuil : s4.valeur_au_dessus);
+  const posCount = Array.isArray(positions) ? positions.length : 0;
+  const nMaxReached = nMax != null && posCount >= nMax;
+
   return {
     // graphe (overlay) — inchangé
     nlv, nlvSpark: sparkFrom(series, 'nlv', 30),
+    // DÉPLOYABLE (S0 héros) + N-max ; LIQUIDITÉ DISPO démote en cellule S1.
+    deployableUsd,
+    deployablePct: SIZING.S1_pct_max_par_position * 100, // 60 % du NLV, par position
+    nMax,
+    nMaxReached,
     // CAPITAL & LIQUIDITÉ — powder = liquidité déployable (réelle IBKR ou
     // estimation cash-A). powderIsReal pilote le marqueur IBKR / est.
     powder: availableUsd ?? null,

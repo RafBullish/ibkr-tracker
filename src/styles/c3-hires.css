@@ -815,12 +815,19 @@
   .pf-cell .mk-title { font-size: 12px; letter-spacing: 0.08em; }                                            /* S4 titre de panneau */
   .pf-deck .pf-grid { row-gap: 9px; grid-auto-rows: minmax(70px, auto); }
 
-  /* ── « COCKPIT » = BANDE DÉCISION (interprétation de « deck + cockpit » ;
-     la classe littérale .cockpit = MarketDeck, traité plus bas). Scale-up
-     MODÉRÉ pour la cohérence avec le deck à 2844, scopé .decision-band. ── */
-  .decision-band .db-c__val { font-size: 24px; line-height: 26px; }
-  .decision-band .mk-title { font-size: 12px; }
-  .decision-band .db-grid3 { grid-auto-rows: minmax(48px, auto); }
+  /* ── 1.G-b · BLOC PORTES · échelle S2/S3/S4 à la cible 2560 ── */
+  .pf-portes__head-val { font-size: 34px; }   /* S1 — la phrase du matin */
+  .pf-porte-row__tk { font-size: 18px; }
+  .pf-porte-row__sub { font-size: 11px; }
+  .pf-porte-row__pnl { font-size: 15px; }
+  .pf-porte__lbl { font-size: 11px; letter-spacing: 0.05em; }
+  .pf-porte__val { font-size: 22px; line-height: 26px; }   /* S2 */
+  .pf-porte__meta { font-size: 12px; line-height: 14px; min-height: 14px; }
+  .pf-portes__empty-lbl { font-size: 15px; }
+  .pf-portes__empty-val { font-size: 18px; }
+
+  /* 1.G-b — l'échelle @2560 de la bande décision (.decision-band) est
+     MORTE avec la bande (absorbée par le bloc PORTES du deck). */
 
   /* ── MARKETDECK · GEL 1.C LEVÉ — ÉCHELLE + DENSITÉ SEULEMENT. Doto,
      animation de tick et loi des couleurs INTOUCHÉS. Les rangées fixes
