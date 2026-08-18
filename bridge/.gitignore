@@ -13,3 +13,7 @@ snapshot.json.tmp
 # Seul .env.example (valeurs vides) est suivi.
 .env
 v2/.env
+
+# Journaux runtime bridge v2 — mémoire de vol + outbox, données de session.
+v2/journal.ndjson
+v2/outbox.ndjson
