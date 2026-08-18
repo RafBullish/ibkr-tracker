@@ -8,11 +8,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ## [1.0.2-rc.11] — 2026-08-18
 
-**MICRO-BRIQUE « CAPTURE À L'ENTRÉE ». EN ATTENTE DU GO (non mergée).** Le
-moment manquant entre l'exécution chez IBKR et l'import du Flex : l'endroit où
-Rafael dépose ce qu'il sait. Le Flex ne porte ni θ, ni bid/ask, ni date
-d'earnings, ni thèse — deux des sept règles de violation (**E2** θ ≤ 0,8 %/jour,
-**E4** spread ≤ 30 % du mid) restaient donc **indéterminées à vie**.
+**MICRO-BRIQUE « CAPTURE À L'ENTRÉE » (GO Rafael 18.08).** Le moment manquant
+entre l'exécution chez IBKR et l'import du Flex : l'endroit où Rafael dépose ce
+qu'il sait. Le Flex ne porte ni θ, ni bid/ask, ni date d'earnings, ni thèse —
+deux des sept règles de violation (**E2** θ ≤ 0,8 %/jour, **E4** spread ≤ 30 %
+du mid) restaient donc **indéterminées à vie**.
 
 - **Sidecar étendu** (`positionMeta.js`, clé = signature `tk|as|dir|ty|st|ex`) —
   cinq champs d'entrée réutilisant la convention `<x>AtEntry` déjà lue par
@@ -28,17 +28,21 @@ d'earnings, ni thèse — deux des sept règles de violation (**E2** θ ≤ 0,8 
   d'entrée, écrit le sidecar par signature ; (2) **extension de « Saisie · carte
   V3 »** dans le tiroir détail (compléter après coup) + affichage lecture seule
   des valeurs capturées (NEUTRES).
-- **E2/E4 câblées sur les valeurs d'ENTRÉE** — `E2 = |θ| / mid d'entrée`
-  (mid capturé préféré, `pi` en repli) ; `E4 = (ask − bid) / mid`. **Jamais sur
-  le mark courant** (≠ « Θ % PRIME/JOUR » du deck, combustion sur le mark,
-  neutre — ne pas rapprocher). Reducer `UPDATE_POSITION` : whitelist élargie ;
-  ctx page passe `thetaAtEntryPerDay` pour E2.
+- **E2/E4 câblées sur les valeurs d'ENTRÉE** — `E2 = |θ| / midAtEntry`
+  (**mid capturé SEUL, aucun repli sur `pi`** : à 0,8 % l'écart mid↔fill fait
+  basculer le verdict à la frontière, donc la base juge le mid vu avant l'ordre,
+  pas le prix payé) ; `E4 = (ask − bid) / mid`. **Jamais sur le mark courant**
+  (≠ « Θ % PRIME/JOUR » du deck, combustion sur le mark, neutre — ne pas
+  rapprocher). Reducer `UPDATE_POSITION` : whitelist élargie ; ctx page passe
+  `thetaAtEntryPerDay` pour E2.
 - **Honnêteté préservée** : pas de capture → E2/E4 **indéterminées** (jamais
-  présumées conformes) ; capture **partielle** → seule la règle dont les entrées
-  sont présentes se juge (θ seul → E2 ; bid/ask seuls → E4). Non bloquant.
+  présumées conformes) ; capture **partielle** → seule la règle dont **toutes**
+  les entrées sont présentes se juge (**E2 exige θ ET mid** ; E4 exige bid ET
+  ask). Les positions antérieures à cette brique restent indéterminées sur E2 —
+  correct : elles ont été prises avant que la règle soit mesurable. Non bloquant.
 
-**577 tests** (+12 : sidecar entry-fields, réhydratation capture→import,
-E2/E4 verdicts + partielle + δ jamais jugé), `check:doctrine` 0,
+**579 tests** (+14 : sidecar entry-fields, réhydratation capture→import,
+E2/E4 verdicts + matrice partielle E2=θ∧mid + δ jamais jugé), `check:doctrine` 0,
 `check:color-law` 0, build vert. Vérif @2560+@1591 : formulaire autonome écrit
 le sidecar (`PLTR|Option|Long|CALL|60|…`) sans créer de position ; tiroir affiche
 les valeurs + E2 (1,50 %/jour) / E4 (80 %) jugées sur l'entrée. Captures

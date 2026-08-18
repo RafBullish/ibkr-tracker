@@ -195,19 +195,22 @@ function ruleS6(pos, ctx) {
 /**
  * E2 — θ d'entrée > 0,8 %/jour de la prime mid d'ENTRÉE. Micro-brique
  * capture : θ vient de `ctx.thetaAtEntryPerDay` (θ absolu/jour par action,
- * saisi à la main). Dénominateur = prime mid d'entrée : le mid CAPTURÉ
- * (`pos.midAtEntry`, apparié au θ du même moment) ; à défaut le prix
- * d'entrée `pi` (le fill Flex, proxy honnête). Sans θ capturé → indéterminé.
- * NB : ≠ « Θ % PRIME/JOUR » du deck (combustion sur le MARK courant, neutre).
+ * saisi à la main). Dénominateur = le mid CAPTURÉ (`pos.midAtEntry`, apparié
+ * au θ du même moment) — le mid vu AVANT l'ordre, PAS le prix payé. AUCUN
+ * repli sur `pi` : à 0,8 %, l'écart mid↔fill fait basculer le verdict à la
+ * frontière, donc la base doit être exacte. Sans θ ET mid capturés →
+ * indéterminé (les positions prises avant cette brique le restent : c'est
+ * correct, la règle n'était pas mesurable). ≠ « Θ % PRIME/JOUR » du deck
+ * (combustion sur le MARK courant, neutre).
  */
 function ruleE2(pos, ctx) {
   const src = 'entree.E2_theta_max_pct_prime_jour';
   const max = THETA_MAX_PCT_PRIME_JOUR;
   const theta = ctx.thetaAtEntryPerDay;
-  const mid = toFloat(pos.midAtEntry) || toFloat(pos.pi);
+  const mid = toFloat(pos.midAtEntry);
   if (!Number.isFinite(theta) || !(mid > 0)) {
     return descriptor('E2', 'θ d’entrée', src, V_STATUS.INDETERMINE,
-      'θ d’entrée non capturé (θ/jour + prime mid d’entrée requis).');
+      'θ d’entrée non capturé (θ/jour + mid d’entrée requis).');
   }
   const frac = Math.abs(theta) / mid;
   if (frac > max) {
