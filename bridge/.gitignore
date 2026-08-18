@@ -8,3 +8,8 @@ __pycache__/
 # Données de session, jamais commitées.
 snapshot.json
 snapshot.json.tmp
+
+# Secrets bridge v2 (Phase A) — clé service_role Supabase, JAMAIS commitée.
+# Seul .env.example (valeurs vides) est suivi.
+.env
+v2/.env
