@@ -170,9 +170,20 @@ mandatée : **registre → saisie → portes → palier**.
   purgé (`.sniper-meta-editor*`/`.perf-attr*`/`.qc-anat*`/`.position-detail__
   tag-btn`, ~410 l). **564 tests**, doctrine 0, color-law 0, build ✓ ; vérif :
   base vide → état-vide, LivePositions sans Σ Notionnel, tiroir sans Méta
-  Sniper (drawer ouvre proprement). Résidu consigné : plomberie `risk.js`
-  `totalNotional`/`positionNotional` + `Hero1 notional` désormais orpheline
-  (ne sert plus aucun rendu).
+  Sniper (drawer ouvre proprement).
+  **Décisions architecte (18.08) :**
+  - **Attribution — PAS de renaissance maintenant.** Déclencheur = **20 clôtures
+    officielles**. Raison : 0 clôture au 01.09, ~10 d'ici décembre, plancher
+    n≥3 → la matrice resterait vide ~6 mois. Rebirth = re-clé sur
+    `porteDeclenchee` (la mécanique agrégation/heatmap de `computeEdgeCapitalMatrix`
+    est réutilisable ; code préservé dans git avant `7106b0b`).
+  - **Plomberie notionnel orpheline** (`risk.js` `totalNotional`/`positionNotional`
+    + `Hero1 notional`) → repliée dans la **passe finale É4-b de fin août**, pas
+    de brique dédiée.
+  - **Avertissement Zone dangereuse** durci (correction GO) : le reset détruit
+    `qc:positionMarks` (mémoire du pic) — LOCAL, sans copie serveur, donc
+    irrécupérable après le 1er trade réel jusqu'à ce que le bridge V1.1 écrive
+    dans Supabase (trailing P2 repart de zéro). Nommé dans la modale.
 
 ---
 

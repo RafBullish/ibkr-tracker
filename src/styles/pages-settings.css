@@ -542,6 +542,19 @@
   line-height: 1.7;
   font-size: var(--fs-sm);
 }
+/* É4-b (correction GO) — avertissement de CONSÉQUENCE (mémoire du pic
+   irrécupérable). AMBRE = attention décisionnelle : c'est une perte de
+   DONNÉE locale, pas d'argent réel → jamais rouge (loi de couleur). */
+.settings-danger__warn {
+  margin: 0;
+  padding: var(--qc-space-2) var(--qc-space-3);
+  color: var(--ink-soft);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  border-left: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border-radius: var(--qc-radius-sm);
+}
 .settings-danger__type-label {
   display: flex;
   flex-direction: column;

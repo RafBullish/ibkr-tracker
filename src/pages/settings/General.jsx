@@ -964,8 +964,21 @@ export default function SettingsGeneral() {
               <strong className="mono">{journalEntries.length}</strong> entrées de journal
             </li>
             <li>Capital de référence, dernière synchro, snapshots bridge</li>
+            <li>
+              L&apos;historique NLV (courbe d&apos;équité + buffer intraday) et{' '}
+              <strong>la mémoire du pic de chaque position</strong> (trailing P2)
+            </li>
             <li>Identifiants Flex, historique de recherche Chain, préférence Vue History</li>
           </ul>
+          {/* É4-b (correction GO) — nommer la CONSÉQUENCE du pic détruit :
+              qc:positionMarks est LOCAL, sans copie serveur tant que V1.1. */}
+          <p className="settings-danger__warn">
+            ⚠ La mémoire du pic (<span className="mono">qc:positionMarks</span>) est{' '}
+            <strong>locale et sans copie serveur</strong>. Une fois effacée, elle est{' '}
+            <strong>irrécupérable</strong> après ton premier trade réel — jusqu&apos;à ce que le
+            bridge V1.1 l&apos;écrive dans Supabase. Le trailing (porte P2) repartirait alors de
+            zéro sur tes positions en cours.
+          </p>
           <p className="settings-danger__survives-title">Ce qui SURVIT (préférences, pas des données comptables) :</p>
           <ul className="settings-danger__survives-list">
             <li>Watchlist (tickers suivis)</li>
