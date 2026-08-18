@@ -35,6 +35,19 @@ export const isWritableNlv = (nlv) =>
  * @returns {Array<Object>} points date-ordered, annotés
  */
 export function buildNlvSeries({ snapshots, cashFlows, closedTrades, liveNlv, liveRate = 1, today, unrealizedLive = null }) {
+  // GARDE D'ÉTAT-VIDE (É4-b) — corrige le faux zéro du 01.09. Sans AUCUNE
+  // ancre réelle — ni NLV live > 0, ni clôture, ni flux — d'éventuels
+  // `dailySnapshots` résiduels (persistés lors d'une session passée puis
+  // orphelins après un reset des données) traçaient une ligne périmée au
+  // lieu de laisser l'état-vide du Héros 1 se déclencher. On rend la série
+  // VIDE à la SOURCE quand le compte n'a genuinement rien : l'état-vide
+  // « Série NLV vide » s'affiche, plus jamais de faux zéro / ligne fantôme.
+  const hasLiveAnchor = Number.isFinite(liveNlv) && liveNlv > 0;
+  const hasHistory =
+    (Array.isArray(closedTrades) && closedTrades.length > 0) ||
+    (Array.isArray(cashFlows) && cashFlows.length > 0);
+  if (!hasLiveAnchor && !hasHistory) return [];
+
   const clean = (Array.isArray(snapshots) ? snapshots : [])
     .filter((s) => s && typeof s.date === 'string' && Number.isFinite(s.nlv) && s.nlv > 0)
     .slice()

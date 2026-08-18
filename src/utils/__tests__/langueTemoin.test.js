@@ -79,7 +79,8 @@ const REQUIRED = [
   "label: 'Durée'",
   'Exporter CSV',
   'Σ LATENT $',
-  '>Σ NOTIONNEL<',
+  // É4-b — « Σ NOTIONNEL » n'est plus requis : cellule retirée de
+  // LivePositions (mensonge mark, comme la cellule NOTIONNEL du deck en É4-a).
   '>Σ RISQUE MAX<',
   '>DTE PROCHE<',
   '+ Ajouter',

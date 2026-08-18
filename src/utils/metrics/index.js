@@ -27,7 +27,4 @@ export {
   daysSincePeakOf,
   recoveryOf,
   joursGagnants,
-  realCurve,
-  nlvCurve,
-  greeksTotals,
 } from './curveStats';

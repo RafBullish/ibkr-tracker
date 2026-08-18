@@ -53,7 +53,6 @@ import StatusBadge from '../../components/ui/StatusBadge';
 import EmptyState from '../../components/ui/EmptyState';
 import DataTable from '../../components/ui/DataTable';
 import Modal from '../../components/ui/Modal';
-import SniperMetaEditor from '../../components/dashboard/SniperMetaEditor';
 import { POLLING } from '../../constants/timing';
 import { RISE_CONTAINER_VARIANTS, RISE_TILE_VARIANTS } from '../../theme/animationVariants';
 
@@ -429,7 +428,7 @@ function earningsLabel(earningsDate) {
   return '— non renseignée';
 }
 
-function PositionDetailBody({ row, greeks, violations, navigate, onEdit, onCloseMode, onTagMeta }) {
+function PositionDetailBody({ row, greeks, violations, navigate, onEdit, onCloseMode }) {
   const { pos, r, pctChg, isOpt, dte, costBasis, maxLoss } = row;
   const doctrine = violations || [];
   const pnl = r.unrealizedPnlUsd;
@@ -519,20 +518,9 @@ function PositionDetailBody({ row, greeks, violations, navigate, onEdit, onClose
         </div>
       )}
 
-      {/* 2.A — méta Sniper : AFFICHAGE dans la table, ÉDITION ici. */}
-      <div className="position-detail__section">
-        <span className="position-detail__section-title">Méta Sniper</span>
-        {/* É3.2 — l'item « IV Rank » est MORT (champ jamais servi par
-            l'import réel) ; Edge/Capital restent : sidecar vivant par
-            l'UI de tagging ci-dessous. */}
-        <div className="position-detail__grid">
-          <DetailItem label="Edge tier">{row.edgeTier || '—'}</DetailItem>
-          <DetailItem label="Capital tier">{row.capitalTier || '—'}</DetailItem>
-        </div>
-        <button type="button" className="pg-mock-btn position-detail__tag-btn" onClick={onTagMeta}>
-          Tagger la méta (E0-E4 · C1-C5 · β)
-        </button>
-      </div>
+      {/* É4-b — section « Méta Sniper » (Edge tier E0-E4 / Capital tier C1-C5 +
+          éditeur SniperMetaEditor) SUPPRIMÉE : doctrine V1 morte (abolie par la
+          carte V3), l'usine IV Rank qui alimentait le tier n'a jamais existé. */}
 
       {/* Q-B — saisie carte V3 : date de résultats (source P4, câblage Q-C)
           + note d'entrée. Édition via « Éditer ». */}
@@ -989,8 +977,6 @@ export default function Positions() {
   const [detailId, setDetailId] = useState(null);
   // U4-bis — mode du panneau détail : 'view' (read-only) | 'edit' | 'close'.
   const [detailMode, setDetailMode] = useState('view');
-  // 2.A — éditeur de méta Sniper (modal autonome, sidecar qc:sniperMeta).
-  const [tagPos, setTagPos] = useState(null);
   const [greeksMap, setGreeksMap] = useState(new Map());
   const [lastGreeksUpdate, setLastGreeksUpdate] = useState(null);
   // `now` lives in state so the relative age label can be computed during
@@ -1093,11 +1079,8 @@ export default function Positions() {
           delta: lrow.delta ?? null,
           theta: lrow.theta ?? null,
           ivEstimated: !!lrow.ivEstimated,
-          // É3.2 — ivr et spark7d MORTS (slots fantômes, aucun producteur
-          // réel). edgeTier/capitalTier restent : le tiroir détail les
-          // affiche et les édite (sidecar SniperMetaEditor).
-          edgeTier: lrow.edgeTier ?? null,
-          capitalTier: lrow.capitalTier ?? null,
+          // É3.2 — ivr et spark7d MORTS ; É4-b — edgeTier/capitalTier retirés
+          // (doctrine tier V1 morte, plus de tiroir de tagging).
           daysIn: Number.isFinite(lrow.daysHeld) ? lrow.daysHeld : null,
         };
       }),
@@ -1670,7 +1653,6 @@ export default function Positions() {
             navigate={navigate}
             onEdit={() => setDetailMode('edit')}
             onCloseMode={() => setDetailMode('close')}
-            onTagMeta={() => setTagPos({ id: detailRow.pos.id, ticker: detailRow.pos.tk })}
           />
         )}
         {detailRow && detailMode === 'edit' && (
@@ -1703,8 +1685,6 @@ export default function Positions() {
         )}
       </Modal>
 
-      {/* 2.A — éditeur de méta Sniper (modal autonome, sidecar). */}
-      <SniperMetaEditor position={tagPos} open={!!tagPos} onClose={() => setTagPos(null)} />
     </motion.div>
   );
 }

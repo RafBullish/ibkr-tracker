@@ -12,7 +12,6 @@ import {
 } from './migrations';
 import { applyAction } from './reducer';
 import { DEBOUNCE } from '../constants/timing';
-import { sanitizeTier, DEFAULT_TIER } from '../utils/sniperMeta';
 import { DEFAULT_SECTORS, sanitizeSectors } from '../config/tapeGroups';
 
 // ─── Storage Keys ────────────────────────────────────────────
@@ -84,9 +83,7 @@ function loadInitialState() {
     if (typeof s.ic === 'number' && Number.isFinite(s.ic) && s.ic > 0) {
       settings.initialCapitalChf = s.ic;
     }
-    // Brique 13 — tier Sniper actif (coordonnée matrice E×C, clé `tier`).
-    // sanitizeTier rejette silencieusement un payload corrompu → E0×C1.
-    if (s.tier) settings.activeSniperTier = sanitizeTier(s.tier);
+    // É4-b — tier Sniper actif (clé `tier`) MORT : doctrine V1 abolie.
     // 1.G-c · D2 — groupe SECTEURS personnalisé (clé courte `tsec`).
     // Absent → défaut (DEFAULT_SECTORS déjà posé ci-dessus).
     if (Array.isArray(s.tsec)) {
@@ -182,12 +179,7 @@ function persistSettings(settings) {
     ) {
       toSave.ic = settings.initialCapitalChf;
     }
-    // Brique 13 — tier Sniper actif (clé courte `tier`). Persisté
-    // seulement hors défaut E0×C1 ; l'absence au load = défaut.
-    if (settings.activeSniperTier) {
-      const t = sanitizeTier(settings.activeSniperTier);
-      if (t.e !== DEFAULT_TIER.e || t.c !== DEFAULT_TIER.c) toSave.tier = t;
-    }
+    // É4-b — persistance du tier Sniper (clé `tier`) RETIRÉE (doctrine morte).
     // 1.G-c · D2 — groupe SECTEURS (clé courte `tsec`). Persisté
     // seulement quand il diffère du défaut (économie d'octets).
     if (Array.isArray(settings.tapeSectors)) {

@@ -41,7 +41,6 @@ import DataTable from '../../components/ui/DataTable';
 import Modal from '../../components/ui/Modal';
 import AddTradeModal from '../../components/trades/AddTradeModal';
 import WinRateDonut from '../../components/ui/WinRateDonut';
-import PerformanceAttribution from '../../components/history/PerformanceAttribution';
 import { detectExitReason, EXIT_REASONS } from '../../utils/trades/detectExitReason';
 import { RISE_CONTAINER_VARIANTS, RISE_TILE_VARIANTS } from '../../theme/animationVariants';
 
@@ -814,11 +813,9 @@ export default function History() {
               </div>
             )}
           </div>
-          <div className="hist-analyse__zone hist-analyse__zone--attr">
-            <div className="mk-title">ATTRIBUTION · EDGE × CAPITAL</div>
-            <div className="hist-analyse__scope">{scopeLine}</div>
-            <PerformanceAttribution trades={filtered} />
-          </div>
+          {/* É4-b — zone « ATTRIBUTION · EDGE × CAPITAL » SUPPRIMÉE : matrice
+              Edge×Capital (E0-E4 / C1-C5) = doctrine V1 morte, sortie toujours
+              vide en réel (deriveEdgeTier(ivRankAtEntry=null) → untagged). */}
         </div>
       </motion.section>
 

@@ -23,7 +23,7 @@
 //  ou '—' si absents (cf. CANONICAL_GUIDE alignment note #6).
 // ═══════════════════════════════════════════════════════════════
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useOpenPositions } from '../store/useStore';
 import { toFloat } from '../utils/math';
 import { calculateOpenPositionPnl } from '../utils/calculations';
@@ -34,25 +34,10 @@ import {
   isExpired,
   daysHeld,
   detectAlert,
-  deriveEdgeTier,
 } from '../utils/positions';
-import { readSniperMeta } from '../utils/sniperMeta';
 
-// v5 Sprint 2.2 : sniper meta sidecar can change between renders when
-// the user tags a position via SniperMetaEditor. We listen for the
-// `qc:sniperMeta:change` window event and bump a counter so useMemo
-// recomputes rows. Decoupled from React state so any consumer can
-// subscribe without prop drilling.
-function useSniperMetaVersion() {
-  const [version, setVersion] = useState(0);
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-    const handler = () => setVersion((v) => v + 1);
-    window.addEventListener('qc:sniperMeta:change', handler);
-    return () => window.removeEventListener('qc:sniperMeta:change', handler);
-  }, []);
-  return version;
-}
+// É4-b — le sidecar `qc:sniperMeta` (edgeTier/capitalTier) + l'écouteur
+// `useSniperMetaVersion` sont MORTS avec la doctrine tier V1 (éditeur retiré).
 
 function buildRow(pos, context) {
   const isStock = pos.as === 'Action';
@@ -68,22 +53,14 @@ function buildRow(pos, context) {
   // pas du taux (pi × mul × qty ± fi en USD pur).
   const { costBasisUsd } = calculateOpenPositionPnl(pos, 1);
 
-  // Sidecar lookup. Priorité de résolution :
-  //   sidecar override > pos.<field> (fixture) > deriveEdgeTier(ivr)
-  // É3.2 — ivrSnapshot reste un INTERNE (il alimente detectAlert et la
-  // dérivation d'edgeTier) mais n'est plus exposé en row : la colonne
-  // IVR est morte (le pipeline d'import réel écrit toujours
-  // ivRankAtEntry: null — aucune valeur réelle servie). edgeTier /
-  // capitalTier restent exposés : le tiroir détail de /trading/positions
-  // les affiche et les édite (SniperMetaEditor, sidecar vivant par l'UI).
-  const sidecar = readSniperMeta(pos.id);
+  // ivrSnapshot reste un INTERNE : il alimente detectAlert. La colonne IVR
+  // est morte (import réel écrit toujours ivRankAtEntry: null). É4-b —
+  // edgeTier/capitalTier + sidecar retirés (doctrine tier V1 morte).
   const ivrSnapshot = Number.isFinite(pos.ivr)
     ? pos.ivr
     : Number.isFinite(pos.ivRankAtEntry)
       ? pos.ivRankAtEntry
       : null;
-  const edgeTier = sidecar?.edgeTier ?? pos.edgeTier ?? deriveEdgeTier(ivrSnapshot) ?? null;
-  const capitalTier = sidecar?.capitalTier ?? pos.capitalTier ?? null;
 
   // Q-B — plus d'earnings ici : la branche EARN de detectAlert est morte
   // (P4 tire de position.earningsDate, câblage Q-C). Finnhub reste au calendrier.
@@ -131,8 +108,6 @@ function buildRow(pos, context) {
     theta,
     ivEstimated,
     greeksSource,
-    edgeTier,
-    capitalTier,
     daysHeld: days,
     // É3.2 — ivr, betaSPY et spark7d ne sont plus exposés : slots morts
     // (aucun producteur réel ; betaSPY vit dans le sidecar, lu par
@@ -156,15 +131,14 @@ function buildRow(pos, context) {
  * en faisait un autre. Σ Unreal Loss reste lisible ailleurs via Σ UNREAL.
  */
 function aggregate(rows) {
-  let totalNotional = 0;
+  // É4-b — `totalNotional` (Σ|mark×qty×mul|) RETIRÉ : même mensonge mark que
+  // la cellule NOTIONNEL du deck (É4-a), jamais le strike (§8). Plus aucun
+  // consommateur ne l'affiche.
   let totalMaxRisk = 0;
   for (const r of rows) {
-    const mul = r.type === 'STK' ? 1 : 100;
-    totalNotional += Math.abs(r.mark * r.qty * mul);
     if (Number.isFinite(r.costBasisUsd)) totalMaxRisk -= r.costBasisUsd;
   }
   return {
-    totalNotional: Number(totalNotional.toFixed(2)),
     totalMaxRisk: Number(totalMaxRisk.toFixed(2)),
   };
 }
@@ -179,26 +153,20 @@ function aggregate(rows) {
  */
 export function useLivePositions(options = {}) {
   const openPositions = useOpenPositions();
-  const metaVersion = useSniperMetaVersion();
 
   return useMemo(() => {
-    // Deliberately reference metaVersion so ESLint sees the dep used.
-    // buildRow → readSniperMeta side-effect makes the dep meaningful
-    // even though the value itself isn't computed with.
-    void metaVersion;
     const ctx = {
       now: options.now,
       greeksMap: options.greeksMap,
     };
     const rows = (openPositions || []).map((p) => buildRow(p, ctx));
-    const { totalNotional, totalMaxRisk } = aggregate(rows);
+    const { totalMaxRisk } = aggregate(rows);
     return {
       positions: rows,
-      totalNotional,
       totalMaxRisk,
       count: rows.length,
     };
-  }, [openPositions, options.now, options.greeksMap, metaVersion]);
+  }, [openPositions, options.now, options.greeksMap]);
 }
 
 /**
@@ -211,10 +179,9 @@ export function buildLivePositions(openPositions, options = {}) {
     greeksMap: options.greeksMap,
   };
   const rows = (openPositions || []).map((p) => buildRow(p, ctx));
-  const { totalNotional, totalMaxRisk } = aggregate(rows);
+  const { totalMaxRisk } = aggregate(rows);
   return {
     positions: rows,
-    totalNotional,
     totalMaxRisk,
     count: rows.length,
   };

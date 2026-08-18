@@ -167,7 +167,9 @@ function PositionRow({ pos, gateLine }) {
 // +$2'989 quand le deck disait +1'083).
 export default function LivePositions({ data, greeks = null, area = 'positions' }) {
   const count = data?.count ?? 0;
-  const totalNotional = data?.totalNotional ?? 0;
+  // É4-b — « Σ Notionnel » RETIRÉ : même mensonge mark que la cellule
+  // NOTIONNEL du deck (É4-a) — Σ|mark×ct×mul|, jamais le strike (§8). Aucune
+  // ne survit.
   const totalMaxRisk = data?.totalMaxRisk ?? 0;
   const positions = data?.positions ?? [];
   const isEmpty = count === 0;
@@ -279,8 +281,8 @@ export default function LivePositions({ data, greeks = null, area = 'positions' 
   const thetaDay = hasGreeksAgg ? greeks.thetaDaily : null;
 
   const headerHint = isEmpty
-    ? 'Σ Notionnel $0 · Σ Risque max $0'
-    : `Σ Notionnel ${fmtUsd(totalNotional, 0)} · Σ Risque max ${fmtUsdSigned0(totalMaxRisk)}`;
+    ? 'Σ Risque max $0'
+    : `Σ Risque max ${fmtUsdSigned0(totalMaxRisk)}`;
 
   return (
     <section className="module live-pos" style={{ gridArea: area }}>
@@ -420,12 +422,7 @@ export default function LivePositions({ data, greeks = null, area = 'positions' 
               {fmtUsdSigned2(stats.totalUnreal)}
             </span>
           </div>
-          <div className="live-pos__footer-cell">
-            <span className="live-pos__footer-label">Σ NOTIONNEL</span>
-            <span className="live-pos__footer-value">
-              {fmtUsd(totalNotional, 0)}
-            </span>
-          </div>
+          {/* É4-b — cellule « Σ NOTIONNEL » RETIRÉE (mensonge mark, cf. haut). */}
           <div className="live-pos__footer-cell">
             {/* É3 panel — montant HYPOTHÉTIQUE → NEUTRE (amendement
                 15.07, déjà soldé côté /trading/positions en 2.A). */}

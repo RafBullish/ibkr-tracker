@@ -150,6 +150,25 @@ mandatée : **registre → saisie → portes → palier**.
   — il manque la 2ᵉ passe (état exact du tag) + les GO en attente (1.G-c mergée,
   É4-a à merger) + arbitrage des consignés. Fondations saines (0 NaN, 0
   color-law, 0 doctrine, portes/registre opérationnels).
+- **É4-b ⏳ (1.0.2-rc.10, EN ATTENTE DU GO — branche `v1/e4b-nettoyage`)** —
+  BRIQUE DE NETTOYAGE (3 soldes de résidus consignés, ordre architecte).
+  **(1)** Graphe NLV plat à $0 sur base vide (priorité 01.09) : garde à la
+  source dans `buildNlvSeries` — sans ancre réelle (NLV live > 0 / clôture /
+  flux), série VIDE → l'état-vide « Série NLV vide » se déclenche (un snapshot
+  résiduel n'est jamais une ancre). **(2)** `Σ Notionnel` de LivePositions
+  supprimé (même mensonge mark que la cellule deck retirée en É4-a ; aucun
+  notionnel ne survit). **(3)** Purge module tier dormant + exports morts :
+  `SniperMetaEditor`/`PerformanceAttribution`/`attribution.js`/`sniperMeta.js`
+  supprimés, `deriveEdgeTier` + `activeSniperTier` (reducer/store/migration,
+  slDollar conservé) + sidecar `qc:sniperMeta` retirés, sections « Méta Sniper »
+  (tiroir Positions) + « ATTRIBUTION · EDGE × CAPITAL » (History) mortes ;
+  exports morts `NumAnat`/`realCurve`/`nlvCurve`/`greeksTotals` ; CSS mort
+  purgé (`.sniper-meta-editor*`/`.perf-attr*`/`.qc-anat*`/`.position-detail__
+  tag-btn`, ~410 l). **564 tests**, doctrine 0, color-law 0, build ✓ ; vérif :
+  base vide → état-vide, LivePositions sans Σ Notionnel, tiroir sans Méta
+  Sniper (drawer ouvre proprement). Résidu consigné : plomberie `risk.js`
+  `totalNotional`/`positionNotional` + `Hero1 notional` désormais orpheline
+  (ne sert plus aucun rendu).
 
 ---
 
