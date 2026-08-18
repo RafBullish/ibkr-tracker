@@ -26,7 +26,6 @@
 //  « Δ × qty × 100 × prime » des ex-footers est MORTE.
 // ═══════════════════════════════════════════════════════════════
 
-import { aggregateGreeks } from '../greeks';
 
 const DAY_MS = 86_400_000;
 const dayKey = (d) => (typeof d === 'string' && d.length >= 10 ? d.slice(0, 10) : null);
@@ -154,46 +153,6 @@ export function joursGagnants(dayPnls) {
   };
 }
 
-/**
- * Courbe RÉAL : cumul réalisé (running sum) depuis une série
- * quotidienne { date, pnl } (useDailyPnL / buildDayPnls).
- * @param {Array<{date: string, pnl: number}>} dayPnls
- * @returns {Array<{date: string, value: number}>}
- */
-export function realCurve(dayPnls) {
-  let c = 0;
-  return (Array.isArray(dayPnls) ? dayPnls : [])
-    .filter((d) => d && Number.isFinite(d.pnl))
-    .map((d) => ({ date: d.date, value: (c += d.pnl) }));
-}
-
-/**
- * Courbe NLV : projection { date, value: flowNeutral } d'une série
- * buildNlvSeries (la sémantique flow-neutral vit là-bas — source unique).
- * @param {Array<{date: string, flowNeutral: number}>} series
- * @returns {Array<{date: string, value: number}>}
- */
-export function nlvCurve(series) {
-  return (Array.isArray(series) ? series : [])
-    .filter((p) => p && Number.isFinite(p.flowNeutral))
-    .map((p) => ({ date: p.date, value: p.flowNeutral }));
-}
-
-/**
- * Agrégats greeks « argent » du portefeuille — projection de la maison
- * canonique aggregateGreeks (sign-aware, spot du sous-jacent) :
- *   deltaNet        = Σ Δ×qty×mul×sign            (équivalent-actions)
- *   deltaExposure   = Σ Δ×qty×mul×sign×spot       ($ d'exposition, si spot)
- *   thetaDollarJour = Σ (θ/365)×qty×mul×sign      ($/jour)
- * @param {Array} openPositions
- * @param {Map} greeksMap
- */
-export function greeksTotals(openPositions, greeksMap) {
-  const a = aggregateGreeks(openPositions, greeksMap);
-  return {
-    deltaNet: a.sumDelta,
-    deltaExposure: a.notionalDelta,
-    thetaDollarJour: a.thetaDaily,
-    optionsCount: a.optionsCount,
-  };
-}
+// É4-b — `realCurve` / `nlvCurve` / `greeksTotals` SUPPRIMÉS : exports morts
+// (aucun consommateur runtime, seulement leurs propres tests). Les maisons
+// vivantes restent : realCurve→buildNlvSeries, greeks→aggregateGreeks.

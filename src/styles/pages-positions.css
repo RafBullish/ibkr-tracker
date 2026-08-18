@@ -221,9 +221,7 @@
 .position-detail__no-alert {
   font-size: 12px;
 }
-.position-detail__tag-btn {
-  align-self: flex-start;
-}
+/* É4-b — `.position-detail__tag-btn` retiré (bouton de tagging Sniper mort). */
 
 /* ── Q-B — conformité doctrine (tiroir détail) + saisie carte V3 ───────
    Écart marqué = chip AMBRE (db-badge--arme, loi de couleur : un écart

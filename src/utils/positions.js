@@ -140,27 +140,6 @@ export function positionSignature(p) {
 // É3.2 — sparkTrend MORTE avec PositionSparkline (colonne SPARK 7D
 // fantôme : aucun producteur de marks datés par position).
 
-// ═══════════════════════════════════════════════════════════════
-//  v5 Sprint 1.3 — Edge Tier derivation
-// ═══════════════════════════════════════════════════════════════
-
-/**
- * Auto-derive Edge Tier (E0..E4) from IV Rank snapshot.
- * Sniper OTM v1.0 Finale convention :
- *   E0 : IVR < 25
- *   E1 : 25 ≤ IVR < 40
- *   E2 : 40 ≤ IVR < 55
- *   E3 : 55 ≤ IVR < 70
- *   E4 : IVR ≥ 70
- *
- * Returns null when ivRank is missing or non-finite — let the caller
- * decide whether to render '—' or fall back to a sidecar-tagged value.
- */
-export function deriveEdgeTier(ivRank) {
-  if (ivRank == null || !Number.isFinite(ivRank)) return null;
-  if (ivRank < 25) return 'E0';
-  if (ivRank < 40) return 'E1';
-  if (ivRank < 55) return 'E2';
-  if (ivRank < 70) return 'E3';
-  return 'E4';
-}
+// É4-b — `deriveEdgeTier` (Edge Tier E0..E4 depuis l'IV Rank) SUPPRIMÉ :
+// doctrine V1 morte (abolie par la carte V3), plus aucun consommateur après
+// le retrait de l'éditeur de méta + de la matrice d'attribution.

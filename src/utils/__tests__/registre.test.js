@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import * as R from '../../config/registre';
 import { effectiveSlDollar } from '../risk';
 import { detectExitReason } from '../trades/detectExitReason';
-import { tierParams } from '../sniperMeta';
 import {
   MIN_DECISIVE_WINRATE,
   MIN_LOSSES_PF,
@@ -62,12 +61,11 @@ describe('registre Q-A — PARITÉ doctrine (valeurs identiques)', () => {
 });
 
 describe('registre Q-A — PARITÉ ergonomie (parametres.app.json)', () => {
-  it('affichage portefeuille : 30 / 70, servi par tierParams', () => {
+  it('affichage portefeuille : 30 / 70 (parametres.app.json)', () => {
+    // É4-b — l'assertion via tierParams est retirée (module tier mort) ;
+    // le fait 30/70 vit dans PORTFOLIO_AFFICHAGE (source unique).
     expect(R.PORTFOLIO_AFFICHAGE.cashFloorPct).toBe(30);
     expect(R.PORTFOLIO_AFFICHAGE.notionalMaxPct).toBe(70);
-    const t = tierParams({ e: 'E0', c: 'C1' });
-    expect(t.cashFloorPct).toBe(30);
-    expect(t.notionalMaxPct).toBe(70);
   });
   it('significativité inchangée : 10 / 3 / 20 / 0.25 / 30 / 500', () => {
     expect(MIN_DECISIVE_WINRATE).toBe(10);

@@ -93,50 +93,8 @@
   background: color-mix(in srgb, var(--depth-raised) 98%, #FFFFFF 2%);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* === ANATOMIE DU CHIFFRE FINANCIER (D1.2) — spans .qc-anat* émis par le    === */
-/* === composant partagé NumAnat. Le « $ » et les séparateurs de milliers    === */
-/* === « ' » reculent pour que les chiffres mènent. Loi de couleur : sur un  === */
-/* === montant coloré (P&L), $ et séparateurs SUIVENT la teinte (jamais      === */
-/* === neutralisés) → color:inherit ; sur un montant neutre/accent, $ =      === */
-/* === ink-soft, séparateur = ink-mute.                                      === */
-/* ═══════════════════════════════════════════════════════════════════════════ */
-.qc-anat {
-  font-variant-numeric: tabular-nums slashed-zero;
-}
-.qc-anat__cur { color: var(--ink-soft); }
-.qc-anat__grp { color: var(--ink-mute); }
-
-/* Tier DISPLAY (héros ≥40px) : $ à 58 %, aligné hauteur de capitale, chasse
-   resserrée −1.5 %. */
-.qc-anat--display {
-  letter-spacing: -0.015em;
-}
-.qc-anat--display .qc-anat__cur {
-  font-size: 0.58em;
-  vertical-align: 0.16em;
-  margin-right: 0.03em;
-}
-
-/* Tier MID (KPI 18-39px) : $ à 70 %. */
-.qc-anat--mid .qc-anat__cur {
-  font-size: 0.70em;
-  vertical-align: 0.10em;
-  margin-right: 0.02em;
-}
-
-/* Montant coloré (P&L) : le $ et les séparateurs suivent la couleur portée par
-   le conteneur (data-tone sur la carte, ou .text-profit/.text-loss). */
-[data-tone="profit"] .qc-anat__cur,
-[data-tone="profit"] .qc-anat__grp,
-[data-tone="loss"] .qc-anat__cur,
-[data-tone="loss"] .qc-anat__grp,
-.text-profit .qc-anat__cur,
-.text-profit .qc-anat__grp,
-.text-loss .qc-anat__cur,
-.text-loss .qc-anat__grp {
-  color: inherit;
-}
+/* É4-b — bloc `.qc-anat*` (composant NumAnat, D1.2) SUPPRIMÉ : NumAnat était
+   un export mort (0 importeur) retiré ; ses styles n'ont plus d'émetteur. */
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* === TRANSITION ZONE — alias rétrocompat pour Dashboard (CANONICAL-8)     === */

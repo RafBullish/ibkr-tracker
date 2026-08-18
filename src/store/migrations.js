@@ -320,28 +320,24 @@ function migrateV5toV6(state) {
 }
 
 /**
- * v6 → v7 (Brique 13) : tier Sniper actif + slDollar.
+ * v6 → v7 (Brique 13) : slDollar par position.
  *
- *   - settings.activeSniperTier = {e:'E0', c:'C1'} quand absent —
- *     le défaut reproduit exactement le comportement antérieur
- *     (label 'A · E0×C1', cashFloor 30, notionalMax 70 hardcodés).
- *     `=== undefined` seulement : un tier déjà posé passe intact.
  *   - openPositions[i].slDollar = null quand absent — null signifie
  *     "risque dérivé" (pi×ct×mu×0.35, gate SL35) ; une valeur string
  *     posée par l'utilisateur est une surcharge et passe intacte.
  *
+ * É4-b — le seed `settings.activeSniperTier = {e:'E0', c:'C1'}` est RETIRÉ
+ * (doctrine tier V1 morte). Un `activeSniperTier` résiduel dans un store
+ * migré est inoffensif : plus aucun code ne le lit.
+ *
  * Idempotent et pur — copies superficielles, aucune mutation.
  */
 function migrateV6toV7(state) {
-  const settings = { ...state.settings };
-  if (settings.activeSniperTier === undefined) {
-    settings.activeSniperTier = { e: 'E0', c: 'C1' };
-  }
   const openPositions = (state.openPositions || []).map((p) => {
     if (p.slDollar !== undefined) return p;
     return { ...p, slDollar: null };
   });
-  return { ...state, settings, openPositions };
+  return { ...state, openPositions };
 }
 
 /**

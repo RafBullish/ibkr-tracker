@@ -5,7 +5,6 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { toFloat, ensurePositive, generateId, roundTo2, roundTo5, roundTo6 } from '../utils/math';
-import { sanitizeTier } from '../utils/sniperMeta';
 import { sanitizeSectors, DEFAULT_SECTORS } from '../config/tapeGroups';
 
 const normalizeStrike = (s) => String(parseFloat(s) || 0);
@@ -35,18 +34,8 @@ export function applyAction(state, action) {
       // le subscribe localStorage (persistSettings lit settings.gwAutoConnect).
       return { ...state, settings: { ...state.settings, gwAutoConnect: Boolean(action.payload) } };
 
-    case 'SET_ACTIVE_SNIPER_TIER': {
-      // Brique 13 — coordonnée matrice E×C du tier Sniper actif.
-      // Payload partiel accepté ({e} ou {c} seul) : le merge se fait
-      // ICI contre l'état courant — pas dans le composant — pour
-      // éviter toute stale closure côté UI. Toute valeur hors matrice
-      // retombe sur le défaut E0×C1 via sanitizeTier. Persisté
-      // automatiquement par persistSettings (clé courte `tier`,
-      // omise quand défaut).
-      const current = sanitizeTier(state.settings.activeSniperTier);
-      const tier = sanitizeTier({ ...current, ...(action.payload || {}) });
-      return { ...state, settings: { ...state.settings, activeSniperTier: tier } };
-    }
+    // É4-b — case 'SET_ACTIVE_SNIPER_TIER' SUPPRIMÉE (jamais dispatchée ;
+    // doctrine tier V1 morte — matrice E×C abolie par la carte V3).
 
     case 'SET_INITIAL_CAPITAL': {
       // B4 — capital de référence manuel en CHF. Payload null/0/NaN
@@ -390,10 +379,16 @@ export function applyAction(state, action) {
           fxMode: state.settings.fxMode,
           fxLastUpdated: state.settings.fxLastUpdated,
           fxSource: state.settings.fxSource,
-          activeSniperTier: state.settings.activeSniperTier,
           // 1.G-c — groupe SECTEURS du bandeau = préférence (comme la
           // watchlist), pas de la donnée comptable → préservé.
           tapeSectors: state.settings.tapeSectors,
+          // É4-b (correction) — EFFACER EXPLICITEMENT l'historique NLV : les
+          // `dailySnapshots` sont de la DONNÉE (la courbe d'équité), pas une
+          // préférence. Sans ça, des snapshots orphelins de l'ère démo (points
+          // à $24'000) se mêleraient à la vraie courbe dès le 1er dépôt (qui
+          // crée une ancre — la garde de buildNlvSeries ne les couvre plus).
+          // Le reset les EMPORTE ; il ne les masque pas.
+          dailySnapshots: [],
         },
       };
 

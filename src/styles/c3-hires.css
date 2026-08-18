@@ -237,19 +237,11 @@
      l'étage ANALYSE et la donut-sub montent aussi au plancher.
      EXCLUS : .history-page__cell-mobile-date (mobile <768, jamais au
      palier) ; chips .lh-toggle (anatomie héros validée, 11px). */
+  /* É4-b — sélecteurs `.perf-attr__*` retirés (PerformanceAttribution mort) ;
+     les résidus de page vivants gardent le plancher caption. */
   .hist-analyse__scope,
   .hist-analyse__donut-sub,
-  .history-page__cell-meta,
-  .perf-attr__hint,
-  .perf-attr__empty-title,
-  .perf-attr__empty-sub,
-  .perf-attr__chip-label,
-  .perf-attr__chip-sub,
-  .perf-attr__grid thead th,
-  .perf-attr__grid tbody th,
-  .perf-attr__cell-val,
-  .perf-attr__cell-n,
-  .perf-attr__legend {
+  .history-page__cell-meta {
     font-size: var(--type-caption);
   }
   /* Le bandeau .hist-command suit le registre DECK (labels/meta 10px,

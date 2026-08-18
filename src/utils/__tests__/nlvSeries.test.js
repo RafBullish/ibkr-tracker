@@ -28,6 +28,58 @@ function ts(dateIso, minute = 0) {
   return Math.floor((new Date(dateIso + 'T15:00:00Z').getTime() + minute * 60_000) / 1000);
 }
 
+describe('buildNlvSeries — garde d’état-vide (É4-b · faux zéro du 01.09)', () => {
+  it('snapshots RÉSIDUELS mais compte VIDE (0 clôture, 0 flux, pas de NLV live) → série VIDE', () => {
+    // Le cas du bug : dailySnapshots persistés d'une session passée,
+    // orphelins après un reset des données. Doit rendre [] → l'état-vide
+    // du Héros 1 s'affiche, plus de ligne périmée / faux zéro.
+    const series = buildNlvSeries({
+      snapshots: [{ date: D1, nlv: 3000 }, { date: D2, nlv: 3200 }],
+      cashFlows: [],
+      closedTrades: [],
+      liveNlv: null,
+      liveRate: 1,
+      today: D3,
+    });
+    expect(series).toEqual([]);
+  });
+
+  it('compte TOTALEMENT vide → []', () => {
+    expect(buildNlvSeries({ snapshots: [], cashFlows: [], closedTrades: [], liveNlv: 0, today: D1 })).toEqual([]);
+  });
+
+  it('ANCRE présente : NLV live > 0 → la série se construit (pas de garde abusive)', () => {
+    const series = buildNlvSeries({
+      snapshots: [{ date: D1, nlv: 3000 }],
+      cashFlows: [],
+      closedTrades: [],
+      liveNlv: 3100,
+      liveRate: 1,
+      today: D2,
+    });
+    expect(series.length).toBeGreaterThan(0);
+  });
+
+  it('HISTOIRE présente : une clôture (ou un flux) → la série se construit', () => {
+    const withClose = buildNlvSeries({
+      snapshots: [{ date: D1, nlv: 3000 }],
+      cashFlows: [],
+      closedTrades: [{ do: D1, pnl: 50 }],
+      liveNlv: null,
+      today: D2,
+    });
+    expect(withClose.length).toBeGreaterThan(0);
+    const withFlux = buildNlvSeries({
+      snapshots: [{ date: D1, nlv: 3000 }],
+      cashFlows: [{ da: D1, ty: 'dep_usd', a1: 3000 }],
+      closedTrades: [],
+      liveNlv: null,
+      today: D2,
+    });
+    expect(withFlux.length).toBeGreaterThan(0);
+  });
+});
+
 describe('buildNlvSeries — drawdown flow-neutral (verrou anti-régression)', () => {
   it('un apport ne guérit pas un drawdown : dd mesuré sur nlv − dépôts cumulés', () => {
     const series = buildNlvSeries({
@@ -79,7 +131,7 @@ describe('ranges', () => {
       ],
       cashFlows: [],
       closedTrades: [],
-      liveNlv: null,
+      liveNlv: 10_200, // ancre live du jour (garde É4-b) — série inchangée
       liveRate: 1,
       today: D3,
     });
@@ -99,7 +151,7 @@ describe('buildIntradaySeries (FF-données)', () => {
       ],
       cashFlows: [],
       closedTrades: [],
-      liveNlv: null,
+      liveNlv: 11_000, // ancre live du jour (garde É4-b) — série inchangée
       liveRate: 1,
       today: D3,
     });

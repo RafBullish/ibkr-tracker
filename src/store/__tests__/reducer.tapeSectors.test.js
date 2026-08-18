@@ -54,4 +54,16 @@ describe('RESET_ALL — SECTEURS = préférence préservée', () => {
     expect(next.settings.tapeSectors).toEqual(custom);
     expect(next.openPositions).toEqual([]);
   });
+
+  it('EFFACE dailySnapshots (donnée, pas préférence) — pas de faux zéro post-reset', () => {
+    // É4-b correction : les snapshots de l'ère démo doivent partir au reset,
+    // sinon ils se mêlent à la vraie courbe dès le 1er dépôt (qui crée une
+    // ancre que la garde buildNlvSeries ne couvre pas).
+    const state = baseState({
+      liveRate: 0.88,
+      dailySnapshots: [{ date: '2026-01-02', nlv: 24000 }, { date: '2026-01-03', nlv: 24500 }],
+    });
+    const next = applyAction(state, { type: 'RESET_ALL' });
+    expect(next.settings.dailySnapshots).toEqual([]);
+  });
 });

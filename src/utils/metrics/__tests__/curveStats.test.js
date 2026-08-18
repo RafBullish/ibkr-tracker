@@ -16,9 +16,6 @@ import {
   daysSincePeakOf,
   recoveryOf,
   joursGagnants,
-  realCurve,
-  nlvCurve,
-  greeksTotals,
 } from '../curveStats';
 
 const pt = (date, value) => ({ date, value });
@@ -113,55 +110,6 @@ describe('joursGagnants — LA définition unique', () => {
   });
 });
 
-describe('realCurve / nlvCurve — constructeurs de courbe partagés', () => {
-  it('realCurve = running sum des P&L quotidiens', () => {
-    const c = realCurve([
-      { date: 'a', pnl: 100 },
-      { date: 'b', pnl: -30 },
-      { date: 'c', pnl: 50 },
-    ]);
-    expect(c.map((p) => p.value)).toEqual([100, 70, 120]);
-  });
-
-  it('nlvCurve projette flowNeutral (sémantique flow-neutral = buildNlvSeries)', () => {
-    const c = nlvCurve([
-      { date: 'a', flowNeutral: 10_000, nlv: 12_000 },
-      { date: 'b', flowNeutral: 10_180, nlv: 15_180 },
-    ]);
-    expect(c).toEqual([pt('a', 10_000), pt('b', 10_180)]);
-  });
-});
-
-describe('greeksTotals — projection de la maison canonique aggregateGreeks', () => {
-  // Long call : Δ .50, θ −73/an, spot 40, 2 contrats ×100.
-  const LONG_CALL = { id: 'lc', tk: 'AAA', ty: 'CALL', as: 'Option', dir: 'Long', ct: 2, mu: 100 };
-  // Short call : Δ .30, θ −36.5/an, spot 40, 1 contrat ×100 (signes inversés).
-  const SHORT_CALL = { id: 'sc', tk: 'BBB', ty: 'CALL', as: 'Option', dir: 'Short', ct: 1, mu: 100 };
-  const MAP = new Map([
-    ['lc', { delta: 0.5, gamma: 0.01, theta: -73, vega: 10, spot: 40 }],
-    ['sc', { delta: 0.3, gamma: 0.01, theta: -36.5, vega: 10, spot: 40 }],
-  ]);
-
-  it('deltaNet = Σ Δ×qty×mul×sign — JAMAIS ×prime de l’option', () => {
-    const t = greeksTotals([LONG_CALL, SHORT_CALL], MAP);
-    // +0.5×200 − 0.3×100 = +70 équivalent-actions
-    expect(t.deltaNet).toBeCloseTo(70, 5);
-  });
-
-  it('deltaExposure = Σ Δ×qty×mul×sign×spot (le SOUS-JACENT, pas la prime)', () => {
-    const t = greeksTotals([LONG_CALL, SHORT_CALL], MAP);
-    expect(t.deltaExposure).toBeCloseTo(70 * 40, 5); // 2 800 $
-  });
-
-  it('thetaDollarJour = Σ (θ/365)×qty×mul×sign', () => {
-    const t = greeksTotals([LONG_CALL, SHORT_CALL], MAP);
-    // long : −0.2/j ×200 = −40 ; short : +0.1/j ×100 = +10 → −30 $/j
-    expect(t.thetaDollarJour).toBeCloseTo(-30, 5);
-  });
-
-  it('position sans greeks (API down) : exclue des agrégats, pas de NaN', () => {
-    const t = greeksTotals([LONG_CALL, SHORT_CALL], new Map([['lc', MAP.get('lc')]]));
-    expect(t.deltaNet).toBeCloseTo(100, 5);
-    expect(t.optionsCount).toBe(1);
-  });
-});
+// É4-b — describe('realCurve / nlvCurve') et describe('greeksTotals')
+// SUPPRIMÉS : exports morts retirés (cf. curveStats.js). Les maisons
+// vivantes (buildNlvSeries, aggregateGreeks) gardent leurs propres tests.

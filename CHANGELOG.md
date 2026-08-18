@@ -6,6 +6,50 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.2-rc.10] — 2026-08-18
+
+**É4-b — BRIQUE DE NETTOYAGE. EN ATTENTE DU GO (non mergée).** Trois soldes de
+résidus consignés en É4-a, dans l'ordre de priorité de l'architecte.
+
+1. **Graphe NLV plat à $0 sur base vide (priorité — l'écran du 01.09).**
+   L'état-vide du Héros 1 existait mais ne se déclenchait pas : sur un compte
+   genuinement vide, des `dailySnapshots` RÉSIDUELS (persistés lors d'une
+   session passée, orphelins après un reset) traçaient une ligne périmée.
+   **Garde à la source** dans `buildNlvSeries` : sans AUCUNE ancre réelle — ni
+   NLV live > 0, ni clôture, ni flux — la série est VIDE → « Série NLV vide »
+   s'affiche, plus de faux zéro. Un snapshot n'est jamais une ancre à lui seul.
+   Vérifié : base vide (+ snapshot résiduel) → message d'état-vide, aucun canvas.
+   **Correction (GO)** : la garde ne couvre que le cas SANS ancre — dès le 1er
+   dépôt (ancre), des snapshots démo orphelins se mêleraient à la vraie courbe.
+   **RESET_ALL efface donc l'historique NLV** : `dailySnapshots` (explicite dans
+   le reducer) + caches hors store `qc:nlvIntraday` / `qc:positionMarks`
+   (handleResetAll). Le reset les EMPORTE, la garde ne les masque pas. Vérifié
+   bout en bout (démo $24'000 → reset → tout à null, état-vide).
+2. **`Σ Notionnel` de LivePositions supprimé.** Même mensonge mark que la
+   cellule NOTIONNEL du deck retirée en É4-a (`Σ|mark×ct×mul|`, jamais le
+   strike, §8). Cellule de pied + mention d'en-tête + calcul `totalNotional`
+   dans `useLivePositions` retirés. **Aucun notionnel ne survit à l'écran.**
+3. **Purge du module tier dormant + exports morts.** Doctrine V1 abolie par la
+   carte V3 : `SniperMetaEditor` + `PerformanceAttribution` (matrice
+   Edge×Capital) + `utils/attribution.js` + `utils/sniperMeta.js` supprimés ;
+   `deriveEdgeTier` (`positions.js`), le magasin dormant `activeSniperTier`
+   (reducer `SET_ACTIVE_SNIPER_TIER` + RESET_ALL + load/persist `useStore` +
+   seed migration v6→v7, slDollar conservé) et le sidecar `qc:sniperMeta`
+   (`useLivePositions`) retirés ; section « Méta Sniper » du tiroir détail
+   (Edge tier / Capital tier / bouton Tagger) + zone « ATTRIBUTION · EDGE ×
+   CAPITAL » de History supprimées. **Exports morts** : `NumAnat` +
+   `realCurve`/`nlvCurve`/`greeksTotals` (`curveStats`, 0 consommateur runtime).
+   **CSS mort** purgé : `.sniper-meta-editor*`, `.perf-attr*` (pages-history +
+   c3-hires, ~410 l), `.qc-anat*`, `.position-detail__tag-btn`. Tests morts
+   trimés (`registre` tierParams, `curveStats` trio).
+
+**564 tests** (guard NLV +3 ; trio curveStats −6), `check:doctrine` 0,
+`check:color-law` 0, build vert. Vérif : base vide → « Série NLV vide » ;
+LivePositions sans Σ Notionnel ; tiroir détail sans Méta Sniper ; drawer ouvre
+proprement. Captures `docs/captures/e4b-nettoyage/`.
+
+---
+
 ## [1.0.2-rc.9] — 2026-08-18
 
 **É4-a — LA RECETTE (première passe structurelle). EN ATTENTE DU GO (non
