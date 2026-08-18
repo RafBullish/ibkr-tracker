@@ -150,8 +150,12 @@ mandatée : **registre → saisie → portes → palier**.
   — il manque la 2ᵉ passe (état exact du tag) + les GO en attente (1.G-c mergée,
   É4-a à merger) + arbitrage des consignés. Fondations saines (0 NaN, 0
   color-law, 0 doctrine, portes/registre opérationnels).
-- **É4-b ⏳ (1.0.2-rc.10, EN ATTENTE DU GO — branche `v1/e4b-nettoyage`)** —
+- **É4-b ✅ MERGÉE sur main (1.0.2-rc.10, GO Rafael 18.08 + correction RESET)** —
   BRIQUE DE NETTOYAGE (3 soldes de résidus consignés, ordre architecte).
+  **Correction GO** : RESET_ALL efface l'historique NLV (`dailySnapshots`
+  explicite + caches `qc:nlvIntraday`/`qc:positionMarks`) — la garde ne
+  couvrait que le cas sans ancre ; le reset EMPORTE les snapshots démo (sinon
+  mêlés à la vraie courbe dès le 1er dépôt). Vérifié bout en bout.
   **(1)** Graphe NLV plat à $0 sur base vide (priorité 01.09) : garde à la
   source dans `buildNlvSeries` — sans ancre réelle (NLV live > 0 / clôture /
   flux), série VIDE → l'état-vide « Série NLV vide » se déclenche (un snapshot
