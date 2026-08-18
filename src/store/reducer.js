@@ -208,8 +208,12 @@ export function applyAction(state, action) {
       const { id, ...incoming } = action.payload || {};
       if (!id) return state;
       // Q-B — earningsDate (tri-état) + entryNote éditables via le tiroir.
-      // Ils ne touchent pas lots (stripLots ne se déclenche que sur pi/ct).
-      const EDITABLE = ['tk', 'ty', 'dir', 'st', 'ex', 'pi', 'ct', 'di', 'earningsDate', 'entryNote'];
+      // Micro-brique capture — données d'ENTRÉE (E2/E4). Aucun ne touche lots
+      // (stripLots ne se déclenche que sur pi/ct).
+      const EDITABLE = [
+        'tk', 'ty', 'dir', 'st', 'ex', 'pi', 'ct', 'di', 'earningsDate', 'entryNote',
+        'midAtEntry', 'bidAtEntry', 'askAtEntry', 'thetaAtEntryPerDay', 'deltaAtEntry',
+      ];
       const patch = {};
       for (const k of EDITABLE) {
         if (incoming[k] !== undefined) patch[k] = incoming[k];

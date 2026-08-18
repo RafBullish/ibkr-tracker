@@ -111,11 +111,19 @@ describe('violations — E2/E4/E5 honnêtes quand l’entrée manque', () => {
     expect(e2.measurable).toBe(false);
     expect(e2.source).toBe('entree.E2_theta_max_pct_prime_jour');
   });
-  it('E2 mesuré : θ/prime au-dessus du seuil du registre = VIOLATION', () => {
-    // θ absolu/jour = 0.06 ; prime pi = 5 → 0.012 > seuil (0.008)
-    const e2 = byCode(evaluatePositionViolations(pos, { thetaAtEntryPerDay: 0.06 }), 'E2');
+  it('E2 mesuré : θ/mid au-dessus du seuil du registre = VIOLATION', () => {
+    // θ absolu/jour = 0.06 ; mid d'entrée capturé = 5 → 0.012 > seuil (0.008)
+    const e2 = byCode(
+      evaluatePositionViolations({ ...pos, midAtEntry: 5 }, { thetaAtEntryPerDay: 0.06 }),
+      'E2'
+    );
     expect(e2.status).toBe(V_STATUS.VIOLATION);
     expect(0.06 / 5).toBeGreaterThan(THETA_MAX_PCT_PRIME_JOUR);
+  });
+  it('E2 θ capturé mais mid absent = INDÉTERMINÉ (aucun repli sur pi)', () => {
+    // pi=5 existe, mais le mid d'entrée n'est pas capturé → base non exacte → indéterminé.
+    const e2 = byCode(evaluatePositionViolations(pos, { thetaAtEntryPerDay: 0.06 }), 'E2');
+    expect(e2.measurable).toBe(false);
   });
   it('E4 spread non capturé = INDÉTERMINÉ ; spread large = VIOLATION', () => {
     expect(byCode(evaluatePositionViolations(pos, {}), 'E4').measurable).toBe(false);
@@ -133,6 +141,58 @@ describe('violations — E2/E4/E5 honnêtes quand l’entrée manque', () => {
     // 14:00 UTC = 16:00 Zurich → dans la fenêtre → conforme (pas d’E5)
     const inWindow = { ...pos, entryTs: '2026-08-16T14:00:00Z' };
     expect(byCode(evaluatePositionViolations(inWindow, {}), 'E5')).toBeNull();
+  });
+});
+
+describe('violations — CAPTURE À L’ENTRÉE (E2/E4 sur valeurs d’entrée)', () => {
+  const base = { ...OPT, id: 'c', ct: '1', pi: '10' };
+
+  it('E2 utilise le MID CAPTURÉ comme dénominateur, JAMAIS pi', () => {
+    // midAtEntry=5 → 0.06/5 = 0.012 > seuil. pi=10 n'entre PAS dans le calcul.
+    const pos = { ...base, midAtEntry: 5 };
+    const e2 = byCode(evaluatePositionViolations(pos, { thetaAtEntryPerDay: 0.06 }), 'E2');
+    expect(e2.status).toBe(V_STATUS.VIOLATION);
+  });
+
+  it('E2 conforme sous le seuil → absent (pas de violation)', () => {
+    const pos = { ...base, midAtEntry: 5 };
+    expect(byCode(evaluatePositionViolations(pos, { thetaAtEntryPerDay: 0.02 }), 'E2')).toBeNull();
+  });
+
+  // ── Matrice de capture partielle : E2 exige θ ET mid (base exacte à la frontière) ──
+  it('E2 exige θ ET mid : θ+mid présents → E2 déterminable, E4 sans bid/ask → INDÉTERMINÉ', () => {
+    const out = evaluatePositionViolations({ ...base, midAtEntry: 5 }, { thetaAtEntryPerDay: 0.02 });
+    expect(byCode(out, 'E2')).toBeNull(); // déterminé (conforme)
+    expect(byCode(out, 'E4').measurable).toBe(false); // indéterminé (bid/ask absents)
+  });
+
+  it('E2 exige θ ET mid : θ sans mid → INDÉTERMINÉ (aucun repli sur pi)', () => {
+    const e2 = byCode(evaluatePositionViolations(base, { thetaAtEntryPerDay: 0.02 }), 'E2');
+    expect(e2.measurable).toBe(false);
+  });
+
+  it('E2 exige θ ET mid : mid sans θ → INDÉTERMINÉ', () => {
+    const e2 = byCode(evaluatePositionViolations({ ...base, midAtEntry: 5 }, {}), 'E2');
+    expect(e2.measurable).toBe(false);
+  });
+
+  it('capture PARTIELLE bid/ask seuls : E4 déterminable, E2 reste INDÉTERMINÉ', () => {
+    const pos = { ...base, bidAtEntry: '4.9', askAtEntry: '5.1' }; // spread 0.2 / mid 5 = 0.04
+    const out = evaluatePositionViolations(pos, {}); // ni θ ni mid
+    expect(byCode(out, 'E4')).toBeNull(); // déterminé (conforme)
+    expect(byCode(out, 'E2').measurable).toBe(false); // indéterminé (θ + mid absents)
+  });
+
+  it('δ capturé n’affecte JAMAIS le verdict (indicatif)', () => {
+    const out = evaluatePositionViolations({ ...base, deltaAtEntry: 0.9 }, {});
+    expect(byCode(out, 'E2').measurable).toBe(false);
+    expect(byCode(out, 'E4').measurable).toBe(false);
+  });
+
+  it('aucune capture → E2 ET E4 indéterminées (jamais présumées conformes)', () => {
+    const out = evaluatePositionViolations(base, {});
+    expect(byCode(out, 'E2').measurable).toBe(false);
+    expect(byCode(out, 'E4').measurable).toBe(false);
   });
 });
 

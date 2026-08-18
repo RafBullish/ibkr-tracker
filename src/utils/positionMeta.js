@@ -2,11 +2,20 @@
 //  SIDECAR MÉTADONNÉES DE SAISIE — Brique Q-B « la saisie »
 //
 //  Les métadonnées saisies à la main sur une position (earningsDate,
-//  entryNote) vivent dans un sidecar localStorage KEYÉ PAR SIGNATURE
+//  entryNote + données d'ENTRÉE — micro-brique « capture à l'entrée »)
+//  vivent dans un sidecar localStorage KEYÉ PAR SIGNATURE
 //  (tk|as|dir|ty|st|ex), pas par id. L'id est régénéré à chaque
 //  ré-import ; la signature, elle, est stable → une annotation SURVIT
 //  au ré-import du même CSV. Même patron que qc:sniperMeta, mais un
 //  seul objet-carte sous une clé unique (`ibkr_u_m`).
+//
+//  DONNÉES D'ENTRÉE (le Flex ne les porte pas) : `midAtEntry`,
+//  `bidAtEntry`, `askAtEntry` (prime + fourchette au moment de l'achat),
+//  `thetaAtEntryPerDay` (θ/jour par action), `deltaAtEntry` (INDICATIF —
+//  affiché, jamais jugé). Elles alimentent les portes de VIOLATION E2
+//  (θ/mid ≤ registre) et E4 (spread/mid ≤ registre) — calculées sur les
+//  valeurs D'ENTRÉE, jamais sur le mark courant. Noms `<x>AtEntry` =
+//  convention déjà lue par violations.js / le schéma (ne pas réinventer).
 //
 //  earningsDate est un TRI-ÉTAT : une date 'YYYY-MM-DD' | 'AUCUN'
 //  (sous-jacent sans résultats, ETF…) | null (non renseigné / legacy).
@@ -35,13 +44,51 @@ function sanitizeNote(v) {
   return t.slice(0, 500);
 }
 
+// Prix/prime : nombre fini STRICTEMENT positif (0 ou négatif = invalide).
+function sanitizePositiveNum(v) {
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+// θ / δ : nombre fini SIGNÉ (θ souvent négatif pour du long premium ;
+// δ dans [-1, 1]). Le signe est conservé ; E2 en prend la magnitude.
+function sanitizeSignedNum(v) {
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 function sanitizeEntry(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const earningsDate = sanitizeEarningsDate(raw.earningsDate);
   const entryNote = sanitizeNote(raw.entryNote);
-  if (earningsDate == null && entryNote == null) return null;
+  const midAtEntry = sanitizePositiveNum(raw.midAtEntry);
+  const bidAtEntry = sanitizePositiveNum(raw.bidAtEntry);
+  const askAtEntry = sanitizePositiveNum(raw.askAtEntry);
+  const thetaAtEntryPerDay = sanitizeSignedNum(raw.thetaAtEntryPerDay);
+  const deltaAtEntry = sanitizeSignedNum(raw.deltaAtEntry);
+  // Entrée VIDE = TOUS les champs nuls → supprimée du sidecar (une capture
+  // ne portant que des données d'entrée, sans earnings ni note, DOIT survivre).
+  if (
+    earningsDate == null &&
+    entryNote == null &&
+    midAtEntry == null &&
+    bidAtEntry == null &&
+    askAtEntry == null &&
+    thetaAtEntryPerDay == null &&
+    deltaAtEntry == null
+  ) {
+    return null;
+  }
   const updatedAt = typeof raw.updatedAt === 'string' ? raw.updatedAt : null;
-  return { earningsDate, entryNote, updatedAt };
+  return {
+    earningsDate,
+    entryNote,
+    midAtEntry,
+    bidAtEntry,
+    askAtEntry,
+    thetaAtEntryPerDay,
+    deltaAtEntry,
+    updatedAt,
+  };
 }
 
 function readMap() {
@@ -87,9 +134,15 @@ export function writePositionMeta(signature, patch, stamp) {
   if (!signature || !patch || typeof patch !== 'object') return null;
   const map = readMap();
   const current = sanitizeEntry(map[signature]) || {};
+  const pick = (k) => (k in patch ? patch[k] : current[k]);
   const merged = {
-    earningsDate: 'earningsDate' in patch ? patch.earningsDate : current.earningsDate,
-    entryNote: 'entryNote' in patch ? patch.entryNote : current.entryNote,
+    earningsDate: pick('earningsDate'),
+    entryNote: pick('entryNote'),
+    midAtEntry: pick('midAtEntry'),
+    bidAtEntry: pick('bidAtEntry'),
+    askAtEntry: pick('askAtEntry'),
+    thetaAtEntryPerDay: pick('thetaAtEntryPerDay'),
+    deltaAtEntry: pick('deltaAtEntry'),
     updatedAt: typeof stamp === 'string' ? stamp : current.updatedAt || null,
   };
   const next = sanitizeEntry(merged);
