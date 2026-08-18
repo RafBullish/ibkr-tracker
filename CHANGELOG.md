@@ -19,6 +19,12 @@ résidus consignés en É4-a, dans l'ordre de priorité de l'architecte.
    NLV live > 0, ni clôture, ni flux — la série est VIDE → « Série NLV vide »
    s'affiche, plus de faux zéro. Un snapshot n'est jamais une ancre à lui seul.
    Vérifié : base vide (+ snapshot résiduel) → message d'état-vide, aucun canvas.
+   **Correction (GO)** : la garde ne couvre que le cas SANS ancre — dès le 1er
+   dépôt (ancre), des snapshots démo orphelins se mêleraient à la vraie courbe.
+   **RESET_ALL efface donc l'historique NLV** : `dailySnapshots` (explicite dans
+   le reducer) + caches hors store `qc:nlvIntraday` / `qc:positionMarks`
+   (handleResetAll). Le reset les EMPORTE, la garde ne les masque pas. Vérifié
+   bout en bout (démo $24'000 → reset → tout à null, état-vide).
 2. **`Σ Notionnel` de LivePositions supprimé.** Même mensonge mark que la
    cellule NOTIONNEL du deck retirée en É4-a (`Σ|mark×ct×mul|`, jamais le
    strike, §8). Cellule de pied + mention d'en-tête + calcul `totalNotional`

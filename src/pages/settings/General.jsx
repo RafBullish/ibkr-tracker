@@ -59,6 +59,8 @@ import Modal from '../../components/ui/Modal';
 import { TickValue } from '../../components/dashboard/decision/parts';
 import { clearFlexCredentials } from '../../services/flexApi';
 import { todayDateString } from '../../utils/dates';
+import { NLV_INTRADAY_KEY } from '../../utils/nlvIntraday';
+import { POSITION_MARKS_KEY } from '../../utils/positionMarks';
 import { CONTAINER_VARIANTS, TILE_VARIANTS } from '../../theme/animationVariants';
 import { DEFAULT_SECTORS, sanitizeSectors, MAX_SECTORS } from '../../config/tapeGroups';
 
@@ -293,6 +295,11 @@ export default function SettingsGeneral() {
     try {
       localStorage.removeItem('ibkr_history_view_mode');
       localStorage.removeItem('chain_history');
+      // É4-b (correction) — caches d'HISTORIQUE NLV hors store (qc:*) : le
+      // buffer intraday (graphe 1D/5D) et les marks de pic. Sans ça, du résidu
+      // démo persisterait à côté de la vraie courbe après reset.
+      localStorage.removeItem(NLV_INTRADAY_KEY);
+      localStorage.removeItem(POSITION_MARKS_KEY);
     } catch {
       /* quota */
     }

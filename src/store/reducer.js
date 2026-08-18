@@ -382,6 +382,13 @@ export function applyAction(state, action) {
           // 1.G-c — groupe SECTEURS du bandeau = préférence (comme la
           // watchlist), pas de la donnée comptable → préservé.
           tapeSectors: state.settings.tapeSectors,
+          // É4-b (correction) — EFFACER EXPLICITEMENT l'historique NLV : les
+          // `dailySnapshots` sont de la DONNÉE (la courbe d'équité), pas une
+          // préférence. Sans ça, des snapshots orphelins de l'ère démo (points
+          // à $24'000) se mêleraient à la vraie courbe dès le 1er dépôt (qui
+          // crée une ancre — la garde de buildNlvSeries ne les couvre plus).
+          // Le reset les EMPORTE ; il ne les masque pas.
+          dailySnapshots: [],
         },
       };
 
