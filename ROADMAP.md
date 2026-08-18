@@ -74,8 +74,19 @@ mandatée : **registre → saisie → portes → palier**.
   encore load-bearing pour `RiskMatrix` + reducer), `store` (`activeSniperTier`
   dormant), + toute trace « E×C » / « IV rank » / « GICS ». 1.G-b a déjà retiré
   le chip TIER du deck ET de Settings/General ; le reste = ce balayage.
-- **Micro-brique E2/E4 (à venir)** — capture manuelle à l'entrée (θ d'entrée sur
-  la prime `pi` ; bid/ask pour le spread), pour allumer E2 et E4.
+- **Micro-brique CAPTURE À L'ENTRÉE ⏳ (1.0.2-rc.11, EN ATTENTE DU GO — branche
+  `v1/capture-entree`)** — l'endroit où déposer ce que le Flex ne porte pas, pour
+  allumer **E2** (θ/mid) et **E4** (spread/mid). Sidecar `positionMeta` étendu
+  (`midAtEntry`/`bidAtEntry`/`askAtEntry`/`thetaAtEntryPerDay`/`deltaAtEntry` — δ
+  indicatif, jamais jugé), keyé par signature ; **aucune position créée**
+  (l'import reste seul créateur ; réhydratation à l'import prouvée). Deux points
+  d'entrée : formulaire autonome « J'ai pris une position » + extension du tiroir
+  « Saisie · carte V3 ». E2/E4 calculées sur les valeurs d'ENTRÉE (jamais le mark ;
+  ≠ Θ%/JOUR du deck). Honnêteté : sans capture → indéterminé ; partielle → seule
+  la règle portée se juge. 577 tests, doctrine 0, color-law 0, build ✓, captures
+  @2560+@1591. **Reste** : E2 s'appuie sur le mid capturé (repli `pi`) ; le
+  pipeline greeks d'entrée AUTOMATIQUE (θ/δ live à l'exécution) n'existe pas —
+  saisie manuelle par design.
 
 ---
 

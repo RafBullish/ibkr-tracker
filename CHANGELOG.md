@@ -6,6 +6,49 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.2-rc.11] — 2026-08-18
+
+**MICRO-BRIQUE « CAPTURE À L'ENTRÉE ». EN ATTENTE DU GO (non mergée).** Le
+moment manquant entre l'exécution chez IBKR et l'import du Flex : l'endroit où
+Rafael dépose ce qu'il sait. Le Flex ne porte ni θ, ni bid/ask, ni date
+d'earnings, ni thèse — deux des sept règles de violation (**E2** θ ≤ 0,8 %/jour,
+**E4** spread ≤ 30 % du mid) restaient donc **indéterminées à vie**.
+
+- **Sidecar étendu** (`positionMeta.js`, clé = signature `tk|as|dir|ty|st|ex`) —
+  cinq champs d'entrée réutilisant la convention `<x>AtEntry` déjà lue par
+  `violations.js` : `midAtEntry`, `bidAtEntry`, `askAtEntry`,
+  `thetaAtEntryPerDay`, `deltaAtEntry` (δ = **INDICATIF**, affiché jamais jugé).
+  Garde-vide élargie : une capture sans earnings ni note **survit**.
+- **AUCUNE position créée** — l'import reste le seul créateur. La capture écrit
+  le sidecar ; la ré-hydratation à l'import (`merge.js`) recopie les champs sur
+  la position nouvellement créée (clé = signature). *Capture le soir → import
+  des jours plus tard → réhydratation automatique* (prouvé par test).
+- **Deux points d'entrée** : (1) formulaire **autonome « J'ai pris une
+  position »** (bouton en tête de Positions) — identité du contrat + données
+  d'entrée, écrit le sidecar par signature ; (2) **extension de « Saisie · carte
+  V3 »** dans le tiroir détail (compléter après coup) + affichage lecture seule
+  des valeurs capturées (NEUTRES).
+- **E2/E4 câblées sur les valeurs d'ENTRÉE** — `E2 = |θ| / mid d'entrée`
+  (mid capturé préféré, `pi` en repli) ; `E4 = (ask − bid) / mid`. **Jamais sur
+  le mark courant** (≠ « Θ % PRIME/JOUR » du deck, combustion sur le mark,
+  neutre — ne pas rapprocher). Reducer `UPDATE_POSITION` : whitelist élargie ;
+  ctx page passe `thetaAtEntryPerDay` pour E2.
+- **Honnêteté préservée** : pas de capture → E2/E4 **indéterminées** (jamais
+  présumées conformes) ; capture **partielle** → seule la règle dont les entrées
+  sont présentes se juge (θ seul → E2 ; bid/ask seuls → E4). Non bloquant.
+
+**577 tests** (+12 : sidecar entry-fields, réhydratation capture→import,
+E2/E4 verdicts + partielle + δ jamais jugé), `check:doctrine` 0,
+`check:color-law` 0, build vert. Vérif @2560+@1591 : formulaire autonome écrit
+le sidecar (`PLTR|Option|Long|CALL|60|…`) sans créer de position ; tiroir affiche
+les valeurs + E2 (1,50 %/jour) / E4 (80 %) jugées sur l'entrée. Captures
+`docs/captures/capture-entree/`.
+
+**HORS PÉRIMÈTRE** : création de positions, renaissance de l'attribution,
+plomberie notionnel orpheline, bridge/V1.1.
+
+---
+
 ## [1.0.2-rc.10] — 2026-08-18
 
 **É4-b — BRIQUE DE NETTOYAGE. EN ATTENTE DU GO (non mergée).** Trois soldes de

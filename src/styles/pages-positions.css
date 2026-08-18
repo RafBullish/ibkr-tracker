@@ -300,6 +300,18 @@
   color: var(--pnl-down);
   margin: 0;
 }
+/* Micro-brique capture — confirmation de saisie. NEUTRE + filet ambre :
+   c'est un état d'UI (saisie enregistrée), pas de l'argent → jamais vert P&L. */
+.entry-capture__saved {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  background: var(--depth-raised);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--qc-radius-sm);
+}
 .position-detail__close-summary {
   display: flex;
   flex-direction: column;

@@ -24,7 +24,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Briefcase, Crosshair, ArrowUpRight, Trash2 } from 'lucide-react';
+import { Briefcase, Crosshair, ArrowUpRight, Trash2, Plus } from 'lucide-react';
 import { useOpenPositions, useSettings, useClosedTrades, useDispatch } from '../../store/useStore';
 import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
 import useLivePositions from '../../hooks/useLivePositions';
@@ -53,6 +53,7 @@ import StatusBadge from '../../components/ui/StatusBadge';
 import EmptyState from '../../components/ui/EmptyState';
 import DataTable from '../../components/ui/DataTable';
 import Modal from '../../components/ui/Modal';
+import EntryCaptureModal from '../../components/positions/EntryCaptureModal';
 import { POLLING } from '../../constants/timing';
 import { RISE_CONTAINER_VARIANTS, RISE_TILE_VARIANTS } from '../../theme/animationVariants';
 
@@ -523,11 +524,26 @@ function PositionDetailBody({ row, greeks, violations, navigate, onEdit, onClose
           carte V3), l'usine IV Rank qui alimentait le tier n'a jamais existé. */}
 
       {/* Q-B — saisie carte V3 : date de résultats (source P4, câblage Q-C)
-          + note d'entrée. Édition via « Éditer ». */}
+          + note d'entrée. Micro-brique capture : mid/spread/θ/δ d'entrée.
+          Édition via « Éditer ». Valeurs NEUTRES (greeks/prix, jamais tonées). */}
       <div className="position-detail__section">
         <span className="position-detail__section-title">Saisie · carte V3</span>
         <div className="position-detail__grid">
           <DetailItem label="Date de résultats">{earningsLabel(pos.earningsDate)}</DetailItem>
+          <DetailItem label="Mid d’entrée">
+            {pos.midAtEntry != null ? `$${Number(pos.midAtEntry).toFixed(2)}` : '—'}
+          </DetailItem>
+          <DetailItem label="Spread d’entrée">
+            {pos.bidAtEntry != null && pos.askAtEntry != null
+              ? `$${Number(pos.bidAtEntry).toFixed(2)} / $${Number(pos.askAtEntry).toFixed(2)}`
+              : '—'}
+          </DetailItem>
+          <DetailItem label="θ / jour (entrée)">
+            {pos.thetaAtEntryPerDay != null ? Number(pos.thetaAtEntryPerDay).toFixed(3) : '—'}
+          </DetailItem>
+          <DetailItem label="δ (indicatif)">
+            {pos.deltaAtEntry != null ? Number(pos.deltaAtEntry).toFixed(2) : '—'}
+          </DetailItem>
         </div>
         <p className="position-detail__note-line">
           {pos.entryNote ? pos.entryNote : <span className="text-tertiary">Aucune note d’entrée</span>}
@@ -611,8 +627,16 @@ function PositionEditForm({ row, onSave, onCancel }) {
     pos.earningsDate && pos.earningsDate !== 'AUCUN' ? pos.earningsDate : ''
   );
   const [entryNote, setEntryNote] = useState(pos.entryNote || '');
+  // Micro-brique CAPTURE À L'ENTRÉE — données que le Flex ne porte pas.
+  // Alimentent E2 (θ/mid) et E4 (spread/mid). δ = INDICATIF (affiché, jamais jugé).
+  const numStr = (v) => (v != null ? String(v) : '');
+  const [midAtEntry, setMidAtEntry] = useState(numStr(pos.midAtEntry));
+  const [bidAtEntry, setBidAtEntry] = useState(numStr(pos.bidAtEntry));
+  const [askAtEntry, setAskAtEntry] = useState(numStr(pos.askAtEntry));
+  const [thetaAtEntry, setThetaAtEntry] = useState(numStr(pos.thetaAtEntryPerDay));
+  const [deltaAtEntry, setDeltaAtEntry] = useState(numStr(pos.deltaAtEntry));
 
-  // earningsDate/entryNote sont OPTIONNELS — jamais dans la condition de
+  // earningsDate/entryNote/capture sont OPTIONNELS — jamais dans la condition de
   // validité (enregistreur de vol : on ne bloque pas une saisie incomplète).
   const valid =
     !!tk.trim() && toFloat(pi) > 0 && toFloat(ct) > 0 && (!isOpt || (toFloat(st) > 0 && !!ex));
@@ -622,6 +646,22 @@ function PositionEditForm({ row, onSave, onCancel }) {
     if (!valid) return;
     const finalEarnings = earningsNone ? 'AUCUN' : earningsDate || null;
     const finalNote = entryNote.trim() ? entryNote.trim() : null;
+    // Capture : prix/prime > 0, θ/δ signés ; vide → null (jamais présumé).
+    const posNum = (s) => {
+      const n = parseFloat(s);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+    const sigNum = (s) => {
+      const n = parseFloat(s);
+      return Number.isFinite(n) ? n : null;
+    };
+    const capture = {
+      midAtEntry: posNum(midAtEntry),
+      bidAtEntry: posNum(bidAtEntry),
+      askAtEntry: posNum(askAtEntry),
+      thetaAtEntryPerDay: sigNum(thetaAtEntry),
+      deltaAtEntry: sigNum(deltaAtEntry),
+    };
     const patch = {
       id: pos.id,
       tk: tk.trim().toUpperCase(),
@@ -631,6 +671,7 @@ function PositionEditForm({ row, onSave, onCancel }) {
       di,
       earningsDate: finalEarnings,
       entryNote: finalNote,
+      ...capture,
     };
     if (isOpt) {
       patch.ty = ty;
@@ -642,7 +683,7 @@ function PositionEditForm({ row, onSave, onCancel }) {
     // stable). Le stamp est fourni ici (le module reste déterministe).
     writePositionMeta(
       positionSignature({ ...pos, ...patch }),
-      { earningsDate: finalEarnings, entryNote: finalNote },
+      { earningsDate: finalEarnings, entryNote: finalNote, ...capture },
       new Date().toISOString()
     );
     onSave(patch);
@@ -769,6 +810,45 @@ function PositionEditForm({ row, onSave, onCancel }) {
           />
         </label>
       </div>
+      {/* Micro-brique CAPTURE À L'ENTRÉE — options seules (θ/δ/spread). */}
+      {isOpt && (
+        <>
+          <p className="position-detail__form-hint">
+            Capture à l&apos;entrée — le Flex ne les porte pas. Débloque E2
+            (θ / mid) et E4 (spread / mid), calculées sur ces valeurs
+            d&apos;ENTRÉE (jamais le mark courant). δ = indicatif, jamais jugé.
+          </p>
+          <div className="add-trade-form__row">
+            <label>
+              <span className="uppercase-label">Mid d&apos;entrée</span>
+              <input type="number" step="0.01" min="0" value={midAtEntry}
+                onChange={(e) => setMidAtEntry(e.target.value)} placeholder="prime mid" />
+            </label>
+            <label>
+              <span className="uppercase-label">θ / jour (entrée)</span>
+              <input type="number" step="0.001" value={thetaAtEntry}
+                onChange={(e) => setThetaAtEntry(e.target.value)} placeholder="ex. −0.02" />
+            </label>
+          </div>
+          <div className="add-trade-form__row">
+            <label>
+              <span className="uppercase-label">Bid d&apos;entrée</span>
+              <input type="number" step="0.01" min="0" value={bidAtEntry}
+                onChange={(e) => setBidAtEntry(e.target.value)} />
+            </label>
+            <label>
+              <span className="uppercase-label">Ask d&apos;entrée</span>
+              <input type="number" step="0.01" min="0" value={askAtEntry}
+                onChange={(e) => setAskAtEntry(e.target.value)} />
+            </label>
+            <label>
+              <span className="uppercase-label">δ d&apos;entrée (indicatif)</span>
+              <input type="number" step="0.01" value={deltaAtEntry}
+                onChange={(e) => setDeltaAtEntry(e.target.value)} placeholder="ex. 0.30" />
+            </label>
+          </div>
+        </>
+      )}
       <div className="add-trade-form__footer">
         <button type="button" className="pg-mock-btn" onClick={onCancel}>
           Annuler
@@ -975,6 +1055,8 @@ export default function Positions() {
   // Panneau détail (read-only) : on stocke l'id, la ligne live est
   // re-dérivée depuis `positions` (auto-close si la position disparaît).
   const [detailId, setDetailId] = useState(null);
+  // Micro-brique capture — formulaire autonome « j'ai pris une position ».
+  const [captureOpen, setCaptureOpen] = useState(false);
   // U4-bis — mode du panneau détail : 'view' (read-only) | 'edit' | 'close'.
   const [detailMode, setDetailMode] = useState('view');
   const [greeksMap, setGreeksMap] = useState(new Map());
@@ -1097,7 +1179,16 @@ export default function Positions() {
   const violByPos = useMemo(() => {
     const map = new Map();
     for (const pos of openPositions) {
-      map.set(pos.id, evaluatePositionViolations(pos, { capitalUsd, book: openPositions }));
+      // Micro-brique capture — E2 lit θ d'entrée via ctx (convention établie) ;
+      // il vient de la position (réhydraté du sidecar à l'import, ou saisi).
+      map.set(
+        pos.id,
+        evaluatePositionViolations(pos, {
+          capitalUsd,
+          book: openPositions,
+          thetaAtEntryPerDay: pos.thetaAtEntryPerDay,
+        })
+      );
     }
     return map;
   }, [openPositions, capitalUsd]);
@@ -1544,6 +1635,12 @@ export default function Positions() {
             L'état du livre ouvert · P&L unrealized, Greeks par contrat, gates Sniper.
           </p>
         </div>
+        {/* Micro-brique capture — le point d'entrée AUTONOME (position pas
+            encore importée) : dépose les données d'entrée dans le sidecar. */}
+        <button type="button" className="pg-mock-btn" onClick={() => setCaptureOpen(true)}>
+          <Plus size={13} aria-hidden="true" style={{ marginRight: 6 }} />
+          J'ai pris une position
+        </button>
       </motion.div>
 
       {/* 2.A — BANDEAU DE COMMANDEMENT : un panneau cockpit, cellules-MONDE
@@ -1685,6 +1782,8 @@ export default function Positions() {
         )}
       </Modal>
 
+      {/* Micro-brique capture — formulaire autonome (n'écrit QUE le sidecar). */}
+      <EntryCaptureModal open={captureOpen} onClose={() => setCaptureOpen(false)} />
     </motion.div>
   );
 }

@@ -91,6 +91,9 @@ export function mergeIbkrData(parsed, currentState, opts = {}) {
       delete clean._ibkrSymbol;
       delete clean._ibkrUnrealized;
       // Ré-hydratation des métadonnées saisies depuis le sidecar (signature).
+      // Le Flex ne portant AUCUNE de ces données, on ne compare pas au clean
+      // (toujours absent) : on recopie ce que le sidecar porte. C'est le cœur
+      // de « capture le soir → import des jours plus tard → réhydratation ».
       if (metaBySig) {
         const meta = metaBySig[positionSignature(clean)];
         if (meta) {
@@ -99,6 +102,10 @@ export function mergeIbkrData(parsed, currentState, opts = {}) {
           }
           if (clean.entryNote == null && meta.entryNote != null) {
             clean.entryNote = meta.entryNote;
+          }
+          // Données d'ENTRÉE (micro-brique capture) — E2/E4 les lisent sur pos.
+          for (const k of ['midAtEntry', 'bidAtEntry', 'askAtEntry', 'thetaAtEntryPerDay', 'deltaAtEntry']) {
+            if (clean[k] == null && meta[k] != null) clean[k] = meta[k];
           }
         }
       }

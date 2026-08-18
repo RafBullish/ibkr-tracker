@@ -136,6 +136,52 @@ describe('violations — E2/E4/E5 honnêtes quand l’entrée manque', () => {
   });
 });
 
+describe('violations — CAPTURE À L’ENTRÉE (E2/E4 sur valeurs d’entrée)', () => {
+  const base = { ...OPT, id: 'c', ct: '1', pi: '10' };
+
+  it('E2 utilise le MID CAPTURÉ comme dénominateur (pas pi)', () => {
+    // pi=10 (→ 0.06/10 = 0.006 conforme) MAIS midAtEntry=5 (→ 0.012 > seuil).
+    const pos = { ...base, midAtEntry: 5 };
+    const e2 = byCode(evaluatePositionViolations(pos, { thetaAtEntryPerDay: 0.06 }), 'E2');
+    expect(e2.status).toBe(V_STATUS.VIOLATION);
+  });
+
+  it('E2 conforme sous le seuil → absent (pas de violation)', () => {
+    const pos = { ...base, midAtEntry: 5 };
+    expect(byCode(evaluatePositionViolations(pos, { thetaAtEntryPerDay: 0.02 }), 'E2')).toBeNull();
+  });
+
+  it('E2 retombe sur pi quand le mid n’est pas capturé', () => {
+    // sans midAtEntry, dénominateur = pi=10 → 0.06/10 = 0.006 < seuil → conforme.
+    expect(byCode(evaluatePositionViolations(base, { thetaAtEntryPerDay: 0.06 }), 'E2')).toBeNull();
+  });
+
+  it('capture PARTIELLE θ seul : E2 déterminable, E4 reste INDÉTERMINÉ', () => {
+    const out = evaluatePositionViolations({ ...base, midAtEntry: 5 }, { thetaAtEntryPerDay: 0.02 });
+    expect(byCode(out, 'E2')).toBeNull(); // déterminé (conforme)
+    expect(byCode(out, 'E4').measurable).toBe(false); // indéterminé (bid/ask absents)
+  });
+
+  it('capture PARTIELLE bid/ask seuls : E4 déterminable, E2 reste INDÉTERMINÉ', () => {
+    const pos = { ...base, bidAtEntry: '4.9', askAtEntry: '5.1' }; // spread 0.2 / mid 5 = 0.04
+    const out = evaluatePositionViolations(pos, {}); // pas de θ
+    expect(byCode(out, 'E4')).toBeNull(); // déterminé (conforme)
+    expect(byCode(out, 'E2').measurable).toBe(false); // indéterminé (θ absent)
+  });
+
+  it('δ capturé n’affecte JAMAIS le verdict (indicatif)', () => {
+    const out = evaluatePositionViolations({ ...base, deltaAtEntry: 0.9 }, {});
+    expect(byCode(out, 'E2').measurable).toBe(false);
+    expect(byCode(out, 'E4').measurable).toBe(false);
+  });
+
+  it('aucune capture → E2 ET E4 indéterminées (jamais présumées conformes)', () => {
+    const out = evaluatePositionViolations(base, {});
+    expect(byCode(out, 'E2').measurable).toBe(false);
+    expect(byCode(out, 'E4').measurable).toBe(false);
+  });
+});
+
 describe('violations — robustesse', () => {
   it('pos null → [] (ne throw jamais)', () => {
     expect(evaluatePositionViolations(null)).toEqual([]);

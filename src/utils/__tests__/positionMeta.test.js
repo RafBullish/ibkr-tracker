@@ -68,6 +68,49 @@ describe('positionMeta — écriture / lecture par signature', () => {
   });
 });
 
+describe('positionMeta — CAPTURE À L’ENTRÉE (mid/bid/ask/θ/δ)', () => {
+  it('écrit puis relit les données d’entrée, prix > 0 / θ,δ signés', () => {
+    writePositionMeta(
+      SIG,
+      { midAtEntry: 5, bidAtEntry: 4.9, askAtEntry: 5.1, thetaAtEntryPerDay: -0.02, deltaAtEntry: 0.3 },
+      't'
+    );
+    const m = readPositionMeta(SIG);
+    expect(m.midAtEntry).toBe(5);
+    expect(m.bidAtEntry).toBe(4.9);
+    expect(m.askAtEntry).toBe(5.1);
+    expect(m.thetaAtEntryPerDay).toBe(-0.02);
+    expect(m.deltaAtEntry).toBe(0.3);
+  });
+
+  it('une capture SANS earnings ni note SURVIT (garde vide élargie)', () => {
+    writePositionMeta(SIG, { thetaAtEntryPerDay: -0.02, midAtEntry: 5 }, 't');
+    const m = readPositionMeta(SIG);
+    expect(m).not.toBeNull();
+    expect(m.earningsDate).toBeNull();
+    expect(m.entryNote).toBeNull();
+    expect(m.thetaAtEntryPerDay).toBe(-0.02);
+  });
+
+  it('prix ≤ 0 ou non-fini → null (jamais un faux 0)', () => {
+    writePositionMeta(SIG, { midAtEntry: 0, bidAtEntry: -1, askAtEntry: 'x', entryNote: 'garde' }, 't');
+    const m = readPositionMeta(SIG);
+    expect(m.midAtEntry).toBeNull();
+    expect(m.bidAtEntry).toBeNull();
+    expect(m.askAtEntry).toBeNull();
+  });
+
+  it('fusion de patch : une capture partielle préserve les champs déjà posés', () => {
+    writePositionMeta(SIG, { midAtEntry: 5, thetaAtEntryPerDay: -0.02 }, 't1');
+    writePositionMeta(SIG, { bidAtEntry: 4.9, askAtEntry: 5.1 }, 't2');
+    const m = readPositionMeta(SIG);
+    expect(m.midAtEntry).toBe(5);
+    expect(m.thetaAtEntryPerDay).toBe(-0.02);
+    expect(m.bidAtEntry).toBe(4.9);
+    expect(m.askAtEntry).toBe(5.1);
+  });
+});
+
 describe('positionMeta — SURVIE au ré-import (rehydrate par signature)', () => {
   it('une position NOUVELLE reprend la métadonnée du sidecar par signature', () => {
     // 1. l'utilisateur a annoté une position (sidecar).
@@ -89,6 +132,36 @@ describe('positionMeta — SURVIE au ré-import (rehydrate par signature)', () =
     const created = mergedData.openPositions[0];
     expect(created.earningsDate).toBe('2026-09-01');
     expect(created.entryNote).toBe('thèse');
+  });
+
+  it('CAPTURE À L’ENTRÉE puis IMPORT : les données d’entrée se réhydratent sur la position créée', () => {
+    // 1. Le soir de l'achat, capture AUTONOME (aucune position en store).
+    writePositionMeta(
+      SIG,
+      { midAtEntry: 5, bidAtEntry: 4.9, askAtEntry: 5.1, thetaAtEntryPerDay: -0.02, deltaAtEntry: 0.3 },
+      't'
+    );
+    // 2. Des jours plus tard, l'import Flex crée la position (aucune donnée d'entrée).
+    const parsed = {
+      positions: [{ ...POS, ct: '1', pi: '5', pc: '5' }],
+      trades: [],
+      cashFlows: [],
+      fxRates: {},
+      cashReport: null,
+      errors: [],
+      stats: { totalLines: 1, positionsSkipped: { byLevel: {}, byAssetClass: {} } },
+    };
+    const currentState = { openPositions: [], closedTrades: [], cashFlows: [], journalEntries: [] };
+    const { mergedData } = mergeIbkrData(parsed, currentState, {
+      metaBySignature: readAllPositionMeta(),
+    });
+    const created = mergedData.openPositions[0];
+    // Le sidecar s'est réhydraté dessus TOUT SEUL (clé = signature).
+    expect(created.midAtEntry).toBe(5);
+    expect(created.bidAtEntry).toBe(4.9);
+    expect(created.askAtEntry).toBe(5.1);
+    expect(created.thetaAtEntryPerDay).toBe(-0.02);
+    expect(created.deltaAtEntry).toBe(0.3);
   });
 
   it('une position EXISTANTE dédupliquée conserve sa métadonnée saisie (skip = objet préservé)', () => {
