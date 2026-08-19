@@ -22,8 +22,11 @@ import { useState, useEffect } from 'react';
 import { useOpenPositions, useSettings } from '../../store/useStore';
 import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
 import useApiStatus from '../../hooks/useApiStatus';
+import useMarketSession from '../../hooks/useMarketSession';
 import ThemeSwitcher from '../ui/ThemeSwitcher';
 import { FRESHNESS } from '../../constants/timing';
+import { useLiveFreshness } from '../../store/liveFeed';
+import { formatAge, nlvAgeTone } from '../../utils/formatAge';
 
 // 1.S — marqueur de mode relogé ici (seul point de l'app affichant le
 // mode ; l'ancien badge SideNav est mort en 1.S). Registre NEUTRE :
@@ -154,6 +157,16 @@ export default function StatusBar() {
   const liveRate = settings?.liveRate;
   const realizedUsd = metrics?.realizedPnlUsd;
 
+  // Pastille d'âge du flux NLV (loi de la maison : jamais un chiffre sans son
+  // âge). Source = captured_at le plus frais du flux Supabase. Un fetch échoué
+  // (ok=false) ne peut JAMAIS rester vert. Marché fermé → neutre, jamais rouge.
+  const { lastCapturedAt, ok: feedOk } = useLiveFreshness();
+  const { isOpen: marketOpen } = useMarketSession();
+  const nlvAgeMs = lastCapturedAt != null ? now.getTime() - lastCapturedAt : null;
+  let nlvTone = nlvAgeTone(nlvAgeMs, { marketOpen });
+  if (!feedOk && nlvTone === 'live') nlvTone = 'est'; // fetch en échec → jamais LIVE
+  const nlvAgeText = formatAge(nlvAgeMs);
+
   // Mode réactif : dérivé du tick `now` (jamais de Date.now() au render).
   const ibkrLive = settings?.ibkrLiveData;
   const modeVariant = (() => {
@@ -199,8 +212,19 @@ export default function StatusBar() {
         ))}
       </div>
 
-      {/* Zone droite — taux + P&L + thème */}
+      {/* Zone droite — âge flux + taux + P&L + thème */}
       <div className="statusbar__zone statusbar__zone--right" aria-label="Portefeuille">
+        {nlvTone ? (
+          <div
+            className="statusbar__cell statusbar__nlvage"
+            data-tone={nlvTone}
+            title="Âge du dernier point NLV live (Supabase)"
+          >
+            <span className="statusbar__nlvage-dot" aria-hidden="true" />
+            <span className="statusbar__label">NLV</span>
+            <span className="statusbar__value">{nlvAgeText || '—'}</span>
+          </div>
+        ) : null}
         <div className="statusbar__cell statusbar__rate" title="Taux USD/CHF live">
           <span className="statusbar__label">USD/CHF</span>
           <span className="statusbar__value">{fmtFxRate(liveRate)}</span>

@@ -153,6 +153,34 @@
   opacity: 0.55;
 }
 
+/* Pastille d'âge du flux NLV (Phase B) — MÊME famille que les feed dots :
+   la fraîcheur est un STATUT de flux, pas une valeur P&L. Seul le DOT porte
+   la couleur (comme le dot IBKR voisin) ; le texte d'âge reste neutre pour
+   qu'« il y a N s » ne soit jamais lu comme un gain/perte. Marché fermé =
+   neutre (idle), jamais rouge. */
+.statusbar__nlvage-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--qc-text-tertiary);
+  transition: background 120ms ease-out;
+}
+.statusbar__nlvage[data-tone="live"] .statusbar__nlvage-dot {
+  background: var(--qc-profit);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--qc-profit) 18%, transparent);
+}
+.statusbar__nlvage[data-tone="est"] .statusbar__nlvage-dot {
+  background: var(--accent-amber);
+}
+.statusbar__nlvage[data-tone="stale"] .statusbar__nlvage-dot {
+  background: var(--qc-loss);
+}
+.statusbar__nlvage[data-tone="idle"] .statusbar__nlvage-dot {
+  background: var(--qc-text-tertiary);
+  opacity: 0.55;
+}
+
 /* IBKR feed principal — halo subtile sur le dot.
    color-mix s'adapte automatiquement au thème (--profit varie). */
 .statusbar__feed--featured[data-status="live"] .statusbar__feed-dot {
