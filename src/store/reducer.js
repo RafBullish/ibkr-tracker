@@ -19,6 +19,20 @@ export function applyAction(state, action) {
     case 'SET_LIVE_RATE':
       return { ...state, settings: { ...state.settings, liveRate: action.payload } };
 
+    // Phase B (D3) — le flux Supabase alimente l'état de compte (NLV/cash/
+    // dispo/marge/settled). SEUL settings.ibkrLiveData bouge : ni positions,
+    // ni trades. Ses consommateurs (LIQUIDITÉ DISPO, badge NLV, fraîcheur du
+    // writer pic) le lisent déjà. Remplace l'ex-bridge local (useIbkrLive mort).
+    case 'SET_IBKR_LIVE':
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          ibkrLiveData: action.payload || null,
+          lastSync: action.payload?.timestamp ?? state.settings.lastSync,
+        },
+      };
+
     case 'SET_FX_MODE':
       return { ...state, settings: { ...state.settings, fxMode: action.payload } };
 

@@ -30,7 +30,7 @@ import BottomNav from './BottomNav';
 import CommandPalette from '../ui/CommandPalette';
 import CheatsheetModal from '../ui/CheatsheetModal';
 import useMediaQuery from '../../hooks/useMediaQuery';
-import useIbkrLive from '../../hooks/useIbkrLive';
+import useSupabaseLive from '../../hooks/useSupabaseLive';
 import { useIntradayNlvWriter } from '../../hooks/useIntradayNlv';
 import { usePositionMarksWriter } from '../../hooks/usePositionMarks';
 
@@ -154,10 +154,10 @@ export default function AppShell() {
       return next;
     });
 
-  // Bridge IBKR (étape 3) — polling /ibkr/account toutes les 5s quand
-  // settings.gwAutoConnect est ON. Gating + erreurs silencieuses internes
-  // au hook : si OFF ou si le bridge local n'est pas lancé, aucune action.
-  useIbkrLive();
+  // Flux live V1.1 (Phase B, D3) — sonde Supabase PostgREST par clé anon.
+  // Source UNIQUE du live ; remplace l'ancien bridge HTTP local (useIbkrLive
+  // RETIRÉ). Sans VITE_SUPABASE_* configuré, no-op → repli estimateur « est. ».
+  useSupabaseLive();
 
   useEffect(() => {
     const handler = (e) => {
