@@ -35,6 +35,7 @@ import {
   STAGNATION_BANDE_HAUTE_FRAC,
 } from '../config/registre';
 import { tradingDaysUntil } from './tradingDays';
+import { PIC_SOURCE_CLIENT } from './positionMarks';
 
 /** Severités du moteur. 'perte' = ROUGE (perte réelle) ; sinon AMBRE. */
 export const GATE_SEV = Object.freeze({ PERTE: 'perte', CRITIQUE: 'critique', ARME: 'arme' });
@@ -75,6 +76,16 @@ function gateP2(row) {
   const src = 'portes.P2_trail';
   const picPct = row.picPct; // fraction, (pic − mid entrée) / mid entrée
   if (!Number.isFinite(picPct)) return null; // pas de pic enregistré → pas d'armement
+  // BARRIÈRE DURE (D8) : un pic issu du bridge (source ≠ client) s'AFFICHE mais
+  // n'ARME JAMAIS la porte tant que la devise de reqPnLSingle.value n'est pas
+  // confirmée sur une vraie position. Le trailing reste piloté par le pic de
+  // CLÔTURE côté client. Informationnel seulement (jamais 'armed'/'crossed').
+  if (row.picSource && row.picSource !== PIC_SOURCE_CLIENT) {
+    if (picPct < P2_ACTIVATION_FRAC) return null;
+    return sig('P2', 'trail', 'indeterminate', null,
+      `TRAIL pic ${pct0(picPct * 100)} (source ${row.picSource}) · non validé`, src,
+      { unvalidated: true, picSource: row.picSource });
+  }
   if (picPct < P2_ACTIVATION_FRAC) return null; // pic < +50 % → non armé
   const sortieFrac = picPct * P2_SORTIE_FACTEUR; // pic_pct × 0.60
   const sortiePctPts = sortieFrac * 100;
@@ -198,20 +209,34 @@ export function gateDistances(row, ctx = {}) {
 
   // P2 TRAIL — armée quand pic ≥ +50 % ; seuil de sortie = pic × 0,60.
   const pic = row?.picPct; // fraction
-  const P2 = Number.isFinite(pic)
-    ? {
-        picPct: pic * 100,
-        isArmed: pic >= P2_ACTIVATION_FRAC,
-        sortiePct: pic * P2_SORTIE_FACTEUR * 100,
-        isPartial: !!row?.isPartial,
-        state:
-          pic < P2_ACTIVATION_FRAC
-            ? 'inactive'
-            : hasP && p <= pic * P2_SORTIE_FACTEUR * 100
-              ? 'crossed'
-              : 'armed',
-      }
-    : { picPct: null, isArmed: false, sortiePct: null, isPartial: !!row?.isPartial, state: 'no-peak' };
+  const picUnvalidated = Number.isFinite(pic) && row?.picSource && row.picSource !== PIC_SOURCE_CLIENT;
+  let P2;
+  if (!Number.isFinite(pic)) {
+    P2 = { picPct: null, isArmed: false, sortiePct: null, isPartial: !!row?.isPartial, state: 'no-peak' };
+  } else if (picUnvalidated) {
+    // Pic bridge : affiché (picPct, sortie), mais JAMAIS armé — barrière dure.
+    P2 = {
+      picPct: pic * 100,
+      isArmed: false,
+      sortiePct: pic * P2_SORTIE_FACTEUR * 100,
+      isPartial: !!row?.isPartial,
+      picSource: row.picSource,
+      state: 'unvalidated',
+    };
+  } else {
+    P2 = {
+      picPct: pic * 100,
+      isArmed: pic >= P2_ACTIVATION_FRAC,
+      sortiePct: pic * P2_SORTIE_FACTEUR * 100,
+      isPartial: !!row?.isPartial,
+      state:
+        pic < P2_ACTIVATION_FRAC
+          ? 'inactive'
+          : hasP && p <= pic * P2_SORTIE_FACTEUR * 100
+            ? 'crossed'
+            : 'armed',
+    };
+  }
 
   // P3 DTE — jours restants + jours avant la gate 45 (inconditionnel).
   const dte = row?.dte;

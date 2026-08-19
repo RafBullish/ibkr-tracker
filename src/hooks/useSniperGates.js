@@ -56,6 +56,10 @@ export default function useSniperGates(options = {}) {
           earningsDate: p.earningsDate ?? null,
           picPct: Number.isFinite(picPct) ? picPct : null,
           isPartial: rec ? !!rec.isPartial : false,
+          // Source du pic ('session_close' client · 'bridge' V1.1). La porte P2
+          // ne s'arme que sur le pic client tant que la devise n'est pas
+          // confirmée (barrière dure, gates.gateP2). null = pas de pic.
+          picSource: rec ? rec.source ?? 'session_close' : null,
         };
       });
 

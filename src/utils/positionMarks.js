@@ -44,6 +44,11 @@ export const POSITION_MARKS_KEY = 'qc:positionMarks';
 export const POSITION_MARKS_EVENT = 'qc:positionMarks:change';
 const SCHEMA_V = 1;
 
+// Source du pic côté client (mid de clôture, devise du feed IBKR). SEULE source
+// qui arme la porte P2. Le bridge V1.1 pose une autre source ('bridge') que la
+// barrière dure de gates.gateP2 affiche mais n'arme jamais (devise non confirmée).
+export const PIC_SOURCE_CLIENT = 'session_close';
+
 function isBrowser() {
   return typeof window !== 'undefined' && !!window.localStorage;
 }
@@ -172,6 +177,11 @@ export function recordSessionClose(positions, opts = {}) {
         series: [{ d: day, mid: close }],
         pic: 0,
         isPartial: entryDay ? day > entryDay : false,
+        // Source du pic. Le client n'écrit QUE 'session_close' (mid de clôture,
+        // devise du feed IBKR). Le bridge V1.1 posera 'bridge' (mark intraday
+        // reqPnLSingle) — la porte P2 ne s'arme JAMAIS dessus tant que la
+        // devise de value n'est pas confirmée (barrière dure, gates.gateP2).
+        source: PIC_SOURCE_CLIENT,
         updatedAt: stamp,
       };
       recomputePic(rec);

@@ -68,6 +68,40 @@ describe('P2 — TRAIL (pic +50 %, sortie pic×0,60, aucun plancher)', () => {
   it('aucun pic enregistré → pas de P2 (jamais armé sans pic)', () => {
     expect(byCode({ unrealPct: 100 }, {}, 'P2')).toBeNull();
   });
+  it('source client explicite → armé comme avant (barrière transparente)', () => {
+    const p2 = byCode({ picPct: 0.5, unrealPct: 100, picSource: 'session_close' }, {}, 'P2');
+    expect(p2.status).toBe('armed');
+  });
+});
+
+describe('P2 — BARRIÈRE DURE (pic bridge jamais armé, D8)', () => {
+  it('pic bridge +100 % → informationnel, JAMAIS armé/franchi', () => {
+    const p2 = byCode({ picPct: 1.0, unrealPct: 100, picSource: 'bridge' }, {}, 'P2');
+    expect(p2.status).toBe('indeterminate');
+    expect(p2.severity).toBeNull();
+    expect(p2.unvalidated).toBe(true);
+    expect(p2.metric).toMatch(/non validé/);
+    expect(p2.metric).toMatch(/bridge/);
+  });
+  it('pic bridge sous +50 % → rien du tout', () => {
+    expect(byCode({ picPct: 0.4, unrealPct: 30, picSource: 'bridge' }, {}, 'P2')).toBeNull();
+  });
+  it('un pic bridge ne descend JAMAIS dans la bande (severity null → hors bande)', () => {
+    const band = bandSignals(evaluateGates({ picPct: 1.0, unrealPct: 30, picSource: 'bridge' }, {}));
+    expect(band.some((s) => s.code === 'P2')).toBe(false);
+  });
+  it('gateDistances : pic bridge affiché mais état « unvalidated », jamais armé', () => {
+    const P2 = gateDistances({ unrealPct: 100, picPct: 1.0, picSource: 'bridge' }).P2;
+    expect(P2.state).toBe('unvalidated');
+    expect(P2.isArmed).toBe(false);
+    expect(P2.picPct).toBeCloseTo(100); // le pic reste affiché
+    expect(P2.picSource).toBe('bridge');
+  });
+  it('gateDistances : source client → armé normalement', () => {
+    const P2 = gateDistances({ unrealPct: 100, picPct: 1.0, picSource: 'session_close' }).P2;
+    expect(P2.state).toBe('armed');
+    expect(P2.isArmed).toBe(true);
+  });
 });
 
 describe('P3 — DTE 45 inconditionnel', () => {
