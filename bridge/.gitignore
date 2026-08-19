@@ -8,3 +8,10 @@ __pycache__/
 # Données de session, jamais commitées.
 snapshot.json
 snapshot.json.tmp
+
+# Journaux runtime bridge v2 — mémoire de vol + outbox, données de session.
+v2/journal.ndjson
+v2/outbox.ndjson
+# Secrets bridge v2 — clé service_role, jamais commitée.
+.env
+v2/.env
