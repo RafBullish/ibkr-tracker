@@ -35,6 +35,7 @@ import useCalendarFeeds from '../../hooks/useCalendarFeeds';
 import { useFx } from '../../hooks/useFx';
 import { useOpenPositions } from '../../store/useStore';
 import { computeMarketPhase, formatCountdown } from '../../utils/marketPhase';
+import { formatAge } from '../../utils/formatAge';
 import { macroEventsInRange } from '../../data/macroEvents2026';
 
 const PHASE_LABELS = { open: 'OUVERT', pre: 'PRÉ-MARCHÉ', after: 'AFTER', closed: 'FERMÉ' };
@@ -160,17 +161,7 @@ function compactName(name) {
 // perte) : même si live (60 s) et Frankfurter (5 min) sont tous deux muets,
 // on montre le DERNIER taux connu + son âge — jamais figé passé pour vif.
 const FX_STALE_AGE_MS = 10 * 60 * 1000; // 10 min
-function formatAge(ms) {
-  if (ms == null || !Number.isFinite(ms) || ms < 0) return null;
-  const s = Math.floor(ms / 1000);
-  if (s < 60) return `il y a ${s} s`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `il y a ${m} min`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `il y a ${h} h`;
-  const d = Math.floor(h / 24);
-  return `il y a ${d} j`;
-}
+// formatAge : maison unique partagée (utils/formatAge), ex-copie locale.
 function detailOf(name) {
   const s = String(name || '');
   const dash = s.split(' — ')[1];

@@ -39,3 +39,12 @@ export const DEBOUNCE = {
 export const FRESHNESS = {
   LIVE_DATA_MAX_AGE_MS: TIME.ONE_HOUR_MS,
 };
+
+// Âge d'AFFICHAGE du dernier point NLV (pastille cockpit + StatusBar, Phase B).
+// Distinct de FRESHNESS (seuil bridge, 1 h) : ici c'est la fraîcheur d'un tick
+// de flux. < 60 s = LIVE licite ; < 5 min = ambre ; au-delà = rouge en séance,
+// neutre marché fermé (cf. utils/formatAge.nlvAgeTone).
+export const NLV_AGE = {
+  LIVE_MS: TIME.ONE_MINUTE_MS, // < 60 s → vert (LIVE)
+  EST_MS: 5 * TIME.ONE_MINUTE_MS, // < 5 min → ambre
+};
