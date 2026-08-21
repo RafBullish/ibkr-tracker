@@ -36,5 +36,10 @@ export const useLiveFeed = create((set) => ({
 export const useLiveNlvSeries = () => useLiveFeed((s) => s.nlvSeries);
 export const useLiveMarks = () => useLiveFeed((s) => s.marks);
 export const useLiveFx = () => useLiveFeed((s) => s.fx);
-export const useLiveFreshness = () =>
-  useLiveFeed((s) => ({ lastCapturedAt: s.lastCapturedAt, ok: s.ok }));
+// Deux sélecteurs primitifs composés : un sélecteur qui fabriquerait un objet
+// neuf à chaque getSnapshot ferait boucler useSyncExternalStore (Zustand v5).
+export const useLiveFreshness = () => {
+  const lastCapturedAt = useLiveFeed((s) => s.lastCapturedAt);
+  const ok = useLiveFeed((s) => s.ok);
+  return { lastCapturedAt, ok };
+};
