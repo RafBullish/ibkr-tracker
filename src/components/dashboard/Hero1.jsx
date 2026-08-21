@@ -28,6 +28,11 @@ import PerfBand from './hero1/PerfBand';
 const TvChart = lazy(() => import('./hero1/TvChart'));
 import { deriveKpisReal } from './hero1/model';
 import { buildNlvSeries, buildIntradaySeries, resampleSeries, TIMEFRAMES_HERO1 } from '../../utils/nlvSeries';
+// Héros 1 LIVE (Phase B) — courbe 1D depuis le flux bridge, loi d'une
+// seule source (bridge | est., jamais une couture).
+import { buildBridgeSeries, selectHeroSeries } from '../../utils/liveNlvSeries';
+import { sessionWindow } from '../../utils/marketPhase';
+import { useLiveNlvSeries, useLiveFxSeries } from '../../store/liveFeed';
 import { deriveHeroWindowStats } from '../../utils/heroStats';
 import { useIntradayNlvDays } from '../../hooks/useIntradayNlv';
 import { usePortfolioMetrics } from '../../hooks/usePortfolioMetrics';
@@ -121,6 +126,43 @@ export default function Hero1({ area = 'hero1' }) {
     return s.length >= 2 ? s : null;
   }, [range, intradayDays, dailyFull, metrics]);
 
+  // ── HÉROS 1 LIVE (Phase B) — le range 1D lit nlv_snapshots via la
+  //    couche de flux. Fenêtre = séance COURANTE du calendrier cockpit
+  //    (pré→post NY) : des lignes d'hier ne construisent jamais la courbe
+  //    d'aujourd'hui. Conversion CHF→USD PAR POINT (as-of fx_rates). ──
+  const liveNlvRows = useLiveNlvSeries();
+  const liveFxRows = useLiveFxSeries();
+  const bridgeBuild = useMemo(() => {
+    if (range !== '1D' || liveNlvRows.length === 0) return null;
+    const win = sessionWindow(new Date());
+    return buildBridgeSeries({
+      rows: liveNlvRows,
+      fxRows: liveFxRows,
+      dailySeries: dailyFull,
+      windowStartMs: win.startMs,
+      windowEndMs: win.endMs,
+    });
+  }, [range, liveNlvRows, liveFxRows, dailyFull]);
+
+  // LOI D'UNE SEULE SOURCE — la porte unique bridge | est. (jamais une
+  // couture). Hors 1D ou sans point bridge : la série client, inchangée.
+  const picked = useMemo(
+    () => selectHeroSeries({ bridgeSeries: bridgeBuild?.series, clientSeries: intradaySeries || series }),
+    [bridgeBuild, intradaySeries, series]
+  );
+  const heroIsBridge = picked.source === 'bridge';
+  const bridgeCurrency = heroIsBridge ? bridgeBuild?.currency || 'USD' : 'USD';
+  // Le NLV géant en overlay = la TÊTE de la série affichée (même source
+  // que la courbe — la divergence chiffre/courbe est celle qu'É3.1 a tuée).
+  // Le magasin (netLiquidationValueUsd, cellules du deck) n'est PAS touché.
+  const bridgeHead = useMemo(() => {
+    if (!heroIsBridge) return null;
+    for (let i = picked.series.length - 1; i >= 0; i -= 1) {
+      if (picked.series[i].nlv != null) return picked.series[i].nlv;
+    }
+    return null;
+  }, [heroIsBridge, picked]);
+
   // HERO-FOOTER (D1/D2) : UNE maison de stats — calculée sur la fenêtre
   // QUOTIDIENNE pré-resample + les clôtures de la fenêtre. Le tracé
   // (resampleSeries, cap 190) reste un détail d'affichage.
@@ -159,7 +201,9 @@ export default function Hero1({ area = 'hero1' }) {
       <ZoneSep label="GRAPHIQUE" />
       <div className="lh-graphzone">
         <div className="lh-graphzone__bar">
-          <span className="lh-chart__title">EQUITY / NLV</span>
+          {/* 3.3 — titre statique, SANS « · LIVE » : l'état vit dans le badge
+              (FluxBadge), seul porteur. Un titre LIVE un samedi mentirait. */}
+          <span className="lh-chart__title">NET LIQUIDATION</span>
           <div className="lh-chart__controls">
             <ViewToggle view={view} setView={setView} />
             <RangeSelector range={range} setRange={setRange} options={TIMEFRAMES_HERO1} />
@@ -175,16 +219,25 @@ export default function Hero1({ area = 'hero1' }) {
         )}
         <div className="lh-fuse__stage">
           <div className="lh-fuse__overlay">
-            <NlvHero nlv={kpi.nlv} rate={rate} dayPnl={kpi.dayPnl} dayPct={kpi.dayPct} spark={kpi.nlvSpark} size="lg" live={realAvailableUsd != null} />
+            <NlvHero
+              nlv={heroIsBridge ? bridgeHead : kpi.nlv}
+              rate={rate}
+              dayPnl={kpi.dayPnl}
+              dayPct={kpi.dayPct}
+              spark={kpi.nlvSpark}
+              size="lg"
+              hasBridge={heroIsBridge}
+              currency={bridgeCurrency}
+            />
           </div>
           <div className="lh-fuse__chart">
             {/* 1.H — état-vide dessiné (calqué sur Hero 2) : sur base purgée,
                 un message honnête au lieu d'un canvas encadré vide. */}
-            {(intradaySeries || series).length === 0 ? (
+            {picked.series.length === 0 ? (
               <div className="lh-canvas lh-canvas--empty">Série NLV vide — le graphe apparaît au premier point</div>
             ) : (
               <Suspense fallback={<div className="lh-canvas lh-canvas--empty">Chargement…</div>}>
-                <TvChart data={intradaySeries || series} view={view} line="neutral" intraday={Boolean(intradaySeries)} />
+                <TvChart data={picked.series} view={view} line="neutral" intraday={heroIsBridge || Boolean(intradaySeries)} />
               </Suspense>
             )}
           </div>

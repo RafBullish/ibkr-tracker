@@ -7,6 +7,26 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
 
 ---
 
+## V1.1 — Phase B « LE FRONT LIVE » (branche `v1.1/phase-b-front`, NON mergée)
+
+Rien ne merge sur `main` avant le tag du 01.09. Fondation livrée (barrière
+P2 · briquette d'âge · couche de flux Supabase · pastille StatusBar), puis
+briques sur GO : **1 Héros 1 LIVE** (en cours) → Cellule JOUR → cellules
+est./NON RÉGLÉ → pastille cockpit + merge du pic.
+
+**CONSIGNES ARCHITECTE (addendum 21.08, contraignantes) :**
+
+- **Vercel : AUCUNE variable `VITE_SUPABASE_*`** — ni preview ni prod,
+  jusqu'à décision contraire de l'architecte. Les clés ne vivent qu'en
+  `.env.local` (poste de Rafael).
+- **PRÉCONDITION DE MERGE de `v1.1/phase-b-front`** : brique **B-AUTH** —
+  Supabase Auth mono-utilisateur via GoTrue REST (zéro dépendance),
+  policies `authenticated`, **anon ne lit plus rien**. Placée APRÈS les
+  quatre briques de la Phase B. Tant que B-AUTH n'est pas livrée, la
+  branche ne merge pas.
+
+---
+
 ## Conformité Sniper V3 — chantier Q (ouvert le 16.08.2026)
 
 Registre V3 (`parametres.json` v3.0.0) reçu ; le 2.0.1 est mort. Séquence

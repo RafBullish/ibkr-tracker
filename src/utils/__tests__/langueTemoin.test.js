@@ -24,6 +24,10 @@ const FILES = [
   'components/ui/DataTable.jsx',
   'pages/trading/Positions.jsx',
   'pages/trading/History.jsx',
+  // Héros 1 LIVE (Phase B) — les titres des deux graphes du Dashboard
+  // passent par le témoin (renommages 3.3).
+  'components/dashboard/Hero1.jsx',
+  'components/dashboard/Hero2.jsx',
 ];
 
 // Motifs de texte RENDU condamnés (JSX text ou valeur de prop label).
@@ -58,6 +62,12 @@ const FORBIDDEN = [
   /'DAY'/,
   /label="STREAK"/,
   /GROSS GAINS/,
+  // Héros 1 LIVE (3.3) — anciens titres de graphe morts : le haut devient
+  // « NET LIQUIDATION » (sans « · LIVE » statique — l'état vit dans le
+  // badge), le bas devient « ÉQUITY EXÉCUTÉ » (sa nature : Flex, exécuté).
+  />EQUITY \/ NLV</,
+  />RÉALISÉ</,
+  /NET LIQUIDATION · LIVE/,
 ];
 
 // Traductions imposées qui DOIVENT être rendues quelque part.
@@ -89,6 +99,9 @@ const REQUIRED = [
   // 1.G-b — la bande FORME (label="SÉRIE") est morte ; la SÉRIE (français)
   // vit désormais dans le PortfolioDeck (« SÉRIE EN COURS »).
   "'SÉRIE EN COURS'",
+  // Héros 1 LIVE (3.3) — les deux titres de graphe renommés.
+  '>NET LIQUIDATION<',
+  '>ÉQUITY EXÉCUTÉ<',
 ];
 
 describe('É3.3 — témoin de langue (sources du périmètre)', () => {

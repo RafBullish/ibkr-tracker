@@ -156,8 +156,10 @@
 /* Pastille d'âge du flux NLV (Phase B) — MÊME famille que les feed dots :
    la fraîcheur est un STATUT de flux, pas une valeur P&L. Seul le DOT porte
    la couleur (comme le dot IBKR voisin) ; le texte d'âge reste neutre pour
-   qu'« il y a N s » ne soit jamais lu comme un gain/perte. Marché fermé =
-   neutre (idle), jamais rouge. */
+   qu'« il y a N s » ne soit jamais lu comme un gain/perte.
+   Pré-vol Héros 1 LIVE (c) : l'ex-ton « stale » ROUGE est MORT — une
+   péremption n'est pas une perte. ≥ 60 s = ambre (est) et c'est le LIBELLÉ
+   qui dit « FLUX PÉRIMÉ » ; hors séance = idle neutre, « MARCHÉ FERMÉ ». */
 .statusbar__nlvage-dot {
   display: inline-block;
   width: 6px;
@@ -173,12 +175,12 @@
 .statusbar__nlvage[data-tone="est"] .statusbar__nlvage-dot {
   background: var(--accent-amber);
 }
-.statusbar__nlvage[data-tone="stale"] .statusbar__nlvage-dot {
-  background: var(--qc-loss);
-}
 .statusbar__nlvage[data-tone="idle"] .statusbar__nlvage-dot {
   background: var(--qc-text-tertiary);
   opacity: 0.55;
+}
+@media (prefers-reduced-motion: reduce) {
+  .statusbar__nlvage-dot { transition: none; }
 }
 
 /* IBKR feed principal — halo subtile sur le dot.

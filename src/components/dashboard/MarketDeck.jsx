@@ -36,6 +36,7 @@ import { useFx } from '../../hooks/useFx';
 import { useOpenPositions } from '../../store/useStore';
 import { computeMarketPhase, formatCountdown } from '../../utils/marketPhase';
 import { formatAge } from '../../utils/formatAge';
+import { FX_AGE } from '../../constants/timing';
 import { macroEventsInRange } from '../../data/macroEvents2026';
 
 const PHASE_LABELS = { open: 'OUVERT', pre: 'PRÉ-MARCHÉ', after: 'AFTER', closed: 'FERMÉ' };
@@ -160,7 +161,9 @@ function compactName(name) {
 // de ce seuil, le taux est « en retard » (ambre = fraîcheur, JAMAIS une
 // perte) : même si live (60 s) et Frankfurter (5 min) sont tous deux muets,
 // on montre le DERNIER taux connu + son âge — jamais figé passé pour vif.
-const FX_STALE_AGE_MS = 10 * 60 * 1000; // 10 min
+// Héros 1 LIVE : seuil hissé dans constants/timing (FX_AGE) — c'est le
+// MÊME seuil qui arme le swap du producteur FX (useFxLiveSync ← fx_rates).
+const FX_STALE_AGE_MS = FX_AGE.STALE_MS;
 // formatAge : maison unique partagée (utils/formatAge), ex-copie locale.
 function detailOf(name) {
   const s = String(name || '');

@@ -4,10 +4,15 @@
 //  ambre = actif, encre neutre, valeurs monétaires blanches + CHF live.
 // ═══════════════════════════════════════════════════════════════
 
+import { useEffect, useState } from 'react';
 import { TIMEFRAMES } from '../../../utils/nlvSeries';
 import { fmtUsd, fmtPct, fmtChf } from './kit';
 // É3.3 — dates calendaires au format central dd.mm.yy.
 import { fmtDate } from '../../../utils/format';
+// Héros 1 LIVE (Phase B) — badge d'état du flux, seul porteur de l'état.
+import { useLiveFreshness } from '../../../store/liveFeed';
+import useMarketSession from '../../../hooks/useMarketSession';
+import { nlvFluxBadge } from '../../../utils/formatAge';
 
 // É4 §5.3 — MoneyDual, KpiCell et KpiBelt (exports 0-consommateur,
 // vestiges de l'itération 1.D pré-PortfolioDeck) sont MORTS.
@@ -51,10 +56,70 @@ export function MiniSpark({ points, w = 110, h = 34 }) {
   );
 }
 
+// ── Tick d'âge ISOLÉ dans le badge (le héros ne re-rend pas à la
+//    seconde). Sous prefers-reduced-motion, le tick est gelé à la minute
+//    (l'âge reste vrai à 60 s près, plus aucun texte au battement 1 s). ──
+function useBadgeNow() {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const reduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    const id = setInterval(() => setNow(Date.now()), reduced ? 60_000 : 1_000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
+// ── Badge d'état du Héros 1 — SEUL porteur de l'état du flux (3.3). ──
+//    LIVE (< 60 s) · « il y a N s/min » (ambre) · « FLUX PÉRIMÉ · … »
+//    (ambre, jamais rouge) · « MARCHÉ FERMÉ · dernier tick HH:MM »
+//    (neutre) · EST. (aucun point bridge pour la séance → courbe client).
+//    Un titre qui dirait LIVE un samedi matin mentirait : le titre reste
+//    statique, l'état vit ici. La source est nommée (title=).
+export function FluxBadge({ hasBridge = false }) {
+  const now = useBadgeNow();
+  const { lastCapturedAt, ok } = useLiveFreshness();
+  const { phase } = useMarketSession();
+  if (!hasBridge) {
+    return (
+      <span
+        className="lh-hero__live lh-hero__live--est"
+        title="Source : estimateur client — aucun point bridge pour la séance courante (NLV reconstituée, pas un feed broker)"
+      >
+        EST.
+      </span>
+    );
+  }
+  const ageMs = lastCapturedAt != null ? now - lastCapturedAt : null;
+  const flux = nlvFluxBadge(ageMs, { marketOpen: phase !== 'closed', lastCapturedAt });
+  if (!flux) return null;
+  const kind = flux.kind === 'live' && !ok ? 'age' : flux.kind; // fetch en échec → jamais LIVE
+  if (kind === 'live') {
+    return (
+      <span className="lh-hero__live" title="Source : flux bridge Supabase — dernier point < 60 s">
+        <span className="lh-hero__live-dot" aria-hidden="true" />LIVE
+      </span>
+    );
+  }
+  return (
+    <span
+      className={`lh-hero__live ${kind === 'closed' ? 'lh-hero__live--idle' : 'lh-hero__live--age'}`}
+      title="Source : flux bridge Supabase — âge du dernier point de la séance"
+    >
+      {flux.label}
+    </span>
+  );
+}
+
 // ── HÉROS NLV — le plus gros et le plus soigné du bloc ──────────
-export function NlvHero({ nlv, rate, dayPnl, dayPct, spark, size = 'md', live = false }) {
+// Héros 1 LIVE : `hasBridge` pilote le badge (seul porteur d'état) ;
+// `currency` ≠ USD = série brute non convertie (fx_rates vide) — le
+// montant s'affiche dans la devise du broker, étiqueté honnêtement.
+export function NlvHero({ nlv, rate, dayPnl, dayPct, spark, size = 'md', hasBridge = false, currency = 'USD' }) {
   const tone = dayPnl == null || dayPnl === 0 ? 'mute' : dayPnl > 0 ? 'profit' : 'loss';
-  const chf = fmtChf(nlv, rate);
+  const raw = currency !== 'USD';
+  const chf = raw ? null : fmtChf(nlv, rate);
   const pill =
     dayPnl == null
       ? null
@@ -63,28 +128,21 @@ export function NlvHero({ nlv, rate, dayPnl, dayPct, spark, size = 'md', live = 
     <div className={`lh-hero lh-hero--${size}`}>
       <div className="lh-hero__head">
         <span className="lh-hero__label">NET LIQUIDATION</span>
-        {/* S6.5 (É4-a) — le témoin dit la VÉRITÉ : « LIVE » seulement quand le
-            bridge IBKR est frais (marks temps réel) ; sinon « EST. » — la NLV
-            est reconstituée (réalisé + apports), pas un feed broker live. Même
-            honnêteté que LIQUIDITÉ DISPO. Le vrai live NLV = V1.1. */}
-        {live ? (
-          <span className="lh-hero__live"><span className="lh-hero__live-dot" aria-hidden="true" />LIVE</span>
-        ) : (
-          <span
-            className="lh-hero__live lh-hero__live--est"
-            title="NLV reconstituée (réalisé + apports) — aucun feed broker live tant que le bridge IBKR n'est pas frais / V1.1"
-          >
-            EST.
-          </span>
-        )}
+        <FluxBadge hasBridge={hasBridge} />
       </div>
       {/* Montant + sparkline COLLÉE + pill à proximité (une ligne). */}
       <div className="lh-hero__row">
-        <span className="lh-hero__usd">{nlv == null ? '—' : fmtUsd(nlv)}</span>
+        <span className="lh-hero__usd">
+          {nlv == null ? '—' : raw ? `${currency} ${Math.round(nlv).toLocaleString('de-CH')}` : fmtUsd(nlv)}
+        </span>
         <MiniSpark points={spark} w={132} h={38} />
         {pill ? <span className={`lh-hero__pill lh-hero__pill--${tone}`}>{pill}<span className="lh-hero__pill-cap"> jour</span></span> : null}
       </div>
-      {chf ? <span className="lh-hero__chf">{chf}</span> : null}
+      {raw ? (
+        <span className="lh-hero__chf">{currency} · taux indisponible — série brute, jamais convertie par un taux d'une autre source</span>
+      ) : chf ? (
+        <span className="lh-hero__chf">{chf}</span>
+      ) : null}
     </div>
   );
 }

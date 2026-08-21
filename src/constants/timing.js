@@ -42,9 +42,18 @@ export const FRESHNESS = {
 
 // Âge d'AFFICHAGE du dernier point NLV (pastille cockpit + StatusBar, Phase B).
 // Distinct de FRESHNESS (seuil bridge, 1 h) : ici c'est la fraîcheur d'un tick
-// de flux. < 60 s = LIVE licite ; < 5 min = ambre ; au-delà = rouge en séance,
-// neutre marché fermé (cf. utils/formatAge.nlvAgeTone).
+// de flux. < 60 s = LIVE licite ; ≥ 60 s = ambre ; ≥ 5 min = le LIBELLÉ passe
+// à « FLUX PÉRIMÉ », la couleur RESTE ambre (le rouge = perte d'argent, jamais
+// une péremption — pré-vol Héros 1 LIVE). Hors séance : neutre, « MARCHÉ
+// FERMÉ · dernier tick » (cf. utils/formatAge.nlvFluxBadge).
 export const NLV_AGE = {
   LIVE_MS: TIME.ONE_MINUTE_MS, // < 60 s → vert (LIVE)
-  EST_MS: 5 * TIME.ONE_MINUTE_MS, // < 5 min → ambre
+  EST_MS: 5 * TIME.ONE_MINUTE_MS, // ≥ 5 min → libellé « FLUX PÉRIMÉ » (ambre)
+};
+
+// Fraîcheur FX (seuil ambre 1.G-c, partagé MarketDeck ↔ swap du producteur
+// FX) : une ligne fx_rates bridge plus jeune que ce seuil devient LE taux
+// (useFxLiveSync) ; plus vieille → repli sur la quote actuelle.
+export const FX_AGE = {
+  STALE_MS: 10 * TIME.ONE_MINUTE_MS,
 };

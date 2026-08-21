@@ -1,46 +1,76 @@
 // ═══════════════════════════════════════════════════════════════
-//  useFxLiveSync — single FX source : Yahoo USDCHF=X → settings.liveRate
+//  useFxLiveSync — source FX unique → settings.liveRate
 //
-//  Avant ce hook deux taux coexistaient à l'écran :
-//    • TickerTape  : 0.7838 (live Yahoo via useMarketQuotes)
-//    • Footer / Cockpit / Conversions / FX Impact : 0.7865 (Frankfurter
-//      figé écrit par useFxAutoRefresh toutes les 5 min)
+//  Héros 1 LIVE (Phase B, 3.2) — le PRODUCTEUR devient fx_rates (mid
+//  IDEALPRO écrit par le bridge) quand la dernière ligne a moins de
+//  10 min (FX_AGE.STALE_MS, le seuil ambre de 1.G-c) ; repli sur la
+//  quote actuelle (Yahoo) sinon. `settings.liveRate` reste le SEUL
+//  canal consommé en aval ; l'âge affiché (FxCell) = le captured_at de
+//  la ligne, jamais l'heure du fetch. Ainsi la tête de la courbe live
+//  et les cellules sont au même taux quand le bridge est frais.
 //
-//  Le ticker utilise la même cascade /api/quote/USDCHF=X que le reste du
-//  ticker tape (Finnhub → Yahoo → CBOE), poll 60 s. On hisse cette valeur
-//  dans `settings.liveRate` au lieu de Frankfurter quand :
-//    – le quote a un price valide (isValidFxRate)
-//    – le quote n'est pas stale (timestamp < 2 min)
-//    – le mode FX est 'auto' (manual = choix utilisateur, on ne touche pas)
-//    – le diff vs settings.liveRate > 1 pip (0.0001) pour ne pas spammer
-//
-//  Frankfurter (useFxAutoRefresh) reste actif comme fallback : si Yahoo
-//  est down, le boot fetch Frankfurter + ses re-tries 5 min couvrent le
-//  trou. La cascade canonique devient :
-//    live (Yahoo, < 2 min) > Frankfurter (< 24 h) > stale Frankfurter > manual
+//  Cascade canonique :
+//    bridge fx_rates (< 10 min) > live Yahoo (< 2 min) > Frankfurter
+//    (useFxAutoRefresh, < 24 h) > stale Frankfurter > manual
+//  Mode manual : on ne touche jamais au taux choisi par l'utilisateur.
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useRef } from 'react';
 import useMarketQuotes from './useMarketQuotes';
 import { useFx } from './useFx';
 import { useDispatch } from '../store/useStore';
+import { useLiveFx } from '../store/liveFeed';
 import { isValidFxRate } from '../utils/fx/helpers';
+import { FX_AGE } from '../constants/timing';
 
 const FX_QUOTE_SYMBOLS = ['USDCHF=X'];
 const STALE_QUOTE_MS = 2 * 60 * 1000; // 2 min — match TickerTape STALE threshold
 const RATE_DIFF_THRESHOLD = 0.0001; // 1 pip — sensibilité minimum
 
+/** La ligne fx_rates bridge est-elle utilisable comme producteur ?
+ *  (< FX_AGE.STALE_MS, mid valide). PUR — testé aux bornes 10 min. */
+export function isBridgeFxFresh(fx, nowMs, staleMs = FX_AGE.STALE_MS) {
+  if (!fx || !Number.isFinite(fx.mid) || !isValidFxRate(fx.mid)) return false;
+  const t = fx.capturedAt ? new Date(fx.capturedAt).getTime() : NaN;
+  if (!Number.isFinite(t)) return false;
+  const age = nowMs - t;
+  return age >= 0 && age < staleMs;
+}
+
 export function useFxLiveSync() {
   const dispatch = useDispatch();
   const { mode, rate } = useFx();
   const { quotes } = useMarketQuotes(FX_QUOTE_SYMBOLS);
+  const bridgeFx = useLiveFx();
   const lastSyncedRef = useRef(null);
+  const lastBridgeAtRef = useRef(null);
 
   useEffect(() => {
     // Manual override : on ne touche pas au taux choisi par l'user en
     // Réglages, même si le live diverge. Respect deliberate UX.
     if (mode !== 'auto') return;
 
+    // ── Producteur 1 : fx_rates bridge (< 10 min) — il GAGNE. ──
+    if (isBridgeFxFresh(bridgeFx, Date.now())) {
+      // Une ligne = un dispatch (dédup sur capturedAt : la sonde relit la
+      // même dernière ligne à chaque cycle, on n'écrit pas en boucle).
+      if (lastBridgeAtRef.current !== bridgeFx.capturedAt) {
+        lastBridgeAtRef.current = bridgeFx.capturedAt;
+        lastSyncedRef.current = bridgeFx.mid;
+        dispatch({
+          type: 'SET_FX_STATE',
+          payload: {
+            rate: bridgeFx.mid,
+            // L'âge affiché = captured_at de la LIGNE (jamais l'heure du fetch).
+            lastUpdated: bridgeFx.capturedAt,
+            source: 'live · bridge IDEALPRO USD.CHF',
+          },
+        });
+      }
+      return; // bridge frais → la quote ne parle pas
+    }
+
+    // ── Producteur 2 (repli) : quote actuelle (Yahoo). ──
     const q = quotes && quotes['USDCHF=X'];
     if (!q) return;
     if (!Number.isFinite(q.price) || !isValidFxRate(q.price)) return;
@@ -70,7 +100,7 @@ export function useFxLiveSync() {
         source: 'live · Yahoo USDCHF=X',
       },
     });
-  }, [dispatch, mode, rate, quotes]);
+  }, [dispatch, mode, rate, quotes, bridgeFx]);
 }
 
 export default useFxLiveSync;

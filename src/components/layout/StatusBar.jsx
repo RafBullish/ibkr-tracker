@@ -26,7 +26,7 @@ import useMarketSession from '../../hooks/useMarketSession';
 import ThemeSwitcher from '../ui/ThemeSwitcher';
 import { FRESHNESS } from '../../constants/timing';
 import { useLiveFreshness } from '../../store/liveFeed';
-import { formatAge, nlvAgeTone } from '../../utils/formatAge';
+import { nlvFluxBadge } from '../../utils/formatAge';
 
 // 1.S — marqueur de mode relogé ici (seul point de l'app affichant le
 // mode ; l'ancien badge SideNav est mort en 1.S). Registre NEUTRE :
@@ -159,13 +159,15 @@ export default function StatusBar() {
 
   // Pastille d'âge du flux NLV (loi de la maison : jamais un chiffre sans son
   // âge). Source = captured_at le plus frais du flux Supabase. Un fetch échoué
-  // (ok=false) ne peut JAMAIS rester vert. Marché fermé → neutre, jamais rouge.
+  // (ok=false) ne peut JAMAIS rester vert. Pré-vol Héros 1 LIVE : « en
+  // séance » = pré→post (le bridge collecte les trois phases) ; hors séance
+  // → « MARCHÉ FERMÉ · dernier tick » neutre ; en retard → AMBRE + « FLUX
+  // PÉRIMÉ », jamais rouge (le rouge = perte d'argent, pas une péremption).
   const { lastCapturedAt, ok: feedOk } = useLiveFreshness();
-  const { isOpen: marketOpen } = useMarketSession();
+  const { phase: sessionPhase } = useMarketSession();
   const nlvAgeMs = lastCapturedAt != null ? now.getTime() - lastCapturedAt : null;
-  let nlvTone = nlvAgeTone(nlvAgeMs, { marketOpen });
-  if (!feedOk && nlvTone === 'live') nlvTone = 'est'; // fetch en échec → jamais LIVE
-  const nlvAgeText = formatAge(nlvAgeMs);
+  const nlvFlux = nlvFluxBadge(nlvAgeMs, { marketOpen: sessionPhase !== 'closed', lastCapturedAt });
+  const nlvTone = nlvFlux && !feedOk && nlvFlux.kind === 'live' ? 'est' : nlvFlux?.tone;
 
   // Mode réactif : dérivé du tick `now` (jamais de Date.now() au render).
   const ibkrLive = settings?.ibkrLiveData;
@@ -222,7 +224,7 @@ export default function StatusBar() {
           >
             <span className="statusbar__nlvage-dot" aria-hidden="true" />
             <span className="statusbar__label">NLV</span>
-            <span className="statusbar__value">{nlvAgeText || '—'}</span>
+            <span className="statusbar__value">{nlvFlux.label}</span>
           </div>
         ) : null}
         <div className="statusbar__cell statusbar__rate" title="Taux USD/CHF live">

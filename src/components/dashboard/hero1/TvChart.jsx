@@ -62,26 +62,57 @@ export default function TvChart({ data, view = 'equity', line = 'neutral', intra
 
     const priceFormat = { type: 'custom', minMove: 1, formatter: (v) => fmtUsd(v) };
 
-    let series;
-    if (isDD) {
-      // Underwater « hanging » : BaselineSeries base 0 → remplit 0 → courbe.
-      series = chart.addSeries(BaselineSeries, {
-        baseValue: { type: 'price', price: 0 },
-        topLineColor: col, topFillColor1: hexToRgba(col, 0.05), topFillColor2: hexToRgba(col, 0.0),
-        bottomLineColor: col, bottomFillColor1: hexToRgba(col, 0.04), bottomFillColor2: hexToRgba(col, 0.24),
-        lineWidth: 2, priceFormat, priceLineVisible: true, lastValueVisible: true,
-      });
-    } else {
-      series = chart.addSeries(AreaSeries, {
+    // Trous du flux bridge (Héros 1 LIVE) : les points whitespace ({time}
+    // seul) ne réservent que des CRANS d'axe — lightweight-charts trace la
+    // ligne Area À TRAVERS eux (constaté au harnais). Pour qu'un trou COUPE
+    // réellement la ligne (jamais interpolé), on segmente : UNE série par
+    // segment contigu ; la première porte en plus tous les whitespace
+    // (l'axe garde la largeur proportionnelle du trou).
+    const segments = [];
+    let seg = [];
+    const gaps = [];
+    for (const p of data) {
+      const v = isDD ? p.underwater : p.nlv;
+      if (v == null) {
+        gaps.push({ time: toTime(p) });
+        if (seg.length) { segments.push(seg); seg = []; }
+      } else {
+        seg.push({ time: toTime(p), value: v });
+      }
+    }
+    if (seg.length) segments.push(seg);
+    if (segments.length === 0) return undefined;
+
+    const mkSeries = (isLast) => {
+      // Ligne de prix / dernière valeur : uniquement sur le DERNIER segment.
+      const tail = { priceLineVisible: isLast, lastValueVisible: isLast };
+      if (isDD) {
+        // Underwater « hanging » : BaselineSeries base 0 → remplit 0 → courbe.
+        return chart.addSeries(BaselineSeries, {
+          baseValue: { type: 'price', price: 0 },
+          topLineColor: col, topFillColor1: hexToRgba(col, 0.05), topFillColor2: hexToRgba(col, 0.0),
+          bottomLineColor: col, bottomFillColor1: hexToRgba(col, 0.04), bottomFillColor2: hexToRgba(col, 0.24),
+          lineWidth: 2, priceFormat, ...tail,
+        });
+      }
+      return chart.addSeries(AreaSeries, {
         lineColor: col, lineWidth: 2,
         topColor: hexToRgba(col, 0.26), bottomColor: hexToRgba(col, 0.0),
-        priceFormat, priceLineVisible: true, lastValueVisible: true,
-        crosshairMarkerVisible: true, crosshairMarkerRadius: 4,
+        priceFormat, crosshairMarkerVisible: true, crosshairMarkerRadius: 4, ...tail,
       });
-    }
+    };
 
-    const seriesData = data.map((p) => ({ time: toTime(p), value: isDD ? p.underwater : p.nlv }));
-    series.setData(seriesData);
+    const allSeries = segments.map((points, i) => {
+      const s = mkSeries(i === segments.length - 1);
+      // Les whitespace vont avec le premier segment (crans d'axe) — les
+      // items sont triés par temps, exigence lightweight-charts.
+      const items = i === 0 && gaps.length
+        ? [...points, ...gaps].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0))
+        : points;
+      s.setData(items);
+      return s;
+    });
+    const series = allSeries[0];
     chart.timeScale().fitContent();
 
     // Marqueurs (jours de clôture + apports) — vue NLV, granularité jour.
@@ -100,13 +131,19 @@ export default function TvChart({ data, view = 'equity', line = 'neutral', intra
     const tip = tipRef.current;
     const onMove = (param) => {
       if (!tip) return;
-      if (!param.point || param.time == null || !param.seriesData || !param.seriesData.get(series)) {
+      if (!param.point || param.time == null || !param.seriesData) {
         tip.style.opacity = '0';
         return;
       }
       const p = byTime.get(String(param.time));
-      const sd = param.seriesData.get(series);
+      // Le point vit dans l'UN des segments (une série par segment).
+      let sd = null;
+      for (const s of allSeries) {
+        const cand = param.seriesData.get(s);
+        if (cand && cand.value != null) { sd = cand; break; }
+      }
       const val = sd && sd.value != null ? sd.value : (p ? (isDD ? p.underwater : p.nlv) : null);
+      if (val == null) { tip.style.opacity = '0'; return; } // whitespace (trou) : pas de boîte
       const label = (p?.date || '').replace('T', ' · ');
       const chg = p?.chg;
       const chgTxt = chg == null ? '' : `<span class="lh-tv__d ${chg > 0 ? 'up' : chg < 0 ? 'down' : ''}">${chg > 0 ? '+' : chg < 0 ? '−' : ''}${fmtUsd(Math.abs(chg))}</span>`;

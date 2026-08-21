@@ -47,7 +47,9 @@ export default function Hero2({ area = 'hero2' }) {
       <ZoneSep label="GRAPHIQUE" />
       <div className="lh-graphzone">
         <div className="lh-graphzone__bar">
-          <span className="lh-chart__title">RÉALISÉ</span>
+          {/* Héros 1 LIVE (3.3) — le graphe du bas dit sa nature : l'équity
+              EXÉCUTÉ (Flex, réalisé) — statique par essence, aucun badge. */}
+          <span className="lh-chart__title">ÉQUITY EXÉCUTÉ</span>
           <div className="lh-chart__controls">
             <ViewToggleRealized view={view} setView={setView} />
             <RangeSelector range={range} setRange={setRange} />

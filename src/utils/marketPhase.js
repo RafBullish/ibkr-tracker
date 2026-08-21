@@ -132,6 +132,29 @@ export function computeMarketPhase(now = new Date()) {
   };
 }
 
+// ── Fenêtre de séance COURANTE (Héros 1 LIVE, Phase B) ──────────────
+// La « séance courante » du flux = pré-market → post-market (04:00 →
+// 20:00 NY) du jour de bourse en cours — ou du DERNIER jour de bourse
+// quand le marché est fermé (week-end, nuit) : hors séance, le poste
+// montre la dernière séance complète (« MARCHÉ FERMÉ · dernier tick »).
+// Même connaissance week-day que le reste du cockpit (fériés non gérés
+// ici — un férié, le bridge ne collecte pas : zéro ligne → EST.).
+export function sessionWindow(now = new Date()) {
+  let p = nyParts(now);
+  const weekday = (x) => x.weekday >= 1 && x.weekday <= 5;
+  if (!weekday(p) || p.minutes < 4 * 60) {
+    for (let i = 1; i <= 4; i += 1) {
+      const pp = nyParts(new Date(now.getTime() - i * 86_400_000));
+      if (weekday(pp)) { p = pp; break; }
+    }
+  }
+  return {
+    startMs: nyDateToUtc(p.year, p.month, p.day, 4, 0).getTime(),
+    endMs: nyDateToUtc(p.year, p.month, p.day, 20, 0).getTime(),
+    dayKey: `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`,
+  };
+}
+
 /** Formate un delta ms en « H:MM:SS » (heures non paddées, cf. brief). */
 export function formatCountdown(deltaMs) {
   if (deltaMs == null || !Number.isFinite(deltaMs) || deltaMs < 0) return '—';

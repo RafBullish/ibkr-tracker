@@ -46,3 +46,39 @@ export async function fetchLatest(table, q = {}, signal) {
   if (!res.ok) throw new Error(`${table}: HTTP ${res.status}`);
   return res.json();
 }
+
+/**
+ * Lecture paginée ASC par curseur — une séance entière dépasse le plafond
+ * PostgREST (~1 000 lignes) : on avance par pages sur tsCol jusqu'à la
+ * page incomplète. Sert l'amorce de séance ET l'incrémental (sinceIso =
+ * dernier point connu, inclusive=false).
+ * @returns {Promise<Array|null>} lignes asc, ou null si non configuré.
+ */
+export async function fetchAllSince(
+  table,
+  { select = '*', tsCol = 'captured_at', sinceIso, inclusive = false, filters, pageSize = 1000, maxPages = 6 } = {},
+  signal
+) {
+  if (!supabaseConfigured) return null;
+  const out = [];
+  let cursor = sinceIso;
+  let op = inclusive ? 'gte' : 'gt';
+  for (let page = 0; page < maxPages; page += 1) {
+    const rows = await fetchLatest(
+      table,
+      {
+        select,
+        order: `${tsCol}.asc`,
+        limit: pageSize,
+        filters: { ...(filters || {}), [tsCol]: `${op}.${cursor}` },
+      },
+      signal
+    );
+    if (!rows || rows.length === 0) break;
+    out.push(...rows);
+    if (rows.length < pageSize) break;
+    cursor = rows[rows.length - 1][tsCol];
+    op = 'gt';
+  }
+  return out;
+}

@@ -186,7 +186,15 @@
 .lh-hero__live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-amber); animation: lh-pulse 2.4s ease-in-out infinite; }
 /* S6.5 — témoin « EST. » (NLV reconstituée) : neutre, sans pastille pulsée. */
 .lh-hero__live--est { color: var(--ink-mute); }
+/* Héros 1 LIVE (Phase B) — badge SEUL porteur d'état : âge/« FLUX PÉRIMÉ »
+   en AMBRE (loi de couleur : une péremption n'est jamais rouge), « MARCHÉ
+   FERMÉ » neutre. Sous prefers-reduced-motion, la pulsation est gelée. */
+.lh-hero__live--age { color: var(--accent-amber); }
+.lh-hero__live--idle { color: var(--ink-mute); }
 @keyframes lh-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) {
+  .lh-hero__live-dot { animation: none; }
+}
 .lh-hero__row { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
 .lh-hero__usd { font-family: var(--qc-font-num); font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; color: var(--ink-pure); line-height: 0.95; letter-spacing: -0.01em; }
 .lh-hero__chf { display: block; margin-top: 3px; font-family: var(--qc-font-num); font-weight: 500; font-variant-numeric: tabular-nums; color: var(--ink-soft); letter-spacing: 0.01em; }
