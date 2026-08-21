@@ -11,8 +11,10 @@ Le backlog post-1.0 vit en fin de fichier + ETAT-DU-SITE-V1 §9.
 
 Rien ne merge sur `main` avant le tag du 01.09. Fondation livrée (barrière
 P2 · briquette d'âge · couche de flux Supabase · pastille StatusBar), puis
-briques sur GO : **1 Héros 1 LIVE** (en cours) → Cellule JOUR → cellules
-est./NON RÉGLÉ → pastille cockpit + merge du pic.
+briques sur GO : **1 Héros 1 LIVE ✅ LIVRÉE (rc.12, ATTENTE GO)** →
+Cellule JOUR → cellules est./NON RÉGLÉ → pastille cockpit + merge du pic.
+Partie 0 (bridge `available_funds`) livrée sur `v1.1/phase-a-bridge`
+(`f91e9e9`) — Rafael : SQL `001_*` D'ABORD, redémarrage du bridge ENSUITE.
 
 **CONSIGNES ARCHITECTE (addendum 21.08, contraignantes) :**
 

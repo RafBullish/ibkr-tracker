@@ -6,6 +6,63 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/), versionnage
 
 ---
 
+## [1.0.2-rc.12] — 2026-08-21 · branche `v1.1/phase-b-front` (NON mergée)
+
+**V1.1 PHASE B · BRIQUE 1 « HÉROS 1 LIVE » (spec architecte 21.08 + addendum).**
+Le range 1D du Héros 1 lit le flux bridge (Supabase `nlv_snapshots`) ; l'état
+du flux vit dans un badge unique ; le rouge de la péremption meurt.
+
+- **Pré-vol corrigé** : (b) état **« MARCHÉ FERMÉ · dernier tick HH:MM »**
+  créé, distinct de la péremption (neutre, jamais ambre/rouge) ; (c) l'ex-ton
+  `stale` **ROUGE est MORT** — ≥ 60 s = ambre, ≥ 5 min le **libellé** devient
+  « FLUX PÉRIMÉ · il y a N min », la couleur reste ambre (le rouge = perte
+  d'argent, jamais une péremption). `nlvFluxBadge` = maison unique du
+  libellé + ton (pastille StatusBar + badge héros). « En séance » = pré→post.
+- **Courbe 1D bridge** (`utils/liveNlvSeries.js`) : **loi d'une seule
+  source** — ≥ 1 point bridge (séance courante) → série bridge ENTIÈRE,
+  sinon série client « est. » ; `selectHeroSeries` = porte unique, une
+  couture bridge+est. ne peut pas être construite (prouvé par référence).
+  Fenêtre = séance du calendrier cockpit (`sessionWindow`, 04:00→20:00 NY,
+  dernière séance quand fermé) — les lignes d'hier sont exclues. Mêmes maths
+  que `buildIntradaySeries` (flow-neutral, HWM seedé, axe local).
+- **Devise par point** : conversion CHF→USD **as-of** sur `fx_rates` (taux
+  ≤ T, jamais le suivant, jamais un taux unique sur toute la courbe) ;
+  `fx_rates` vide → série brute **CHF étiquetée**, jamais convertie ailleurs.
+- **Trous visibles** : whitespace au pas de 60 s (axe lightweight-charts
+  indexé barre → largeur proportionnelle) + **une série par segment
+  contigu** (le whitespace seul ne coupe pas une ligne Area) — la ligne se
+  coupe, jamais interpolée. Seuil de trou 240 s (aucun faux trou à 90 s).
+- **NLV géant = tête de la série affichée** (même source que la courbe) ;
+  le magasin (`netLiquidationValueUsd`, cellules du deck) n'est pas touché.
+- **Titre & badge (3.3)** : titre statique **« NET LIQUIDATION »** (ex
+  « EQUITY / NLV »), l'état vit dans `FluxBadge` SEUL — LIVE (< 60 s) ·
+  « il y a N » · « FLUX PÉRIMÉ » · « MARCHÉ FERMÉ · dernier tick » · EST. ;
+  tick 1 s isolé, gelé à la minute sous `prefers-reduced-motion`. Graphe du
+  bas renommé **« ÉQUITY EXÉCUTÉ »** (Hero2). `langueTemoin` étendu.
+- **Couche de flux** : amorce de séance **paginée** (`fetchAllSince`,
+  curseur asc — une séance RTH dépasse le plafond PostgREST ~1000) + ancre
+  FX pré-fenêtre + sondage **incrémental** ; marché fermé → UNE amorce
+  (montrer la dernière séance), zéro sondage. `liveFeed` : `fxSeries` +
+  `sessionKey`, points broker avec leur devise, jamais convertis en store.
+- **Swap FX (3.2)** : `fx_rates` < 10 min (`FX_AGE.STALE_MS`, seuil partagé
+  avec MarketDeck) devient LE producteur de `settings.liveRate`,
+  `lastUpdated` = `captured_at` de la ligne ; repli quote actuelle sinon.
+- **Partie 0 (branche `v1.1/phase-a-bridge`, `f91e9e9`)** :
+  `account_state.available_funds` — migration additive `sql/001_*` (ORDRE :
+  SQL d'abord, redémarrage bridge ensuite), collect absent→None, PGRST204
+  journalisé EN CLAIR (« migration non appliquée », lignes en outbox), 3
+  tests, README (contrat + migrations).
+- **Addendum** : test de non-régression **5caf2ab** (chemin live fetch
+  mocké, invariant `Object.is` de chaque sélecteur, preuve que l'ancien
+  sélecteur viole) ; sonde RLS unique autorisée → **401 code 42501** (RLS
+  active, rien d'inséré) ; ROADMAP : **aucune `VITE_SUPABASE_*` dans
+  Vercel** + précondition de merge **B-AUTH** consignées.
+- Preuves : 636 tests (bornes 59/60/299/300 s, fenêtre, as-of, couture,
+  pagination, swap 10 min), color-law 0, doctrine 0, build ✓,
+  `scripts/heros1-live-proof.mjs` → `docs/captures/heros1-live/` (5 états ×
+  2844/1591, fixtures = lignes réelles rejouées via la clé anonyme),
+  `audit:visual` bi-profil `audit-20260821[-1591]/`.
+
 ## [1.0.2-rc.11] — 2026-08-18
 
 **MICRO-BRIQUE « CAPTURE À L'ENTRÉE » (GO Rafael 18.08).** Le moment manquant
