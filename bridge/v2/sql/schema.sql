@@ -33,12 +33,16 @@ create index if not exists nlv_snapshots_captured_at_idx
   on public.nlv_snapshots (captured_at desc);
 
 -- ── account_state — marge, liquidités, cushion ─────────────────────────
+-- (installation neuve : inclut available_funds ; base existante : migration
+--  sql/001_account_state_available_funds.sql — create if not exists ne
+--  modifie pas une table déjà créée.)
 create table if not exists public.account_state (
   id               bigint generated always as identity primary key,
   captured_at      timestamptz not null,
   maint_margin     numeric,
   excess_liquidity numeric,
   buying_power     numeric,
+  available_funds  numeric,       -- fonds après marge initiale (migration 001)
   cushion          numeric,       -- ratio [0–1], sans devise
   currency         text,
   source           text        not null default 'bridge-v2',

@@ -1,0 +1,21 @@
+-- ═══════════════════════════════════════════════════════════════════════
+--  Migration 001 — account_state.available_funds (V1.1 Phase B, brique 1).
+--
+--  Le bridge lit AvailableFunds depuis le jalon 1 mais ne l'écrivait dans
+--  aucune table → LIQUIDITÉ DISPO n'avait pas de source Supabase.
+--  AvailableFunds (fonds après marge initiale) est le frère d'ExcessLiquidity
+--  (après marge de maintenance) : il vit avec excess_liquidity et
+--  buying_power dans account_state. La devise est portée par la ligne.
+--
+--  ORDRE D'EXPLOITATION (non négociable) :
+--    1. Exécuter CE fichier dans le SQL editor Supabase (projet QuantumCall).
+--    2. Redémarrer le bridge ENSUITE.
+--  Sinon PostgREST répond PGRST204 (colonne inconnue) sur account_state —
+--  le bridge le journalise en clair (« migration non appliquée ») et met
+--  les lignes en outbox ; elles rejouent après la migration.
+--
+--  RLS inchangée : la policy SELECT existante couvre la nouvelle colonne ;
+--  toujours aucune policy d'écriture pour anon.
+-- ═══════════════════════════════════════════════════════════════════════
+alter table public.account_state
+  add column if not exists available_funds numeric;

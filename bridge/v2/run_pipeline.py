@@ -75,6 +75,16 @@ def push_or_enqueue(base_url, key, table, rows, dry_run) -> bool:
         post_rows(base_url, key, table, rows, dry_run=dry_run)
         return True
     except PushError as exc:
+        # PGRST204 = colonne inconnue du schéma PostgREST → migration SQL non
+        # appliquée. Dit EN CLAIR (jamais un échec muet) ; les lignes partent
+        # quand même en outbox : elles rejoueront après la migration
+        # (ordre : SQL d'abord, redémarrage du bridge ensuite).
+        if "PGRST204" in str(exc):
+            journal_event("migration_missing", table=table, error=str(exc))
+            print(f"[{now_iso()}] ✗ {table} : colonne absente — migration non "
+                  f"appliquée. Exécuter bridge/v2/sql/ (dernier NNN_*.sql) dans "
+                  f"le SQL editor Supabase, PUIS redémarrer le bridge.",
+                  file=sys.stderr)
         outbox_enqueue(table, rows)
         journal_event("push_failed", table=table, error=str(exc), enqueued=len(rows))
         return False

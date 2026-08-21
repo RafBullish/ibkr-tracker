@@ -74,6 +74,10 @@ def build_account_rows(summary: dict, captured_at: str) -> tuple[dict, dict]:
         "maint_margin": _get(summary, "MaintMarginReq"),
         "excess_liquidity": _get(summary, "ExcessLiquidity"),
         "buying_power": _get(summary, "BuyingPower"),
+        # AvailableFunds (fonds après marge initiale) = frère d'ExcessLiquidity
+        # (après marge de maintenance) — même règle que SettledCash : tag
+        # absent → None, jamais un faux 0. Migration sql/001_*.
+        "available_funds": _get(summary, "AvailableFunds"),
         "cushion": _get(summary, "Cushion"),  # ratio, sans devise
         "currency": currency,
     }

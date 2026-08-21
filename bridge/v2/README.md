@@ -51,9 +51,9 @@ retenu, en deux temps, **les deux — pas l'un ou l'autre** :
 
 | Table | Contenu |
 |---|---|
-| `nlv_snapshots` | horodatage, NLV, cash, devise |
+| `nlv_snapshots` | horodatage, NLV, cash, cash réglé (SettledCash), devise |
 | `position_marks` | **signature `tk\|as\|dir\|ty\|st\|ex`**, mid, **horodatage du mark**, source |
-| `account_state` | marge de maintenance, excess liquidity, buying power, cushion |
+| `account_state` | marge de maintenance, excess liquidity, buying power, **fonds disponibles** (`available_funds`, migration 001), cushion |
 | `fx_rates` | paire, mid, horodatage, source |
 
 La signature de `position_marks` est **exactement** celle du writer client
@@ -115,6 +115,14 @@ avec `--client-id`) ou Gateway/port mal configuré.
 **1. Créer les tables** (une fois) — colle `sql/schema.sql` dans le SQL editor
 du projet Supabase QuantumCall (eu-west-3). Crée les 4 tables, la RLS lecture
 seule, et publie sur `supabase_realtime` (Phase B).
+
+**1-bis. Migrations SQL** — les évolutions de schéma vivent dans
+`sql/NNN_*.sql` (additives, idempotentes). **ORDRE NON NÉGOCIABLE : le SQL
+d'abord** (coller le fichier dans le SQL editor Supabase), **le redémarrage du
+bridge ensuite.** Sinon PostgREST répond `PGRST204` (colonne inconnue) : le
+bridge le journalise en clair (« colonne absente : migration non appliquée »)
+et met les lignes en outbox — elles rejouent après la migration. Migration
+courante : `001_account_state_available_funds.sql`.
 
 **2. Poser les secrets** — copie `.env.example` en `bridge/v2/.env` et remplis
 `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`. `.env` est gitignoré ; la

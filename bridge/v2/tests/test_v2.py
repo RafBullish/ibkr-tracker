@@ -133,6 +133,20 @@ class TestCollect(unittest.TestCase):
         self.assertIsNone(nlv["settled_cash"])   # absent → None, jamais un faux 0
         self.assertIsNone(state["cushion"])
 
+    # ── available_funds (micro-fix Phase B brique 1) — même règle que
+    #    SettledCash : absent → None, présent → valeur, clé toujours là. ──
+    def test_available_funds_present(self):
+        _, state = build_account_rows({"AvailableFunds": _av(8.75, "CHF")}, "t")
+        self.assertEqual(state["available_funds"], 8.75)
+
+    def test_available_funds_missing_is_none_not_zero(self):
+        _, state = build_account_rows({"NetLiquidation": _av(100, "USD")}, "t")
+        self.assertIsNone(state["available_funds"])
+
+    def test_available_funds_key_always_in_payload(self):
+        _, state = build_account_rows({}, "t")
+        self.assertIn("available_funds", state)
+
 
 class TestMarks(unittest.TestCase):
     def test_derive_mid(self):
