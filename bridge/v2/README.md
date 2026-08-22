@@ -80,7 +80,10 @@ pic** que Q-C a créé, sans réconciliation.
 ## Lancer le jalon 1
 
 Prérequis : IB Gateway lancé en **Paper Trading**, API activée, **« Read-Only
-API » coché**, port **4002**. Environnement Python : celui de `bridge/` (`ib_async`).
+API » coché**, port **4002**. Environnement Python : celui de `bridge/`
+(`ib_async` **+ `tzdata`** — Windows n'embarque pas de base de fuseaux IANA ;
+sans tzdata, `session.py` s'arrête net au démarrage (« tzdata manquant :
+pip install tzdata ») plutôt que de tourner sur un calendrier UTC faux).
 
 ```powershell
 .\.venv\Scripts\Activate.ps1

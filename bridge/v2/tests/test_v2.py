@@ -17,11 +17,12 @@ import sys
 import unittest
 from datetime import datetime, timezone
 from types import SimpleNamespace
+from unittest import mock
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from signature import js_number_str, position_signature, signature_from_contract  # noqa: E402
-from session import market_phase, cadence_seconds, is_collecting  # noqa: E402
+from session import market_phase, cadence_seconds, is_collecting, _load_eastern  # noqa: E402
 from collect import build_account_rows  # noqa: E402
 from marks import derive_mid  # noqa: E402
 
@@ -106,6 +107,14 @@ class TestSession(unittest.TestCase):
         self.assertEqual(cadence_seconds("closed"), 300)
         self.assertTrue(is_collecting("rth"))
         self.assertFalse(is_collecting("closed"))
+
+    def test_missing_tzdata_is_hard_stop_never_utc(self):
+        # Addendum 2 (21.08) : zone introuvable → SystemExit avec le remède,
+        # JAMAIS un calendrier UTC silencieux (RTH décalée de 4-5 h).
+        with mock.patch("zoneinfo.ZoneInfo", side_effect=Exception("no tzdata")):
+            with self.assertRaises(SystemExit) as ctx:
+                _load_eastern()
+        self.assertIn("tzdata manquant", str(ctx.exception))
 
 
 class TestCollect(unittest.TestCase):

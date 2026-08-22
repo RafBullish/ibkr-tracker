@@ -3,3 +3,7 @@
 # Utilisé uniquement par bridge/ibkr_poller.py.
 # bridge/serve.py n'a AUCUNE dépendance externe (stdlib http.server + json).
 ib_async>=1.0.1
+# tzdata = base de fuseaux IANA pour zoneinfo (Addendum 2, 21.08).
+# Windows n'en embarque PAS ; sans elle, session.py (bridge/v2) refuse de
+# demarrer (SystemExit) plutot que de tourner sur un calendrier UTC faux.
+tzdata>=2024.1

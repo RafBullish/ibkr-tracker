@@ -22,13 +22,27 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, time, timezone
+from datetime import datetime, time
 
-try:
-    from zoneinfo import ZoneInfo
-    _ET = ZoneInfo("America/New_York")
-except Exception:  # pragma: no cover — zoneinfo est stdlib 3.9+
-    _ET = timezone.utc
+def _load_eastern():
+    """Charge America/New_York ou ARRÊT NET — jamais un calendrier UTC.
+
+    Addendum 2 (21.08) : l'ex-repli silencieux `_ET = timezone.utc` aurait
+    faussé TOUT le calendrier (RTH décalée de 4-5 h) sans un mot. Windows
+    n'embarque pas de base de fuseaux : zoneinfo y exige le paquet tzdata
+    (requirements.txt) — la machine dédiée de A.5 n'en aura pas non plus.
+    """
+    try:
+        from zoneinfo import ZoneInfo
+        return ZoneInfo("America/New_York")
+    except Exception as exc:
+        raise SystemExit(
+            "session.py : fuseau America/New_York introuvable — "
+            "tzdata manquant : pip install tzdata"
+        ) from exc
+
+
+_ET = _load_eastern()
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 HOLIDAYS_PATH = os.path.join(SCRIPT_DIR, "..", "..", "src", "config", "parametres.app.json")
