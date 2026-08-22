@@ -92,7 +92,7 @@ export function FluxBadge({ hasBridge = false }) {
     );
   }
   const ageMs = lastCapturedAt != null ? now - lastCapturedAt : null;
-  const flux = nlvFluxBadge(ageMs, { marketOpen: phase !== 'closed', lastCapturedAt });
+  const flux = nlvFluxBadge(ageMs, { phase, lastCapturedAt });
   if (!flux) return null;
   const kind = flux.kind === 'live' && !ok ? 'age' : flux.kind; // fetch en échec → jamais LIVE
   if (kind === 'live') {

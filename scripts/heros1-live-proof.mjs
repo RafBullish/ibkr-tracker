@@ -203,16 +203,19 @@ async function main() {
       await context.close();
     }
 
-    // 2 · LIVE — lignes réelles rejouées, dernière à ~8 s (badge < 60 s).
+    // 2 · LIVE — lignes réelles NON décalées ; c'est l'horloge de la PAGE
+    //     qui rejoint la fixture (now' = dernier tick réel + 8 s → phase
+    //     'after' du 18.08, seuil LIVE pré/post 200 s). Déterministe quelle
+    //     que soit l'heure du run.
     {
-      const delta = Date.now() - 8_000 - lastRealMs;
+      const dateOffsetMs = lastRealMs + 8_000 - Date.now();
       const fixture = {
-        nlv_snapshots: shiftRows(real.nlv, delta),
-        fx_rates: shiftRows(real.fx, delta),
-        account_state: shiftRows(real.acct, delta),
+        nlv_snapshots: real.nlv,
+        fx_rates: real.fx,
+        account_state: real.acct,
         position_marks: [],
       };
-      const { context, page, hero1, errors } = await openState(browser, { width, dpr, supaHost, fixture });
+      const { context, page, hero1, errors } = await openState(browser, { width, dpr, supaHost, fixture, dateOffsetMs });
       await shotEl(hero1.locator('.lh-fuse__overlay'), `live-badge${tag}.png`);
       await shotEl(hero1, `live-h1${tag}.png`);
       await shotEl(page.locator('footer.statusbar'), `live-statusbar${tag}.png`);
@@ -220,11 +223,11 @@ async function main() {
       await context.close();
     }
 
-    // 3 · TROU — même fixture réelle, fenêtre de 20 min RETIRÉE au milieu
-    //     (les lignes réelles du 18.08 n'ont pas de coupure ≥ 4 min : on en
+    // 3 · TROU — même rejeu, fenêtre de 20 min RETIRÉE au milieu (les
+    //     lignes réelles du 18.08 n'ont pas de coupure ≥ 4 min : on en
     //     fabrique une, et on le dit) → rendu whitespace, jamais interpolé.
     {
-      const delta = Date.now() - 8_000 - lastRealMs;
+      const dateOffsetMs = lastRealMs + 8_000 - Date.now();
       const holeEnd = lastRealMs - 60 * 60_000;
       const holeStart = holeEnd - 20 * 60_000;
       const nlvHole = real.nlv.filter((r) => {
@@ -232,12 +235,12 @@ async function main() {
         return t < holeStart || t > holeEnd;
       });
       const fixture = {
-        nlv_snapshots: shiftRows(nlvHole, delta),
-        fx_rates: shiftRows(real.fx, delta),
-        account_state: shiftRows(real.acct, delta),
+        nlv_snapshots: nlvHole,
+        fx_rates: real.fx,
+        account_state: real.acct,
         position_marks: [],
       };
-      const { context, hero1, errors } = await openState(browser, { width, dpr, supaHost, fixture });
+      const { context, hero1, errors } = await openState(browser, { width, dpr, supaHost, fixture, dateOffsetMs });
       await shotEl(hero1, `trou-h1${tag}.png`);
       await shotEl(hero1.locator('.lh-fuse__chart'), `trou-chart${tag}.png`);
       reportErrors(`trou${tag}`, errors);

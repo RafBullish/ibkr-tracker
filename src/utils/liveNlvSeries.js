@@ -147,6 +147,23 @@ export function buildBridgeSeries({ rows, fxRows, dailySeries, windowStartMs, wi
 }
 
 /**
+ * MiniSpark de l'overlay — MÊME source que la série affichée (addendum 2
+ * n°4 : un chiffre et sa spark de deux sources, c'est la divergence
+ * qu'É3.1 a tuée). Valeurs réelles seules (les whitespace sautent),
+ * sous-échantillonnées uniformément à ≤ maxPoints.
+ */
+export function sparkFromSeries(series, maxPoints = 40) {
+  const vals = (Array.isArray(series) ? series : [])
+    .filter((p) => p.nlv != null)
+    .map((p) => p.nlv);
+  if (vals.length <= maxPoints) return vals;
+  const out = [];
+  const step = (vals.length - 1) / (maxPoints - 1);
+  for (let i = 0; i < maxPoints; i += 1) out.push(vals[Math.round(i * step)]);
+  return out;
+}
+
+/**
  * LOI D'UNE SEULE SOURCE — l'unique porte de sélection de la courbe du
  * Héros 1. ≥ 1 point bridge réel (séance courante) → la série bridge,
  * ENTIÈRE ; sinon la série client. Ne construit JAMAIS un mélange : la

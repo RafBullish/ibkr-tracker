@@ -16,6 +16,7 @@ import {
   injectHoles,
   buildBridgeSeries,
   selectHeroSeries,
+  sparkFromSeries,
   BRIDGE_HOLE_MS,
 } from '../liveNlvSeries';
 
@@ -116,6 +117,20 @@ describe('injectHoles — trous visibles, jamais interpolés', () => {
     const out = injectHoles([pt(0, 100), pt(90, 100.5), pt(180, 101)]);
     expect(out).toHaveLength(3);
     expect(out.every((p) => p.nlv != null)).toBe(true);
+  });
+});
+
+describe('sparkFromSeries — la spark suit la série affichée (addendum 2 n°4)', () => {
+  it('valeurs réelles seules, les whitespace sautent', () => {
+    const s = [{ t: 1, nlv: 10 }, { t: 2, nlv: null, gap: true }, { t: 3, nlv: 11 }];
+    expect(sparkFromSeries(s)).toEqual([10, 11]);
+  });
+  it('sous-échantillonne à ≤ maxPoints en gardant premier et dernier', () => {
+    const s = Array.from({ length: 200 }, (_, i) => ({ t: i, nlv: i }));
+    const out = sparkFromSeries(s, 40);
+    expect(out).toHaveLength(40);
+    expect(out[0]).toBe(0);
+    expect(out[out.length - 1]).toBe(199);
   });
 });
 

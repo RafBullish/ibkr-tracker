@@ -166,7 +166,7 @@ export default function StatusBar() {
   const { lastCapturedAt, ok: feedOk } = useLiveFreshness();
   const { phase: sessionPhase } = useMarketSession();
   const nlvAgeMs = lastCapturedAt != null ? now.getTime() - lastCapturedAt : null;
-  const nlvFlux = nlvFluxBadge(nlvAgeMs, { marketOpen: sessionPhase !== 'closed', lastCapturedAt });
+  const nlvFlux = nlvFluxBadge(nlvAgeMs, { phase: sessionPhase, lastCapturedAt });
   const nlvTone = nlvFlux && !feedOk && nlvFlux.kind === 'live' ? 'est' : nlvFlux?.tone;
 
   // Mode réactif : dérivé du tick `now` (jamais de Date.now() au render).

@@ -40,6 +40,25 @@ function nyDay(d) {
   }
 }
 
+/**
+ * Addendum 2 n°1 — la porte juge la fraîcheur de la SOURCE du chiffre
+ * qu'elle enregistre. `pos.pc` n'a AUCUN producteur quotes dans l'app
+ * (UPDATE_LIVE_PRICE : 0 dispatcheur) : sa source réelle est l'IMPORT de
+ * rapport (Flex/CSV), horodaté par `settings.pcSyncedAt` au moment où les
+ * marks sont écrits. Seuil 5 min (PC_SOURCE_MAX_AGE_MS) : un mid de
+ * clôture vieux de 59 min n'est pas un mid de clôture — 1 h abandonné.
+ * `ibkrLiveData.timestamp` (bridge) n'est PLUS JAMAIS consulté ici : le
+ * bridge n'est pas la source du pc (c'était le défaut Q3 — bridge frais
+ * + pc périmé aurait enregistré un mid douteux comme sain). PUR, testé.
+ */
+export function pcSourceFresh(pcSyncedAt, nowMs) {
+  if (typeof pcSyncedAt !== 'string' || !pcSyncedAt) return false;
+  const t = new Date(pcSyncedAt).getTime();
+  if (!Number.isFinite(t)) return false;
+  const ageMs = nowMs - t;
+  return ageMs >= 0 && ageMs < FRESHNESS.PC_SOURCE_MAX_AGE_MS;
+}
+
 export function usePositionMarksWriter() {
   const session = useMarketSession({ tickMs: TIME.ONE_MINUTE_MS });
   const positions = useOpenPositions();
@@ -51,13 +70,12 @@ export function usePositionMarksWriter() {
     if (session.phase !== 'after') return;
     if (!positions || positions.length === 0) return;
     const now = new Date();
-    // Fraîcheur FEED-LEVEL : aucun horodatage de mark PAR POSITION n'existe,
-    // donc pos.pc n'est de confiance que si le snapshot live est frais (même
-    // seuil canonique que le badge LIVE / useAvailableCapital). Non frais →
-    // le writer laisse un TROU (jamais de mid douteux) qui nourrit isPartial.
-    const ts = settings?.ibkrLiveData?.timestamp;
-    const ageMs = ts ? now.getTime() - new Date(ts).getTime() : Infinity;
-    const fresh = Number.isFinite(ageMs) && ageMs >= 0 && ageMs < FRESHNESS.LIVE_DATA_MAX_AGE_MS;
+    // Porte de fraîcheur = provenance du pc (pcSourceFresh, 5 min). Non
+    // frais → le writer laisse un TROU (jamais de mid douteux) qui nourrit
+    // isPartial. En pratique : l'import du soir déclenche ce writer dans
+    // la foulée (le changement de state re-exécute l'effet) → capture
+    // immédiate ; un vieux pc n'est plus jamais promu clôture du jour.
+    const fresh = pcSourceFresh(settings?.pcSyncedAt, now.getTime());
     recordSessionClose(positions, {
       day: nyDay(now),
       stamp: now.toISOString(),

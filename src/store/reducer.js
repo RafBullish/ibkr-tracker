@@ -342,13 +342,26 @@ export function applyAction(state, action) {
         Array.isArray(arr)
           ? arr.map((item) => (item && item.id ? item : { ...item, id: generateId() }))
           : null;
+      // Addendum 2 n°1 — provenance du pc : quand un import DE RAPPORT
+      // (Flex/CSV, `data.pcSyncedAt` posé par le dispatch) écrit des
+      // positions, on horodate l'écriture des marks. La porte du writer
+      // du pic juge CETTE fraîcheur (la source du chiffre qu'il
+      // enregistre), plus jamais le timestamp du bridge. Une restauration
+      // de backup ne stampe PAS (ses pc peuvent dater de semaines).
+      const pcStamp =
+        Array.isArray(data.openPositions) && typeof data.pcSyncedAt === 'string'
+          ? { pcSyncedAt: data.pcSyncedAt }
+          : null;
       return {
         ...state,
         openPositions: ensureIds(data.openPositions) ?? state.openPositions,
         closedTrades: ensureIds(data.closedTrades) ?? state.closedTrades,
         cashFlows: ensureIds(data.cashFlows) ?? state.cashFlows,
         journalEntries: ensureIds(data.journalEntries) ?? state.journalEntries,
-        settings: data.settings ? { ...state.settings, ...data.settings } : state.settings,
+        settings:
+          data.settings || pcStamp
+            ? { ...state.settings, ...(data.settings || {}), ...(pcStamp || {}) }
+            : state.settings,
       };
     }
 
@@ -364,6 +377,8 @@ export function applyAction(state, action) {
           ...state.settings,
           liveRate: sync.fxRate || state.settings.liveRate,
           lastSync: sync.timestamp,
+          // Addendum 2 n°1 — ce chemin écrit aussi les pc en masse.
+          pcSyncedAt: sync.timestamp ?? state.settings.pcSyncedAt,
           // ibkrSummary : écrit par le bridge, persisté, AUCUN lecteur
           // UI (documenté É4 §5.3 — conservé : le flux d'écriture vit).
           ibkrSummary: sync.summary,

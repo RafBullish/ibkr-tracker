@@ -137,7 +137,9 @@ function FlexSection({ onResult }) {
       setStatus('Analyse des données…');
       const parsed = parseIbkrCsv(csvText);
       const result = mergeIbkrData(parsed, state, { metaBySignature: readAllPositionMeta() });
-      dispatch({ type: 'IMPORT_DATA', payload: result.mergedData });
+      // Addendum 2 n°1 — l'import de rapport horodate l'écriture des pc
+      // (provenance jugée par la porte du writer du pic).
+      dispatch({ type: 'IMPORT_DATA', payload: { ...result.mergedData, pcSyncedAt: new Date().toISOString() } });
       const s = result.stats || {};
       const syncInfo = {
         date: new Date().toISOString(),
@@ -284,7 +286,8 @@ function CsvUploadSection({ onResult }) {
       const text = await file.text();
       const parsed = parseIbkrCsv(text);
       const result = mergeIbkrData(parsed, state, { metaBySignature: readAllPositionMeta() });
-      dispatch({ type: 'IMPORT_DATA', payload: result.mergedData });
+      // Addendum 2 n°1 — même horodatage de provenance des pc que le Flex.
+      dispatch({ type: 'IMPORT_DATA', payload: { ...result.mergedData, pcSyncedAt: new Date().toISOString() } });
       const s = result.stats || {};
       // É3.1 — provenance persistée (l'import CSV n'écrivait RIEN dans
       // lastSync) : le marqueur de mode StatusBar affiche CSV, pas REAL.

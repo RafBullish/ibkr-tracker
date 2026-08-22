@@ -32,24 +32,32 @@ export function formatAge(ageMs) {
 
 /**
  * Ton de fraîcheur d'un flux NLV, pour la pastille d'âge.
- *   'live' (vert)   — < 60 s, en séance
- *   'est'  (ambre)  — ≥ 60 s, en séance (y compris ≥ 5 min : le LIBELLÉ
+ *   'live' (vert)   — âge < seuil LIVE de la PHASE (RTH 60 s ; pré/post
+ *                     200 s = écriture bridge 90 + sondage 90 + 20)
+ *   'est'  (ambre)  — au-delà, en séance (y compris ≥ 5 min : le LIBELLÉ
  *                     change, la couleur reste ambre — jamais rouge)
  *   'idle' (neutre) — hors séance (absence de tick normale)
  *   null            — aucun point (pastille masquée)
- * `marketOpen` = « en séance » au sens du flux : pré-market → post-market
- * (le bridge collecte sur les trois phases), pas seulement la RTH.
+ * `phase` = la phase du calendrier cockpit ('pre'|'open'|'after'|'closed') ;
+ * « en séance » au sens du flux = pré→post (le bridge collecte les trois).
  */
-export function nlvAgeTone(ageMs, { marketOpen = true } = {}) {
+export function nlvAgeTone(ageMs, { phase = 'open' } = {}) {
   if (ageMs == null || !Number.isFinite(ageMs) || ageMs < 0) return null;
-  if (!marketOpen) return 'idle';
-  if (ageMs < NLV_AGE.LIVE_MS) return 'live';
+  if (phase === 'closed') return 'idle';
+  const liveMs = phase === 'open' ? NLV_AGE.LIVE_MS : NLV_AGE.LIVE_PREPOST_MS;
+  if (ageMs < liveMs) return 'live';
   return 'est';
 }
 
+const p2 = (n) => String(n).padStart(2, '0');
 const hhmm = (ms) => {
   const d = new Date(ms);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return `${p2(d.getHours())}:${p2(d.getMinutes())}`;
+};
+const sameLocalDay = (a, b) => {
+  const da = new Date(a);
+  const db = new Date(b);
+  return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate();
 };
 
 /**
@@ -58,14 +66,22 @@ const hhmm = (ms) => {
  *   kind 'live'   → tone 'live',  label « il y a N s »        (badge : LIVE)
  *   kind 'age'    → tone 'est',   label « il y a N s/min »
  *   kind 'stale'  → tone 'est',   label « FLUX PÉRIMÉ · il y a N min »
- *   kind 'closed' → tone 'idle',  label « MARCHÉ FERMÉ · dernier tick HH:MM »
+ *   kind 'closed' → tone 'idle',  label « MARCHÉ FERMÉ · dernier tick
+ *                   HH:MM » — daté (« 18.08 23:43 ») si le dernier tick
+ *                   n'est pas d'aujourd'hui.
  *   null          → aucun point (rien à afficher)
  */
-export function nlvFluxBadge(ageMs, { marketOpen = true, lastCapturedAt = null } = {}) {
-  const tone = nlvAgeTone(ageMs, { marketOpen });
+export function nlvFluxBadge(ageMs, { phase = 'open', lastCapturedAt = null } = {}) {
+  const tone = nlvAgeTone(ageMs, { phase });
   if (!tone) return null;
   if (tone === 'idle') {
-    const tick = Number.isFinite(lastCapturedAt) ? ` · dernier tick ${hhmm(lastCapturedAt)}` : '';
+    let tick = '';
+    if (Number.isFinite(lastCapturedAt)) {
+      const nowMs = lastCapturedAt + ageMs;
+      const d = new Date(lastCapturedAt);
+      const datePart = sameLocalDay(lastCapturedAt, nowMs) ? '' : `${p2(d.getDate())}.${p2(d.getMonth() + 1)} `;
+      tick = ` · dernier tick ${datePart}${hhmm(lastCapturedAt)}`;
+    }
     return { tone, kind: 'closed', label: `MARCHÉ FERMÉ${tick}` };
   }
   if (tone === 'live') return { tone, kind: 'live', label: formatAge(ageMs) };

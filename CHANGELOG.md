@@ -62,6 +62,22 @@ du flux vit dans un badge unique ; le rouge de la péremption meurt.
   `scripts/heros1-live-proof.mjs` → `docs/captures/heros1-live/` (5 états ×
   2844/1591, fixtures = lignes réelles rejouées via la clé anonyme),
   `audit:visual` bi-profil `audit-20260821[-1591]/`.
+- **Addendum 2 (22.08, corrections)** : ① porte du writer du pic — la
+  fraîcheur jugée est celle de la **SOURCE du pc** (`settings.pcSyncedAt`,
+  posé par l'import Flex/CSV qui écrit les marks ; `pos.pc` n'a AUCUN
+  producteur quotes — `UPDATE_LIVE_PRICE` 0 dispatcheur), seuil **5 min**
+  (1 h abandonné), `ibkrLiveData.timestamp` plus jamais consulté (défaut
+  Q3 éteint) ; restauration de backup ne stampe pas. ② seuil LIVE **par
+  phase** : RTH 60 s inchangé, pré/post **200 s** (90+90+20) ; « FLUX
+  PÉRIMÉ » à 5 min partout (bornes 199/200 testées). ③ « MARCHÉ FERMÉ ·
+  dernier tick » **daté** (« 18.08 23:43 ») quand le tick n'est pas
+  d'aujourd'hui. ④ MiniSpark = **même source que la série affichée**
+  (`sparkFromSeries` bridge ; est. → magasin). ⑤ bridge (`b9aa413`) :
+  repli silencieux `_ET = timezone.utc` **MORT** — zone introuvable →
+  SystemExit « tzdata manquant », tzdata aux requirements + README (16
+  tests). Fix BOM `package.json` (bump PS 5.1) qui cassait le build vite.
+  646 tests, gates verts, harnais rejoué (LIVE prouvé en 'after' 200 s,
+  libellé daté, spark bridge).
 
 ## [1.0.2-rc.11] — 2026-08-18
 

@@ -27,66 +27,81 @@ describe('formatAge', () => {
 });
 
 describe('nlvAgeTone — loi de couleur de la fraîcheur (le rouge est MORT)', () => {
-  it('59 s → live (vert)', () => {
-    expect(nlvAgeTone(59_000, { marketOpen: true })).toBe('live');
-    expect(nlvAgeTone(NLV_AGE.LIVE_MS - 1, { marketOpen: true })).toBe('live');
+  it('RTH : 59 s → live (vert), 60 s → est (ambre) — inchangés', () => {
+    expect(nlvAgeTone(59_000, { phase: 'open' })).toBe('live');
+    expect(nlvAgeTone(NLV_AGE.LIVE_MS - 1, { phase: 'open' })).toBe('live');
+    expect(nlvAgeTone(60_000, { phase: 'open' })).toBe('est');
   });
-  it('60 s → est (ambre)', () => {
-    expect(nlvAgeTone(60_000, { marketOpen: true })).toBe('est');
+  it('pré/post : 199 s → LIVE, 200 s → ambre (seuil de phase 90+90+20)', () => {
+    for (const phase of ['pre', 'after']) {
+      expect(nlvAgeTone(199_000, { phase })).toBe('live');
+      expect(nlvAgeTone(NLV_AGE.LIVE_PREPOST_MS - 1, { phase })).toBe('live');
+      expect(nlvAgeTone(200_000, { phase })).toBe('est');
+    }
   });
-  it('299 s → est (ambre)', () => {
-    expect(nlvAgeTone(299_000, { marketOpen: true })).toBe('est');
+  it('299 s → est · 300 s → TOUJOURS ambre (jamais rouge), toutes phases de séance', () => {
+    for (const phase of ['open', 'pre', 'after']) {
+      expect(nlvAgeTone(299_000, { phase })).toBe('est');
+      expect(nlvAgeTone(300_000, { phase })).toBe('est');
+      expect(nlvAgeTone(3 * 3_600_000, { phase })).toBe('est');
+    }
   });
-  it("300 s → TOUJOURS ambre (jamais 'stale'/rouge, même en séance)", () => {
-    expect(nlvAgeTone(300_000, { marketOpen: true })).toBe('est');
-    expect(nlvAgeTone(3 * 3_600_000, { marketOpen: true })).toBe('est');
-  });
-  it("le ton 'stale' n'existe plus, quel que soit l'âge ou la séance", () => {
-    for (const age of [0, 59_000, 60_000, 299_000, 300_000, 86_400_000]) {
-      for (const open of [true, false]) {
-        expect(nlvAgeTone(age, { marketOpen: open })).not.toBe('stale');
+  it("le ton 'stale' n'existe plus, quel que soit l'âge ou la phase", () => {
+    for (const age of [0, 59_000, 60_000, 199_000, 200_000, 300_000, 86_400_000]) {
+      for (const phase of ['open', 'pre', 'after', 'closed']) {
+        expect(nlvAgeTone(age, { phase })).not.toBe('stale');
       }
     }
   });
   it('hors séance → idle (neutre), quel que soit l’âge', () => {
-    expect(nlvAgeTone(5_000, { marketOpen: false })).toBe('idle');
-    expect(nlvAgeTone(NLV_AGE.EST_MS, { marketOpen: false })).toBe('idle');
-    expect(nlvAgeTone(10 * 3_600_000, { marketOpen: false })).toBe('idle');
+    expect(nlvAgeTone(5_000, { phase: 'closed' })).toBe('idle');
+    expect(nlvAgeTone(NLV_AGE.EST_MS, { phase: 'closed' })).toBe('idle');
+    expect(nlvAgeTone(10 * 3_600_000, { phase: 'closed' })).toBe('idle');
   });
   it('aucun point → null (pastille masquée)', () => {
-    expect(nlvAgeTone(null, { marketOpen: true })).toBeNull();
+    expect(nlvAgeTone(null, { phase: 'open' })).toBeNull();
   });
 });
 
 describe('nlvFluxBadge — libellés du seul porteur d’état', () => {
-  const open = { marketOpen: true };
-  it('59 s → kind live, « il y a 59 s »', () => {
-    expect(nlvFluxBadge(59_000, open)).toEqual({ tone: 'live', kind: 'live', label: 'il y a 59 s' });
+  const rth = { phase: 'open' };
+  it('RTH 59 s → kind live, « il y a 59 s »', () => {
+    expect(nlvFluxBadge(59_000, rth)).toEqual({ tone: 'live', kind: 'live', label: 'il y a 59 s' });
   });
-  it('60 s → kind age, ambre, « il y a 1 min »', () => {
-    expect(nlvFluxBadge(60_000, open)).toEqual({ tone: 'est', kind: 'age', label: 'il y a 1 min' });
+  it('RTH 60 s → kind age, ambre, « il y a 1 min »', () => {
+    expect(nlvFluxBadge(60_000, rth)).toEqual({ tone: 'est', kind: 'age', label: 'il y a 1 min' });
+  });
+  it('pré/post 199 s → LIVE · 200 s → age ambre', () => {
+    expect(nlvFluxBadge(199_000, { phase: 'after' }).kind).toBe('live');
+    expect(nlvFluxBadge(200_000, { phase: 'after' }).kind).toBe('age');
+    expect(nlvFluxBadge(199_000, { phase: 'pre' }).kind).toBe('live');
   });
   it('299 s → kind age (pas encore périmé)', () => {
-    expect(nlvFluxBadge(299_000, open).kind).toBe('age');
+    expect(nlvFluxBadge(299_000, rth).kind).toBe('age');
   });
-  it('300 s → « FLUX PÉRIMÉ · il y a 5 min », couleur AMBRE (tone est)', () => {
-    const b = nlvFluxBadge(300_000, open);
-    expect(b).toEqual({ tone: 'est', kind: 'stale', label: 'FLUX PÉRIMÉ · il y a 5 min' });
+  it('300 s → « FLUX PÉRIMÉ · il y a 5 min », couleur AMBRE (tone est), toutes phases', () => {
+    expect(nlvFluxBadge(300_000, rth)).toEqual({ tone: 'est', kind: 'stale', label: 'FLUX PÉRIMÉ · il y a 5 min' });
+    expect(nlvFluxBadge(300_000, { phase: 'after' }).kind).toBe('stale');
   });
   it('12 min → « FLUX PÉRIMÉ · il y a 12 min »', () => {
-    expect(nlvFluxBadge(12 * 60_000, open).label).toBe('FLUX PÉRIMÉ · il y a 12 min');
+    expect(nlvFluxBadge(12 * 60_000, rth).label).toBe('FLUX PÉRIMÉ · il y a 12 min');
   });
-  it('hors séance → « MARCHÉ FERMÉ · dernier tick HH:MM », neutre, aucune couleur d’alerte', () => {
+  it('hors séance, dernier tick d’AUJOURD’HUI → « MARCHÉ FERMÉ · dernier tick HH:MM »', () => {
     const lastTick = new Date(2026, 7, 21, 22, 0).getTime(); // 22:00 locale
-    const b = nlvFluxBadge(10 * 3_600_000, { marketOpen: false, lastCapturedAt: lastTick });
+    const b = nlvFluxBadge(30 * 60_000, { phase: 'closed', lastCapturedAt: lastTick }); // now = 22:30 même jour
     expect(b.tone).toBe('idle');
     expect(b.kind).toBe('closed');
     expect(b.label).toBe('MARCHÉ FERMÉ · dernier tick 22:00');
   });
+  it('hors séance, dernier tick d’un AUTRE jour → le libellé porte la date', () => {
+    const lastTick = new Date(2026, 7, 18, 23, 43).getTime(); // mardi 18.08 23:43 locale
+    const b = nlvFluxBadge(3 * 86_400_000, { phase: 'closed', lastCapturedAt: lastTick }); // now = 21.08
+    expect(b.label).toBe('MARCHÉ FERMÉ · dernier tick 18.08 23:43');
+  });
   it('hors séance sans dernier tick connu → « MARCHÉ FERMÉ » seul', () => {
-    expect(nlvFluxBadge(5_000, { marketOpen: false }).label).toBe('MARCHÉ FERMÉ');
+    expect(nlvFluxBadge(5_000, { phase: 'closed' }).label).toBe('MARCHÉ FERMÉ');
   });
   it('aucun point → null', () => {
-    expect(nlvFluxBadge(null, open)).toBeNull();
+    expect(nlvFluxBadge(null, rth)).toBeNull();
   });
 });

@@ -30,7 +30,7 @@ import { deriveKpisReal } from './hero1/model';
 import { buildNlvSeries, buildIntradaySeries, resampleSeries, TIMEFRAMES_HERO1 } from '../../utils/nlvSeries';
 // Héros 1 LIVE (Phase B) — courbe 1D depuis le flux bridge, loi d'une
 // seule source (bridge | est., jamais une couture).
-import { buildBridgeSeries, selectHeroSeries } from '../../utils/liveNlvSeries';
+import { buildBridgeSeries, selectHeroSeries, sparkFromSeries } from '../../utils/liveNlvSeries';
 import { sessionWindow } from '../../utils/marketPhase';
 import { useLiveNlvSeries, useLiveFxSeries } from '../../store/liveFeed';
 import { deriveHeroWindowStats } from '../../utils/heroStats';
@@ -162,6 +162,12 @@ export default function Hero1({ area = 'hero1' }) {
     }
     return null;
   }, [heroIsBridge, picked]);
+  // Addendum 2 n°4 — la MiniSpark suit la série affichée : tête bridge →
+  // spark bridge ; est. → spark magasin (kpi.nlvSpark). Jamais deux sources.
+  const heroSpark = useMemo(
+    () => (heroIsBridge ? sparkFromSeries(picked.series) : null),
+    [heroIsBridge, picked]
+  );
 
   // HERO-FOOTER (D1/D2) : UNE maison de stats — calculée sur la fenêtre
   // QUOTIDIENNE pré-resample + les clôtures de la fenêtre. Le tracé
@@ -224,7 +230,7 @@ export default function Hero1({ area = 'hero1' }) {
               rate={rate}
               dayPnl={kpi.dayPnl}
               dayPct={kpi.dayPct}
-              spark={kpi.nlvSpark}
+              spark={heroSpark ?? kpi.nlvSpark}
               size="lg"
               hasBridge={heroIsBridge}
               currency={bridgeCurrency}

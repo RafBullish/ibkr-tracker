@@ -38,6 +38,12 @@ export const DEBOUNCE = {
 // is treated as "stale" and the badge falls back to "real" / "paper".
 export const FRESHNESS = {
   LIVE_DATA_MAX_AGE_MS: TIME.ONE_HOUR_MS,
+  // Addendum 2 (21.08) — porte du writer du pic : la fraîcheur jugée est
+  // celle de la SOURCE du pc (provenance d'écriture, settings.pcSyncedAt —
+  // l'import qui a posé le mark), plus jamais ibkrLiveData.timestamp
+  // (bridge ≠ source du pc). Un mid de clôture vieux de 59 min n'est pas
+  // un mid de clôture : 1 h est abandonné, 5 min.
+  PC_SOURCE_MAX_AGE_MS: 5 * TIME.ONE_MINUTE_MS,
 };
 
 // Âge d'AFFICHAGE du dernier point NLV (pastille cockpit + StatusBar, Phase B).
@@ -46,8 +52,13 @@ export const FRESHNESS = {
 // à « FLUX PÉRIMÉ », la couleur RESTE ambre (le rouge = perte d'argent, jamais
 // une péremption — pré-vol Héros 1 LIVE). Hors séance : neutre, « MARCHÉ
 // FERMÉ · dernier tick » (cf. utils/formatAge.nlvFluxBadge).
+// Addendum 2 (21.08) — seuil LIVE selon la PHASE : LIVE = âge < écriture
+// bridge + sondage + 20 s. RTH : 21+20+20 ≈ 60 s. Pré/post : 90+90+20 =
+// 200 s (à cadence 90 s, un flux sain peut afficher 3 min d'âge sans
+// mentir). « FLUX PÉRIMÉ » à 5 min partout.
 export const NLV_AGE = {
-  LIVE_MS: TIME.ONE_MINUTE_MS, // < 60 s → vert (LIVE)
+  LIVE_MS: TIME.ONE_MINUTE_MS, // RTH : < 60 s → vert (LIVE)
+  LIVE_PREPOST_MS: 200_000, // pré/post : < 200 s → vert (LIVE)
   EST_MS: 5 * TIME.ONE_MINUTE_MS, // ≥ 5 min → libellé « FLUX PÉRIMÉ » (ambre)
 };
 
