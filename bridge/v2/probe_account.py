@@ -32,6 +32,11 @@ from datetime import datetime, timezone
 # mais on l'insère explicitement pour être robuste quel que soit le cwd.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from connection import add_connection_args, connect_readonly  # noqa: E402
+import env as envmod  # noqa: E402
+
+# .env chargé AVANT la construction du parseur (mêmes défauts IBKR_* que le
+# pipeline — jalon 1 ne le chargeait pas du tout : --port à la main obligé).
+envmod.load_env()
 
 # Tags reqAccountSummary. Les quatre premiers viennent de rc.6 ; les trois
 # derniers sont l'apport Phase A (marge / excess / cushion). TOUS calculés par

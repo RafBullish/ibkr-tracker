@@ -157,6 +157,31 @@ class TestCollect(unittest.TestCase):
         self.assertIn("available_funds", state)
 
 
+class TestConnectionArgs(unittest.TestCase):
+    def test_env_ibkr_beats_defaults_at_parser_build(self):
+        # Contrat « CLI > env > défaut » : les défauts du parseur lisent
+        # os.environ À LA CONSTRUCTION — d'où l'ordre load_env() AVANT
+        # add_connection_args (fix 22.08 : .env muet, pipeline sur 4002
+        # alors que le Gateway LIVE du .env écoutait 4001).
+        import argparse
+        from connection import add_connection_args
+        with mock.patch.dict(os.environ, {"IBKR_PORT": "4001", "IBKR_CLIENT_ID": "33"}):
+            parser = argparse.ArgumentParser()
+            add_connection_args(parser)
+            args = parser.parse_args([])
+        self.assertEqual(args.port, 4001)
+        self.assertEqual(args.client_id, 33)
+
+    def test_cli_still_beats_env(self):
+        import argparse
+        from connection import add_connection_args
+        with mock.patch.dict(os.environ, {"IBKR_PORT": "4001"}):
+            parser = argparse.ArgumentParser()
+            add_connection_args(parser)
+            args = parser.parse_args(["--port", "7497"])
+        self.assertEqual(args.port, 7497)
+
+
 class TestMarks(unittest.TestCase):
     def test_derive_mid(self):
         self.assertAlmostEqual(derive_mid(640.0, 1, 100), 6.4)     # option : value/(qty×100)

@@ -113,6 +113,12 @@ def run_cycle(ib, account, base_url, key, dry_run) -> None:
 
 
 def main() -> int:
+    # .env AVANT le parseur : add_connection_args résout ses défauts depuis
+    # os.environ (IBKR_HOST/PORT/CLIENT_ID) au moment de la CONSTRUCTION —
+    # chargé après, le .env était MUET et le pipeline visait toujours
+    # 4002/21 (promesse « CLI > env > défaut » cassée, constaté 22.08 :
+    # Gateway LIVE 4001 dans le .env, connexion tentée sur 4002).
+    envmod.load_env()
     parser = argparse.ArgumentParser(
         description="QuantumCall bridge v2 — jalon 2 : pipeline vivant (read-only)."
     )
@@ -126,7 +132,6 @@ def main() -> int:
 
     # Credentials Supabase — via .env local (jamais commité). En dry-run,
     # facultatifs (aucun POST réel).
-    envmod.load_env()
     base_url = os.environ.get("SUPABASE_URL", "")
     key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
     if not args.dry_run:
